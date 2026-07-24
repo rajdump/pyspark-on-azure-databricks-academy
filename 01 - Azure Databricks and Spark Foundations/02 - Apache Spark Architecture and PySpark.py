@@ -162,8 +162,10 @@ trips.show()
 # MAGIC 4. Write down (in a comment in that cell, or on paper) how many **stages**
 # MAGIC    and roughly how many **tasks** that job shows.
 # MAGIC
-# MAGIC The exact counts can vary by Runtime and cluster size — what matters is
-# MAGIC that you can find the job and read its stage/task breakdown.
+# MAGIC The exact stage and task counts depend on how the data is partitioned and on
+# MAGIC how Spark optimizes the query at runtime — not on how big your cluster is.
+# MAGIC Later modules cover partitioning and query optimization. For now, what matters
+# MAGIC is that you can find the job and read its stage/task breakdown.
 
 # COMMAND ----------
 
