@@ -97,22 +97,32 @@
 # MAGIC already provides a `spark` session in the notebook — you do not create one
 # MAGIC yourself here.
 # MAGIC
-# MAGIC The cell prints the Spark version from your attached compute. That is a
-# MAGIC simple proof that the workspace, notebook, and compute are connected.
+# MAGIC The cell prints the Spark version and the Databricks Runtime version from
+# MAGIC your attached compute. That is a simple proof that the workspace, notebook,
+# MAGIC and compute are connected.
 
 # COMMAND ----------
 
-# A notebook on Databricks already has `spark`. Printing its version confirms
-# that this notebook is attached to compute and can run code.
-print(f"Spark version on this compute: {spark.version}")
+import os
+
+# A notebook on Databricks already has `spark`. These prints confirm that this
+# notebook is attached to compute and show which Runtime you are on.
+spark_version = spark.version
+dbr_version = os.environ.get(
+    "DATABRICKS_RUNTIME_VERSION",
+    spark.conf.get("spark.databricks.clusterUsageTags.sparkVersion", "unknown"),
+)
+
+print(f"Spark version on this compute: {spark_version}")
+print(f"Databricks Runtime version: {dbr_version}")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### What you should see
 # MAGIC
-# MAGIC - A Spark version string in the cell output (for DBR 17.3 LTS this is in the
-# MAGIC   Spark 4.0 line).
+# MAGIC - A Spark version string (for DBR 17.3 LTS this is in the Spark 4.0 line).
+# MAGIC - A Databricks Runtime version string (for this course, look for **17.3** LTS).
 # MAGIC - If the cell errors because compute is missing, use **Connect**, attach
 # MAGIC   compute, wait until it is ready, and run the cell again.
 # MAGIC
@@ -128,21 +138,29 @@ print(f"Spark version on this compute: {spark.version}")
 # MAGIC
 # MAGIC 1. If compute is connected, disconnect it from the notebook toolbar, then
 # MAGIC    attach (connect) again and wait until it is ready.
-# MAGIC 2. Run the cell below.
-# MAGIC 3. In the compute UI for the cluster you attached, find the **Databricks
-# MAGIC    Runtime** version and write it in a comment in that cell (replace the
-# MAGIC    placeholder).
+# MAGIC 2. Run the cell below and note the printed **Databricks Runtime** version.
+# MAGIC 3. In the compute UI for the cluster you attached, confirm the same Runtime
+# MAGIC    version appears there.
 # MAGIC
-# MAGIC You are not grading yourself on a perfect Runtime string — the goal is to
-# MAGIC practice connecting compute and knowing where Runtime is shown.
+# MAGIC You are not grading yourself on a perfect match of every suffix — the goal
+# MAGIC is to practice connecting compute and knowing where Runtime is shown.
 
 # COMMAND ----------
 
 # After re-attaching compute, run this cell.
-print(f"Spark version on this compute: {spark.version}")
+import os
 
-# Replace the placeholder with the Databricks Runtime version from the compute UI.
-# Example shape: 17.3.x (LTS) — use whatever your workspace shows.
+spark_version = spark.version
+dbr_version = os.environ.get(
+    "DATABRICKS_RUNTIME_VERSION",
+    spark.conf.get("spark.databricks.clusterUsageTags.sparkVersion", "unknown"),
+)
+
+print(f"Spark version on this compute: {spark_version}")
+print(f"Databricks Runtime version: {dbr_version}")
+
+# Optional: compare the printed Runtime with the value shown in the compute UI.
+# Example shape: 17.3 — use whatever your workspace shows.
 # dbr_version_from_ui = "REPLACE_ME"
 
 # COMMAND ----------
