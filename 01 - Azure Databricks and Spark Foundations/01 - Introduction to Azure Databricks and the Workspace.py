@@ -122,12 +122,20 @@ print(f"Databricks Runtime version: {dbr_version}")
 # MAGIC ### What you should see
 # MAGIC
 # MAGIC - A Spark version string (for DBR 17.3 LTS this is in the Spark 4.0 line).
-# MAGIC - A Databricks Runtime version string (for this course, look for **17.3** LTS).
+# MAGIC - A Databricks Runtime version string (for this course, look for **17.3** LTS)
+# MAGIC   when you are on **classic all-purpose** compute — the baseline for this
+# MAGIC   notebook.
 # MAGIC - If the cell errors because compute is missing, use **Connect**, attach
 # MAGIC   compute, wait until it is ready, and run the cell again.
 # MAGIC
 # MAGIC You can also confirm Runtime in the UI: open the compute details for the
 # MAGIC cluster you attached and check the Databricks Runtime version shown there.
+# MAGIC
+# MAGIC **Gotcha — serverless.** Serverless compute does **not** use Databricks
+# MAGIC Runtime version pins. It uses its own environment versions. On serverless,
+# MAGIC `spark.version` usually still prints, but the DBR lookup above may return
+# MAGIC `unknown` or be missing. Prefer classic all-purpose **Standard** for this
+# MAGIC lesson when you want to see Runtime / LTS clearly.
 
 # COMMAND ----------
 
@@ -137,10 +145,12 @@ print(f"Databricks Runtime version: {dbr_version}")
 # MAGIC Practice the attach-and-run loop yourself:
 # MAGIC
 # MAGIC 1. If compute is connected, disconnect it from the notebook toolbar, then
-# MAGIC    attach (connect) again and wait until it is ready.
-# MAGIC 2. Run the cell below and note the printed **Databricks Runtime** version.
+# MAGIC    attach (connect) again and wait until it is ready. Prefer classic
+# MAGIC    all-purpose **Standard** for this exercise.
+# MAGIC 2. Run the cell below and note the printed **Databricks Runtime** version
+# MAGIC    (on serverless, this may be missing or `unknown` — see the gotcha above).
 # MAGIC 3. In the compute UI for the cluster you attached, confirm the same Runtime
-# MAGIC    version appears there.
+# MAGIC    version appears there (classic compute only).
 # MAGIC
 # MAGIC You are not grading yourself on a perfect match of every suffix — the goal
 # MAGIC is to practice connecting compute and knowing where Runtime is shown.
