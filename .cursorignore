@@ -1,0 +1,11 @@
+# Binary dataset files - schemas/samples are documented in
+# docs/data/dataset-overview.md; Cursor should reason about the data via that
+# doc, not by loading binary files into context.
+data/raw/**/*.parquet
+data/raw/**/*.avro
+
+# Lock file - large, generated, not useful as AI context
+uv.lock
+
+# Local virtual environment
+.venv/

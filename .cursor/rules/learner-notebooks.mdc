@@ -1,0 +1,27 @@
+---
+description: Standards for learner-facing module notebooks
+globs: ["[0-9][0-9] - */*.py"]
+alwaysApply: false
+---
+
+You are editing a learner-facing Databricks notebook (`.py` source format)
+in a numbered module folder.
+
+Follow these standards, in full, before writing or editing any cell:
+
+- @docs/standards/notebook-writing.md — notebook structure, cell markers,
+  format rules
+- @docs/standards/teaching-guidelines.md — pedagogy, explanation style,
+  audience assumptions
+- @docs/standards/coding-standards.md — PySpark/Python code conventions
+- @docs/data/dataset-overview.md — the rideshare dataset's schemas, join
+  keys, and file layout; use this as the source of truth for any DataFrame
+  or file-read example
+
+Do not duplicate the content of those files here — they are the canonical
+source. If something in a notebook conflicts with them, follow the
+standards files.
+
+Never write runtime validation evidence, or update `COURSE_MODULES.md`
+status, from within notebook edits — those are author-owned actions
+(`docs/validation/` and `COURSE_MODULES.md` respectively).

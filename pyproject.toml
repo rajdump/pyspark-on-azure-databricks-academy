@@ -1,0 +1,29 @@
+[project]
+name = "pyspark-on-azure-databricks-academy"
+version = "0.1.0"
+description = "Local authoring tooling for the PySpark on Azure Databricks Academy course (formatting, linting, type-checking, non-Spark tests). Not used by the Databricks runtime."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14",
+    "mypy>=1.15",
+    "pytest>=8.4",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

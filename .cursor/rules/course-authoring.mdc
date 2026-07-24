@@ -1,0 +1,26 @@
+---
+description: Standards for course roadmap and README authoring
+globs: ["README.md", "COURSE_MODULES.md", "[0-9][0-9] - */README.md"]
+alwaysApply: false
+---
+
+You are editing a course-level or module-level README, or the course
+roadmap.
+
+Follow these standards before writing or editing:
+
+- @docs/standards/teaching-guidelines.md — pedagogy and explanation style
+- @docs/standards/naming-conventions.md — folder, file, and notebook
+  naming rules to reference correctly
+
+Ownership reminders:
+
+- `COURSE_MODULES.md` owns the full roadmap (module purpose, topics,
+  prerequisites, production relevance, final-project contribution, status).
+  It must never contain notebook sequences, exercises, or code.
+- A module's own `README.md` owns that module's detailed objectives,
+  notebook navigation, exercises, and minimum-privilege documentation
+  (see @docs/standards/permissions-and-governance.md for that pattern). It
+  must not duplicate the full course roadmap or global standards.
+- Status changes in `COURSE_MODULES.md` are author-owned — draft them only
+  when explicitly asked to, never as a side effect of an unrelated edit.
