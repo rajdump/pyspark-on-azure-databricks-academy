@@ -19,33 +19,24 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Cell types
+# MAGIC ## Cells and magic commands
 # MAGIC
 # MAGIC A Databricks notebook is a sequence of **cells**. Each cell has a type
-# MAGIC that tells the runtime how to interpret its content.
+# MAGIC that tells the runtime how to interpret its content. You set most types
+# MAGIC with a **magic command** — a line starting with `%` that must be the
+# MAGIC **first line** of the cell.
 # MAGIC
-# MAGIC | Cell type | How to create | What it does |
+# MAGIC | Cell type | Magic (first line) | What it does |
 # MAGIC |---|---|---|
-# MAGIC | **Python** | Default | Runs Python / PySpark on the driver |
-# MAGIC | **Markdown** | `%md` magic at the top | Renders formatted text, headings, tables |
-# MAGIC | **SQL** | `%sql` magic at the top | Runs a Spark SQL statement, shows a result table |
-# MAGIC | **Shell** | `%sh` magic at the top | Runs a bash command on the driver node |
+# MAGIC | **Python** | *(none — default)* | Runs Python / PySpark on the driver |
+# MAGIC | **Markdown** | `%md` | Renders formatted text, headings, tables |
+# MAGIC | **SQL** | `%sql` | Runs a Spark SQL statement; shows a result table |
+# MAGIC | **Shell** | `%sh` | Runs a bash command on the driver node |
 # MAGIC
-# MAGIC You switch the type of a single cell with a **magic command** — a line
-# MAGIC starting with `%` that must be the **first line** of the cell.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Magic commands
-# MAGIC
-# MAGIC Magic commands change how a cell is interpreted. The most common ones:
+# MAGIC Two other magics are useful but are **not** cell languages:
 # MAGIC
 # MAGIC | Magic | Purpose |
 # MAGIC |---|---|
-# MAGIC | `%md` | Markdown — formatted text, diagrams, tables |
-# MAGIC | `%sql` | Spark SQL — run a SQL statement |
-# MAGIC | `%sh` | Shell — bash commands on the driver |
 # MAGIC | `%run` | Run another notebook and import its variables into this session |
 # MAGIC | `%pip` | Install a Python package for this notebook session |
 # MAGIC
