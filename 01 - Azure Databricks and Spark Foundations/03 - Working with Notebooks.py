@@ -15,8 +15,8 @@
 # MAGIC should already know what a SparkSession is and how to attach compute.
 # MAGIC
 # MAGIC **Setup.** Any compute type works for most cells. Prefer classic
-# MAGIC all-purpose **Standard** if you want reliable `%sh` behavior (see the
-# MAGIC serverless gotcha later).
+# MAGIC all-purpose **Standard** if you want reliable `%sh` and `%fs` behavior
+# MAGIC (both can be limited on serverless — see gotcha notes later).
 # MAGIC
 # MAGIC You already attach compute and run cells. Next we watch how those cells
 # MAGIC share — and do not share — a live session.
@@ -191,6 +191,12 @@ print(f"Base fare: {base_fare}")
 # MAGIC **read-only sample collection** Databricks provides on supported compute.
 # MAGIC It is only a demo for listing — this course's rideshare files are read
 # MAGIC later from the shared dataset paths, not from here.
+# MAGIC
+# MAGIC **Gotcha — serverless.** `%fs` is backed by Scala internals. Serverless
+# MAGIC notebooks do **not** support Scala, so this cell can fail with
+# MAGIC `UNAUTHORIZED_COMMAND` (Scala not supported). On serverless, **skip** the
+# MAGIC `%fs` cell and use the `dbutils.fs` cell next — same listing, Python API.
+# MAGIC Prefer classic all-purpose **Standard** if you want to see `%fs` succeed.
 
 # COMMAND ----------
 
@@ -200,8 +206,9 @@ print(f"Base fare: {base_fare}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You listed the path with a magic — a quick look. When your **Python code**
-# MAGIC needs that listing (count items, loop, filter), use `dbutils` instead.
+# MAGIC On classic compute, you listed the path with a magic — a quick look. When
+# MAGIC your **Python code** needs that listing (count items, loop, filter), use
+# MAGIC `dbutils` instead. On serverless, jump straight to `dbutils.fs` below.
 
 # COMMAND ----------
 
@@ -248,18 +255,15 @@ for f in files[:5]:
 # MAGIC
 # MAGIC 1. Use `dbutils.fs.ls` on `/databricks-datasets`.
 # MAGIC 2. Keep only entries whose **name** contains the letters `data`
-# MAGIC    (case-insensitive is fine).
+# MAGIC    (case-insensitive is fine). If nothing matches in your workspace,
+# MAGIC    try another short keyword that appears in the listing (for example
+# MAGIC    `csv` or `taxi`).
 # MAGIC 3. Print how many matched, then print those names.
 
 # COMMAND ----------
 
 # Your code here.
-# # Hint shape (optional):
-# # entries = dbutils.fs.ls("/databricks-datasets")
-# # matched = [e for e in entries if "data" in e.name.lower()]
-# # print(len(matched))
-# # for e in matched:
-# #     print(e.name)
+# Hint: filter with `"data" in e.name.lower()` (or your chosen keyword).
 
 # COMMAND ----------
 
@@ -269,12 +273,12 @@ for f in files[:5]:
 # MAGIC One thread for this lesson:
 # MAGIC
 # MAGIC - Python cells share state by **run order** — define before use; prefer
-# MAGIC   **Run All**.
+# MAGIC   **Run All** (except the intentional failing `%sql` cell).
 # MAGIC - Each language keeps its **own** state — a SQL cell cannot read a Python
 # MAGIC   local like `base_fare`.
 # MAGIC - **Magic commands** switch how a cell runs (`%sql`, `%sh`, `%fs`, …).
-# MAGIC - **`%fs`** is a quick look; **`dbutils.fs`** gives you a Python result
-# MAGIC   you can count and loop over.
+# MAGIC - **`%fs`** is a quick look on classic compute (may fail on serverless);
+# MAGIC   **`dbutils.fs`** works as the Python equivalent you can count and loop.
 # MAGIC
 # MAGIC Next up: `04 - Your First DataFrame` — building and inspecting a small
 # MAGIC rideshare DataFrame with `show()`, `display()`, and `printSchema()`.
