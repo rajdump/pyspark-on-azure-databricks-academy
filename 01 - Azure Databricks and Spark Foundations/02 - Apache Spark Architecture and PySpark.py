@@ -91,19 +91,34 @@ print(f"Spark is running. Engine version: {spark.version}")
 # MAGIC spark = SparkSession.builder.appName("my-app").getOrCreate()
 # MAGIC ```
 # MAGIC
-# MAGIC Next, prove you are connected to a real Spark application.
+# MAGIC Next, prove you are connected to a real Spark application by reading its
+# MAGIC application id — a label Spark (and the Spark UI) use for this session.
 
 # COMMAND ----------
 
 # Application id labels the Spark application behind this session.
-# On some compute types (especially serverless) this conf key may be missing.
+# On serverless, Spark Connect does not expose spark.app.id — that is expected.
 try:
     app_id = spark.conf.get("spark.app.id")
     print(f"Connected to Spark application: {app_id}")
-except Exception as e:
+except Exception:
     print("spark.app.id is not available on this compute type.")
-    print(f"{type(e).__name__}: {e}")
     print("That is expected on serverless. Prefer classic all-purpose for this lesson.")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### What you should see
+# MAGIC
+# MAGIC - On **classic all-purpose** compute: a line like
+# MAGIC   `Connected to Spark application: app-...` (the exact id varies).
+# MAGIC - That id is the label for **this** Spark application — the same idea you
+# MAGIC   will look up later in the Spark UI.
+# MAGIC
+# MAGIC **Gotcha — serverless.** Serverless uses Spark Connect and does **not**
+# MAGIC expose `spark.app.id`. The cell above prints a short note instead of an
+# MAGIC id. Prefer classic all-purpose **Standard** for this lesson so you can
+# MAGIC see the application id and later open the Spark UI.
 
 # COMMAND ----------
 
