@@ -76,6 +76,46 @@
 
 # COMMAND ----------
 
+# MAGIC %sh
+# MAGIC # Common shell commands you can use in %sh cells:
+# MAGIC # ls        - list directory contents
+# MAGIC # pwd       - print working directory
+# MAGIC # cat       - display file contents
+# MAGIC # echo      - print text to stdout
+# MAGIC # head      - show first lines of a file
+# MAGIC # tail      - show last lines of a file
+# MAGIC # cp        - copy files
+# MAGIC # mv        - move/rename files
+# MAGIC # rm        - remove files
+# MAGIC # mkdir     - create directories
+# MAGIC # rmdir     - remove directories
+# MAGIC # du        - disk usage
+# MAGIC # df        - disk free space
+# MAGIC # grep      - search text
+# MAGIC # wc        - word/line count
+# MAGIC # touch     - create empty file
+# MAGIC # chmod     - change file permissions
+# MAGIC # chown     - change file owner
+# MAGIC # find      - search for files
+# MAGIC # date      - show current date/time
+# MAGIC # whoami    - show current user
+# MAGIC # ps        - show running processes
+# MAGIC # top       - show system resource usage
+# MAGIC # uname     - show system info
+# MAGIC # curl      - transfer data from/to server
+# MAGIC # wget      - download files
+# MAGIC # python3   - run Python scripts
+# MAGIC
+# MAGIC ls -l /dbfs
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC For advanced and interactive command-line workflows (like using vim, htop, or tracking complex tasks), Databricks provides a dedicated Web Terminal interface, which is preferred over writing repetitive %sh notebook cells
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Cell execution order
 # MAGIC
