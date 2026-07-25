@@ -43,7 +43,10 @@ in this planned order:
    - Running story: count-trips stand-in via `spark.range(...).count()`
    - Spark UI on classic all-purpose Standard (no DataFrame labs yet)
 3. **Working with Notebooks**
-   - Cells, magic commands, and `dbutils`
+   - Cell run order and shared Python state
+   - Each language keeps its own state (expected-fail `%sql` on a Python local)
+   - Magic commands (`%md`, `%sql`, `%fs`, `%sh`)
+   - `%fs` vs `dbutils.fs` (quick look vs Python result)
 4. **Your First DataFrame**
    - Build and inspect a small rideshare DataFrame (`show` / `display` /
      `printSchema`)

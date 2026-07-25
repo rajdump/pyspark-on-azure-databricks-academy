@@ -3,71 +3,161 @@
 # MAGIC # Working with Notebooks
 # MAGIC
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Identify the different cell types in a Databricks notebook and run them
-# MAGIC - Use common magic commands (`%md`, `%sql`, `%sh`, `%run`)
-# MAGIC - Use `dbutils` for common notebook tasks (widgets, file system access,
-# MAGIC   notebook utilities)
-# MAGIC - Explain why cell execution order matters in a live Spark session
+# MAGIC - Explain how Python cells share state by **run order**
+# MAGIC - Explain that each notebook language keeps its **own** state — and prove it
+# MAGIC   with an expected-fail SQL cell
+# MAGIC - Switch a cell's language with common magic commands (`%md`, `%sql`, `%fs`,
+# MAGIC   `%sh`)
+# MAGIC - Use `dbutils.fs` when you need a filesystem listing as Python data, not
+# MAGIC   only as a quick look
 # MAGIC
 # MAGIC **Prerequisites.** `02 - Apache Spark Architecture and PySpark` — you
 # MAGIC should already know what a SparkSession is and how to attach compute.
 # MAGIC
-# MAGIC **Setup.** Any compute type works for this notebook. Classic all-purpose
-# MAGIC Standard is fine; serverless also works for most cells (see gotcha notes
-# MAGIC where relevant).
+# MAGIC **Setup.** Any compute type works for most cells. Prefer classic
+# MAGIC all-purpose **Standard** if you want reliable `%sh` behavior (see the
+# MAGIC serverless gotcha later).
+# MAGIC
+# MAGIC You already attach compute and run cells. Next we watch how those cells
+# MAGIC share — and do not share — a live session.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Cells and magic commands
+# MAGIC ## Cells and notebook state
 # MAGIC
-# MAGIC A Databricks notebook is a sequence of **cells**. Each cell has a type
-# MAGIC that tells the runtime how to interpret its content. You set most types
-# MAGIC with a **magic command** — a line starting with `%` that must be the
-# MAGIC **first line** of the cell.
+# MAGIC A notebook is made of **cells**. You can run them in any order, but later
+# MAGIC cells often depend on values created earlier — so top-to-bottom is the
+# MAGIC safe habit.
 # MAGIC
-# MAGIC | Cell type | Magic (first line) | What it does |
+# MAGIC Python cells share a running **state**. A variable created in one Python
+# MAGIC cell is available to another Python cell **after** the defining cell has
+# MAGIC run. Run the next two cells in order.
+
+# COMMAND ----------
+
+# A rideshare-flavored value — shared with later Python cells in this session.
+base_fare = 2.50
+
+# COMMAND ----------
+
+print(f"Base fare: {base_fare}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC If you run the print cell before `base_fare = 2.50`, Python raises
+# MAGIC `NameError` because the variable does not exist yet.
+# MAGIC
+# MAGIC For predictable results:
+# MAGIC
+# MAGIC - Put definitions before the cells that use them.
+# MAGIC - Run notebooks from top to bottom (**Run All**).
+# MAGIC - If results look inconsistent, clear the notebook state (for example
+# MAGIC   **Detach & Re-attach**) and rerun from the top.
+# MAGIC
+# MAGIC Same-language sharing is only half the story. Other cell languages do
+# MAGIC **not** automatically see Python variables like `base_fare`.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Each language has its own state
+# MAGIC
+# MAGIC Both Python cells above can use `base_fare` because Python cells share
+# MAGIC variables.
+# MAGIC
+# MAGIC SQL, Scala, and R cells **cannot** use variables created in Python. Each
+# MAGIC language keeps its own state.
+# MAGIC
+# MAGIC Later in the course you will share data across languages with Spark
+# MAGIC tables or temporary views — not by reading a Python local from SQL.
+# MAGIC
+# MAGIC To prove the boundary here, you need a non-Python cell. That is what
+# MAGIC **magic commands** are for.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Magic commands
+# MAGIC
+# MAGIC By default, a cell runs **Python**. To switch one cell to another
+# MAGIC language (or mode), put a **magic command** on its **first line** — or
+# MAGIC use the language selector on the cell.
+# MAGIC
+# MAGIC | Cell type / mode | Magic (first line) | What it does |
 # MAGIC |---|---|---|
-# MAGIC | **Python** | *(none — default)* | Runs Python / PySpark on the driver |
+# MAGIC | **Python** | *(none — default)* or `%python` | Runs Python / PySpark on the driver |
 # MAGIC | **Markdown** | `%md` | Renders formatted text, headings, tables |
 # MAGIC | **SQL** | `%sql` | Runs a Spark SQL statement; shows a result table |
-# MAGIC | **Shell** | `%sh` | Runs a bash command on the driver node |
+# MAGIC | **Filesystem** | `%fs` | Quick filesystem commands (shorthand for `dbutils.fs`) |
+# MAGIC | **Shell** | `%sh` | Bash on the driver node |
 # MAGIC
-# MAGIC Two other magics are useful but are **not** cell languages:
+# MAGIC Two other magics are useful later but are **not** cell languages:
 # MAGIC
 # MAGIC | Magic | Purpose |
 # MAGIC |---|---|
 # MAGIC | `%run` | Run another notebook and import its variables into this session |
 # MAGIC | `%pip` | Install a Python package for this notebook session |
 # MAGIC
-# MAGIC You will see `%md` in every notebook in this course. `%sql` and `%run`
-# MAGIC appear in later modules. `%pip` is covered in Module 14.
+# MAGIC Magics are a **Databricks notebook** feature, not part of Apache Spark
+# MAGIC itself. A `%sql` cell uses the SQL supported by Databricks Runtime
+# MAGIC (including Spark SQL behavior).
+# MAGIC
+# MAGIC First magic to try: `%sql`.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Worked example: `%sql`
 # MAGIC
-# MAGIC The cell below uses `%sql` to run a simple Spark SQL statement. The result
-# MAGIC renders as a table directly in the notebook output — no `display()` needed
-# MAGIC for SQL cells.
+# MAGIC The cell below runs a simple Spark SQL statement. The result renders as a
+# MAGIC table in the notebook output.
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT 'Working with Notebooks' AS lesson, current_timestamp() AS run_at
+# MAGIC SELECT 'Hello from a SQL cell' AS message
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC The SQL greeting worked — so the SQL cell is running correctly. Now ask
+# MAGIC SQL for the Python variable `base_fare`.
+# MAGIC
+# MAGIC Run the next cell **separately**. It is **expected to fail**: SQL treats
+# MAGIC `base_fare` as a column name and cannot find that column. Python locals
+# MAGIC are not visible to SQL.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT base_fare
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### What that error confirms
+# MAGIC
+# MAGIC Another Python cell can read `base_fare`, but a SQL cell cannot. Python
+# MAGIC and SQL keep separate language state.
+# MAGIC
+# MAGIC Magics are not only for SQL. Next, try `%sh` — it reaches the **driver
+# MAGIC shell**, which is another environment (still not Python variable state).
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Worked example: `%sh`
 # MAGIC
-# MAGIC `%sh` runs a bash command on the **driver node** — not on executors.
-# MAGIC Useful for quick checks like confirming Python version or reading a small
-# MAGIC local file. Not a substitute for Spark file operations on large data.
+# MAGIC `%sh` runs a bash command on the **driver node** — not on executors, and
+# MAGIC not inside the Python process that holds `base_fare`. Useful for quick
+# MAGIC checks (Python version, working directory). Not a substitute for Spark
+# MAGIC file operations on large data.
 # MAGIC
 # MAGIC **Gotcha — serverless.** `%sh` may be restricted or unavailable on
-# MAGIC serverless compute. Prefer classic all-purpose Standard if you need it.
+# MAGIC serverless compute. Prefer classic all-purpose **Standard** if you need
+# MAGIC it.
 
 # COMMAND ----------
 
@@ -81,156 +171,83 @@
 
 # COMMAND ----------
 
-# MAGIC %sh
-# MAGIC echo "hello from the driver"
-
-# COMMAND ----------
-
-# MAGIC %sh
-# MAGIC ls -l /dbfs
-
-# COMMAND ----------
-
 # MAGIC %md
-# MAGIC Other common commands you may see in `%sh` cells: `ls`, `pwd`, `cat`,
-# MAGIC `echo`, `head`, `mkdir`. You do not need to memorize a shell catalog here.
-# MAGIC
 # MAGIC **Tip — Web Terminal.** For interactive work (for example `vim`, `htop`,
 # MAGIC or multi-step command-line sessions), prefer the Databricks **Web
-# MAGIC Terminal** over stacking many `%sh` cells in a notebook.
+# MAGIC Terminal** over stacking many `%sh` cells.
+# MAGIC
+# MAGIC For checking files in storage, prefer filesystem tools next — `%fs` and
+# MAGIC `dbutils.fs` — instead of ad-hoc shell listing.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Cell execution order
+# MAGIC ### Worked example: `%fs`
 # MAGIC
-# MAGIC A Databricks notebook shares one live Python process (the driver) across
-# MAGIC all cells. Variables, imports, and DataFrames created in one cell are
-# MAGIC available in every cell run **after** it in the same session.
-# MAGIC
-# MAGIC This means **order matters**:
-# MAGIC - If you run cell 5 before cell 3, and cell 5 depends on a variable
-# MAGIC   defined in cell 3, cell 5 will fail.
-# MAGIC - If you redefine a variable in cell 2 and re-run cell 5, cell 5 sees
-# MAGIC   the new value — even if you ran cell 5 earlier with the old value.
-# MAGIC
-# MAGIC The safest habit: use **Run All** (`Shift+F10` or the toolbar button) to
-# MAGIC run the notebook top-to-bottom before sharing it or recording results.
+# MAGIC `%fs` is shorthand for `dbutils.fs` commands. The path below is a
+# MAGIC **read-only sample collection** Databricks provides on supported compute.
+# MAGIC It is only a demo for listing — this course's rideshare files are read
+# MAGIC later from the shared dataset paths, not from here.
+
+# COMMAND ----------
+
+# MAGIC %fs
+# MAGIC ls /databricks-datasets
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Worked example: execution order
-# MAGIC
-# MAGIC Run the two cells below in order, then try running the second cell first
-# MAGIC (after restarting the session with **Detach & Re-attach**) to see the
-# MAGIC `NameError` that results.
-
-# COMMAND ----------
-
-# Cell A — defines a variable
-city = "New York"
-
-# COMMAND ----------
-
-# Cell B — uses the variable defined in Cell A
-# If you run this before Cell A, Python raises NameError: name 'city' is not defined.
-print(f"Rideshare city: {city}")
+# MAGIC You listed the path with a magic — a quick look. When your **Python code**
+# MAGIC needs that listing (count items, loop, filter), use `dbutils` instead.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## `dbutils`
 # MAGIC
-# MAGIC `dbutils` is a Databricks-provided utility object, available in every
-# MAGIC notebook automatically (no import needed). It covers three areas you will
-# MAGIC use throughout this course:
+# MAGIC `dbutils` is a Databricks-provided toolbox available in this notebook
+# MAGIC without an import. The utilities you will meet most often:
 # MAGIC
 # MAGIC | Utility | Access | What it does |
 # MAGIC |---|---|---|
-# MAGIC | **File system** | `dbutils.fs` | List, read, copy, move, delete files in DBFS or cloud storage |
-# MAGIC | **Widgets** | `dbutils.widgets` | Create notebook parameters (dropdowns, text inputs) |
-# MAGIC | **Notebook** | `dbutils.notebook` | Run or exit a notebook programmatically |
-# MAGIC | **Secrets** | `dbutils.secrets` | Read secrets from a Databricks secret scope |
+# MAGIC | **File system** | `dbutils.fs` | List, copy, move, delete files |
+# MAGIC | **Widgets** | `dbutils.widgets` | Notebook parameters (later in the course) |
+# MAGIC | **Notebook** | `dbutils.notebook` | Run or exit notebooks programmatically (later) |
+# MAGIC | **Secrets** | `dbutils.secrets` | Read secrets from a scope (later) |
 # MAGIC
-# MAGIC You can explore any utility with `dbutils.fs.help()`, `dbutils.widgets.help()`,
-# MAGIC and so on.
+# MAGIC Today you need only `dbutils.fs`. As a data engineer, that is how you
+# MAGIC confirm files landed in storage before a job tries to read them.
+# MAGIC
+# MAGIC The next cell does what `%fs ls` did, but returns Python objects you can
+# MAGIC count and loop over.
+
+# COMMAND ----------
+
+files = dbutils.fs.ls("/databricks-datasets")
+print(f"Found {len(files)} items. First 5:")
+for f in files[:5]:
+    print(f" - {f.name}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Worked example: `dbutils.fs`
+# MAGIC Same listing as the `%fs` cell, now as a list in a variable. Magics are
+# MAGIC handy for a quick look; use `dbutils` when your code must work with the
+# MAGIC result.
 # MAGIC
-# MAGIC List the top-level entries in the Databricks File System (DBFS).
-# MAGIC This is the managed file system attached to your workspace — not Unity
-# MAGIC Catalog volumes, which come in a later module.
-
-# COMMAND ----------
-
-# List the root of DBFS.
-for entry in dbutils.fs.ls("/"):
-    print(entry.path)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Worked example: `dbutils.widgets`
-# MAGIC
-# MAGIC Widgets turn notebook parameters into interactive UI controls. In a
-# MAGIC production job, widget values are supplied by the job run configuration
-# MAGIC instead. Here, create a simple text widget and read its value.
-
-# COMMAND ----------
-
-# Create a text widget with a default value.
-dbutils.widgets.text("city_filter", "New York", "City")
-
-# Read the current value — default until the learner changes it in the UI.
-city_filter = dbutils.widgets.get("city_filter")
-print(f"city_filter = {city_filter!r}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Clean up the widget
-# MAGIC
-# MAGIC Widgets persist for the notebook session. Remove them when done so they
-# MAGIC don't accumulate across repeated runs.
-
-# COMMAND ----------
-
-dbutils.widgets.remove("city_filter")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## `%run` — sharing code between notebooks
-# MAGIC
-# MAGIC `%run` executes another notebook and pulls all its variables and functions
-# MAGIC into the current session. It is the simplest way to share a setup cell
-# MAGIC (imports, dataset reads) across multiple notebooks in a module.
-# MAGIC
-# MAGIC ```python
-# MAGIC # Example — not executed here because there is no target notebook yet.
-# MAGIC # %run ./00 - Setup
-# MAGIC ```
-# MAGIC
-# MAGIC You will use `%run` in later modules to load a shared setup notebook
-# MAGIC before the lesson's main content. The path is relative to the current
-# MAGIC notebook's folder.
+# MAGIC Practice that distinction in the exercise below. While you do, remember
+# MAGIC why `SELECT base_fare` failed earlier — SQL never saw the Python local.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC 1. In the cell below, add a `dbutils.widgets.dropdown` widget named
-# MAGIC    `"service_type"` with options `["Yellow", "Green", "FHV"]` and default
-# MAGIC    `"Yellow"`.
-# MAGIC 2. Read its value with `dbutils.widgets.get("service_type")` and print it.
-# MAGIC 3. Change the dropdown value in the notebook UI and re-run only that cell
-# MAGIC    — confirm the printed value updates.
-# MAGIC 4. Remove the widget with `dbutils.widgets.remove("service_type")`.
+# MAGIC 1. Use `dbutils.fs.ls` on `/databricks-datasets` (or another path your
+# MAGIC    workspace allows).
+# MAGIC 2. Print how many items you found and the names of the first few.
+# MAGIC 3. In a short comment or markdown note, explain in one sentence why
+# MAGIC    `SELECT base_fare` failed earlier in this notebook.
 
 # COMMAND ----------
 
@@ -241,13 +258,15 @@ dbutils.widgets.remove("city_filter")
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - A notebook is a sequence of **cells**; each cell runs in the shared
-# MAGIC   driver process, so **execution order matters**.
-# MAGIC - **Magic commands** (`%md`, `%sql`, `%sh`, `%run`, `%pip`) change how a
-# MAGIC   cell is interpreted — the magic must be the first line of the cell.
-# MAGIC - **`dbutils`** provides file system access (`dbutils.fs`), notebook
-# MAGIC   parameters (`dbutils.widgets`), cross-notebook execution
-# MAGIC   (`dbutils.notebook`), and secret access (`dbutils.secrets`).
+# MAGIC One thread for this lesson:
+# MAGIC
+# MAGIC - Python cells share state by **run order** — define before use; prefer
+# MAGIC   **Run All**.
+# MAGIC - Each language keeps its **own** state — a SQL cell cannot read a Python
+# MAGIC   local like `base_fare`.
+# MAGIC - **Magic commands** switch how a cell runs (`%sql`, `%sh`, `%fs`, …).
+# MAGIC - **`%fs`** is a quick look; **`dbutils.fs`** gives you a Python result
+# MAGIC   you can count and loop over.
 # MAGIC
 # MAGIC Next up: `04 - Your First DataFrame` — building and inspecting a small
 # MAGIC rideshare DataFrame with `show()`, `display()`, and `printSchema()`.
