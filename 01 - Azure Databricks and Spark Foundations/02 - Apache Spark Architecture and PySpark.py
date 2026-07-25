@@ -4,191 +4,278 @@
 # MAGIC
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
 # MAGIC - Explain what Apache Spark is and why data engineers use it
-# MAGIC - Describe the driver/executor model at a practical level
-# MAGIC - Relate a notebook cell run to jobs, stages, and tasks in the Spark UI
-# MAGIC - Recognize PySpark as the Python API for Spark on Databricks
+# MAGIC - Explain what the `spark` variable (a **SparkSession**) is and how PySpark
+# MAGIC   relates to Spark
+# MAGIC - Identify the driver, executors, and cluster manager
+# MAGIC - Describe how a submitted request becomes jobs, stages, and tasks
+# MAGIC - Observe one live request in the Spark UI on classic compute
 # MAGIC
 # MAGIC **Prerequisites.** `01 - Introduction to Azure Databricks and the Workspace`
-# MAGIC in this module — you should already know how to attach compute and run a cell.
+# MAGIC — you should already know how to attach compute and run a cell.
 # MAGIC
-# MAGIC **Dataset note.** This module uses small, hand-built rideshare-flavored
-# MAGIC examples when needed. File-based reads of the shared rideshare dataset
-# MAGIC begin later.
+# MAGIC **Setup.** Attach this notebook to **classic all-purpose** compute
+# MAGIC (**Standard** access mode when available). Prefer classic compute so the
+# MAGIC **Spark UI** is easy to open after you submit a request.
+# MAGIC
+# MAGIC **Running story.** Imagine a rideshare batch job that must **count today's
+# MAGIC trips**. Real trip DataFrames come later in this module. Here you will
+# MAGIC submit a simple count request that follows the **same Spark path**, then
+# MAGIC see who runs it and how Spark nests the work.
+# MAGIC
+# MAGIC We start with the one idea Spark is built on.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Setup
+# MAGIC ## The one idea behind Spark
 # MAGIC
-# MAGIC Attach this notebook to **classic all-purpose** compute (**Standard** access
-# MAGIC mode when available) before running code cells. Prefer classic compute for
-# MAGIC this lesson so you can open the **Spark UI** clearly after a cell runs.
+# MAGIC Some workloads are too large for one machine to finish in a reasonable
+# MAGIC time. Spark's answer is to **split the work into pieces and process those
+# MAGIC pieces at the same time across many machines**, then combine the results.
 # MAGIC
-# MAGIC No dataset files are required — examples below build a few rows in code.
+# MAGIC Imagine counting every book in a library. One person walking every aisle
+# MAGIC would take all day. With many people each counting one shelf, the job
+# MAGIC finishes much faster. Spark is the system that divides the shelves,
+# MAGIC assigns the work, and adds up the totals.
+# MAGIC
+# MAGIC In production batch data engineering — including rideshare pipelines that
+# MAGIC clean, join, and aggregate trip data — you rely on that same idea.
+# MAGIC
+# MAGIC To use that engine from Python on Databricks, you talk to it through one
+# MAGIC object.
+
+# COMMAND ----------
+
+# Prove the Spark engine is available on the compute you attached.
+print(f"Spark is running. Engine version: {spark.version}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Concept: Apache Spark and PySpark
+# MAGIC ## PySpark and the `spark` variable (SparkSession)
 # MAGIC
-# MAGIC **Apache Spark** is a distributed data processing engine. Instead of one
-# MAGIC machine doing all the work, Spark can split a large batch job across many
-# MAGIC workers and combine the results. Data engineers use it for reliable,
-# MAGIC repeatable batch pipelines — clean, transform, join, and write tables at
-# MAGIC scale.
+# MAGIC You just talked to a live Spark engine. Two things to notice:
 # MAGIC
-# MAGIC On Azure Databricks you do not install Spark yourself. Compute already
-# MAGIC includes Spark as part of the **Databricks Runtime**.
+# MAGIC - You never installed Spark or started it yourself. When this notebook
+# MAGIC   attached to compute, Databricks provided a ready-to-use object named
+# MAGIC   **`spark`**.
+# MAGIC - You wrote plain Python. Spark itself runs on the JVM, but **PySpark**
+# MAGIC   lets you drive Spark from Python. That is all "PySpark" means: Python
+# MAGIC   talking to Spark.
 # MAGIC
-# MAGIC **PySpark** is the Python API for Spark. When you write Python in a
-# MAGIC Databricks notebook and use `spark` (and later DataFrame methods), you are
-# MAGIC using PySpark. Spark also has APIs for Scala and SQL; this course focuses
-# MAGIC on PySpark for batch data engineering.
+# MAGIC ### What `spark` is
 # MAGIC
-# MAGIC You do not need a distributed-systems deep dive here. Remember the job
-# MAGIC framing: **your notebook code describes the work; Spark schedules that
-# MAGIC work across the cluster.**
+# MAGIC `spark` is a **SparkSession** — your entry point (and connection) to this
+# MAGIC Spark application on the cluster.
+# MAGIC
+# MAGIC Picture a hotel reception desk. For a room, a taxi, or dinner, you do not
+# MAGIC visit every department yourself. You ask reception, and they route the
+# MAGIC request. **`spark` is reception for the Spark engine.**
+# MAGIC
+# MAGIC Through a SparkSession you can later:
+# MAGIC
+# MAGIC - read data → `spark.read...`
+# MAGIC - create DataFrames → `spark.createDataFrame(...)`
+# MAGIC - run SQL → `spark.sql(...)`
+# MAGIC - read or set supported session settings → `spark.conf...`
+# MAGIC
+# MAGIC You will practice DataFrames in a later notebook. Here the point is only:
+# MAGIC **requests go through `spark`.**
+# MAGIC
+# MAGIC Outside Databricks (for example a standalone script) you would create the
+# MAGIC session yourself. You will not run this in a Databricks notebook — it is
+# MAGIC shown so you recognize it elsewhere:
+# MAGIC
+# MAGIC ```python
+# MAGIC from pyspark.sql import SparkSession
+# MAGIC spark = SparkSession.builder.appName("my-app").getOrCreate()
+# MAGIC ```
+# MAGIC
+# MAGIC Next, prove you are connected to a real Spark application.
+
+# COMMAND ----------
+
+# Application id labels the Spark application behind this session.
+# On some compute types (especially serverless) this conf key may be missing.
+try:
+    app_id = spark.conf.get("spark.app.id")
+    print(f"Connected to Spark application: {app_id}")
+except Exception as e:
+    print("spark.app.id is not available on this compute type.")
+    print(f"{type(e).__name__}: {e}")
+    print("That is expected on serverless. Prefer classic all-purpose for this lesson.")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Concept: driver, executors, jobs, stages, and tasks
+# MAGIC ## Who does the work
 # MAGIC
-# MAGIC When your notebook is attached to compute, Spark runs with two main roles:
+# MAGIC Connection is only the start. When you **submit a request** through
+# MAGIC `spark`, several roles work together. Think of a kitchen during a dinner
+# MAGIC rush:
 # MAGIC
-# MAGIC | Role | What it does |
+# MAGIC | Role | Analogy | What it does |
+# MAGIC |---|---|---|
+# MAGIC | **SparkSession (`spark`)** | Reception / ticket window | Where your code submits Spark requests |
+# MAGIC | **Driver** | Head chef | Plans the distributed work, schedules tasks, tracks progress |
+# MAGIC | **Executors** | Line cooks | Run those tasks on their assigned data pieces, in parallel |
+# MAGIC | **Cluster manager** | The kitchen building and staffing | Supplies CPU/memory and launches executors. On Databricks this is handled for you |
+# MAGIC
+# MAGIC You write the request once. The driver plans. The executors run. The
+# MAGIC cluster manager makes sure workers exist.
+# MAGIC
+# MAGIC Here is the same idea as a picture (Diagram A).
+
+# COMMAND ----------
+
+# MAGIC %md-sandbox
+# MAGIC ## Diagram A — runtime roles
+# MAGIC
+# MAGIC Who plans, who allocates machines, who runs the work.
+# MAGIC
+# MAGIC <div class="mermaid">
+# MAGIC flowchart TB
+# MAGIC   driver["Driver\nholds SparkSession spark\nplans work and tracks progress"]
+# MAGIC   cm["Cluster manager\nDatabricks handles this"]
+# MAGIC   ex1["Executor\nruns tasks"]
+# MAGIC   ex2["Executor\nruns tasks"]
+# MAGIC   driver -->|"requests resources"| cm
+# MAGIC   cm --> ex1
+# MAGIC   cm --> ex2
+# MAGIC </div>
+# MAGIC
+# MAGIC <script type="module">
+# MAGIC import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+# MAGIC mermaid.initialize({ startOnLoad: true, theme: "default" });
+# MAGIC </script>
+# MAGIC
+# MAGIC **Same story on this diagram — counting trips (stand-in request):**
+# MAGIC
+# MAGIC 1. You will call a count through **`spark`** (SparkSession on the driver).
+# MAGIC 2. The **driver** plans how to count across the cluster.
+# MAGIC 3. The **cluster manager** has already provided **executors** on your compute.
+# MAGIC 4. **Executors** run the actual counting work and send results back to the driver.
+# MAGIC
+# MAGIC Planning roles is half the story. Spark also nests the work into smaller
+# MAGIC units.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## How Spark splits a submitted request
+# MAGIC
+# MAGIC When a request needs distributed processing, Spark organizes the work into
+# MAGIC nested units:
+# MAGIC
+# MAGIC | Unit | Meaning |
 # MAGIC |---|---|
-# MAGIC | **Driver** | Coordinates the job — plans the work and collects final results |
-# MAGIC | **Executors** | Worker processes that run pieces of the work in parallel |
+# MAGIC | **Application** | This notebook plus its SparkSession — the whole Spark app on your compute |
+# MAGIC | **Job** | One unit of work created when you submit a request that must actually run (an *action*) |
+# MAGIC | **Stage** | A phase inside a job |
+# MAGIC | **Task** | The smallest unit; typically one task per data partition, run on an executor |
 # MAGIC
-# MAGIC When you run a cell that actually **executes** Spark work (an *action*, such
-# MAGIC as showing rows or counting them), Spark organizes that work like this:
+# MAGIC So: **application → job → stage(s) → task(s)**. Tasks are what executors
+# MAGIC run (Diagram A). Jobs are what the driver plans for your request.
 # MAGIC
-# MAGIC 1. **Job** — one unit of work triggered by an action
-# MAGIC 2. **Stage** — a phase within a job (Spark may split a job into stages when
-# MAGIC    data must be reshuffled between workers)
-# MAGIC 3. **Task** — the smallest unit; each task runs on one executor on a slice
-# MAGIC    of the data
+# MAGIC Later modules cover why stage counts change (partitioning, shuffles,
+# MAGIC adaptive query execution). For now: stage and task counts depend on how
+# MAGIC data is partitioned and how Spark optimizes the plan — **not** on how big
+# MAGIC your cluster is.
 # MAGIC
-# MAGIC So one notebook cell that calls an action can create **one or more jobs**,
-# MAGIC each with **stages**, each with **tasks**.
+# MAGIC Diagram B shows how those units nest for our count request.
+
+# COMMAND ----------
+
+# MAGIC %md-sandbox
+# MAGIC ## Diagram B — execution hierarchy
 # MAGIC
-# MAGIC Later modules cover *lazy evaluation* (why some lines do not run work yet).
-# MAGIC For now: if you only build a DataFrame and never call something like
-# MAGIC `.show()` or `.count()`, you may see little or no new work in the Spark UI.
+# MAGIC How one submitted request nests.
+# MAGIC
+# MAGIC <div class="mermaid">
+# MAGIC flowchart TB
+# MAGIC   app["Application\nthis notebook + SparkSession"]
+# MAGIC   job["Job\ncreated by the count request"]
+# MAGIC   stage["Stage(s)"]
+# MAGIC   task["Task(s)\nrun on executors"]
+# MAGIC   app --> job
+# MAGIC   job --> stage
+# MAGIC   stage --> task
+# MAGIC </div>
+# MAGIC
+# MAGIC <script type="module">
+# MAGIC import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+# MAGIC mermaid.initialize({ startOnLoad: true, theme: "default" });
+# MAGIC </script>
+# MAGIC
+# MAGIC **Same story on this diagram:**
+# MAGIC
+# MAGIC 1. **Application** — this notebook and its SparkSession.
+# MAGIC 2. **Job** — created when the count request runs.
+# MAGIC 3. **Stage(s)** — phases Spark needs for that job.
+# MAGIC 4. **Task(s)** — work pieces executors run (link back to Diagram A).
+# MAGIC
+# MAGIC Now submit that request live and find it in the Spark UI.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Where to find the Spark UI
+# MAGIC ## Worked example: submit a count request
 # MAGIC
-# MAGIC After you run an action on classic compute:
+# MAGIC Production idea: count today's rideshare trips. You will build real trip
+# MAGIC DataFrames in `04 - Your First DataFrame`. Here we submit a **stand-in
+# MAGIC count request** that follows the same Spark path:
 # MAGIC
-# MAGIC 1. Open the compute attached to this notebook (or use the notebook's Spark
-# MAGIC    UI / jobs entry point your workspace shows for the run).
-# MAGIC 2. Open the **Spark UI**.
-# MAGIC 3. Look at the **Jobs** page for a new job tied to your cell run.
-# MAGIC 4. Open that job to see **stages**, then open a stage to see **tasks**.
+# MAGIC ```python
+# MAGIC spark.range(1000).count()
+# MAGIC ```
 # MAGIC
-# MAGIC Exact menu labels can vary slightly by UI version. The goal is the same:
-# MAGIC connect **your cell** → **job** → **stage** → **task**.
+# MAGIC After the cell finishes (on classic compute):
 # MAGIC
-# MAGIC **Gotcha.** On serverless, Spark UI visibility can differ from classic
-# MAGIC clusters. Prefer classic all-purpose **Standard** for this notebook's
-# MAGIC Spark UI exercise.
+# MAGIC 1. Open the **Spark UI** for this compute (or the notebook's Spark UI entry).
+# MAGIC 2. Open **Jobs** and find the newest job for this run.
+# MAGIC 3. Open that job → stages → tasks.
+# MAGIC
+# MAGIC **Gotcha — serverless.** Serverless may not expose the classic Spark UI the
+# MAGIC same way. Prefer classic all-purpose **Standard** for this lesson.
+# MAGIC
+# MAGIC You are walking Diagram A (who) and Diagram B (nesting) for one request.
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Worked example: run an action and inspect the Spark UI
-# MAGIC
-# MAGIC The next cell builds a tiny rideshare-flavored DataFrame by hand (a few
-# MAGIC `trip` rows — not a file read). Then it calls `.show()`, which is an
-# MAGIC **action** and should create Spark work you can find in the Spark UI.
-# MAGIC
-# MAGIC After the cell finishes:
-# MAGIC
-# MAGIC 1. Open the Spark UI for this compute.
-# MAGIC 2. Find the newest job.
-# MAGIC 3. Note how many stages and tasks that job shows (even a tiny DataFrame
-# MAGIC    usually still shows at least one stage with one or more tasks).
-
-# COMMAND ----------
-
-# Small ad-hoc sample — column names match the course trip table shape.
-trips = spark.createDataFrame(
-    [
-        (1001, "standard", 1, 5, 2.40, 3, 12, 1),
-        (1002, "premium", 2, 8, 5.10, 5, 18, 2),
-        (1003, "standard", 3, 1, 1.20, 2, 8, 1),
-    ],
-    schema=[
-        "trip_id",
-        "service_type",
-        "pickup_location_id",
-        "dropoff_location_id",
-        "trip_distance_miles",
-        "request_to_pickup_mins",
-        "ride_duration_mins",
-        "driver_arrival_to_pickup_mins",
-    ],
-)
-
-# .show() is an action — it triggers a Spark job you can inspect in the Spark UI.
-trips.show()
+# Stand-in for "count today's trips" — same request path, no DataFrame lesson yet.
+trip_stand_in_count = spark.range(1000).count()
+print(f"Count result: {trip_stand_in_count}")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### What you should see
 # MAGIC
-# MAGIC - A three-row table printed in the notebook output.
-# MAGIC - In the Spark UI, at least one recent **job** created by the `.show()`
-# MAGIC   action, with stage and task detail underneath.
+# MAGIC - Printed count `1000` in the notebook.
+# MAGIC - In the Spark UI (classic), a recent **job** for that count, with stage and
+# MAGIC   task detail underneath.
 # MAGIC
-# MAGIC You are not expected to tune performance here. The goal is a mental model:
-# MAGIC **notebook action → Spark job → stages → tasks on executors.**
+# MAGIC Your turn — change the request and find the new job.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Practice the same loop with a different action:
-# MAGIC
 # MAGIC 1. Keep classic all-purpose compute attached.
-# MAGIC 2. Run the cell below (it uses `.count()` instead of `.show()`).
-# MAGIC 3. Open the Spark UI and find the new job for this run.
-# MAGIC 4. Write down (in a comment in that cell, or on paper) how many **stages**
-# MAGIC    and roughly how many **tasks** that job shows.
+# MAGIC 2. Run the cell below (a different count size).
+# MAGIC 3. In the Spark UI, find the **new** job for this run.
+# MAGIC 4. Note how many **stages** and roughly how many **tasks** that job shows.
 # MAGIC
-# MAGIC The exact stage and task counts depend on how the data is partitioned and on
-# MAGIC how Spark optimizes the query at runtime — not on how big your cluster is.
-# MAGIC Later modules cover partitioning and query optimization. For now, what matters
-# MAGIC is that you can find the job and read its stage/task breakdown.
+# MAGIC Exact stage and task counts depend on partitioning and query optimization —
+# MAGIC not on how big your cluster is. What matters is that you can find the job
+# MAGIC and read its stage/task breakdown.
 
 # COMMAND ----------
 
-# Same tiny trip sample, different action — look for a new job in the Spark UI.
-trips = spark.createDataFrame(
-    [
-        (2001, "standard", 4, 6, 3.50, 4, 15, 2),
-        (2002, "premium", 7, 2, 6.80, 6, 22, 3),
-    ],
-    schema=[
-        "trip_id",
-        "service_type",
-        "pickup_location_id",
-        "dropoff_location_id",
-        "trip_distance_miles",
-        "request_to_pickup_mins",
-        "ride_duration_mins",
-        "driver_arrival_to_pickup_mins",
-    ],
-)
-
-trip_count = trips.count()
-print(f"Trip count: {trip_count}")
+# Change the number if you like, re-run, then inspect the new job in the Spark UI.
+trip_stand_in_count = spark.range(5000).count()
+print(f"Count result: {trip_stand_in_count}")
 
 # After checking the Spark UI, note what you saw, for example:
 # stages_seen = ?
@@ -199,12 +286,17 @@ print(f"Trip count: {trip_count}")
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **Spark** is the distributed engine; **PySpark** is how you drive it from
-# MAGIC   Python on Databricks.
-# MAGIC - The **driver** plans; **executors** run the work.
-# MAGIC - An **action** (like `.show()` or `.count()`) creates a **job**, which
-# MAGIC   breaks into **stages** and **tasks** — visible in the Spark UI.
-# MAGIC - Prefer classic all-purpose compute when you need a clear Spark UI view.
+# MAGIC - **Spark** distributes work across machines; **PySpark** is how you drive
+# MAGIC   it from Python.
+# MAGIC - **`spark`** is a **SparkSession** — your entry point to the Spark
+# MAGIC   application.
+# MAGIC - **Diagram A:** driver plans, cluster manager supplies executors, executors
+# MAGIC   run tasks.
+# MAGIC - **Diagram B:** application → job → stage(s) → task(s) for one submitted
+# MAGIC   request.
+# MAGIC - You observed that path with a stand-in count request; real trip DataFrames
+# MAGIC   come next in the module sequence.
 # MAGIC
 # MAGIC Next up: `03 - Working with Notebooks` — cells, magic commands, and
-# MAGIC `dbutils` inside the Databricks notebook editor.
+# MAGIC `dbutils`. After that, `04 - Your First DataFrame` builds rideshare rows
+# MAGIC for real — using the same request path you learned here.

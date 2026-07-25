@@ -32,10 +32,21 @@ basic SQL.
 Notebooks are added to this module using `/new-lesson` as they're authored,
 in this planned order:
 
-1. Introduction to Azure Databricks and the Workspace
-2. Apache Spark Architecture and PySpark
-3. Working with Notebooks
-4. Your First DataFrame
+1. **Introduction to Azure Databricks and the Workspace**
+   - Workspace browser, notebook editor, compute attach
+   - Databricks Runtime / LTS (classic vs serverless DBR gotcha)
+2. **Apache Spark Architecture and PySpark**
+   - Why Spark distributes work; PySpark as Python talking to Spark
+   - SparkSession (`spark`) as the entry point / connection
+   - Driver, executors, cluster manager (Diagram A — Mermaid)
+   - Jobs → stages → tasks (Diagram B — Mermaid)
+   - Running story: count-trips stand-in via `spark.range(...).count()`
+   - Spark UI on classic all-purpose Standard (no DataFrame labs yet)
+3. **Working with Notebooks**
+   - Cells, magic commands, and `dbutils`
+4. **Your First DataFrame**
+   - Build and inspect a small rideshare DataFrame (`show` / `display` /
+     `printSchema`)
 
 This list will be updated as notebooks are actually created — it reflects
 current planning, not a promise of final content.
