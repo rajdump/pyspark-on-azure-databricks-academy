@@ -53,6 +53,9 @@ print(f"Base fare: {base_fare}")
 # MAGIC
 # MAGIC - Put definitions before the cells that use them.
 # MAGIC - Run notebooks from top to bottom (**Run All**).
+# MAGIC - **Exception:** one `%sql` cell later is **expected to fail** (language
+# MAGIC   state demo). Run that cell separately, read the error, then continue —
+# MAGIC   or accept that **Run All** will show that error mid-notebook by design.
 # MAGIC - If results look inconsistent, clear the notebook state (for example
 # MAGIC   **Detach & Re-attach**) and rerun from the top.
 # MAGIC
@@ -235,23 +238,28 @@ for f in files[:5]:
 # MAGIC handy for a quick look; use `dbutils` when your code must work with the
 # MAGIC result.
 # MAGIC
-# MAGIC Practice that distinction in the exercise below. While you do, remember
-# MAGIC why `SELECT base_fare` failed earlier — SQL never saw the Python local.
+# MAGIC Practice that distinction in the exercise below — same path, but filter
+# MAGIC the names so the task is not a copy of the worked example.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC 1. Use `dbutils.fs.ls` on `/databricks-datasets` (or another path your
-# MAGIC    workspace allows).
-# MAGIC 2. Print how many items you found and the names of the first few.
-# MAGIC 3. In a short comment or markdown note, explain in one sentence why
-# MAGIC    `SELECT base_fare` failed earlier in this notebook.
+# MAGIC 1. Use `dbutils.fs.ls` on `/databricks-datasets`.
+# MAGIC 2. Keep only entries whose **name** contains the letters `data`
+# MAGIC    (case-insensitive is fine).
+# MAGIC 3. Print how many matched, then print those names.
 
 # COMMAND ----------
 
 # Your code here.
+# # Hint shape (optional):
+# # entries = dbutils.fs.ls("/databricks-datasets")
+# # matched = [e for e in entries if "data" in e.name.lower()]
+# # print(len(matched))
+# # for e in matched:
+# #     print(e.name)
 
 # COMMAND ----------
 

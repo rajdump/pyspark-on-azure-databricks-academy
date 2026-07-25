@@ -33,3 +33,18 @@ Validated on: 2026-07-25
 
 - Databricks Runtime observed: **17.3 LTS**
 - Serverless compatibility: **partial** (`spark.app.id` unavailable; count path runs)
+
+## `03 - Working with Notebooks.py`
+
+Validated on: 2026-07-25
+
+| Compute | Result | Notes |
+|---|---|---|
+| Classic all-purpose, Standard access mode | Passed | Baseline confirmed — Python state, magics (`%sql`, `%sh`, `%fs`), and `dbutils.fs` cells ran. The `%sql SELECT base_fare` cell fails by design (language-isolated state demo). |
+| Serverless | Passed | Same path as Standard for this notebook. `%sql SELECT base_fare` fails by design on serverless as well (expected teaching outcome, not a compute gap). |
+| Classic all-purpose, Dedicated access mode | Not tested | Standard passed, so Dedicated not repeated per validation baseline |
+| Jobs compute | Not applicable | No jobs content in this module |
+| Pipeline-managed compute | Not applicable | No Lakeflow Pipelines content in this module |
+
+- Databricks Runtime observed: **17.3 LTS**
+- Serverless compatibility: **complete** (intentional expected-fail SQL cell is the same on both compute types)
