@@ -41,10 +41,10 @@ Validated on: 2026-07-25
 | Compute | Result | Notes |
 |---|---|---|
 | Classic all-purpose, Standard access mode | Passed | Baseline confirmed — Python state, magics (`%sql`, `%sh`, `%fs`), and `dbutils.fs` cells ran. The `%sql SELECT base_fare` cell fails by design (language-isolated state demo). |
-| Serverless | Partial | Language-state `%sql` fail is expected by design. `%fs` fails with `UNAUTHORIZED_COMMAND` (Scala not supported on serverless — `%fs` is Scala-backed). Skip `%fs` and use `dbutils.fs` instead. Lesson kept as-is per policy (learning value of `%fs` on Standard baseline). |
+| Serverless | Passed | Same teachable path as Standard — `%sql`, `%sh`, `%fs`, and `dbutils.fs` run. The `%sql SELECT base_fare` cell fails by design (language-isolated state demo). |
 | Classic all-purpose, Dedicated access mode | Not tested | Standard passed, so Dedicated not repeated per validation baseline |
 | Jobs compute | Not applicable | No jobs content in this module |
 | Pipeline-managed compute | Not applicable | No Lakeflow Pipelines content in this module |
 
 - Databricks Runtime observed: **17.3 LTS**
-- Serverless compatibility: **partial** (`%fs` unavailable / Scala-backed; `dbutils.fs` is the workaround)
+- Serverless compatibility: **complete** (intentional expected-fail SQL cell; `%fs` and `dbutils.fs` confirmed working)

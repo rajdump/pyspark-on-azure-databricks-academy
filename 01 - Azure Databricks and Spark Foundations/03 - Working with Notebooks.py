@@ -15,8 +15,8 @@
 # MAGIC should already know what a SparkSession is and how to attach compute.
 # MAGIC
 # MAGIC **Setup.** Any compute type works for most cells. Prefer classic
-# MAGIC all-purpose **Standard** if you want reliable `%sh` and `%fs` behavior
-# MAGIC (both can be limited on serverless — see gotcha notes later).
+# MAGIC all-purpose **Standard** if you want reliable `%sh` behavior (see the
+# MAGIC serverless gotcha on `%sh` later).
 # MAGIC
 # MAGIC You already attach compute and run cells. Next we watch how those cells
 # MAGIC share — and do not share — a live session.
@@ -191,12 +191,6 @@ print(f"Base fare: {base_fare}")
 # MAGIC **read-only sample collection** Databricks provides on supported compute.
 # MAGIC It is only a demo for listing — this course's rideshare files are read
 # MAGIC later from the shared dataset paths, not from here.
-# MAGIC
-# MAGIC **Gotcha — serverless.** `%fs` is backed by Scala internals. Serverless
-# MAGIC notebooks do **not** support Scala, so this cell can fail with
-# MAGIC `UNAUTHORIZED_COMMAND` (Scala not supported). On serverless, **skip** the
-# MAGIC `%fs` cell and use the `dbutils.fs` cell next — same listing, Python API.
-# MAGIC Prefer classic all-purpose **Standard** if you want to see `%fs` succeed.
 
 # COMMAND ----------
 
@@ -206,9 +200,8 @@ print(f"Base fare: {base_fare}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC On classic compute, you listed the path with a magic — a quick look. When
-# MAGIC your **Python code** needs that listing (count items, loop, filter), use
-# MAGIC `dbutils` instead. On serverless, jump straight to `dbutils.fs` below.
+# MAGIC You listed the path with a magic — a quick look. When your **Python code**
+# MAGIC needs that listing (count items, loop, filter), use `dbutils` instead.
 
 # COMMAND ----------
 
@@ -277,8 +270,8 @@ for f in files[:5]:
 # MAGIC - Each language keeps its **own** state — a SQL cell cannot read a Python
 # MAGIC   local like `base_fare`.
 # MAGIC - **Magic commands** switch how a cell runs (`%sql`, `%sh`, `%fs`, …).
-# MAGIC - **`%fs`** is a quick look on classic compute (may fail on serverless);
-# MAGIC   **`dbutils.fs`** works as the Python equivalent you can count and loop.
+# MAGIC - **`%fs`** is a quick look; **`dbutils.fs`** gives you a Python result
+# MAGIC   you can count and loop over.
 # MAGIC
 # MAGIC Next up: `04 - Your First DataFrame` — building and inspecting a small
 # MAGIC rideshare DataFrame with `show()`, `display()`, and `printSchema()`.

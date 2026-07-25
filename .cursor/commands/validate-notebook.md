@@ -24,7 +24,11 @@ Also check for:
   Unity Catalog objects beyond default access (see
   @docs/standards/permissions-and-governance.md)
 
-Output a findings list grouped by standard, each with the cell reference
-and the specific fix. Do not modify `COURSE_MODULES.md` or any file under
+Output format (issues only):
+- If nothing deviates: one short line — e.g. "No authoring issues found."
+- If something deviates: list only issues, grouped by standard — cell reference
+  and specific fix for each. No pass tables, no "OK" rows, no long summaries.
+
+Do not modify `COURSE_MODULES.md` or any file under
 `docs/validation/`, and do not mark anything as runtime-validated — only
 Azure Databricks execution can confirm that.
