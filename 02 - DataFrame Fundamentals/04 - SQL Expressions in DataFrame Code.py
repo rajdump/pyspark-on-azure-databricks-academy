@@ -116,7 +116,23 @@ df.selectExpr(
 
 # MAGIC %md
 # MAGIC > **Good to know:** Plain `select("col_name")` and `select(F.col(...))` do
-# MAGIC > **not** parse SQL expression strings. Only `F.expr` and `selectExpr` do.
+# MAGIC > **not** parse SQL expression strings — they treat the string as a literal
+# MAGIC > column name lookup against the schema.
+# MAGIC >
+# MAGIC > `df.select("upper(service_type)")` does **not** call the `upper()`
+# MAGIC > function. It looks for a column literally named `upper(service_type)` in
+# MAGIC > the schema and fails with `AnalysisException`.
+# MAGIC >
+# MAGIC > `df.select(F.col("trip_distance_miles * 2"))` does **not** perform
+# MAGIC > multiplication. It looks for a column literally named
+# MAGIC > `trip_distance_miles * 2` — which does not exist — and fails the same way.
+# MAGIC >
+# MAGIC > To parse SQL inside a string, use `F.expr` or `selectExpr`:
+# MAGIC >
+# MAGIC > ```python
+# MAGIC > df.select(F.expr("upper(service_type)"))          # ✓ calls upper()
+# MAGIC > df.selectExpr("trip_distance_miles * 2 AS doubled") # ✓ does math
+# MAGIC > ```
 
 # COMMAND ----------
 
