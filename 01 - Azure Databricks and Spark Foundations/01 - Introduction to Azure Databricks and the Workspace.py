@@ -142,36 +142,30 @@ print(f"Databricks Runtime version: {dbr_version}")
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Practice the attach-and-run loop yourself:
+# MAGIC Practice the attach-and-run loop — this time confirming Runtime from the
+# MAGIC **compute UI**, not by re-running the lookup cell above.
 # MAGIC
 # MAGIC 1. If compute is connected, disconnect it from the notebook toolbar, then
 # MAGIC    attach (connect) again and wait until it is ready. Prefer classic
 # MAGIC    all-purpose **Standard** for this exercise.
-# MAGIC 2. Run the cell below and note the printed **Databricks Runtime** version
-# MAGIC    (on serverless, this may be missing or `unknown` — see the gotcha above).
-# MAGIC 3. In the compute UI for the cluster you attached, confirm the same Runtime
-# MAGIC    version appears there (classic compute only).
+# MAGIC 2. Open the compute details for the cluster you attached and find the
+# MAGIC    **Databricks Runtime** version shown there (classic compute only).
+# MAGIC 3. Run the cell below. It prints only `spark.version`. Fill in
+# MAGIC    `dbr_version_from_ui` with the Runtime string you saw in the UI, then
+# MAGIC    re-run so both values print.
 # MAGIC
-# MAGIC You are not grading yourself on a perfect match of every suffix — the goal
-# MAGIC is to practice connecting compute and knowing where Runtime is shown.
+# MAGIC On serverless, the UI may not show a DBR pin — use classic Standard for
+# MAGIC this exercise. Exact suffix matching is not the goal; the goal is knowing
+# MAGIC where Runtime appears in the UI after you reconnect.
 
 # COMMAND ----------
 
 # After re-attaching compute, run this cell.
-import os
+print(f"Spark version on this compute: {spark.version}")
 
-spark_version = spark.version
-dbr_version = os.environ.get(
-    "DATABRICKS_RUNTIME_VERSION",
-    spark.conf.get("spark.databricks.clusterUsageTags.sparkVersion", "unknown"),
-)
-
-print(f"Spark version on this compute: {spark_version}")
-print(f"Databricks Runtime version: {dbr_version}")
-
-# Optional: compare the printed Runtime with the value shown in the compute UI.
-# Example shape: 17.3 — use whatever your workspace shows.
-# dbr_version_from_ui = "REPLACE_ME"
+# Replace with the Runtime version from the compute UI (classic), e.g. "17.3.x".
+dbr_version_from_ui = "REPLACE_ME"
+print(f"Databricks Runtime from compute UI: {dbr_version_from_ui}")
 
 # COMMAND ----------
 

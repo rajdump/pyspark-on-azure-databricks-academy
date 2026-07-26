@@ -19,7 +19,8 @@ By the end of this module, you'll be able to:
   attaching a notebook to compute, and how Databricks Runtime/LTS
   versioning works
 - Work inside a Databricks notebook: cells, magic commands, and `dbutils`
-- Create a `SparkSession` and your first DataFrame
+- Use the notebook's provided `SparkSession` (`spark`) and build your first
+  DataFrame
 
 ## Prerequisites
 
@@ -29,8 +30,7 @@ basic SQL.
 
 ## Notebook navigation
 
-Notebooks are added to this module using `/new-lesson` as they're authored,
-in this planned order:
+Notebooks in this module, in order:
 
 1. **Introduction to Azure Databricks and the Workspace**
    - Workspace browser, notebook editor, compute attach
@@ -48,11 +48,10 @@ in this planned order:
    - Magic commands (`%md`, `%sql`, `%fs`, `%sh`)
    - `%fs` vs `dbutils.fs` (quick look vs Python result)
 4. **Your First DataFrame**
-   - Build and inspect a small rideshare DataFrame (`show` / `display` /
-     `printSchema`)
-
-This list will be updated as notebooks are actually created — it reflects
-current planning, not a promise of final content.
+   - Build a small rideshare DataFrame from Python rows (no explicit schema)
+   - Inspect with `show` / `display` / `printSchema`
+   - Note that `printSchema` shows Spark's default inferred schema — fine for
+     demos, not recommended for production
 
 ## Dataset used
 
@@ -67,8 +66,7 @@ full dataset this course builds toward using.
 Each notebook ends with a short hands-on task using the compute you've just
 attached to — for example, running a provided cell and identifying its
 job/stage/task breakdown in the Spark UI, or creating a small DataFrame of
-your own and inspecting it with `.show()`/`display()`. Exercises are added
-alongside each notebook as it's authored.
+your own and inspecting it with `.show()`/`display()`.
 
 ## Minimum privileges required
 
