@@ -53,7 +53,13 @@ schema_ddl = (
     "trip_distance_miles decimal(8,2), ride_duration_mins int"
 )
 
-df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedVariable]
+df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Confirm the sample rows before reshaping — the same habit as inspection
+# MAGIC in the previous notebook.
 
 # COMMAND ----------
 
@@ -211,6 +217,27 @@ df_km.select("trip_id", "trip_distance_miles", "trip_distance_km").show()
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Choose `select` vs `withColumn` when adding a column
+# MAGIC
+# MAGIC The cell above added `trip_distance_km` with `withColumn`. The same
+# MAGIC result can use `select("*", expression)` — keep every existing column and
+# MAGIC append the derived one.
+
+# COMMAND ----------
+
+df.select("*", km_expr.alias("trip_distance_km")).select(
+    "trip_id", "trip_distance_miles", "trip_distance_km"
+).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC For one new column, either style is fine — pick the one that reads more
+# MAGIC clearly in your pipeline.
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC A `withColumn` expression can also produce a true/false flag — useful for
 # MAGIC downstream filters or quality checks.
 
@@ -238,20 +265,24 @@ df.withColumn("service_type", service_type_expr).show()
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Recalculating with `select` can duplicate column names
+# MAGIC
+# MAGIC `withColumn` replaces a column by name. **`select("*", expr.alias("service_type"))`**
+# MAGIC instead keeps the original **and** adds a second `service_type` — later
+# MAGIC references become ambiguous. With `select`, list every column you want and
+# MAGIC put the recalculated expression in the correct position.
+
+# COMMAND ----------
+
+df.select("*", service_type_expr.alias("service_type")).printSchema()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC > **Good to know:** `select` and `withColumn` both accept Column
-# MAGIC > expressions and return a new DataFrame.
-# MAGIC >
-# MAGIC > **Adding a new derived column:** Both
-# MAGIC > `select("*", km_expr.alias("trip_distance_km"))` and
-# MAGIC > `withColumn("trip_distance_km", km_expr)` keep existing columns and add
-# MAGIC > `trip_distance_km`. For one new column, either style is fine — pick the
-# MAGIC > one that reads more clearly in your pipeline.
-# MAGIC >
-# MAGIC > **Recalculating an existing column:** `withColumn` replaces the column
-# MAGIC > by name and keeps the others. `select("*", expr.alias("service_type"))`
-# MAGIC > instead keeps the original **and** adds a second `service_type`, which
-# MAGIC > makes later references ambiguous. With `select`, list every column you
-# MAGIC > want and put the recalculated expression in the correct position.
+# MAGIC > expressions and return a new DataFrame. Use `withColumn` when you mean
+# MAGIC > to replace an existing column by name; use `select` when you are
+# MAGIC > projecting the full output shape explicitly.
 
 # COMMAND ----------
 
@@ -300,6 +331,12 @@ df.withColumnsRenamed(
 # MAGIC **Gotcha:** `withColumnRenamed` is a silent no-op when the old name does not
 # MAGIC match a real column. A typo means the rename never happened — check
 # MAGIC `printSchema()` when output columns look wrong.
+
+# COMMAND ----------
+
+typo_rename = df.withColumnRenamed("ride_duration_min", "duration_mins")
+print("columns after typo rename:", typo_rename.columns)
+print("unchanged from original? ", typo_rename.columns == df.columns)
 
 # COMMAND ----------
 
