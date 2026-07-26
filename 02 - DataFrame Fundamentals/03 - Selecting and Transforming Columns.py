@@ -130,6 +130,9 @@ df.select(
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC **Business question:** Operations reports trip distance in kilometres
+# MAGIC alongside miles for regional teams.
+# MAGIC
 # MAGIC `F.col` also supports calculations. Define the expression once in a
 # MAGIC variable, then reuse it — one definition, no copies that can drift apart
 # MAGIC in a pipeline.
@@ -150,6 +153,9 @@ df.select(
 
 # MAGIC %md
 # MAGIC ## Light `cast` and constants with `F.lit`
+# MAGIC
+# MAGIC **Business question:** Operations exports trip IDs as text for a BI tool
+# MAGIC and tags every row with a source system for downstream audits.
 # MAGIC
 # MAGIC **`.cast("type")`** converts a column's type. Cast with intent — some
 # MAGIC conversions lose precision. Deeper casting rules and failure modes come in
@@ -175,6 +181,9 @@ df.select("trip_id", F.lit("mobile_app").alias("source_system")).show()
 
 # MAGIC %md
 # MAGIC ## Conditional columns: `F.when` / `otherwise`
+# MAGIC
+# MAGIC **Business question:** Operations wants distance-band labels — `short`,
+# MAGIC `medium`, and `long` — for trip reporting and dashboards.
 # MAGIC
 # MAGIC **`F.when(condition, value)`** is column-level if/else logic. Chain more
 # MAGIC `.when(...)`, then finish with `.otherwise(...)`. Without `otherwise`,
