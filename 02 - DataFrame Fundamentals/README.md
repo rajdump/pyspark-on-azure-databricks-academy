@@ -84,7 +84,7 @@ they're authored, in this planned order:
    - `filter` / `where` (alias); one-condition filters
    - Combine conditions: SQL `AND` in strings vs Column `&` (with
      parentheses); why Python `and` fails
-   - `|`, `~`, `isin`, `like`, `between`
+   - `|`, `~`, `isin`, `between`,`like`
    - Intro NULL: `isNull` / `isNotNull`; why `== None` does not find NULLs
    - Empty string is not NULL (check separately)
    - Deeper NULL semantics and quality pipelines stay for later modules
