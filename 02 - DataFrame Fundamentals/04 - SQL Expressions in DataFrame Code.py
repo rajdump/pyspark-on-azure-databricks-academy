@@ -127,11 +127,27 @@ df.selectExpr(
 # MAGIC > multiplication. It looks for a column literally named
 # MAGIC > `trip_distance_miles * 2` — which does not exist — and fails the same way.
 # MAGIC >
-# MAGIC > To parse SQL inside a string, use `F.expr` or `selectExpr`:
+# MAGIC > **`F.col("name")` references one column.** In notebook 03, operators and
+# MAGIC > PySpark functions apply to the Column object — for example
+# MAGIC > `F.upper(F.col("service_type"))` or `F.col("trip_distance_miles") * 2`.
+# MAGIC > They do not go inside the column-name string.
+# MAGIC >
+# MAGIC > To parse SQL **inside** a string, use `F.expr` or `selectExpr`:
 # MAGIC >
 # MAGIC > ```python
-# MAGIC > df.select(F.expr("upper(service_type)"))          # ✓ calls upper()
-# MAGIC > df.selectExpr("trip_distance_miles * 2 AS doubled") # ✓ does math
+# MAGIC > # ✗ literal column names — AnalysisException
+# MAGIC > df.select("upper(service_type)")
+# MAGIC > df.select(F.col("upper(service_type)"))
+# MAGIC > df.select(F.col("trip_distance_miles * 2"))
+# MAGIC >
+# MAGIC > # ✓ Column API (notebook 03)
+# MAGIC > df.select(F.upper(F.col("service_type")))
+# MAGIC > df.select(F.col("trip_distance_miles") * 2)
+# MAGIC >
+# MAGIC > # ✓ SQL strings parsed by Spark
+# MAGIC > df.select(F.expr("upper(service_type)"))
+# MAGIC > df.selectExpr("upper(service_type) AS service_type_upper")
+# MAGIC > df.selectExpr("trip_distance_miles * 2 AS doubled")
 # MAGIC > ```
 
 # COMMAND ----------
