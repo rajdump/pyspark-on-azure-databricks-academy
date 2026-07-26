@@ -158,7 +158,7 @@ except Exception as e:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## More filter helpers: `|`, `~`, `isin`,`between`, `like`
+# MAGIC ## More filter helpers: `|`, `~`, `isin`, `between`, `like`
 # MAGIC
 # MAGIC **Business question:** Peak-hour analysis needs Premium trips or any trip
 # MAGIC longer than twenty miles.
