@@ -195,14 +195,20 @@ df.filter(F.col("service_type").isin("Standard", "Premium")).show()
 # MAGIC **`like(pattern)`** is SQL-style pattern matching on strings. **`S%`** means
 # MAGIC “starts with **`S`**” — **`%`** is a wildcard for the rest of the name.
 # MAGIC
-# MAGIC > **Good to know:** **`LIKE`** does not match **`NULL`**. Trip **`1007`** in
-# MAGIC > this sample has **`NULL`** `service_type`, so it will not appear below even
-# MAGIC > though the pattern looks broad.
-# MAGIC > But like pattern works for emptry stting
+# MAGIC > **Good to know:** **`LIKE`** does not match **`NULL`**. Trip **`1007`**
+# MAGIC > has **`NULL`** `service_type`, so it will not appear in the **`S%`**
+# MAGIC > result below.
 
 # COMMAND ----------
 
 df.filter(F.col("service_type").like("S%")).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC The pattern **`'%'`** matches any non-**`NULL`** string — including an
+# MAGIC **empty string**. Compare with **`S%`** above: trip **`1008`** (blank
+# MAGIC `service_type`) appears below; trip **`1007`** (`NULL`) still does not.
 
 # COMMAND ----------
 
