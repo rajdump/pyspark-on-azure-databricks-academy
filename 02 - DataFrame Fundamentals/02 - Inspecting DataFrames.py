@@ -28,10 +28,22 @@
 
 # COMMAND ----------
 
-# TODO (worked example):
-# 1) Define small rideshare-style rows.
-# 2) Define a schema or column names appropriate for this lesson.
-# 3) Create `df` with `spark.createDataFrame(...)`.
+from decimal import Decimal
+
+rows = [
+    (1001, "Standard", 138, Decimal("12.40"), 18),
+    (1002, "Shared", 74, Decimal("3.10"), 9),
+    (1003, "Premium", 231, Decimal("22.70"), 35),
+    (1004, "Standard", 100, Decimal("5.60"), 14),
+    (1005, "Shared", 74, Decimal("2.20"), 7),
+]
+
+schema_ddl = (
+    "trip_id bigint, service_type string, pickup_location_id int, "
+    "trip_distance_miles decimal(8,2), ride_duration_mins int"
+)
+
+df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedVariable]
 
 # COMMAND ----------
 
@@ -47,15 +59,19 @@
 
 # COMMAND ----------
 
-# TODO (worked example): run `df.show()` with default options.
+df.show()
 
 # COMMAND ----------
 
-# TODO (worked example): run `df.show(...)` with explicit `n`/`truncate` settings.
+df.show(3, truncate=False)
 
 # COMMAND ----------
 
-# TODO (worked example): run `display(df)`.
+df.show(2, vertical=True)
+
+# COMMAND ----------
+
+display(df)  # pyright: ignore[reportUndefinedVariable]
 
 # COMMAND ----------
 
@@ -66,15 +82,16 @@
 
 # COMMAND ----------
 
-# TODO (worked example): run `df.printSchema()`.
+df.printSchema()
 
 # COMMAND ----------
 
-# TODO (worked example): inspect programmatic schema with `df.schema`.
+print(df.schema)
 
 # COMMAND ----------
 
-# TODO (worked example): print or inspect `df.columns` and `df.dtypes`.
+print("columns:", df.columns)
+print("dtypes: ", df.dtypes)
 
 # COMMAND ----------
 
@@ -85,11 +102,17 @@
 
 # COMMAND ----------
 
-# TODO (worked example): run `df.count()`.
+print(f"Row count: {df.count()}")
 
 # COMMAND ----------
 
-# TODO (worked example): run `df.isEmpty()`.
+print(f"Is DataFrame empty? {df.isEmpty()}")
+
+# COMMAND ----------
+
+# A quick emptiness check on a filtered DataFrame.
+empty_df = df.filter("trip_distance_miles > 1000")
+print(f"Is filtered DataFrame empty? {empty_df.isEmpty()}")
 
 # COMMAND ----------
 
@@ -100,22 +123,26 @@
 
 # COMMAND ----------
 
-# TODO (worked example): run `df.describe().show()`.
+df.describe().show()
 
 # COMMAND ----------
 
-# TODO (worked example): run `df.summary(...).show()` with selected stats.
+df.summary("count", "min", "25%", "50%", "75%", "max").show()
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Performance note: metadata checks vs Spark execution
 # MAGIC
-# MAGIC Add a short note showing which methods typically do lightweight metadata
-# MAGIC inspection (`schema`, `columns`, `dtypes`, `printSchema`) and which methods
-# MAGIC trigger Spark work (`show`, `count`, `isEmpty`, `describe`, `summary`).
+# MAGIC For day-to-day inspection, separate lightweight schema lookups from methods
+# MAGIC that execute Spark work:
 # MAGIC
-# MAGIC Keep this note brief and practical for day-to-day notebook use.
+# MAGIC - **Metadata-oriented:** `schema`, `columns`, `dtypes`, `printSchema()`
+# MAGIC - **Execute Spark work:** `show()`, `count()`, `isEmpty()`, `describe()`,
+# MAGIC   `summary()`
+# MAGIC
+# MAGIC Practical tip: if you only need to know whether data exists, `isEmpty()`
+# MAGIC is often a better emptiness check than `count() == 0`.
 
 # COMMAND ----------
 
