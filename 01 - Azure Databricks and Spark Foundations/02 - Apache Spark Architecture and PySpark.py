@@ -97,11 +97,13 @@ print(f"Spark is running. Engine version: {spark.version}")
 # COMMAND ----------
 
 # Application id labels the Spark application behind this session.
-# On serverless, Spark Connect does not expose spark.app.id — that is expected.
+# On serverless, Spark Connect often does not expose spark.app.id — that is expected.
+from pyspark.errors import PySparkException
+
 try:
     app_id = spark.conf.get("spark.app.id")
     print(f"Connected to Spark application: {app_id}")
-except Exception:
+except PySparkException:
     print("spark.app.id is not available on this compute type.")
     print("That is expected on serverless. Prefer classic all-purpose for this lesson.")
 
@@ -143,26 +145,22 @@ except Exception:
 
 # COMMAND ----------
 
-# MAGIC %md-sandbox
+# MAGIC %md
 # MAGIC ## Diagram A — runtime roles
 # MAGIC
-# MAGIC Who plans, who allocates machines, who runs the work.
+# MAGIC Who plans, who allocates machines, who runs the work (plain text so it
+# MAGIC renders without external diagram scripts):
 # MAGIC
-# MAGIC <div class="mermaid">
-# MAGIC flowchart TB
-# MAGIC   driver["Driver\nholds SparkSession spark\nplans work and tracks progress"]
-# MAGIC   cm["Cluster manager\nDatabricks handles this"]
-# MAGIC   ex1["Executor\nruns tasks"]
-# MAGIC   ex2["Executor\nruns tasks"]
-# MAGIC   driver -->|"requests resources"| cm
-# MAGIC   cm --> ex1
-# MAGIC   cm --> ex2
-# MAGIC </div>
-# MAGIC
-# MAGIC <script type="module">
-# MAGIC import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-# MAGIC mermaid.initialize({ startOnLoad: true, theme: "default" });
-# MAGIC </script>
+# MAGIC ```text
+# MAGIC Driver  (holds SparkSession `spark`; plans work and tracks progress)
+# MAGIC    |
+# MAGIC    | requests resources
+# MAGIC    v
+# MAGIC Cluster manager  (Databricks handles this)
+# MAGIC    |
+# MAGIC    +--> Executor  (runs tasks)
+# MAGIC    +--> Executor  (runs tasks)
+# MAGIC ```
 # MAGIC
 # MAGIC **Same story on this diagram — counting trips (stand-in request):**
 # MAGIC
@@ -201,26 +199,23 @@ except Exception:
 
 # COMMAND ----------
 
-# MAGIC %md-sandbox
+# MAGIC %md
 # MAGIC ## Diagram B — execution hierarchy
 # MAGIC
-# MAGIC How one submitted request nests.
+# MAGIC How one submitted request nests (plain text, no external diagram scripts):
 # MAGIC
-# MAGIC <div class="mermaid">
-# MAGIC flowchart TB
-# MAGIC   app["Application\nthis notebook + SparkSession"]
-# MAGIC   job["Job\ncreated by the count request"]
-# MAGIC   stage["Stage(s)"]
-# MAGIC   task["Task(s)\nrun on executors"]
-# MAGIC   app --> job
-# MAGIC   job --> stage
-# MAGIC   stage --> task
-# MAGIC </div>
-# MAGIC
-# MAGIC <script type="module">
-# MAGIC import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-# MAGIC mermaid.initialize({ startOnLoad: true, theme: "default" });
-# MAGIC </script>
+# MAGIC ```text
+# MAGIC Application  (this notebook + SparkSession)
+# MAGIC    |
+# MAGIC    v
+# MAGIC Job  (created by the count request)
+# MAGIC    |
+# MAGIC    v
+# MAGIC Stage(s)
+# MAGIC    |
+# MAGIC    v
+# MAGIC Task(s)  (run on executors)
+# MAGIC ```
 # MAGIC
 # MAGIC **Same story on this diagram:**
 # MAGIC

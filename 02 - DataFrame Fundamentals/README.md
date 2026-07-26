@@ -45,9 +45,10 @@ in this planned order:
    - Keep examples intentionally tiny (2-3 rows) for concept focus
 2. **Inspecting DataFrames**
    - Contents: `show` options (`n`, `truncate`, `vertical`) and `display`
-   - Structure: `printSchema`, `columns`, `dtypes`
-   - Size: `count`
+   - Structure: `printSchema`, `schema`, `columns`, `dtypes`
+   - Size / emptiness: `count`, `isEmpty`
    - Summary stats: `describe` and `summary` for a first-pass review
+   - Performance note: metadata checks vs methods that execute Spark work
 3. **Selecting and Transforming Columns**
    - `select` to project and reorder columns
    - Column expressions with `F.col` (and simple `alias` / `cast` / `lit`

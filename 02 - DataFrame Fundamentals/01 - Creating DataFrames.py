@@ -55,14 +55,22 @@ rows_basic = [
 
 df_unnamed = spark.createDataFrame(rows_basic)
 
+# COMMAND ----------
+
 df_unnamed.printSchema()
+
+# COMMAND ----------
+
 df_unnamed.show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Default names (`_1`, `_2`, ...) are useful for quick experiments, but they
-# MAGIC are hard to maintain in real pipelines.
+# MAGIC Default names (`_1`, `_2`, ...) are fine for a quick experiment, but they
+# MAGIC are risky in production pipelines. Joins, filters, and quality checks need
+# MAGIC stable business names (`trip_id`, `service_type`). If those names are
+# MAGIC positional (`_1`, `_2`), a later column reordering can silently break the
+# MAGIC logic.
 
 # COMMAND ----------
 
@@ -90,14 +98,25 @@ columns_named = [
 
 df_inferred = spark.createDataFrame(rows_named, columns_named)
 
+# COMMAND ----------
+
 df_inferred.printSchema()
+
+# COMMAND ----------
+
 df_inferred.show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC This is convenient and readable. The risk is that inferred types follow the
-# MAGIC supplied values, not necessarily your intended production model.
+# MAGIC This path is convenient and readable. Look at the `printSchema()` output
+# MAGIC above: whole numbers often become `long`, and Python floats become
+# MAGIC `double`.
+# MAGIC
+# MAGIC That is the production risk. The course rideshare model expects
+# MAGIC `pickup_location_id` as `int` and `trip_distance_miles` as
+# MAGIC `decimal(8,2)`. Inference followed the sample values, not that intended
+# MAGIC data model — so types can drift before you notice.
 
 # COMMAND ----------
 
@@ -125,14 +144,26 @@ schema_ddl = (
 
 df_ddl = spark.createDataFrame(rows_typed, schema_ddl)
 
+# COMMAND ----------
+
 df_ddl.printSchema()
+
+# COMMAND ----------
+
 df_ddl.show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The explicit DDL schema controls types and nullability metadata up front.
-# MAGIC That makes behavior more predictable than inference.
+# MAGIC Compare this schema with the inferred one: `pickup_location_id` is `int`
+# MAGIC and `trip_distance_miles` is `decimal(8,2)` — closer to the intended
+# MAGIC rideshare model.
+# MAGIC
+# MAGIC **Gotcha — `NOT NULL`.** DDL `NOT NULL` (and `nullable=False` next) sets
+# MAGIC schema metadata when you create the DataFrame from local Python rows. It
+# MAGIC is not a lasting table constraint that will keep rejecting nulls forever
+# MAGIC after writes to storage. Treat it as create-time schema intent, not as a
+# MAGIC substitute for later data-quality checks.
 
 # COMMAND ----------
 
@@ -157,15 +188,21 @@ schema_struct = StructType(
 
 df_struct = spark.createDataFrame(rows_typed, schema_struct)
 
+# COMMAND ----------
+
 df_struct.printSchema()
+
+# COMMAND ----------
+
 df_struct.show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `StructType` is especially useful when schema objects need to be assembled
-# MAGIC or reused in code. In this notebook, focus on seeing that it produces an
-# MAGIC explicit schema outcome similar to DDL.
+# MAGIC `StructType` is useful when schema fields need to be assembled or reused in
+# MAGIC Python code. The outcome should look like the DDL example: explicit types
+# MAGIC and nullability metadata, including `nullable=False` on `trip_id` with the
+# MAGIC same create-time meaning as DDL `NOT NULL`.
 
 # COMMAND ----------
 

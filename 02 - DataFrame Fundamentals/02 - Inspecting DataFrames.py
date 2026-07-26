@@ -53,16 +53,24 @@ df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedV
 # MAGIC %md
 # MAGIC ## Inspect contents: `show()` and `display()`
 # MAGIC
-# MAGIC Demonstrate row output options:
+# MAGIC Before you transform rideshare trips, look at the rows. The sample above
+# MAGIC includes at least one suspicious trip (negative distance and a huge ride
+# MAGIC duration). Spotting that early is a reliability habit — not just a demo of
+# MAGIC print options.
 # MAGIC
-# MAGIC - `show()` default
-# MAGIC - `show(n, truncate=...)`
-# MAGIC - `show(..., vertical=True)` (if useful for readability)
-# MAGIC - `display(df)` for interactive exploration in Databricks
+# MAGIC Use `show()` for a quick text sample and `display()` when you want an
+# MAGIC interactive Databricks table.
 
 # COMMAND ----------
 
 df.show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Look for the suspicious trip in the output (negative `trip_distance_miles`
+# MAGIC and a very large `ride_duration_mins`). In a real pipeline, that is a signal
+# MAGIC to investigate or quarantine — not to trust every row blindly.
 
 # COMMAND ----------
 
@@ -116,11 +124,9 @@ print(df.schema)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `columns` and `dtypes` return regular Python values. This is useful when
-# MAGIC checks or branching logic depend on column names and types.
-# MAGIC
-# MAGIC Typical use: fail fast when a required column is missing, instead of
-# MAGIC letting a transformation fail later with a less clear error.
+# MAGIC `columns` and `dtypes` are **metadata** checks. They return ordinary Python
+# MAGIC values and do **not** launch a Spark job, so you can validate expected
+# MAGIC column names and types cheaply before running expensive actions.
 
 # COMMAND ----------
 
@@ -164,15 +170,25 @@ print(f"Is filtered DataFrame empty? {empty_df.isEmpty()}")
 # MAGIC %md
 # MAGIC ## First-pass statistics: `describe()` and `summary()`
 # MAGIC
-# MAGIC Add a quick profile pass for numeric and string columns.
+# MAGIC Profile numeric columns for a first-pass review. With this sample, watch
+# MAGIC for an impossible minimum distance (negative) and an extreme max ride
+# MAGIC duration — the same anomaly you may have spotted in `show()`.
 # MAGIC
-# MAGIC These methods are good for anomaly discovery (for example impossible mins
-# MAGIC or unexpected ranges), but they are exploratory checks — not a substitute
-# MAGIC for explicit data-quality rules.
+# MAGIC These methods are good for anomaly discovery, but they are exploratory
+# MAGIC checks — not a substitute for explicit data-quality rules that a job can
+# MAGIC enforce.
 
 # COMMAND ----------
 
 df.describe().show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC In the `describe()` output, confirm the anomaly signal: min
+# MAGIC `trip_distance_miles` should be negative, and max `ride_duration_mins`
+# MAGIC should look unrealistically large. Next action in production is not
+# MAGIC “trust the average” — it is investigate, filter, or quarantine bad rows.
 
 # COMMAND ----------
 

@@ -38,8 +38,8 @@ Notebooks in this module, in order:
 2. **Apache Spark Architecture and PySpark**
    - Why Spark distributes work; PySpark as Python talking to Spark
    - SparkSession (`spark`) as the entry point / connection
-   - Driver, executors, cluster manager (Diagram A — Mermaid)
-   - Jobs → stages → tasks (Diagram B — Mermaid)
+   - Driver, executors, cluster manager (Diagram A)
+   - Jobs → stages → tasks (Diagram B)
    - Running story: count-trips stand-in via `spark.range(...).count()`
    - Spark UI on classic all-purpose Standard (no DataFrame labs yet)
 3. **Working with Notebooks**
