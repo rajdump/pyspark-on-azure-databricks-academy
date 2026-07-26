@@ -7,7 +7,8 @@
 # MAGIC - Combine row conditions with Column `&`, `|`, and `~` (with parentheses)
 # MAGIC - Write multi-condition filters as SQL predicate strings and with
 # MAGIC   `F.expr`
-# MAGIC - Explain why Python `and` / `or` / `not` fail on Column conditions
+# MAGIC - Explain why Python `and` fails on Column conditions (same class of error
+# MAGIC   for `or` and `not`)
 # MAGIC - Filter with `isin`, `like`, and `between`
 # MAGIC - Use intro NULL checks with `isNull` / `isNotNull` and explain why
 # MAGIC   `== None` does not find NULLs
@@ -143,7 +144,8 @@ df.filter((F.col("service_type") == "Standard") & (F.col("trip_distance_miles") 
 # MAGIC
 # MAGIC Python **`and`**, **`or`**, and **`not`** expect plain Python booleans. A
 # MAGIC Column condition is not a boolean — PySpark raises an error when Python tries
-# MAGIC to treat it as one. Use **`&`**, **`|`**, and **`~`** between Column
+# MAGIC to treat it as one. The next cell demonstrates **`and`**; **`or`** and **`not`**
+# MAGIC fail the same way. Use **`&`**, **`|`**, and **`~`** between Column
 # MAGIC conditions instead.
 
 # COMMAND ----------
@@ -156,7 +158,7 @@ except Exception as e:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## More filter helpers: `|`, `~`, `isin`, `between`,`like`
+# MAGIC ## More filter helpers: `|`, `~`, `isin`, `like`, `between`
 # MAGIC
 # MAGIC **Business question:** Peak-hour analysis needs Premium trips or any trip
 # MAGIC longer than twenty miles.
@@ -192,22 +194,21 @@ df.filter(F.col("service_type").isin("Standard", "Premium")).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`between(lower, upper)`** is an inclusive range — values equal to either
-# MAGIC boundary match.
-
-# COMMAND ----------
-
-df.filter(F.col("trip_distance_miles").between(3, 12)).show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **`like(pattern)`** is SQL-style pattern matching on strings, The pattern **`'%'`** matches any non-**`NULL`** string — including an
-# MAGIC **empty string**
+# MAGIC **`like(pattern)`** is SQL-style pattern matching on strings. The first
+# MAGIC example uses **`'%'`** — it matches any non-**`NULL`** string, including an
+# MAGIC **empty string** (trip **`1008`**). Trip **`1007`** (`NULL`) still will not
+# MAGIC appear.
 
 # COMMAND ----------
 
 df.filter(F.col("service_type").like("%")).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **`S%`** means “starts with **`S`**” — **`%`** is a wildcard for the rest of
+# MAGIC the name. Trip **`1008`** (empty string) will not match; trip **`1007`**
+# MAGIC (`NULL`) still will not appear.
 
 # COMMAND ----------
 
@@ -216,9 +217,19 @@ df.filter(F.col("service_type").like("S%")).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC
-# MAGIC > **Good to know:** **`LIKE`** does not match **`NULL`**. Trip **`1007`**
-# MAGIC > has **`NULL`** `service_type`.
+# MAGIC > **Good to know:** Compare the two **`like`** results above — **`LIKE`** never
+# MAGIC > matches **`NULL`** (trip **`1007`** missing from both). An **empty string**
+# MAGIC > can match **`'%'`** but not **`S%`** (trip **`1008`**).
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **`between(lower, upper)`** is an inclusive range — values equal to either
+# MAGIC boundary match.
+
+# COMMAND ----------
+
+df.filter(F.col("trip_distance_miles").between(3, 12)).show()
 
 # COMMAND ----------
 
@@ -230,8 +241,8 @@ df.filter(F.col("service_type").like("S%")).show()
 # MAGIC
 # MAGIC Comparing a column to **`None`** with **`==`** or **`!=`** does **not** find
 # MAGIC NULLs in SQL semantics — the result is **unknown**, and a filter keeps only
-# MAGIC rows where the condition is **true**. The next two cells return no rows; use
-# MAGIC **`isNull()`** / **`isNotNull()`** instead.
+# MAGIC rows where the condition is **true**. The next two cells print a **count of
+# MAGIC zero**; use **`isNull()`** / **`isNotNull()`** instead.
 
 # COMMAND ----------
 
