@@ -202,18 +202,8 @@ df.filter(F.col("trip_distance_miles").between(3, 12)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`like(pattern)`** is SQL-style pattern matching on strings. **`S%`** means
-# MAGIC “starts with **`S`**” — **`%`** is a wildcard for the rest of the name.
-# MAGIC
-# MAGIC > **Good to know:** **`LIKE`** does not match **`NULL`**. Trip **`1007`**
-# MAGIC > has **`NULL`** `service_type`.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC The pattern **`'%'`** matches any non-**`NULL`** string — including an
-# MAGIC **empty string**. Compare with **`S%`** above: trip **`1008`** (blank
-# MAGIC `service_type`) appears below; trip **`1007`** (`NULL`) still does not.
+# MAGIC **`like(pattern)`** is SQL-style pattern matching on strings, The pattern **`'%'`** matches any non-**`NULL`** string — including an
+# MAGIC **empty string**
 
 # COMMAND ----------
 
@@ -222,6 +212,13 @@ df.filter(F.col("service_type").like("%")).show()
 # COMMAND ----------
 
 df.filter(F.col("service_type").like("S%")).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC > **Good to know:** **`LIKE`** does not match **`NULL`**. Trip **`1007`**
+# MAGIC > has **`NULL`** `service_type`.
 
 # COMMAND ----------
 
