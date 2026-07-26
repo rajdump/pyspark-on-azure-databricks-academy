@@ -17,8 +17,9 @@ Given a module folder (ask which one if not obvious from context), check:
    `01`, and the README's navigation list matches the actual files present.
 4. **Standards compliance across all notebooks** — spot-check each notebook
    against @docs/standards/notebook-writing.md,
-   @docs/standards/coding-standards.md, and
-   @docs/standards/teaching-guidelines.md (equivalent to running
+   @docs/standards/coding-standards.md,
+   @docs/standards/teaching-guidelines.md, and
+   @docs/standards/compute-validation-policy.md (equivalent to running
    `/validate-notebook` on each one).
 5. **Dataset consistency** — every DataFrame/file-read example matches
    @docs/data/dataset-overview.md.

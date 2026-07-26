@@ -2,8 +2,8 @@
 
 Canonical owner of all Python coding rules for this repository — notebook
 code today, `src/` code once it's introduced (Module 14+). Referenced by
-`.cursor/rules/learner-notebooks.mdc` (and later `.cursor/rules/python-modules.mdc`)
-— do not duplicate this content elsewhere.
+`.cursor/rules/learner-notebooks.mdc`, `/validate-notebook`, and `/review-module`
+(and later `.cursor/rules/python-modules.mdc`) — do not duplicate this content elsewhere.
 
 ## Style baseline
 

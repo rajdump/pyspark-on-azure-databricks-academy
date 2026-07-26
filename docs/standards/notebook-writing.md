@@ -1,8 +1,8 @@
 # Notebook Writing Standards
 
 Canonical owner of all notebook structure and formatting rules. Referenced
-by `.cursor/rules/learner-notebooks.mdc` and the `/new-lesson` and
-`/validate-notebook` commands — do not duplicate this content elsewhere.
+by `.cursor/rules/learner-notebooks.mdc` and the `/new-lesson`,
+`/validate-notebook`, and `/review-module` commands — do not duplicate this content elsewhere.
 
 ## Format
 

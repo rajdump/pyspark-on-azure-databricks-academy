@@ -1,7 +1,8 @@
 # Naming Conventions
 
 Canonical owner of all folder, file, and object naming rules for this
-repository. Referenced by `.cursor/rules/*.mdc` — do not duplicate this
+repository. Referenced by `.cursor/rules/course-authoring.mdc`, `/new-lesson`,
+`/validate-notebook`, and `/review-module` — do not duplicate this
 content elsewhere.
 
 ## Module folders

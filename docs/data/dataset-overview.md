@@ -2,13 +2,13 @@
 
 Canonical owner of the rideshare dataset's logical tables, columns/types,
 join keys, physical formats, and `data/raw/` layout. Referenced by
-`.cursor/rules/learner-notebooks.mdc`, `/validate-notebook`, and Cmd+K
-inline-edit sessions (via explicit `@docs/data/dataset-overview.md`) — do
+`.cursor/rules/learner-notebooks.mdc`, `/new-lesson`, `/validate-notebook`,
+`/review-module`, and Cmd+K inline-edit sessions (via explicit `@docs/data/dataset-overview.md`) — do
 not duplicate this content elsewhere.
 
 This is the single running example threaded through every module. It is
 intentionally small and transformation-friendly, so the same data supports
-everything from hand-built DataFrames in Module 2 through Delta/Unity
+everything from hand-built DataFrames in Module 1 through Delta/Unity
 Catalog work in Modules 11–13.
 
 ## Core logical tables

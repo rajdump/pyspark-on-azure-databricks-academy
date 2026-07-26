@@ -3,7 +3,7 @@
 Canonical owner of the distinction between Azure RBAC, Databricks workspace
 permissions, and Unity Catalog privileges, plus the minimum-privilege
 documentation pattern used in module `README.md` files. Referenced by
-`.cursor/rules/course-authoring.mdc` and `/review-module` — do not duplicate
+`.cursor/rules/course-authoring.mdc`, `/review-module`, and `/validate-notebook` — do not duplicate
 this content elsewhere.
 
 ## Three distinct permission systems

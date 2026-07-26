@@ -1,7 +1,8 @@
 # Teaching Guidelines
 
 Canonical owner of all pedagogical and explanation standards. Referenced by
-`.cursor/rules/learner-notebooks.mdc` and `.cursor/rules/course-authoring.mdc`
+`.cursor/rules/learner-notebooks.mdc`, `.cursor/rules/course-authoring.mdc`,
+`/new-lesson`, `/validate-notebook`, and `/review-module`
 — do not duplicate this content elsewhere.
 
 ## Audience assumptions
