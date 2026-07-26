@@ -70,8 +70,8 @@ df.show()
 # MAGIC %md
 # MAGIC ## Project and reorder with `select`
 # MAGIC
-# MAGIC **Business question:** Operations only needs trip identity, service type,
-# MAGIC and distance for a first dashboard — not every pickup zone column.
+# MAGIC **Business question:** A first dashboard needs trip identity, service type,
+# MAGIC and distance — not every pickup zone column.
 # MAGIC
 # MAGIC `select` returns a new DataFrame with only the columns you name, in the
 # MAGIC order you list them. The simplest form uses column names as strings.
@@ -130,8 +130,8 @@ df.select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Business question:** Operations reports trip distance in kilometres
-# MAGIC alongside miles for regional teams.
+# MAGIC **Business question:** Regional teams need trip distance reported in
+# MAGIC kilometres alongside miles.
 # MAGIC
 # MAGIC `F.col` also supports calculations. Define the expression once in a
 # MAGIC variable, then reuse it — one definition, no copies that can drift apart
@@ -154,8 +154,8 @@ df.select(
 # MAGIC %md
 # MAGIC ## Light `cast` and constants with `F.lit`
 # MAGIC
-# MAGIC **Business question:** Operations exports trip IDs as text for a BI tool
-# MAGIC and tags every row with a source system for downstream audits.
+# MAGIC **Business question:** A BI export needs trip IDs as text, and downstream
+# MAGIC audits need every row tagged with a source system.
 # MAGIC
 # MAGIC **`.cast("type")`** converts a column's type. Cast with intent — some
 # MAGIC conversions lose precision. Deeper casting rules and failure modes come in
@@ -182,8 +182,8 @@ df.select("trip_id", F.lit("mobile_app").alias("source_system")).show()
 # MAGIC %md
 # MAGIC ## Conditional columns: `F.when` / `otherwise`
 # MAGIC
-# MAGIC **Business question:** Operations wants distance-band labels — `short`,
-# MAGIC `medium`, and `long` — for trip reporting and dashboards.
+# MAGIC **Business question:** Trip reporting and dashboards need distance-band
+# MAGIC labels — `short`, `medium`, and `long`.
 # MAGIC
 # MAGIC **`F.when(condition, value)`** is column-level if/else logic. Chain more
 # MAGIC `.when(...)`, then finish with `.otherwise(...)`. Without `otherwise`,
@@ -367,8 +367,8 @@ df_km.drop("trip_distance_miles", "pickup_location_id").show()
 # MAGIC %md
 # MAGIC ## Chain transforms into an operations-style output
 # MAGIC
-# MAGIC **Business question:** How can operations prepare mobile-app trip data for
-# MAGIC a dashboard? The output needs:
+# MAGIC **Business question:** A mobile-app dashboard needs trip data prepared
+# MAGIC with:
 # MAGIC
 # MAGIC - trip IDs as text
 # MAGIC - standardized service names (`Shared` → `Pool`)

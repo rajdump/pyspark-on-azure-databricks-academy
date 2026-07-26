@@ -76,8 +76,8 @@ df.show()
 # MAGIC **`F.expr(sql_text)`** parses a SQL expression string and returns a
 # MAGIC **Column** — not a DataFrame.
 # MAGIC
-# MAGIC **Business question:** Operations wants average trip speed in miles per
-# MAGIC hour for dispatch review.
+# MAGIC **Business question:** Dispatch review needs average trip speed in miles
+# MAGIC per hour.
 # MAGIC
 # MAGIC Store the SQL in a variable, then reuse that one definition later in this
 # MAGIC notebook — no copies that can drift apart in a pipeline.
@@ -155,8 +155,8 @@ df.selectExpr(
 # MAGIC %md
 # MAGIC ## Conditional logic with SQL `CASE WHEN`
 # MAGIC
-# MAGIC **Business question:** Operations wants the same distance-band labels you
-# MAGIC built in notebook 03 — `short`, `medium`, and `long` — for reporting.
+# MAGIC **Business question:** Trip reporting needs the same distance-band labels
+# MAGIC from notebook 03 — `short`, `medium`, and `long`.
 # MAGIC
 # MAGIC Notebook 03 used `F.when` / `otherwise`. Here, the same thresholds appear
 # MAGIC as SQL `CASE WHEN`. Both forms are common in production pipelines.
@@ -315,8 +315,8 @@ except Exception as e:
 # MAGIC %md
 # MAGIC ## Reuse SQL expressions in an operations summary
 # MAGIC
-# MAGIC **Business question:** How can operations publish a trip summary with
-# MAGIC formatted service names, average speed, and a distance band?
+# MAGIC **Business question:** A published trip summary needs formatted service
+# MAGIC names, average speed, and a distance band.
 # MAGIC
 # MAGIC Reuse `distance_band_sql` with `F.expr` / `withColumn` and `mph_sql` with
 # MAGIC `selectExpr` in one chain.
