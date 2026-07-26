@@ -198,10 +198,15 @@ df.filter(F.col("service_type").isin("Standard", "Premium")).show()
 # MAGIC > **Good to know:** **`LIKE`** does not match **`NULL`**. Trip **`1007`** in
 # MAGIC > this sample has **`NULL`** `service_type`, so it will not appear below even
 # MAGIC > though the pattern looks broad.
+# MAGIC > But like pattern works for emptry stting
 
 # COMMAND ----------
 
 df.filter(F.col("service_type").like("S%")).show()
+
+# COMMAND ----------
+
+df.filter(F.col("service_type").like("%")).show()
 
 # COMMAND ----------
 
