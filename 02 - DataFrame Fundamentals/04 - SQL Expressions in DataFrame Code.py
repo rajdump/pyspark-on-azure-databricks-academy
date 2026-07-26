@@ -6,7 +6,7 @@
 # MAGIC - Build a Column from a SQL expression string with `F.expr`
 # MAGIC - Apply several SQL expression strings with `selectExpr`
 # MAGIC - Write conditional column logic with SQL `CASE WHEN` (same idea as
-# MAGIC   `F.when` from the prior notebook)
+# MAGIC   `F.when` from the previous notebook)
 # MAGIC - Compare misspelled column names across `F.col` and `F.expr` styles
 # MAGIC   (`AnalysisException`)
 # MAGIC - Distinguish Python `SyntaxError` from Spark SQL parse errors on bad
@@ -15,8 +15,8 @@
 # MAGIC   in a small operations-style summary
 # MAGIC
 # MAGIC **Prerequisites.** `03 - Selecting and Transforming Columns` in this
-# MAGIC module — you should already know `F.col`, `F.when`, and reusable Column
-# MAGIC expressions.
+# MAGIC module — you should already know `F.col`, `F.when`, `F.lit`, and reusable
+# MAGIC Column expressions.
 # MAGIC
 # MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
 # MAGIC a small, hand-built rideshare-style DataFrame (aligned with the `trip`
@@ -27,14 +27,15 @@
 # MAGIC %md
 # MAGIC ## Setup DataFrame for SQL expression examples
 # MAGIC
-# MAGIC Notebook 03 built Column logic with `F.col`, `F.when`, and friends. Many
-# MAGIC pipelines express the same rules as **SQL expression strings** inside
-# MAGIC DataFrame methods — especially when the rule reads naturally as SQL.
+# MAGIC Notebook 03 built derived columns with the Column API — `F.col`,
+# MAGIC `F.when`, `F.lit`, and related helpers. The same calculations can be
+# MAGIC written as **SQL expression strings** inside DataFrame methods (`F.expr`,
+# MAGIC `selectExpr`). For example, a distance band you built with `F.when` can
+# MAGIC be expressed as SQL `CASE WHEN`.
 # MAGIC
-# MAGIC Reuse one small trip sample across every example so comparisons stay
-# MAGIC fair. SQL strings here still start from a Python DataFrame variable; this
-# MAGIC notebook does not use `%sql` cells or temporary views (those come in
-# MAGIC notebook 06).
+# MAGIC Create one small DataFrame to reuse across every example. SQL strings
+# MAGIC here still start from a Python DataFrame variable — this notebook does
+# MAGIC not use `%sql` cells or temporary views (those come in notebook 06).
 
 # COMMAND ----------
 
@@ -61,7 +62,7 @@ df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedV
 
 # MAGIC %md
 # MAGIC Confirm the sample rows before SQL expression examples — the same habit
-# MAGIC as inspection in the prior notebooks.
+# MAGIC as inspection in the previous notebook.
 
 # COMMAND ----------
 
@@ -78,8 +79,8 @@ df.show()
 # MAGIC **Business question:** Operations wants average trip speed in miles per
 # MAGIC hour for dispatch review.
 # MAGIC
-# MAGIC Store the SQL in a variable so the same rule can be reused later in this
-# MAGIC notebook without copy-paste drift.
+# MAGIC Store the SQL in a variable, then reuse that one definition later in this
+# MAGIC notebook — no copies that can drift apart in a pipeline.
 
 # COMMAND ----------
 
@@ -122,9 +123,11 @@ df.selectExpr(
 # MAGIC %md
 # MAGIC ## Conditional logic with SQL `CASE WHEN`
 # MAGIC
-# MAGIC Notebook 03 labeled distance bands with `F.when` / `otherwise`. The same
-# MAGIC rule can be a SQL `CASE` expression — useful when SQL-first teammates read
-# MAGIC the pipeline.
+# MAGIC **Business question:** Operations wants the same distance-band labels you
+# MAGIC built in notebook 03 — `short`, `medium`, and `long` — for reporting.
+# MAGIC
+# MAGIC Notebook 03 used `F.when` / `otherwise`. Here, the same thresholds appear
+# MAGIC as SQL `CASE WHEN`. Both forms are common in production pipelines.
 
 # COMMAND ----------
 
@@ -260,17 +263,20 @@ except Exception as e:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Choose the clearer form and reuse expressions
+# MAGIC ## Choose the clearer expression form
 # MAGIC
-# MAGIC SQL strings and Column expressions can describe the same logic. Neither is
-# MAGIC always better — both belong in production code.
+# MAGIC SQL expression strings and Column expressions can describe the same column
+# MAGIC logic. Neither style is always better — you will see both in production
+# MAGIC code.
 # MAGIC
-# MAGIC - Use a **SQL expression** when the rule is easier to read as SQL.
-# MAGIC - Use **`F.col` / `F.when`** when the rule is easier to build with PySpark
-# MAGIC   functions.
+# MAGIC - Use a **SQL expression string** when the calculation is easier to read
+# MAGIC   as SQL.
+# MAGIC - Use **`F.col` / `F.when`** when the calculation is easier to build with
+# MAGIC   PySpark functions.
 # MAGIC
-# MAGIC Define each repeated rule once, store it in a variable, and keep related
-# MAGIC rules in a consistent style so the pipeline stays readable.
+# MAGIC Define a repeated calculation once, store it in a variable, and reuse it.
+# MAGIC Keep related calculations in a consistent style so the pipeline stays
+# MAGIC readable.
 
 # COMMAND ----------
 
@@ -326,7 +332,7 @@ operations_summary.show()
 # MAGIC - **`AnalysisException`** — unresolved column names in either style
 # MAGIC - **`SyntaxError` vs `ParseException`** — Python cell errors vs bad SQL
 # MAGIC   strings at Spark parse time
-# MAGIC - **Reuse** named SQL strings; pick SQL or Column style for clarity
+# MAGIC - **Reuse named SQL strings**; choose SQL or Column style for clarity
 # MAGIC
-# MAGIC Next up: `05 - Filtering Rows` — keep only the rows you need with
+# MAGIC Next up: `05 - Filtering Rows` — keep only the rows you need with row
 # MAGIC conditions (Column operators and SQL predicate strings).
