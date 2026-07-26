@@ -16,11 +16,9 @@ Given a module folder (ask which one if not obvious from context), check:
 3. **Notebook sequence** — notebooks are numbered contiguously starting at
    `01`, and the README's navigation list matches the actual files present.
 4. **Standards compliance across all notebooks** — spot-check each notebook
-   against @docs/standards/notebook-writing.md,
-   @docs/standards/coding-standards.md,
-   @docs/standards/teaching-guidelines.md, and
-   @docs/standards/compute-validation-policy.md (equivalent to running
-   `/validate-notebook` on each one).
+   against @docs/standards/notebook-authoring-checklist.md (equivalent to
+   running `/validate-notebook` on each one, including
+   @docs/standards/compute-validation-policy.md when relevant).
 5. **Dataset consistency** — every DataFrame/file-read example matches
    @docs/data/dataset-overview.md.
 6. **No leaked evidence** — validation results, tokens, workspace URLs, or

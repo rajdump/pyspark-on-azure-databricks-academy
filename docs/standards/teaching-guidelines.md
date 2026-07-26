@@ -2,8 +2,9 @@
 
 Canonical owner of all pedagogical and explanation standards. Referenced by
 `.cursor/rules/learner-notebooks.mdc`, `.cursor/rules/course-authoring.mdc`,
-`/new-lesson`, `/validate-notebook`, and `/review-module`
-— do not duplicate this content elsewhere.
+`/new-lesson`, `/write-lesson`, `/validate-notebook`, and `/review-module`
+— do not duplicate this content elsewhere. Shared read list:
+@docs/standards/notebook-authoring-checklist.md.
 
 ## Audience assumptions
 
@@ -55,5 +56,6 @@ Spark tour. Where relevant, name the production concern a topic addresses
 
 - Module `README.md` files (learning objectives, prerequisites, guidance)
 - Learner notebooks (markdown cells, comments, exercise framing)
-- `/new-lesson`-scaffolded content, which should already follow these
-  patterns by default
+- `/new-lesson`-scaffolded content follows the **Scaffold bar** in
+  @docs/standards/notebook-authoring-checklist.md; full lessons use
+  `/write-lesson` and the **Full-lesson bar** there.

@@ -7,25 +7,25 @@ alwaysApply: false
 You are editing a learner-facing Databricks notebook (`.py` source format)
 in a numbered module folder.
 
-Follow these standards, in full, before writing or editing any cell:
+Follow @docs/standards/notebook-authoring-checklist.md — its **Required
+reads** and **Full-lesson bar** — before writing or editing any cell.
 
-Read the module's own design doc first:
+In particular:
 
-- The `README.md` in the same numbered module folder as the notebook (e.g.
-  `01 - …/README.md` when editing `01 - …/NN - Title.py`). Use its
-  **Notebook navigation** entry for this notebook's number/title as the
+- The `README.md` in the same numbered module folder as the notebook. Use
+  its **Notebook navigation** entry for this notebook's number/title as the
   source of truth for topics, subtopics, and must-cover bullets. Do not
   invent sections that are not listed there unless the author explicitly
   asks.
+- @docs/standards/notebook-writing.md
+- @docs/standards/teaching-guidelines.md
+- @docs/standards/coding-standards.md
+- @docs/standards/naming-conventions.md
+- @docs/data/dataset-overview.md
 
-- @docs/standards/notebook-writing.md — notebook structure, cell markers,
-  format rules
-- @docs/standards/teaching-guidelines.md — pedagogy, explanation style,
-  audience assumptions
-- @docs/standards/coding-standards.md — PySpark/Python code conventions
-- @docs/data/dataset-overview.md — the rideshare dataset's schemas, join
-  keys, and file layout; use this as the source of truth for any DataFrame
-  or file-read example
+For a full lesson from a skeleton, the author should use `/write-lesson`
+(not ad-hoc chat) so every standard loads consistently. After writing,
+`/validate-notebook` is the authoring-quality gate.
 
 Do not duplicate the content of those files here — they are the canonical
 source. If something in a notebook conflicts with them, follow the

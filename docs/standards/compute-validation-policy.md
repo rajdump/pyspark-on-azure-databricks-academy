@@ -58,8 +58,8 @@ file's template for the exact fields.
 
 - Runtime validation *evidence itself* — that's the module's
   `docs/validation/` file, filled in by the author after running notebooks
-  in Azure Databricks. Cursor's `/validate-notebook` and `/review-module`
-  are authoring-quality checks in Cursor, not a substitute for this runtime
-  validation.
+  in Azure Databricks. Cursor's `/write-lesson`, `/validate-notebook`, and
+  `/review-module` are authoring-quality checks in Cursor, not a substitute
+  for this runtime validation.
 - Unity Catalog privilege requirements — see
   `permissions-and-governance.md`.

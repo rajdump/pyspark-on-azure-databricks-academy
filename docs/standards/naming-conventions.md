@@ -2,8 +2,9 @@
 
 Canonical owner of all folder, file, and object naming rules for this
 repository. Referenced by `.cursor/rules/course-authoring.mdc`, `/new-lesson`,
-`/validate-notebook`, and `/review-module` — do not duplicate this
-content elsewhere.
+`/write-lesson`, `/validate-notebook`, and `/review-module` — do not duplicate
+this content elsewhere. Shared read list:
+@docs/standards/notebook-authoring-checklist.md.
 
 ## Module folders
 
@@ -54,7 +55,8 @@ they must identify a specific module unambiguously.
 - Rule files: `.cursor/rules/<scope>.mdc`, lowercase kebab-case
   (`learner-notebooks.mdc`, `course-authoring.mdc`).
 - Command files: `.cursor/commands/<command-name>.md` — the filename **is**
-  the slash command name (e.g. `new-lesson.md` → `/new-lesson`).
+  the slash command name (e.g. `new-lesson.md` → `/new-lesson`,
+  `write-lesson.md` → `/write-lesson`).
 
 ## Python code (once `src/` is introduced)
 

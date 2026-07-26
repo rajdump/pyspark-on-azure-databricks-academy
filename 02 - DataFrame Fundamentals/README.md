@@ -43,8 +43,9 @@ with `spark.createDataFrame(rows, columns)` plus basic `show` / `display` /
 
 ## Notebook navigation
 
-Notebooks are added to this module using `/new-lesson` as they're authored,
-in this planned order:
+Notebooks are added to this module using `/new-lesson` (skeleton),
+`/write-lesson` (full content), and `/validate-notebook` (authoring check) as
+they're authored, in this planned order:
 
 1. **Creating DataFrames**
    - What a Spark DataFrame represents (technical foundation)

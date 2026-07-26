@@ -438,6 +438,8 @@ print("original df columns:         ", df.columns)
 # MAGIC - **Column-name strings vs `F.col`** — strings for unchanged columns;
 # MAGIC   `F.col` for expressions (`alias`, arithmetic, light `cast`, `F.lit`,
 # MAGIC   `F.when`)
+# MAGIC - **`select` vs `withColumn`** — either can add a column; `withColumn`
+# MAGIC   replaces by name when recalculating
 # MAGIC - **`withColumn` / `withColumns`** — add or recalculate columns; prefer
 # MAGIC   `withColumns` for several additions at once
 # MAGIC - **`withColumnRenamed` / `withColumnsRenamed`** — rename without listing

@@ -44,15 +44,22 @@ validated in Azure Databricks.
 - Permissions and governance (Azure RBAC vs. workspace permissions vs. Unity
   Catalog privileges): `docs/standards/permissions-and-governance.md`
 - Dataset reference: `docs/data/dataset-overview.md`
+- Notebook authoring checklist (shared read list for slash commands):
+  `docs/standards/notebook-authoring-checklist.md`
 
 Scoped `.cursor/rules/*.mdc` files load these automatically for matching
-files. Slash commands (`/new-lesson`, `/validate-notebook`, `/review-module`)
-reference them directly.
+files. Slash commands (`/new-lesson`, `/write-lesson`, `/validate-notebook`,
+`/review-module`) reference the checklist and standards directly.
+
+Recommended notebook workflow: `/new-lesson` (skeleton) → `/write-lesson`
+(full content) → `/validate-notebook` (authoring check) → Azure Databricks
+runtime validation by the author.
 
 ## What Cursor should not do automatically
 
 - Never update `COURSE_MODULES.md` status — that is author-owned.
 - Never write runtime validation evidence in `docs/validation/` — that is
   filled in by the author after running notebooks in Azure Databricks.
-- `/new-lesson`, `/validate-notebook`, and `/review-module` scaffold or
-  inspect only; they never write roadmap status or validation evidence.
+- `/new-lesson`, `/write-lesson`, `/validate-notebook`, and `/review-module`
+  never write roadmap status or runtime validation evidence (`/write-lesson`
+  fills lesson content; `/new-lesson` scaffolds only).
