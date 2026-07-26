@@ -3,99 +3,106 @@
 # MAGIC # Your First DataFrame
 # MAGIC
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Explain what a Spark **DataFrame** is at a practical level
-# MAGIC - Build a small rideshare-flavored DataFrame with `spark.createDataFrame`
-# MAGIC - Inspect rows with `.show()` and `display()`
-# MAGIC - Inspect column names and types with `.printSchema()`
+# MAGIC - Build a small rideshare DataFrame from in-notebook Python data
+# MAGIC - Inspect DataFrame rows with `show()` and `display()`
+# MAGIC - Inspect DataFrame structure with `printSchema()`
+# MAGIC - Explain why checking both data values and schema is useful before transformations
 # MAGIC
-# MAGIC **Prerequisites.** `03 - Working with Notebooks` — you should already know
-# MAGIC how to attach compute, run cells in order, and use `spark`.
+# MAGIC **Prerequisites.** `03 - Working with Notebooks` in this module — you should be comfortable with notebook cells, magics, and shared Python state.
 # MAGIC
-# MAGIC **Setup.** Attach compute before running code cells. Any compute type
-# MAGIC that provides a `spark` session works for this notebook.
-# MAGIC
-# MAGIC **Dataset note.** This module builds a **few rows in code** — not a file
-# MAGIC read from `data/raw/`. File-based reads of the shared rideshare dataset
-# MAGIC begin in a later module. Column names here match the `trip` table shape
-# MAGIC from the course dataset (see `docs/data/dataset-overview.md`).
-# MAGIC
-# MAGIC You know how notebooks and `spark` work. Next you create and inspect
-# MAGIC your first DataFrame.
+# MAGIC **Setup.** Use any attached compute with PySpark available. This notebook uses a hand-built, small rideshare example (not file reads from `data/raw/` yet).
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## What is a DataFrame?
+# MAGIC ## Build a small rideshare DataFrame
 # MAGIC
-# MAGIC A **DataFrame** is Spark's tabular data structure — rows and named columns,
-# MAGIC like a spreadsheet or SQL table, but distributed when the data grows large.
+# MAGIC In production pipelines, DataFrames usually come from files or tables. For a first step, we create one directly in code so you can focus on the DataFrame shape and inspection workflow.
 # MAGIC
-# MAGIC In this notebook the data is tiny (hand-built). The point is the **API**:
-# MAGIC create a DataFrame, then inspect it before you transform it in later
-# MAGIC modules.
+# MAGIC The columns below use the same naming pattern as the course rideshare dataset (for example `trip_id`, `service_type`, `trip_distance_miles`) so later modules feel familiar.
+
+# COMMAND ----------
+
+from decimal import Decimal
+
+from pyspark.sql import functions as F
+from pyspark.sql.types import DecimalType, IntegerType, LongType, StringType, StructField, StructType
+
+# COMMAND ----------
+
+trip_schema = StructType(
+    [
+        StructField("trip_id", LongType(), nullable=False),
+        StructField("service_type", StringType(), nullable=False),
+        StructField("pickup_location_id", IntegerType(), nullable=False),
+        StructField("dropoff_location_id", IntegerType(), nullable=False),
+        StructField("trip_distance_miles", DecimalType(8, 2), nullable=False),
+    ]
+)
+
+trip_rows = [
+    (1001, "standard", 7, 12, Decimal("3.40")),
+    (1002, "premium", 15, 3, Decimal("8.75")),
+    (1003, "shared", 22, 22, Decimal("1.10")),
+    (1004, "standard", 4, 19, Decimal("5.25")),
+]
+
+trips_df = spark.createDataFrame(trip_rows, schema=trip_schema)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Worked example: build a small `trip` DataFrame
+# MAGIC ## Inspect DataFrame rows
 # MAGIC
-# MAGIC The shared rideshare dataset centers on a `trip` table. Below, three rows
-# MAGIC use the same column names you will see later (`trip_id`, `service_type`,
-# MAGIC `pickup_location_id`, `dropoff_location_id`, `trip_distance_miles`).
-# MAGIC
-# MAGIC Run the next cell to create the DataFrame.
+# MAGIC Start by looking at the actual values. `show()` is quick in code output, while `display()` gives Databricks table exploration controls.
 
 # COMMAND ----------
 
-# TODO: worked example — spark.createDataFrame from a list of rows or dicts
-# using trip column names from dataset-overview.md
+trips_df.show(truncate=False)
+
+# COMMAND ----------
+
+display(trips_df)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Inspect rows with `.show()`
+# MAGIC ## Inspect DataFrame structure
 # MAGIC
-# MAGIC `.show()` prints a text table to the cell output — quick and common in
-# MAGIC logs and tutorials.
+# MAGIC `printSchema()` shows column names, types, and nullability. In real jobs, this check helps catch type mismatches early (for example decimal vs. string distance fields).
 
 # COMMAND ----------
 
-# TODO: trips.show()
+trips_df.printSchema()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Inspect schema with `.printSchema()`
+# MAGIC ## Worked example: quick quality checks
 # MAGIC
-# MAGIC `.printSchema()` prints column names and Spark data types. Use it to
-# MAGIC confirm types before joins or aggregations in later lessons.
+# MAGIC Before any transformation, run one or two simple checks so you know the DataFrame is usable.
 
 # COMMAND ----------
 
-# TODO: trips.printSchema()
+print(f"Row count: {trips_df.count()}")
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Inspect rows with `display()`
-# MAGIC
-# MAGIC `display()` renders an interactive table in the notebook UI — sortable and
-# MAGIC easier to browse than `.show()` for exploration.
-
-# COMMAND ----------
-
-# TODO: display(trips)
+distance_summary_df = trips_df.select(
+    F.min("trip_distance_miles").alias("min_distance_miles"),
+    F.max("trip_distance_miles").alias("max_distance_miles"),
+)
+display(distance_summary_df)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC 1. Add one more row to the worked example data (your choice of values).
-# MAGIC 2. Re-create the DataFrame and run `.show()` and `.printSchema()` again.
-# MAGIC 3. Confirm the new row appears and the schema is unchanged.
+# MAGIC Create a second small DataFrame named `my_trips_df` with the same schema:
 # MAGIC
-# MAGIC *(Full exercise cells to be authored.)*
+# MAGIC 1. Add at least 3 rows of your own rideshare-style values.
+# MAGIC 2. Run `my_trips_df.show(truncate=False)`.
+# MAGIC 3. Run `my_trips_df.printSchema()`.
+# MAGIC 4. Add one quick check of your choice (for example row count or min/max distance).
 
 # COMMAND ----------
 
@@ -106,11 +113,11 @@
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - A **DataFrame** is Spark's tabular structure for batch data engineering.
-# MAGIC - Use **`spark.createDataFrame`** to build small examples in code before
-# MAGIC   file reads.
-# MAGIC - **`.show()`** and **`display()`** inspect rows; **`.printSchema()`**
-# MAGIC   inspects column names and types.
+# MAGIC You created and inspected your first DataFrame by:
 # MAGIC
-# MAGIC Next up: Module 2 — DataFrame fundamentals build on this pattern with
-# MAGIC the full shared rideshare dataset.
+# MAGIC - Defining a schema and building rows in Python
+# MAGIC - Viewing values with `show()` and `display()`
+# MAGIC - Validating structure with `printSchema()`
+# MAGIC - Running a simple quality check before transformation work
+# MAGIC
+# MAGIC This inspection habit carries into the rest of the course whenever you read from files or tables.
