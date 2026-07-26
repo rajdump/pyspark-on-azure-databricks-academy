@@ -158,7 +158,7 @@ except Exception as e:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## More filter helpers: `|`, `~`, `isin`, `like`, `between`
+# MAGIC ## More filter helpers: `|`, `~`, `isin`,`between`, `like`
 # MAGIC
 # MAGIC **Business question:** Peak-hour analysis needs Premium trips or any trip
 # MAGIC longer than twenty miles.
@@ -194,6 +194,16 @@ df.filter(F.col("service_type").isin("Standard", "Premium")).show()
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC **`between(lower, upper)`** is an inclusive range — values equal to either
+# MAGIC boundary match.
+
+# COMMAND ----------
+
+df.filter(F.col("trip_distance_miles").between(3, 12)).show()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC **`like(pattern)`** is SQL-style pattern matching on strings. The first
 # MAGIC example uses **`'%'`** — it matches any non-**`NULL`** string, including an
 # MAGIC **empty string** (trip **`1008`**). Trip **`1007`** (`NULL`) still will not
@@ -220,16 +230,6 @@ df.filter(F.col("service_type").like("S%")).show()
 # MAGIC > **Good to know:** Compare the two **`like`** results above — **`LIKE`** never
 # MAGIC > matches **`NULL`** (trip **`1007`** missing from both). An **empty string**
 # MAGIC > can match **`'%'`** but not **`S%`** (trip **`1008`**).
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **`between(lower, upper)`** is an inclusive range — values equal to either
-# MAGIC boundary match.
-
-# COMMAND ----------
-
-df.filter(F.col("trip_distance_miles").between(3, 12)).show()
 
 # COMMAND ----------
 
