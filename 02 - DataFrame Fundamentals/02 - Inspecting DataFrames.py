@@ -9,7 +9,7 @@
 # MAGIC - Check DataFrame size and emptiness with `count()` and `isEmpty()`
 # MAGIC - Review first-pass statistics with `describe()` and `summary()`
 # MAGIC - Explain which inspection methods are metadata lookups vs methods that
-# MAGIC   execute Spark work
+# MAGIC   execute Spark work, and choose lightweight checks first when possible
 # MAGIC
 # MAGIC **Prerequisites.** `01 - Creating DataFrames` in this module — you should
 # MAGIC already know how to create small DataFrames with inferred and explicit
@@ -25,6 +25,9 @@
 # MAGIC
 # MAGIC Create one small DataFrame (for example 3-8 rows) to use throughout the
 # MAGIC notebook so every inspection method runs against the same data.
+# MAGIC
+# MAGIC This sample intentionally includes one suspicious value pattern so you can
+# MAGIC see why inspection matters before transformation logic.
 
 # COMMAND ----------
 
@@ -34,7 +37,7 @@ rows = [
     (1001, "Standard", 138, Decimal("12.40"), 18),
     (1002, "Shared", 74, Decimal("3.10"), 9),
     (1003, "Premium", 231, Decimal("22.70"), 35),
-    (1004, "Standard", 100, Decimal("5.60"), 14),
+    (1004, "Standard", 100, Decimal("-4.00"), 30000),
     (1005, "Shared", 74, Decimal("2.20"), 7),
 ]
 
@@ -67,11 +70,23 @@ df.show(3, truncate=False)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC `show(n)` is a display sample, not a contract for deterministic row order.
+# MAGIC If row order matters, add an explicit `orderBy(...)` before inspection.
+
+# COMMAND ----------
+
 df.show(2, vertical=True)
 
 # COMMAND ----------
 
 display(df)  # pyright: ignore[reportUndefinedVariable]
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC `display()` is useful for interactive triage (sort/filter quickly), then
+# MAGIC codify what you found in explicit checks so jobs can enforce the same logic.
 
 # COMMAND ----------
 
@@ -86,7 +101,26 @@ df.printSchema()
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC `printSchema()` is best for quick reading. The next cell shows the same
+# MAGIC schema as a Python object (`StructType`) so code can inspect or reuse it.
+# MAGIC
+# MAGIC In production, schema inspection is a reliability check: if a key field
+# MAGIC type is wrong (for example `double` instead of `decimal`), downstream logic
+# MAGIC and quality rules may silently behave differently.
+
+# COMMAND ----------
+
 print(df.schema)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC `columns` and `dtypes` return regular Python values. This is useful when
+# MAGIC checks or branching logic depend on column names and types.
+# MAGIC
+# MAGIC Typical use: fail fast when a required column is missing, instead of
+# MAGIC letting a transformation fail later with a less clear error.
 
 # COMMAND ----------
 
@@ -99,6 +133,12 @@ print("dtypes: ", df.dtypes)
 # MAGIC ## Inspect size and emptiness: `count()` and `isEmpty()`
 # MAGIC
 # MAGIC Compare total-row checks and empty-data checks.
+# MAGIC
+# MAGIC In production pipelines, this answers operational questions such as:
+# MAGIC
+# MAGIC - Did ingestion load any rows for this run?
+# MAGIC - Should we skip downstream writes for an empty batch?
+# MAGIC - Is a filter unexpectedly removing all data?
 
 # COMMAND ----------
 
@@ -110,7 +150,12 @@ print(f"Is DataFrame empty? {df.isEmpty()}")
 
 # COMMAND ----------
 
-# A quick emptiness check on a filtered DataFrame.
+# MAGIC %md
+# MAGIC A filtered DataFrame can become empty even when the original DataFrame is
+# MAGIC not. This is a common sanity check before writing or aggregating results.
+
+# COMMAND ----------
+
 empty_df = df.filter("trip_distance_miles > 1000")
 print(f"Is filtered DataFrame empty? {empty_df.isEmpty()}")
 
@@ -120,10 +165,20 @@ print(f"Is filtered DataFrame empty? {empty_df.isEmpty()}")
 # MAGIC ## First-pass statistics: `describe()` and `summary()`
 # MAGIC
 # MAGIC Add a quick profile pass for numeric and string columns.
+# MAGIC
+# MAGIC These methods are good for anomaly discovery (for example impossible mins
+# MAGIC or unexpected ranges), but they are exploratory checks — not a substitute
+# MAGIC for explicit data-quality rules.
 
 # COMMAND ----------
 
 df.describe().show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC `summary()` can include approximate percentiles (25%, 50%, 75%), which are
+# MAGIC often useful for quick distribution checks during exploratory inspection.
 
 # COMMAND ----------
 
@@ -141,8 +196,12 @@ df.summary("count", "min", "25%", "50%", "75%", "max").show()
 # MAGIC - **Execute Spark work:** `show()`, `count()`, `isEmpty()`, `describe()`,
 # MAGIC   `summary()`
 # MAGIC
-# MAGIC Practical tip: if you only need to know whether data exists, `isEmpty()`
-# MAGIC is often a better emptiness check than `count() == 0`.
+# MAGIC Practical production tips:
+# MAGIC
+# MAGIC - If you only need to know whether data exists, use `isEmpty()` rather than
+# MAGIC   `count() == 0`.
+# MAGIC - Avoid repeatedly running full-table inspections in the same notebook run.
+# MAGIC - For large DataFrames, profile only the columns and statistics you need.
 
 # COMMAND ----------
 
