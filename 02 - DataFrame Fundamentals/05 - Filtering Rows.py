@@ -192,55 +192,16 @@ df.filter(F.col("service_type").isin("Standard", "Premium")).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`like(pattern)`** matches a SQL text pattern — **`%`** matches **zero or
-# MAGIC more** characters at that position (not **`NULL`** — a missing value never
-# MAGIC satisfies **`LIKE`**). **`_`** matches exactly one character. The pattern
-# MAGIC **`S%`** keeps service types that start with **`S`**.
+# MAGIC **`like(pattern)`** is SQL-style pattern matching on strings. **`S%`** means
+# MAGIC “starts with **`S`**” — **`%`** is a wildcard for the rest of the name.
+# MAGIC
+# MAGIC > **Good to know:** **`LIKE`** does not match **`NULL`**. Trip **`1007`** in
+# MAGIC > this sample has **`NULL`** `service_type`, so it will not appear below even
+# MAGIC > though the pattern looks broad.
 
 # COMMAND ----------
 
 df.filter(F.col("service_type").like("S%")).show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Proof on this sample: `%` is not `NULL`, and `%` can match zero characters
-# MAGIC
-# MAGIC Trip **`1007`** has **`NULL`** `service_type`; trip **`1008`** has an empty
-# MAGIC string. Run the next cells and compare trip IDs.
-
-# COMMAND ----------
-
-print("NULL service_type trip IDs:")
-df.filter(F.col("service_type").isNull()).select("trip_id").show()
-
-# COMMAND ----------
-
-print("S% match trip IDs (NULL and empty string excluded):")
-df.filter(F.col("service_type").like("S%")).select("trip_id", "service_type").show()
-
-# COMMAND ----------
-
-print("'%' match trip IDs (empty string included; NULL still excluded):")
-df.filter(F.col("service_type").like("%")).select("trip_id", "service_type").show()
-
-# COMMAND ----------
-
-s_pct_ids = {
-    r.trip_id for r in df.filter(F.col("service_type").like("S%")).select("trip_id").collect()
-}
-pct_ids = {
-    r.trip_id for r in df.filter(F.col("service_type").like("%")).select("trip_id").collect()
-}
-null_ids = {
-    r.trip_id for r in df.filter(F.col("service_type").isNull()).select("trip_id").collect()
-}
-
-print("1007 in isNull():     ", 1007 in null_ids)
-print("1007 in like('S%'):   ", 1007 in s_pct_ids)
-print("1007 in like('%'):    ", 1007 in pct_ids)
-print("1008 in like('S%'):   ", 1008 in s_pct_ids)
-print("1008 in like('%'):    ", 1008 in pct_ids)
 
 # COMMAND ----------
 
