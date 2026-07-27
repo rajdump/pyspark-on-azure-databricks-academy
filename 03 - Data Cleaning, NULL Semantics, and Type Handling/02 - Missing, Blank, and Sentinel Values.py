@@ -94,6 +94,33 @@ df.show()
 # MAGIC **`1006`** uses **`float("nan")`** for **`tip_amount`** — **`NaN`** is not
 # MAGIC **`NULL`**, but **`na.drop`** and **`na.fill`** treat it as missing in
 # MAGIC numeric columns.
+# MAGIC
+# MAGIC Add detection columns so each form of missing data is visible before
+# MAGIC cleaning.
+
+# COMMAND ----------
+
+df.select(
+    "trip_id",
+    "payment_method",
+    "tip_amount",
+    F.col("payment_method").isNull().alias("payment_method_is_null"),
+    F.col("tip_amount").isNull().alias("tip_amount_is_null"),
+    F.isnan(F.col("tip_amount")).alias("tip_amount_is_nan"),
+).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Trip **`1003`** has an empty string in **`payment_method`** — not
+# MAGIC **`NULL`**, so **`payment_method_is_null`** is **`FALSE`**. Trip
+# MAGIC **`1005`** has a real **`NULL`** there.
+# MAGIC
+# MAGIC Trip **`1006`** shows the **`NaN`** trap: **`tip_amount_is_null`** is
+# MAGIC **`FALSE`** because **`NaN`** is not **`NULL`**, but **`tip_amount_is_nan`**
+# MAGIC is **`TRUE`**. Blank strings, spaces, sentinels, and **`-1`** do not
+# MAGIC appear in these checks at all — they look like regular values until you
+# MAGIC normalize them.
 
 # COMMAND ----------
 
@@ -218,6 +245,14 @@ df.na.replace("N/A", None, subset=["payment_method"]).show()
 # COMMAND ----------
 
 df.na.replace("", "unknown", subset=["payment_method"]).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Trip **`1003`** becomes **`"unknown"`**, but trip **`1004`** still shows
+# MAGIC spaces in **`payment_method`**. **`na.replace`** matches exact values — it
+# MAGIC does not trim whitespace. The normalize pipeline later uses **`trim`** +
+# MAGIC **`nullif`** to handle spaces and empty strings together.
 
 # COMMAND ----------
 
