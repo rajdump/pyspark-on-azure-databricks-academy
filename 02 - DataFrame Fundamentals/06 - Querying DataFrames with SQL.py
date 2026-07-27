@@ -284,6 +284,6 @@ except Exception as e:
 # MAGIC   new work
 # MAGIC - **Persisted tables** — for data that must outlive the session (later modules)
 # MAGIC
-# MAGIC Next up: **Module 3 — Transformations, Actions, and Lazy Evaluation** —
-# MAGIC why Spark waits to run work until an action, and how that affects the chains
-# MAGIC you already write.
+# MAGIC Next up: **Module 3 — NULL Semantics and Predicate Correctness** —
+# MAGIC deeper NULL-safe predicates and three-valued logic after Module 2's filter
+# MAGIC traps.
