@@ -20,6 +20,7 @@ By the end of this module, you'll be able to:
   identify optimizer changes
 - Differentiate **narrow transformations** (no data movement between
   partitions) from **wide transformations** (which require a **shuffle**)
+- Identify **`Exchange`** in the physical plan as a shuffle / stage boundary
 - Recognize common **shuffle triggers** such as `groupBy` and `orderBy`
 - Choose common DataFrame **actions** (`first`, `head`, `take`, `tail`,
   `isEmpty`, `toPandas`) and be aware of their driver-side memory risks
@@ -47,10 +48,12 @@ Four notebooks, in this order:
    - Inspect the plan with `.explain(mode="extended")`
    - See how the optimizer can apply a late filter earlier on one narrow chain
 3. **Narrow vs Wide Transformations**
-   - Compare narrow transformations (local to partition) and wide transformations
-     (require a shuffle)
-   - Identify `Exchange` in the physical plan as a shuffle boundary
-   - Recognize common shuffle triggers and their performance implications
+   - Inspect how rows are distributed across partitions
+   - Run a narrow transformation (`filter`) and confirm it does not shuffle
+     (no `Exchange`, one stage; rows stay in place)
+   - Run a wide transformation (`groupBy`) and identify `Exchange` as the
+     shuffle / stage boundary; confirm in Spark UI
+   - Review common shuffle triggers (deep tuning deferred to Module 16)
 4. **Common DataFrame Actions**
    - Use `first()`, `head()`, `take()`, `tail()`, `isEmpty()`, and `toPandas()`
    - Understand the driver-side memory risks of actions that return many rows
