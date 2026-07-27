@@ -2,10 +2,11 @@
 # MAGIC %md
 # MAGIC # Transformations vs Actions
 # MAGIC
-# MAGIC Every DataFrame pipeline uses two kinds of operations. **Transformations**
-# MAGIC describe the rows and columns you want; **actions** ask Spark to produce a
-# MAGIC result. Knowing which is which helps you read a pipeline and recognize when
-# MAGIC Spark will begin processing data.
+# MAGIC Transformations such as **`select()`**, **`filter()`**, and
+# MAGIC **`withColumn()`** define processing steps and return new DataFrames without
+# MAGIC immediately processing the data. Actions such as **`show()`**, **`count()`**,
+# MAGIC or **`df.write.save(...)`** trigger Spark to execute the accumulated plan
+# MAGIC and produce output.
 # MAGIC
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
 # MAGIC - Distinguish transformations, which return DataFrames and extend logical
