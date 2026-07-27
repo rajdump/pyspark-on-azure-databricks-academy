@@ -196,9 +196,10 @@ df.na.fill({"tip_amount": 0.0, "payment_method": "unknown"}).show()
 # MAGIC %md
 # MAGIC ## Replace known values with `na.replace`
 # MAGIC
-# MAGIC **`df.na.replace(...)`** swaps one known value for another (including
-# MAGIC **`None`** → Spark **`NULL`**). It does not replace existing **`NULL`**
-# MAGIC values — use **`na.fill`** for those.
+# MAGIC **`df.na.replace(...)`** swaps one known value for another. Pass Python
+# MAGIC **`None`** as the replacement to write Spark **`NULL`** (for example,
+# MAGIC replace **`"N/A"`** with **`None`**). It does not replace existing
+# MAGIC **`NULL`** values — use **`na.fill`** for those.
 
 # COMMAND ----------
 
