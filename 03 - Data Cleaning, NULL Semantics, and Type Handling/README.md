@@ -17,8 +17,8 @@ By the end of this module, you'll be able to:
   trap, and `eqNullSafe` / `<=>`
 - Identify missing data disguised as `NULL`, blank strings, sentinels, and
   `NaN`; normalize to real `NULL` before drop/fill decisions
-- Use `na.drop`, `na.fill`, and `na.replace`; distinguish `F.coalesce` from
-  partition `coalesce`
+- Use `na.drop`, `na.fill`, and `na.replace`; use `F.coalesce` for column
+  fallbacks (not partition `DataFrame.coalesce(n)`)
 - Cast columns with `cast` and `try_cast`; detect rows rejected by a cast
 - Handle numeric overflow and unparseable dates/timestamps with Spark 4 /
   ANSI `try_*` helpers
@@ -45,7 +45,7 @@ Four notebooks, in this order:
    - Normalize blanks, sentinels, and `NaN` to `NULL` before `na.drop` /
      `na.fill`
    - `na.drop` (`how="any"` / `"all"`, `subset`), `na.fill`, `na.replace`
-   - `F.coalesce` vs `DataFrame.coalesce(n)` gotcha
+   - `F.coalesce` for column fallbacks (not partition `DataFrame.coalesce(n)`)
 3. **Safe Type Casting**
    - `cast` vs `try_cast` under Spark 4 / ANSI mode
    - Rejected-row pattern: `source.isNotNull() & casted.isNull()`
