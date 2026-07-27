@@ -45,9 +45,9 @@
 # MAGIC - **`request_to_pickup_mins`** — **`-1`** as a missing sentinel
 # MAGIC - one row with both tip and request-to-pickup time missing
 # MAGIC
-# MAGIC > **Note:** In this notebook, **`tip_amount`** is intentionally typed as
-# MAGIC > **`double`** so **`NaN`** behavior can be demonstrated with
-# MAGIC > **`na.drop`** / **`na.fill`**.
+# MAGIC > **Note:** **`tip_amount`** is intentionally **`double`** in this notebook
+# MAGIC > so we can demonstrate **`NaN`** behavior with **`na.drop`** /
+# MAGIC > **`na.fill`**.
 
 # COMMAND ----------
 
