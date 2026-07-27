@@ -41,7 +41,7 @@ rather than assuming prior exposure.
   examples by default; only switch datasets when a topic genuinely requires
   it, and explain why.
 - Prefer DataFrame API and Spark SQL side by side where both are idiomatic,
-  so learners recognize both forms in the wild (Module 10 formalizes this).
+  so learners recognize both forms in the wild (Module 9 formalizes this).
 
 ## Production framing
 

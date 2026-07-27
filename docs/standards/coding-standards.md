@@ -1,7 +1,7 @@
 # Coding Standards
 
 Canonical owner of all Python coding rules for this repository — notebook
-code today, `src/` code once it's introduced (Module 14+). Referenced by
+code today, `src/` code once it's introduced (Module 13+). Referenced by
 `.cursor/rules/learner-notebooks.mdc`, `/write-lesson`, `/validate-notebook`,
 and `/review-module` (and later `.cursor/rules/python-modules.mdc`) — do not
 duplicate this content elsewhere. Shared read list:
@@ -26,7 +26,7 @@ duplicate this content elsewhere. Shared read list:
   strings are fine in the earliest DataFrame-fundamentals material before
   `col()` is taught.
 - Avoid UDFs when a built-in function achieves the same result — see
-  Module 7 for the built-in-functions-first philosophy. When a UDF truly is
+  Module 6 for the built-in-functions-first philosophy. When a UDF truly is
   necessary, explain why in a comment.
 - Avoid `.collect()` / `.toPandas()` on data that isn't already known to be
   small; when used for teaching purposes on the small rideshare dataset,
@@ -44,7 +44,7 @@ duplicate this content elsewhere. Shared read list:
   `SparkSession`/`DataFrame` as a parameter instead, so functions stay
   testable without a live cluster.
 - Pure, non-Spark-dependent logic is preferred where feasible, specifically
-  so it can be covered by local `pytest` tests (Module 18) without needing
+  so it can be covered by local `pytest` tests (Module 17) without needing
   Databricks Connect or a running cluster.
 
 ## Security and portability

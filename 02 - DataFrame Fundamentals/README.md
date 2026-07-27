@@ -102,7 +102,7 @@ Six notebooks, in this order:
 This module uses small, **ad-hoc** rideshare-flavored DataFrames (built by
 hand in code), aligned with column names and types from
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
-File-based reading begins in Module 6.
+File-based reading begins in Module 5.
 
 ## Exercises
 

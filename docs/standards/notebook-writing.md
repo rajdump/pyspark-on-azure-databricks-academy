@@ -61,7 +61,7 @@ Every learner notebook follows this shape:
 ## Code cell conventions
 
 - Prefer the DataFrame API and `pyspark.sql.functions` (imported as `F`)
-  unless the notebook's explicit purpose is to teach Spark SQL (Module 10).
+  unless the notebook's explicit purpose is to teach Spark SQL (Module 9).
 - Show, don't just tell: every new API introduced gets a runnable example
   against the rideshare dataset before being used in an exercise.
 - Keep cells focused — one idea per cell — so a learner can run cells

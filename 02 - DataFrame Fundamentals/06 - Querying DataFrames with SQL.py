@@ -284,6 +284,6 @@ except Exception as e:
 # MAGIC   new work
 # MAGIC - **Persisted tables** — for data that must outlive the session (later modules)
 # MAGIC
-# MAGIC Next up: **Module 3 — NULL Semantics and Predicate Correctness** —
-# MAGIC deeper NULL-safe predicates and three-valued logic after Module 2's filter
-# MAGIC traps.
+# MAGIC Next up: **Module 3 — Data Cleaning, NULL Semantics, and Type Handling** —
+# MAGIC normalize messy values and write NULL-aware predicates on hand-built
+# MAGIC DataFrames after Module 2's filter traps.

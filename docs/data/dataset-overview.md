@@ -10,7 +10,7 @@ elsewhere. Shared read list: @docs/standards/notebook-authoring-checklist.md.
 This is the single running example threaded through every module. It is
 intentionally small and transformation-friendly, so the same data supports
 everything from hand-built DataFrames in Module 1 through Delta/Unity
-Catalog work in Modules 11–13.
+Catalog work in Modules 10–12.
 
 ## Core logical tables
 
@@ -75,13 +75,13 @@ part of this initial setup.
 - `trip.dropoff_location_id = zone_lookup.location_id`
 
 `zone_lookup` is referenced twice (pickup and dropoff), which makes it
-useful for teaching multiple joins to the same lookup table (Module 8).
+useful for teaching multiple joins to the same lookup table (Module 7).
 
 ## Supplementary dataset: `drivers` (nested XML)
 
 `drivers.xml` is a nested, non-flat dataset — 12 `<driver>` records — kept
 separately from the 4 core logical tables above. It exists specifically to
-teach nested-structure reading and `explode()` (Module 6 for the read, Module 7
+teach nested-structure reading and `explode()` (Module 5 for the read, Module 6
 for complex-type handling), not as a fifth core table.
 
 | Field | Type |
@@ -99,12 +99,12 @@ Joinable back to the core tables after flattening:
 
 In addition to the static bulk files below, the `payment` table also has a
 live source in an **Azure SQL Database**. This is used specifically for
-Module 6's reader/writer exercise: connect via JDBC from Azure Databricks
+Module 5's reader/writer exercise: connect via JDBC from Azure Databricks
 (not locally), read `payment` from Azure SQL Database, and write the result
 to `data/raw/avro/` as an Avro file. This is why `data/raw/avro/` starts
-empty in this initial setup — it is populated as Module 6 content, not as a
+empty in this initial setup — it is populated as Module 5 content, not as a
 repository-setup data-prep step. Connection details (server name, auth
-method, secret scope) are Module 6 design, documented there, and are never
+method, secret scope) are Module 5 design, documented there, and are never
 committed to this repository.
 
 ## File layout
@@ -114,7 +114,7 @@ data/raw/
 ├── csv/        trip.csv, trip_time.csv, payment.csv, zone_lookup.csv
 ├── json/       trip.json, trip_time.json, payment.json, zone_lookup.json
 ├── parquet/    trip.parquet, trip_time.parquet, payment.parquet, zone_lookup.parquet
-├── avro/       (empty at setup — populated by Module 6's Azure SQL Database exercise)
+├── avro/       (empty at setup — populated by Module 5's Azure SQL Database exercise)
 └── xml/
     └── drivers.xml
 ```
@@ -122,13 +122,13 @@ data/raw/
 - JSON files are newline-delimited (JSON Lines) — reads cleanly in Spark.
 - Parquet files preserve intended types, including decimals.
 - CSV and JSON drive the ingestion-format lessons, where explicit schemas
-  are taught alongside `inferSchema` (Module 6).
+  are taught alongside `inferSchema` (Module 5).
 
 ## Note on scale
 
 This dataset is intentionally tiny (100/100/100/20 rows). It's sized for
 fast iteration while learning syntax and patterns — it is not meant to
-demonstrate shuffle, spill, or skew behavior at volume. Module 17
+demonstrate shuffle, spill, or skew behavior at volume. Module 16
 (Performance and Spark Internals) uses this same data for syntax and
 plan-reading; real performance-at-scale behavior is out of scope for this
 course.
