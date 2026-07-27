@@ -162,9 +162,10 @@ df.filter(F.col("payment_method").isNull()).show()
 # MAGIC **`NULL`**. A **`NULL`** can also enter a condition through a Python list
 # MAGIC passed to **`isin(...)`**.
 # MAGIC
-# MAGIC Operations maintains a list of pickup zone IDs where trips are not
-# MAGIC allowed. Filter with **`isin(...)`** and negate with **`~`** to keep
-# MAGIC allowed trips.
+# MAGIC Operations maintains a blocklist of pickup zone IDs. Build
+# MAGIC **`~F.col("pickup_location_id").isin(blocked)`** to keep trips whose zone is
+# MAGIC **not** on the list — **`~`** applies **`NOT`** to the **`isin(...)`**
+# MAGIC condition result.
 # MAGIC
 # MAGIC **Business question:** Which trips did **not** pick up in zones **74** or
 # MAGIC **231**?
@@ -178,9 +179,9 @@ df.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`isin(blocked)`** returns **`TRUE`** for a blocked location. The **`~`**
-# MAGIC operator reverses the result, so the filter keeps locations that are not
-# MAGIC blocked.
+# MAGIC **`isin(blocked)`** returns **`TRUE`** when **`pickup_location_id`** is on the
+# MAGIC blocklist. Prefix **`~`** to apply **`NOT`** to that condition result. The
+# MAGIC filter keeps rows where **`~isin(...)`** is **`TRUE`** — allowed zones.
 
 # COMMAND ----------
 
@@ -191,8 +192,8 @@ df.filter(~F.col("pickup_location_id").isin(blocked)).show()
 
 # MAGIC %md
 # MAGIC **Business question:** Same rule — exclude zones **74** and **231** — but
-# MAGIC the upstream blocklist accidentally includes a missing value (**`None`**).
-# MAGIC Run the filter again. Why do you get no rows?
+# MAGIC the upstream blocklist accidentally includes Python **`None`**. Run the
+# MAGIC filter again. Why do you get no rows?
 # MAGIC
 # MAGIC PySpark treats Python **`None`** as **`NULL`** when it builds the
 # MAGIC **`isin(...)`** condition.
@@ -205,38 +206,40 @@ df.filter(~F.col("pickup_location_id").isin(blocked_with_null)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You expected trip **`1001`** (zone **`138`**) to pass, as it is not blocked.
-# MAGIC However, the filter returns **no rows**. Walk through each trip using the
-# MAGIC same three-valued logic as the reward example above.
+# MAGIC You expected trip **`1001`** (zone **`138`**) to pass, as it is not on the
+# MAGIC blocklist. However, the filter returns **no rows**. For each trip, trace the
+# MAGIC condition **`~F.col("pickup_location_id").isin(...)`** — the same
+# MAGIC **`TRUE` / `FALSE` / `NULL`** outcomes as the reward example.
 # MAGIC
 # MAGIC - Trip **`1002`** (zone **`74`**) and trip **`1003`** (zone **`231`**):
-# MAGIC   **`isin(...)`** is **`TRUE`**, so **`~`** reverses it to **`FALSE`**. The
-# MAGIC   filter drops them — as intended.
+# MAGIC   **`isin(...)`** is **`TRUE`** (blocked). **`~`** applies **`NOT`**, so the
+# MAGIC   condition is **`FALSE`**. The filter drops these rows — as intended.
 # MAGIC - Trip **`1001`** (zone **`138`**): **`138`** is not blocked, but
-# MAGIC   **`isin(...)`** also compares **`138 == NULL`** because Python **`None`**
-# MAGIC   in the list becomes **`NULL`**. That third comparison is **`NULL`**, not
-# MAGIC   **`FALSE`**. **`FALSE OR FALSE OR NULL`** is **`NULL`**, and **`NOT NULL`**
-# MAGIC   stays **`NULL`**. The filter drops trip **`1001`** even though zone
-# MAGIC   **`138`** is allowed.
-# MAGIC - Trip **`1004`** (missing **`pickup_location_id`**): comparisons against
-# MAGIC   the list also produce **`NULL`**, so **`~`** still yields **`NULL`**.
+# MAGIC   **`isin(...)`** also runs **`138 == NULL`** because Python **`None`** in
+# MAGIC   the list becomes **`NULL`**. That comparison is **`NULL`**, not
+# MAGIC   **`FALSE`**. With **`OR`**, **`FALSE OR FALSE OR NULL`** is **`NULL`**.
+# MAGIC   **`~`** applies **`NOT`**, and **`NOT NULL`** is **`NULL`**. The filter
+# MAGIC   drops trip **`1001`** even though zone **`138`** is allowed.
+# MAGIC - Trip **`1004`** (**`pickup_location_id`** is **`NULL`**): comparisons inside
+# MAGIC   **`isin(...)`** produce **`NULL`**, so **`~`** still yields **`NULL`**. The
+# MAGIC   filter drops this row too.
 # MAGIC
-# MAGIC **Takeaway:** One **`NULL`** inside an **`isin`** list can break the negated
-# MAGIC condition for every row that is not explicitly blocked. The filter keeps
-# MAGIC only **`TRUE`**, so **`FALSE`** and **`NULL`** both disappear — and here,
-# MAGIC no row reaches **`TRUE`**.
+# MAGIC **Takeaway:** Python **`None`** in the blocklist adds a **`NULL`** branch to
+# MAGIC **`isin(...)`**. After **`~`**, rows that are not explicitly blocked can
+# MAGIC still get condition result **`NULL`**, not **`TRUE`**. The filter keeps only
+# MAGIC **`TRUE`**, so every row disappears.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC **Business question:** Rebuild the blocklist without **`None`**, then decide
-# MAGIC separately whether trips with a missing **`pickup_location_id`** should be
-# MAGIC kept or dropped.
+# MAGIC separately whether trips whose **`pickup_location_id`** is **`NULL`** should
+# MAGIC be kept or dropped.
 # MAGIC
 # MAGIC The next filter keeps:
 # MAGIC
-# MAGIC - rows whose pickup location is **`NULL`**
-# MAGIC - rows whose known pickup location is not blocked
+# MAGIC - rows whose **`pickup_location_id`** column value is **`NULL`**
+# MAGIC - rows whose **`pickup_location_id`** is known and not on the blocklist
 
 # COMMAND ----------
 
@@ -251,12 +254,12 @@ df.filter(location_allowed).select("trip_id", "pickup_location_id").show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The **`isNull()`** condition keeps rows with an unknown pickup location.
-# MAGIC For known locations, the negated **`isin(...)`** condition keeps only
-# MAGIC locations that are not blocked.
+# MAGIC The **`isNull()`** branch keeps rows whose **`pickup_location_id`** column
+# MAGIC value is **`NULL`**. For non-**`NULL`** locations, **`~isin(safe_blocked)`**
+# MAGIC keeps zones not on the blocklist.
 # MAGIC
-# MAGIC This pipeline chooses to **keep** unknown locations. If the pipeline
-# MAGIC should **reject** them, leave out the **`isNull()`** condition.
+# MAGIC This pipeline **keeps** rows with a **`NULL`** pickup location. To **drop**
+# MAGIC them instead, remove the **`isNull()`** branch.
 
 # COMMAND ----------
 
@@ -326,9 +329,9 @@ reward_decisions.show()
 
 # MAGIC %md
 # MAGIC Only trip **`1001`** is eligible: it is the sole row where both intermediate
-# MAGIC conditions are **`TRUE`**. Trip **`1003`** shows why **`NULL`** results
-# MAGIC matter — the reward condition is unknown, so the combined rule is not
-# MAGIC **`TRUE`** even when the location is allowed.
+# MAGIC conditions are **`TRUE`**. Trip **`1003`** shows why a **`NULL`** condition
+# MAGIC result matters — the reward rule is **`NULL`**, so the combined rule is not
+# MAGIC **`TRUE`** even when the location rule is **`TRUE`**.
 
 # COMMAND ----------
 
