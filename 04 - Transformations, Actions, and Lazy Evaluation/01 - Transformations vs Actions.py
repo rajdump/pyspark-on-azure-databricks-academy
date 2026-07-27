@@ -188,91 +188,125 @@ print("Number of records:", review_count)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Classify an unfamiliar API
+# MAGIC ## Let's see more examples
 # MAGIC
-# MAGIC **Business question:** You inherit a pipeline that calls **`limit`**,
-# MAGIC **`orderBy`**, and **`printSchema`**. Which of them process data?
-
-# COMMAND ----------
-
-limited_trips = trips.limit(2)
-sorted_trips = trips.orderBy(F.col("trip_distance_miles").desc())
-
-print("limit(2) returned: ", type(limited_trips).__name__)
-print("orderBy() returned:", type(sorted_trips).__name__)
+# MAGIC Each example below builds its own DataFrame and its own transformation
+# MAGIC chain, then calls one action. Classify every step as you read.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Both returned a **`DataFrame`** and printed nothing, so both are
-# MAGIC transformations. **`limit(2)`** reads as if it fetches two rows and
-# MAGIC **`orderBy`** reads as if it sorts them, but neither touches data until an
-# MAGIC action runs. Add the action, and the rows appear.
-
-# COMMAND ----------
-
-limited_trips.show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC A method's return type on its own is not a reliable test either.
-# MAGIC **`printSchema()`** returns **`None`**, exactly like **`show()`**, and
-# MAGIC **`columns`** returns a Python list — yet neither processes rows. Both read
-# MAGIC only the schema Spark already holds.
-
-# COMMAND ----------
-
-schema_result = trips.printSchema()
-
-print("printSchema() returned:", type(schema_result).__name__)
-print("columns returned:      ", type(trips.columns).__name__, trips.columns)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Classify by what a call does, not by what it returns:
+# MAGIC ## Chain transformations before a single action — example 1
 # MAGIC
-# MAGIC - **Transformation** — returns a new DataFrame and extends its logical plan
-# MAGIC   without processing rows: **`select`**, **`filter`** / **`where`**,
-# MAGIC   **`withColumn`**, **`limit`**, **`orderBy`**
-# MAGIC - **Action** — triggers execution and returns a result, displays output, or
-# MAGIC   writes data to storage: **`show`**, **`count`**
-# MAGIC - **Neither** — reads metadata Spark already holds: **`printSchema`**,
-# MAGIC   **`columns`**
+# MAGIC **Business question:** Which standard-service trips lasted 20 minutes or
+# MAGIC more, and what is each trip's distance in kilometers?
+
+# COMMAND ----------
+
+ops_review = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    [
+        (2001, "standard", Decimal("4.10"), 15),
+        (2002, "standard", Decimal("7.80"), 24),
+        (2003, "premium", Decimal("9.20"), 28),
+        (2004, "standard", Decimal("5.50"), 22),
+        (2005, "shared", Decimal("3.40"), 19),
+    ],
+    """
+    trip_id bigint,
+    service_type string,
+    trip_distance_miles decimal(8,2),
+    ride_duration_mins int
+    """,
+)
+
+long_standard = (
+    ops_review.filter((F.col("service_type") == "standard") & (F.col("ride_duration_mins") >= 20))
+    .withColumn(
+        "trip_distance_km",
+        F.round(F.col("trip_distance_miles") * F.lit(1.60934), 2),
+    )
+    .select(
+        "trip_id",
+        "service_type",
+        "ride_duration_mins",
+        "trip_distance_km",
+    )
+)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Chain transformations before one action
-# MAGIC
-# MAGIC In a batch job, build the required result through transformations, then call
-# MAGIC the single action the job needs. Extra actions in the middle of a pipeline
-# MAGIC re-execute every step before them.
-# MAGIC
-# MAGIC **Business question:** The nightly review should list its trips longest
-# MAGIC first. How do you add that step and still execute the plan once?
+# MAGIC **`filter`**, **`withColumn`**, and **`select`** are transformations — the
+# MAGIC chain built a plan and printed nothing. Call one action to execute it.
 
 # COMMAND ----------
 
-nightly_review = review_trips.orderBy(F.col("trip_distance_miles").desc())
-
-nightly_review.show(truncate=False)
+long_standard.show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`orderBy`** extended the existing plan instead of starting a new one, and
-# MAGIC a single **`show()`** executed the filter, kilometer conversion, column
-# MAGIC selection, and sort together. Trip **`1005`** now appears first at
-# MAGIC **`11.50`** miles.
+# MAGIC Trips **`2002`** and **`2004`** meet both conditions. One **`show()`** ran
+# MAGIC the full chain.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Chain transformations before a single action — example 2
+# MAGIC
+# MAGIC **Business question:** For premium trips, what are the two longest rides by
+# MAGIC distance?
+
+# COMMAND ----------
+
+premium_trips = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    [
+        (3001, "premium", Decimal("6.40"), 18),
+        (3002, "standard", Decimal("12.00"), 40),
+        (3003, "premium", Decimal("11.10"), 32),
+        (3004, "premium", Decimal("3.90"), 14),
+        (3005, "premium", Decimal("8.75"), 26),
+    ],
+    """
+    trip_id bigint,
+    service_type string,
+    trip_distance_miles decimal(8,2),
+    ride_duration_mins int
+    """,
+)
+
+top_premium = (
+    premium_trips.filter(F.col("service_type") == "premium")
+    .orderBy(F.col("trip_distance_miles").desc())
+    .limit(2)
+    .select("trip_id", "trip_distance_miles", "ride_duration_mins")
+)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **`filter`**, **`orderBy`**, **`limit`**, and **`select`** are all
+# MAGIC transformations. **`orderBy`** and **`limit`** read as if they sort and
+# MAGIC fetch immediately, but neither processes rows until an action runs.
+
+# COMMAND ----------
+
+top_premium.show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Trips **`3003`** (**`11.10`** miles) and **`3005`** (**`8.75`** miles) are
+# MAGIC the two longest premium rides. Classify by whether a call extends the plan
+# MAGIC or executes it — not by how urgent the method name sounds.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Build a similar review with columns from the course **`payment`** schema:
+# MAGIC Build a similar isolated chain with columns from the course **`payment`**
+# MAGIC schema:
 # MAGIC
 # MAGIC 1. Create **`exercise_df`** with **`trip_id`** (`bigint`),
 # MAGIC    **`payment_method`** (`string`), **`base_fare_amount`**
@@ -282,10 +316,11 @@ nightly_review.show(truncate=False)
 # MAGIC 3. Add **`fare_and_tip_amount`** as **`base_fare_amount + tip_amount`**.
 # MAGIC 4. Select **`trip_id`**, **`payment_method`**, and
 # MAGIC    **`fare_and_tip_amount`**.
-# MAGIC 5. Before you run the chain, write down whether each of steps 2, 3, and 4 is
-# MAGIC    a transformation or an action, and do the same for **`printSchema()`**.
-# MAGIC 6. Call **`show()`** once, after the chain is complete, and check your
-# MAGIC    answers against what the cells printed.
+# MAGIC 5. Before you run anything, label each of steps 2–4 as a transformation or
+# MAGIC    an action.
+# MAGIC 6. Call **`show()`** once after the chain is complete.
+# MAGIC
+# MAGIC Do not reuse DataFrames from earlier sections.
 
 # COMMAND ----------
 
@@ -300,14 +335,15 @@ nightly_review.show(truncate=False)
 # MAGIC
 # MAGIC - **Transformations** return a new DataFrame and extend its logical plan
 # MAGIC   without processing rows — **`select`**, **`filter`** / **`where`**,
-# MAGIC   **`withColumn`**, **`limit`**, **`orderBy`**
+# MAGIC   **`withColumn`**, **`orderBy`**, **`limit`**
 # MAGIC - **Actions** trigger execution and return a result, display output, or
 # MAGIC   write data — **`show`**, **`count`**
-# MAGIC - **Return type is not the test** — **`printSchema()`** returns **`None`**
-# MAGIC   just like **`show()`**, but processes no rows
-# MAGIC - **Source DataFrames are never modified** — each transformation builds a new
-# MAGIC   plan, so a shared source stays usable by other reports
-# MAGIC - **One action per result** — every action re-executes the plan behind it
+# MAGIC - **Source DataFrames are never modified** — each transformation builds a
+# MAGIC   new plan
+# MAGIC - **Chain transformations, then call one action** — every action re-executes
+# MAGIC   the plan behind it
+# MAGIC - **Method names can mislead** — **`orderBy`** and **`limit`** are still
+# MAGIC   transformations until an action runs
 # MAGIC
 # MAGIC Next up: **Lazy Evaluation and the Query Plan** — why Spark waits for an
 # MAGIC action and how to inspect the plan it builds.

@@ -38,8 +38,10 @@ Four notebooks, in this order:
 1. **Transformations vs Actions**
    - Distinguish transformations (new DataFrame, logical plan) from actions
      (executes plan, returns result)
-   - Classify common APIs as transformations or actions
-   - Chain transformations before a single action
+   - Chain transformations before a single action — example 1
+     (`filter`, `withColumn`, `select`)
+   - Chain transformations before a single action — example 2
+     (`filter`, `orderBy`, `limit`, `select`)
 2. **Lazy Evaluation and the Query Plan**
    - Explain why Spark waits for an action (`show`, `count`, `write`)
    - Inspect query plans with `.explain()`
