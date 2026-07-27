@@ -149,9 +149,7 @@ print("Rows in labeled_trips:", row_count)
 # MAGIC - **Action:** executes a plan and produces output or a non-DataFrame result
 # MAGIC   — **`show`** and **`count`**
 # MAGIC
-# MAGIC Run several familiar calls and inspect their Python return types. The
-# MAGIC **`limit`** call only creates a smaller DataFrame plan. The following
-# MAGIC **`show`** action is what displays its rows.
+# MAGIC Run few familiar transformations and inspect their Python return types.
 
 # COMMAND ----------
 
@@ -165,19 +163,18 @@ print("limit(...)  ->", type(limit_result).__name__, "(transformation)")
 
 # COMMAND ----------
 
-limited_show_result = limit_result.show()
-limited_count_result = limit_result.count()
-
-print("show()  ->", type(limited_show_result).__name__, "(action)")
-print("count() ->", type(limited_count_result).__name__, "(action)")
+# MAGIC %md
+# MAGIC Run few familiar actions and inspect their return types.
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC The method name alone is not a reliable test. For example, **`limit(2)`**
-# MAGIC sounds as if it retrieves two rows, but it returns a DataFrame and is a
-# MAGIC transformation. **`limit(2).show()`** displays those rows because
-# MAGIC **`show()`** is the action.
+print("show()  ->", type(select_result.show()).__name__, "(action)")
+
+
+# COMMAND ----------
+
+print("count()  ->", type(where_result.count()).__name__, "(action)")
+print(where_result.count())
 
 # COMMAND ----------
 
