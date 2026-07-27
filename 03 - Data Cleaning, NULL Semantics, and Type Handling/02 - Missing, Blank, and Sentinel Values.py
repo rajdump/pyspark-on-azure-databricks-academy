@@ -39,6 +39,10 @@
 # MAGIC - **`tip_amount`** — `NULL` and **`NaN`**
 # MAGIC - **`request_to_pickup_mins`** — **`-1`** as a missing sentinel
 # MAGIC - one row with both tip and request-to-pickup time missing
+# MAGIC
+# MAGIC > **Note:** In this notebook, **`tip_amount`** is intentionally typed as
+# MAGIC > **`double`** so **`NaN`** behavior can be demonstrated with
+# MAGIC > **`na.drop`** / **`na.fill`**.
 
 # COMMAND ----------
 
@@ -56,13 +60,16 @@ rows = [
 
 schema_ddl = "trip_id bigint, payment_method string, tip_amount double, request_to_pickup_mins int"
 
-df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+df = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    rows,
+    schema_ddl,
+)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC Confirm the sample rows before cleaning — the same habit as inspection in
-# MAGIC the previous notebook.
+# MAGIC Notebook 01.
 
 # COMMAND ----------
 
@@ -73,8 +80,8 @@ df.show()
 # MAGIC %md
 # MAGIC ## Recognize `NULL`, blanks, sentinels, and `NaN`
 # MAGIC
-# MAGIC **Business question:** What forms of "missing" appear in this sample, and
-# MAGIC which ones does Spark treat as a real **`NULL`** on read?
+# MAGIC **Business question:** Operations needs a quick profile of which values are
+# MAGIC true **`NULL`** values and which are missing-value disguises.
 # MAGIC
 # MAGIC When PySpark creates this DataFrame, each Python **`None`** becomes a Spark
 # MAGIC **`NULL`**. Empty strings, spaces, **`"N/A"`**, and **`-1`** remain regular
@@ -93,8 +100,8 @@ df.show()
 # MAGIC It does not remove blank strings, spaces, sentinels, or **`-1`** until those
 # MAGIC values are normalized.
 # MAGIC
-# MAGIC **Business question:** Which trips can be dropped when any column is
-# MAGIC missing?
+# MAGIC **Business question:** Operations needs to drop trips when any checked
+# MAGIC column is missing.
 
 # COMMAND ----------
 
@@ -229,8 +236,8 @@ df.na.replace(["Card", "Cash"], ["card", "cash"], "payment_method").show()
 # MAGIC %md
 # MAGIC ## Normalize first, then drop or fill
 # MAGIC
-# MAGIC **Business question:** How can operations turn every missing-value disguise
-# MAGIC into a real **`NULL`** before choosing drop vs fill per column?
+# MAGIC **Business question:** Operations needs every missing-value disguise turned
+# MAGIC into a real **`NULL`** before choosing drop vs fill per column.
 # MAGIC
 # MAGIC This pipeline converts:
 # MAGIC
@@ -294,9 +301,8 @@ normalized.withColumn(
 # MAGIC %md
 # MAGIC ## Chain cleaning into an operations-style output
 # MAGIC
-# MAGIC **Business question:** How can operations standardize missing-value
-# MAGIC markers, handle each column appropriately, and produce a reporting-ready
-# MAGIC payment view?
+# MAGIC **Business question:** Operations needs a reporting-ready payment view with
+# MAGIC standardized missing-value handling for each column.
 # MAGIC
 # MAGIC Start with **`normalized`**, where blanks and sentinels are already
 # MAGIC **`NULL`**. Remove trips without a request-to-pickup time, fill a missing tip
