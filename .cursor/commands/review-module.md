@@ -2,6 +2,8 @@ Review an entire module folder for completeness and consistency. This is an
 authoring-quality check in Cursor, not runtime validation, and it never
 writes roadmap status or validation evidence.
 
+Response format: @.cursor/rules/notebook-command-output.mdc
+
 Given a module folder (ask which one if not obvious from context), check:
 
 1. **README completeness** — the module's `README.md` has clear learning
@@ -23,9 +25,6 @@ Given a module folder (ask which one if not obvious from context), check:
    @docs/data/dataset-overview.md.
 6. **No leaked evidence** — validation results, tokens, workspace URLs, or
    personal identifiers do not appear anywhere in the module folder.
-
-Output a single findings summary grouped by check, with specific file/cell
-references for anything that needs fixing.
 
 Do not update `COURSE_MODULES.md` status or create/edit anything under
 `docs/validation/` — those remain author-owned, filled in only after real

@@ -1,5 +1,7 @@
 Scaffold a new learner-facing notebook for the current module.
 
+Response format: @.cursor/rules/notebook-command-output.mdc
+
 Before writing anything, read @docs/standards/notebook-authoring-checklist.md
 and follow its **Required reads** and **Scaffold bar** sections.
 

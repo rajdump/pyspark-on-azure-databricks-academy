@@ -1,5 +1,7 @@
 Write the full runnable content for a learner notebook in the current module.
 
+Response format: @.cursor/rules/notebook-command-output.mdc
+
 This command loads the same standards as `/validate-notebook`. Do not use
 normal chat as a substitute — read every file in the checklist before
 writing.

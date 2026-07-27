@@ -3,6 +3,8 @@ issues. This is a Cursor-side quality check, not a substitute for running
 the notebook in Azure Databricks — it never produces or edits runtime
 validation evidence.
 
+Response format: @.cursor/rules/notebook-command-output.mdc
+
 Before reviewing, read @docs/standards/notebook-authoring-checklist.md and
 apply its **Required reads**, **Additional reads** (when relevant), and
 **Full-lesson bar** as the review standard.
@@ -28,13 +30,6 @@ Also check for:
 - Missing "Minimum privileges required" section in the module README if the
   notebook uses Unity Catalog objects beyond default access (see
   @docs/standards/permissions-and-governance.md)
-
-Output format (issues only):
-
-- If nothing deviates: one short line — e.g. "No authoring issues found."
-- If something deviates: list only issues, grouped by standard — cell
-  reference and specific fix for each. No pass tables, no "OK" rows, no long
-  summaries.
 
 Do not modify `COURSE_MODULES.md` or any file under `docs/validation/`,
 and do not mark anything as runtime-validated — only Azure Databricks

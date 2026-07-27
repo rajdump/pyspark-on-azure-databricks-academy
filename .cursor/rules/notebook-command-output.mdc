@@ -1,0 +1,38 @@
+---
+description: Minimal response format for /new-lesson, /write-lesson, /validate-notebook, /review-module
+alwaysApply: false
+---
+
+# Notebook slash-command responses
+
+When finishing `/new-lesson`, `/write-lesson`, `/validate-notebook`, or
+`/review-module`, keep the **user-facing reply minimal**.
+
+## Do not include
+
+- Pass / OK / "Verdict: Pass" sections or checklists with all-green rows
+- Tables summarizing what already meets standards
+- Repeated standards text from docs
+- Full notebook or module recaps unless the author asked for them
+
+## `/new-lesson`
+
+- Path of the scaffold created
+- One line: next step → `/write-lesson`, then `/validate-notebook`
+- Only mention gaps if scaffolding could not be completed
+
+## `/write-lesson`
+
+- Path edited
+- One line: next step → `/validate-notebook`, then Databricks runtime validation
+- Only mention blockers (missing skeleton, missing README bullet, etc.)
+
+## `/validate-notebook` and `/review-module`
+
+**Issues only.**
+
+- If nothing fails: one line — e.g. `No authoring issues found.`
+- If something fails: bullet list — `[file]` or `[file ~lines]` → what's wrong → specific fix
+- Group by topic only when there are many issues; never list passed checks
+- Mark non-blocking polish as `(optional)`; do not mix with blocking issues
+- Do not restate review checklist categories as Pass/Fail tables
