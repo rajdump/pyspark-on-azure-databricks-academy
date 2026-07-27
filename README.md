@@ -62,8 +62,9 @@ workflow.
 
 ## Where to start
 
-- **Full roadmap:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — all 20 modules, their purpose, and status
-- **Current module:** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/) — start here
+- **Full roadmap:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — all 19 modules, their purpose, and status
+- **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
+- **Currently authoring:** [`03 - Data Cleaning, NULL Semantics, and Type Handling`](03%20-%20Data%20Cleaning,%20NULL%20Semantics,%20and%20Type%20Handling/)
 
 ## Repository conventions
 

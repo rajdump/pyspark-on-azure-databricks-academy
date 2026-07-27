@@ -159,7 +159,7 @@ df.select(
 # MAGIC
 # MAGIC **`.cast("type")`** converts a column's type. Cast with intent — some
 # MAGIC conversions lose precision. Deeper casting rules and failure modes come in
-# MAGIC a later module; here, cast only when the target type is clear (for example
+# MAGIC Module 3; here, cast only when the target type is clear (for example
 # MAGIC formatting an ID as text for a dashboard export).
 # MAGIC
 # MAGIC **`F.lit(value)`** wraps a plain Python value as a Column — the same

@@ -33,7 +33,7 @@
 # MAGIC DataFrame — a temporary view — not just a Python variable.
 # MAGIC
 # MAGIC Create one small DataFrame to reuse across every example. Column names and
-# MAGIC types match the `trip` table; file-based reads begin in a later module.
+# MAGIC types match the `trip` table; file-based reads begin in Module 5.
 
 # COMMAND ----------
 

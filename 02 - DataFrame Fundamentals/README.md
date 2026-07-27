@@ -85,7 +85,7 @@ Six notebooks, in this order:
    - `|`, `~`, `isin`, `between`, `like`
    - Intro NULL: `isNull` / `isNotNull`; why `== None` does not find NULLs
    - Empty string is not NULL (check separately)
-   - Deeper NULL semantics and quality pipelines stay for later modules
+   - Deeper NULL semantics and quality pipelines stay for Module 3
 6. **Querying DataFrames with SQL**
    - Short compare: same calculated column via `F.when`, `F.expr`, and
      `selectExpr`

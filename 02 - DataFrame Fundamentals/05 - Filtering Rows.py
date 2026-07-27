@@ -39,7 +39,7 @@
 # MAGIC - one `NULL` `ride_duration_mins`
 # MAGIC - one negative `trip_distance_miles`
 # MAGIC
-# MAGIC Deeper NULL semantics and full quality pipelines stay for later modules;
+# MAGIC Deeper NULL semantics and full quality pipelines stay for Module 3;
 # MAGIC here you learn the intro checks only.
 
 # COMMAND ----------
@@ -270,7 +270,7 @@ df.filter(F.col("ride_duration_mins").isNotNull()).show()
 
 # MAGIC %md
 # MAGIC > **Good to know:** Three-valued logic (`TRUE`, `FALSE`, `UNKNOWN`) and
-# MAGIC > NULL-safe predicates are covered in depth in a later module. Here, reach
+# MAGIC > NULL-safe predicates are covered in depth in Module 3. Here, reach
 # MAGIC > for **`isNull()`** / **`isNotNull()`** whenever the requirement mentions
 # MAGIC > missing values.
 
