@@ -134,7 +134,7 @@ review_payments.explain(mode="extended")
 # MAGIC filter, the projected columns, and the local relation that holds these
 # MAGIC hand-built rows.
 # MAGIC
-# MAGIC In this tiny in-memory example, the optimized plan can place the
+# MAGIC Spark optimized plan can place the
 # MAGIC `tip_amount > 0` filter before the derived columns, so the zero-tip row
 # MAGIC does not pay for `tip_inr` or `tip_band`.
 
