@@ -129,10 +129,11 @@ review_payments.explain(mode="extended")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Read the extended output from the bottom up for the logical stages, then
-# MAGIC the physical plan. You do not need every operator name yet — look for the
-# MAGIC filter, the projected columns, and the local relation that holds these
-# MAGIC hand-built rows.
+# MAGIC Read the extended output from the bottom up, you do not need every operator name yet — look for the filter, the projected columns, and the local relation that holds these hand-built rows.
+# MAGIC
+# MAGIC - Parsed / Analyzed plan: your written chain is still visible.
+# MAGIC - Optimized logical plan: Spark collapsed the whole chain into a LocalRelation.
+# MAGIC - Physical plan: Spark reads that as a LocalTableScan.
 # MAGIC
 # MAGIC Spark optimized plan can place the
 # MAGIC `tip_amount > 0` filter before the derived columns, so the zero-tip row

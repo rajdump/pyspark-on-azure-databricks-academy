@@ -2,9 +2,12 @@
 # MAGIC %md
 # MAGIC # Narrow vs Wide Transformations
 # MAGIC
-# MAGIC Notebook 02 showed lazy evaluation and how to inspect a query plan. That
-# MAGIC example used narrow transformations — Spark could process each partition
-# MAGIC without moving rows between workers.
+# MAGIC In Notebook 02, we learned how lazy evaluation allows Spark to build and
+# MAGIC optimize an execution plan before running it. We used `explain()` and the
+# MAGIC Spark UI to inspect that plan.
+# MAGIC
+# MAGIC The example used narrow transformations, which Spark could process without
+# MAGIC moving rows between partitions.
 # MAGIC
 # MAGIC This notebook compares **narrow** and **wide** transformations: why a wide
 # MAGIC step must move rows between partitions (a **shuffle**), how that appears as
