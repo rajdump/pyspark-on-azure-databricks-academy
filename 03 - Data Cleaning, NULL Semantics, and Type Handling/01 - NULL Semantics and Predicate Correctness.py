@@ -161,8 +161,8 @@ df.filter(F.col("payment_method").isNotNull()).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Business question:** A payment audit needs trips that have no payment
-# MAGIC method.
+# MAGIC **Business question:** A payment audit needs trips with no recorded
+# MAGIC payment method.
 
 # COMMAND ----------
 
@@ -180,9 +180,10 @@ df.filter(F.col("payment_method").isNull()).show()
 # MAGIC **Business question:** Compliance needs trips whose pickup zone is not **74**
 # MAGIC or **231**.
 # MAGIC
-# MAGIC Use **`~F.col("pickup_location_id").isin(blocked)`** — **`~`** applies
-# MAGIC **`NOT`** to the **`isin(...)`** condition result. Inspect
-# MAGIC **`pickup_location_id`** before you filter.
+# MAGIC Use **`~F.col("pickup_location_id").isin(blocked)`** to keep trips whose
+# MAGIC pickup zone is not in the blocklist.
+# MAGIC
+# MAGIC Check **`pickup_location_id`** values before you filter.
 
 # COMMAND ----------
 
@@ -217,7 +218,7 @@ df.filter(~F.col("pickup_location_id").isin(blocked)).show()
 # MAGIC
 # MAGIC The upstream blocklist includes Python **`None`**. Run the same filter.
 # MAGIC Why does it return no rows? PySpark treats Python **`None`** as **`NULL`**
-# MAGIC in the **`isin(...)`** condition.
+# MAGIC inside the **`isin(...)`** condition.
 
 # COMMAND ----------
 
@@ -244,7 +245,7 @@ df.filter(~F.col("pickup_location_id").isin(blocked_with_null)).show()
 
 # MAGIC %md
 # MAGIC **Business question:** Compliance needs trips whose pickup zone is not **74**
-# MAGIC or **231**, and also trips whose pickup zone is unknown.
+# MAGIC or **231**, plus trips with an unknown pickup zone.
 # MAGIC
 # MAGIC Strip **`None`** from the blocklist first. The filter below keeps:
 # MAGIC
@@ -319,7 +320,7 @@ df.select(
 # MAGIC ## Chain reward and pickup-zone rules
 # MAGIC
 # MAGIC **Business question:** Operations needs a per-trip report showing whether
-# MAGIC each trip passes the reward rule, the blocklist rule, and both together.
+# MAGIC each trip passes the reward rule, the blocklist rule, and final eligibility.
 # MAGIC
 # MAGIC Reward rule: payment method is **`"Card"`** and tip is at least **`$2.00`**.
 # MAGIC Blocklist rule: pickup zone is not **74** or **231**, or the pickup zone is
