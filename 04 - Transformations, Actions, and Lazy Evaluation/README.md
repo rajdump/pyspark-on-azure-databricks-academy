@@ -43,9 +43,9 @@ Four notebooks, in this order:
    - Chain transformations before a single action — example 2
      (`filter`, `orderBy`, `limit`, `select`)
 2. **Lazy Evaluation and the Query Plan**
-   - Explain why Spark waits for an action (`show`, `count`, `write`)
-   - Inspect query plans with `.explain()`
-   - Understand how the Spark optimizer reorders transformations
+   - Why Spark waits for an action before processing rows
+   - Inspect the plan with `.explain(mode="extended")`
+   - See how the optimizer can apply a late filter earlier on one narrow chain
 3. **Narrow vs Wide Transformations**
    - Compare narrow transformations (local to partition) and wide transformations
      (require a shuffle)
