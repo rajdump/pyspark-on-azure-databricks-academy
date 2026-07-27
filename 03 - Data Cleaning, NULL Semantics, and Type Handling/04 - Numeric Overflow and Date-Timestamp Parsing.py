@@ -167,39 +167,77 @@ max_duration.select(
 # MAGIC %md
 # MAGIC ## Handle aggregation overflow
 # MAGIC
-# MAGIC **`sum`** and **`avg`** can overflow when the result exceeds the column
-# MAGIC type. Here, **`base_fare_amount`** uses maximum decimal precision — summing
-# MAGIC two max values raises **`[ARITHMETIC_OVERFLOW]`**.
+# MAGIC **`sum`** and **`avg`** can overflow when the **result** exceeds what the
+# MAGIC target type can store — even when every individual value fits fine.
 # MAGIC
-# MAGIC **Business question:** Finance needs a total fare across all trips. What
-# MAGIC happens when the sum exceeds what the decimal type can store?
+# MAGIC Start with normal fares in the course **`decimal(10, 2)`** type. Each
+# MAGIC value is realistic; the aggregation succeeds.
 
 # COMMAND ----------
 
-huge_fares = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+daily_fares = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
     [
-        (Decimal("9" * 38),),
-        (Decimal("9" * 38),),
+        (Decimal("42.50"),),
+        (Decimal("38.75"),),
+        (Decimal("25.00"),),
     ],
-    "base_fare_amount decimal(38,0)",
+    "base_fare_amount decimal(10,2)",
 )
 
+daily_fares.show()
+
+# COMMAND ----------
+
+daily_fares.select(
+    F.sum("base_fare_amount").alias("total_fare"),
+    F.avg("base_fare_amount").alias("avg_fare"),
+).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **Business question:** Finance needs a total fare, but a downstream report
+# MAGIC expects **`decimal(4, 2)`** — at most **`99.99`**. Each trip fare fits that
+# MAGIC type on its own. What happens when the **sum** is **`100.00`**?
+
+# COMMAND ----------
+
+narrow_fares = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    [
+        (Decimal("45.00"),),
+        (Decimal("55.00"),),
+    ],
+    "base_fare_amount decimal(4,2)",
+)
+
+narrow_fares.show()
+
+# COMMAND ----------
+
 try:
-    huge_fares.select(F.sum("base_fare_amount")).show()
+    narrow_fares.select(F.sum("base_fare_amount").cast("decimal(4,2)")).show()
 except Exception as e:
     print(f"{type(e).__name__}: {str(e).splitlines()[0]}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`try_sum`** and **`try_avg`** return **`NULL`** for an overflowing
-# MAGIC result instead of stopping the aggregation.
+# MAGIC **`45.00`** and **`55.00`** each fit **`decimal(4, 2)`**. Their sum is
+# MAGIC **`100.00`**, which needs three digits before the decimal — one more than
+# MAGIC the type allows. Casting the total back to the narrow type raises
+# MAGIC **`[CAST_OVERFLOW]`**.
+# MAGIC
+# MAGIC **`try_sum`** and **`try_avg`** are the safe aggregation equivalents of
+# MAGIC **`try_add`**. Use them when the aggregation itself might overflow; use
+# MAGIC **`try_cast`** when you must narrow an already-computed total to a smaller
+# MAGIC type.
 
 # COMMAND ----------
 
-huge_fares.select(
+narrow_fares.select(
     F.expr("try_sum(base_fare_amount)").alias("safe_sum"),
     F.expr("try_avg(base_fare_amount)").alias("safe_avg"),
+    F.expr("try_cast(sum(base_fare_amount) AS decimal(4,2))").alias("safe_narrow_total"),
 ).show()
 
 # COMMAND ----------
