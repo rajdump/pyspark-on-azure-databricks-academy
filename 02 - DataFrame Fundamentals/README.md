@@ -43,9 +43,7 @@ with `spark.createDataFrame(rows, columns)` plus basic `show` / `display` /
 
 ## Notebook navigation
 
-Notebooks are added to this module using `/new-lesson` (skeleton),
-`/write-lesson` (full content), and `/validate-notebook` (authoring check) as
-they're authored, in this planned order:
+Six notebooks, in this order:
 
 1. **Creating DataFrames**
    - What a Spark DataFrame represents (technical foundation)
@@ -84,7 +82,7 @@ they're authored, in this planned order:
    - `filter` / `where` (alias); one-condition filters
    - Combine conditions: SQL `AND` in strings vs Column `&` (with
      parentheses); why Python `and` fails
-   - `|`, `~`, `isin`, `between`,`like`
+   - `|`, `~`, `isin`, `between`, `like`
    - Intro NULL: `isNull` / `isNotNull`; why `== None` does not find NULLs
    - Empty string is not NULL (check separately)
    - Deeper NULL semantics and quality pipelines stay for later modules
@@ -98,12 +96,6 @@ they're authored, in this planned order:
    - Global temporary views (`global_temp`) — recognize in existing code;
      classic compute only / not on serverless
    - Session view vs global view vs a persisted table (tables come later)
-
-Authoring approach for notebooks 3–6: redesign from scratch to Academy
-standards and framing; cover the topic surface of the prior reference
-notebooks without porting them verbatim. This list will be updated as
-notebooks are actually created — it reflects current planning, not a
-promise of final content.
 
 ## Dataset used
 

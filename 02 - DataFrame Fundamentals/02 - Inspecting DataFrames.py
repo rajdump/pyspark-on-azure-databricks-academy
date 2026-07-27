@@ -46,7 +46,7 @@ schema_ddl = (
     "trip_distance_miles decimal(8,2), ride_duration_mins int"
 )
 
-df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedVariable]
+df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
 
 # COMMAND ----------
 
@@ -88,7 +88,7 @@ df.show(2, vertical=True)
 
 # COMMAND ----------
 
-display(df)  # pyright: ignore[reportUndefinedVariable]
+display(df)  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
 
 # COMMAND ----------
 

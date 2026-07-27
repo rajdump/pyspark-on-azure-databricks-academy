@@ -162,8 +162,8 @@ df.createOrReplaceTempView("trips")
 # MAGIC %md
 # MAGIC ## Query with `%sql`
 # MAGIC
-# MAGIC **Business question:** Operations review needs service types and distances
-# MAGIC for mid-range trips (3–15 miles).
+# MAGIC **Business question:** A mid-range trip report needs service types and
+# MAGIC distances for trips between 3 and 15 miles.
 
 # COMMAND ----------
 

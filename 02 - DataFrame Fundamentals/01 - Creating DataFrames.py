@@ -44,6 +44,14 @@
 # MAGIC
 # MAGIC This is the most basic creation path. Spark infers types and assigns
 # MAGIC default column names like `_1`, `_2`, `_3`.
+# MAGIC
+# MAGIC > **Good to know:** Databricks injects **`spark`** when you attach compute
+# MAGIC > — it is not imported in the notebook. Local linters (`ruff`) analyze this
+# MAGIC > file as plain Python and report rule **F821** (undefined name **`spark`**).
+# MAGIC > The end-of-line **`noqa`** comment on the next code cell tells ruff to
+# MAGIC > ignore that warning there. Without it, **`ruff check` fails locally**; the
+# MAGIC > notebook still runs on Databricks. Later notebooks use the same comment
+# MAGIC > without repeating this note.
 
 # COMMAND ----------
 
@@ -53,7 +61,7 @@ rows_basic = [
     (1003, "Premium", 22.7),
 ]
 
-df_unnamed = spark.createDataFrame(rows_basic)
+df_unnamed = spark.createDataFrame(rows_basic)  # noqa: F821
 
 # COMMAND ----------
 
@@ -96,7 +104,7 @@ columns_named = [
     "ride_duration_mins",
 ]
 
-df_inferred = spark.createDataFrame(rows_named, columns_named)
+df_inferred = spark.createDataFrame(rows_named, columns_named)  # noqa: F821
 
 # COMMAND ----------
 
@@ -129,7 +137,7 @@ df_inferred.show(truncate=False)
 
 # COMMAND ----------
 
-from decimal import Decimal
+from decimal import Decimal  # noqa: E402
 
 rows_typed = [
     (1001, "Standard", 138, Decimal("12.40"), 18),
@@ -142,7 +150,7 @@ schema_ddl = (
     "trip_distance_miles decimal(8,2), ride_duration_mins int"
 )
 
-df_ddl = spark.createDataFrame(rows_typed, schema_ddl)
+df_ddl = spark.createDataFrame(rows_typed, schema_ddl)  # noqa: F821
 
 # COMMAND ----------
 
@@ -174,7 +182,14 @@ df_ddl.show(truncate=False)
 
 # COMMAND ----------
 
-from pyspark.sql.types import DecimalType, IntegerType, LongType, StringType, StructField, StructType
+from pyspark.sql.types import (  # noqa: E402
+    DecimalType,
+    IntegerType,
+    LongType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 schema_struct = StructType(
     [
@@ -186,7 +201,7 @@ schema_struct = StructType(
     ]
 )
 
-df_struct = spark.createDataFrame(rows_typed, schema_struct)
+df_struct = spark.createDataFrame(rows_typed, schema_struct)  # noqa: F821
 
 # COMMAND ----------
 
