@@ -58,15 +58,18 @@ trips.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Transformations return a new DataFrame
+# MAGIC ## Transformations return new DataFrames
 # MAGIC
-# MAGIC A **transformation** describes a change and returns a new DataFrame.
-# MAGIC **`select`**, **`filter`**, and **`withColumn`** are transformations you
-# MAGIC already use.
+# MAGIC A **transformation** defines a processing step and returns a new DataFrame.
+# MAGIC Methods such as **`select()`**, **`filter()`**, and **`withColumn()`** are
+# MAGIC transformations.
 # MAGIC
-# MAGIC Each transformation adds an instruction to a **logical plan** — Spark's
-# MAGIC description of the result you requested. It does not replace the source
-# MAGIC DataFrame. Here, three variables refer to three plans built from
+# MAGIC Spark does not process the underlying rows immediately. Instead, each
+# MAGIC transformation adds an instruction to the DataFrame's **logical plan**,
+# MAGIC which describes what Spark should do when an action triggers execution.
+# MAGIC
+# MAGIC The original **`trips`** DataFrame remains unchanged. In the example below,
+# MAGIC each new variable refers to a DataFrame with a logical plan derived from
 # MAGIC **`trips`**.
 
 # COMMAND ----------
