@@ -4,20 +4,20 @@
 
 Fix imperfect values and write NULL-aware predicates on hand-built rideshare
 DataFrames — before file-based ingestion. Module 2 introduced the DataFrame
-API and filter traps; this module goes deeper on messy values, three-valued
-logic, safe casting, and parsing.
+API and filter traps; this module goes deeper on three-valued logic, messy
+values, safe casting, and parsing.
 
 ## Learning objectives
 
 By the end of this module, you'll be able to:
 
+- Explain three-valued logic and why filters keep only `TRUE` rows
+- Build NULL-safe predicates (`isNull` / `isNotNull`, `isin` + NULL trap,
+  `eqNullSafe`) without repeating Module 2 intro traps
 - Identify missing data disguised as `NULL`, blank strings, sentinels, and
   `NaN`; normalize to real `NULL` before drop/fill decisions
 - Use `na.drop`, `na.fill`, and `na.replace`; distinguish `F.coalesce` from
   partition `coalesce`
-- Explain three-valued logic and why filters keep only `TRUE` rows
-- Build NULL-safe predicates (`isNull` / `isNotNull`, `isin` + NULL trap,
-  `eqNullSafe`) without repeating Module 2 intro traps
 - Cast columns with `cast` and `try_cast`; detect rows rejected by a cast
 - Handle numeric overflow and unparseable dates/timestamps with Spark 4 /
   ANSI `try_*` helpers
@@ -33,17 +33,18 @@ empty string vs `NULL`.
 
 Four notebooks, in this order:
 
-1. **Missing, Blank, and Sentinel Values**
-   - `NULL`, blank strings, sentinels (`"N/A"`, `-1`), and `NaN`
-   - Normalize-first convention before `na.drop` / `na.fill`
-   - `na.drop` (`how="any"` / `"all"`, `subset`), `na.fill`, `na.replace`
-   - `F.coalesce` vs `DataFrame.coalesce(n)` gotcha
-2. **NULL Semantics and Predicate Correctness**
+1. **NULL Semantics and Predicate Correctness**
    - Three-valued logic (`TRUE`, `FALSE`, `NULL`) shown as columns
    - Why filters keep only `TRUE`; extend Module 2 intro — do not re-teach
      `== None` or empty-string basics
    - `isin` + Python `None` trap; `eqNullSafe` / `<=>`
    - Reusable eligibility / quality predicate chain
+2. **Missing, Blank, and Sentinel Values**
+   - `NULL`, blank strings, sentinels (`"N/A"`, `-1`), and `NaN`
+   - Normalize-first convention before `na.drop` / `na.fill`
+   - `na.drop` (`how="any"` / `"all"`, `subset`), `na.fill`, `na.replace`
+   - `F.coalesce` vs `DataFrame.coalesce(n)` gotcha
+   - Bridge to notebook 3 — safe casting when strings must become typed columns
 3. **Safe Type Casting**
    - `cast` vs `try_cast` under Spark 4 / ANSI mode
    - Rejected-row pattern: `source.isNotNull() & casted.isNull()`
@@ -78,7 +79,7 @@ File-based reading begins in Module 5.
 ## Exercises
 
 Each notebook ends with a short hands-on task on a slightly different messy
-DataFrame — for example, normalizing sentinels, writing a NULL-safe filter,
+DataFrame — for example, writing a NULL-safe filter, normalizing sentinels,
 detecting rejected casts, or parsing date strings safely.
 
 ## Minimum privileges required
