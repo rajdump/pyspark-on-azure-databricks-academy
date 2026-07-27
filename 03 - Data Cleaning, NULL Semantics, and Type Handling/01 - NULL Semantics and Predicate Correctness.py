@@ -6,8 +6,8 @@
 # MAGIC - Explain three-valued logic and show `TRUE`, `FALSE`, and `NULL` as
 # MAGIC   intermediate condition columns
 # MAGIC - Explain why `filter` / `where` keep only rows whose condition is `TRUE`
-# MAGIC - Extend Module 2 intro NULL checks without re-teaching empty-string
-# MAGIC   basics or the full `== None` trap demo
+# MAGIC - Use `isNull` / `isNotNull` for definite answers when a column value may
+# MAGIC   be missing
 # MAGIC - Build NULL-safe predicates with `isNull` / `isNotNull`, the `isin` +
 # MAGIC   Python `None` trap, and `eqNullSafe` / `<=>`
 # MAGIC - Chain reward and location rules into a reusable eligibility output

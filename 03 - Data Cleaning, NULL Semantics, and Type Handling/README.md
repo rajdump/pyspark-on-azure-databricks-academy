@@ -37,6 +37,7 @@ Four notebooks, in this order:
 1. **NULL Semantics and Predicate Correctness**
    - Three-valued logic (`TRUE`, `FALSE`, `NULL`) shown as columns
    - Why filters keep only `TRUE`
+   - `isNull` / `isNotNull` for definite answers when values may be missing
    - `isin` + Python `None` trap; `eqNullSafe` / `<=>`
    - Reusable eligibility / quality predicate chain
 2. **Missing, Blank, and Sentinel Values**
