@@ -10,7 +10,7 @@
 # MAGIC   be missing
 # MAGIC - Build NULL-safe predicates with `isNull` / `isNotNull`, the `isin` +
 # MAGIC   Python `None` trap, and `eqNullSafe` / `<=>`
-# MAGIC - Chain reward and location rules into a reusable eligibility output
+# MAGIC - Chain reward and blocklist rules into a reusable eligibility output
 # MAGIC
 # MAGIC **Prerequisites.** Module 2 — especially `05 - Filtering Rows` and
 # MAGIC `06 - Querying DataFrames with SQL`. You should already know `F.col`,
@@ -64,12 +64,12 @@ df.show()
 # MAGIC %md
 # MAGIC ## Understand three-valued logic
 # MAGIC
-# MAGIC **Business question:** Operations wants to identify trips that qualify for
-# MAGIC a card-tip reward. A trip qualifies when its payment method is **`"Card"`**
-# MAGIC and its tip is at least **`$2.00`**. Some rows do not contain enough
-# MAGIC information to evaluate both parts of the rule.
+# MAGIC **Business question:** Operations needs trips that qualify for a card-tip
+# MAGIC reward.
 # MAGIC
-# MAGIC The next result shows each comparison **before** combining them with **`&`**.
+# MAGIC Qualifying rule: payment method is **`"Card"`** and tip is at least
+# MAGIC **`$2.00`**. The next result shows each comparison **before** combining them
+# MAGIC with **`&`**.
 
 # COMMAND ----------
 
@@ -111,8 +111,11 @@ df.select(
 # MAGIC %md
 # MAGIC ## See what a filter keeps
 # MAGIC
-# MAGIC The previous result displayed all three possible outcomes. A filter treats
-# MAGIC them differently: it keeps only rows whose condition is **`TRUE`**.
+# MAGIC **Business question:** Operations needs only the qualifying trips from that
+# MAGIC rule.
+# MAGIC
+# MAGIC A filter keeps only rows whose condition is **`TRUE`** — not **`FALSE`**
+# MAGIC or **`NULL`**.
 
 # COMMAND ----------
 
@@ -138,7 +141,8 @@ df.filter(qualifies_for_reward).show()
 # MAGIC requirement mentions missing values. Here, apply that pattern after seeing
 # MAGIC why comparisons can produce **`NULL`** in the first place.
 # MAGIC
-# MAGIC **Business question:** Which trips have a known payment method recorded?
+# MAGIC **Business question:** A payment audit needs trips with a recorded payment
+# MAGIC method.
 
 # COMMAND ----------
 
@@ -147,7 +151,8 @@ df.filter(F.col("payment_method").isNotNull()).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Business question:** Which trips are missing a payment method?
+# MAGIC **Business question:** A payment audit needs trips with no payment method on
+# MAGIC file.
 
 # COMMAND ----------
 
@@ -162,15 +167,12 @@ df.filter(F.col("payment_method").isNull()).show()
 # MAGIC **`NULL`**. A **`NULL`** can also enter a condition through a Python list
 # MAGIC passed to **`isin(...)`**.
 # MAGIC
-# MAGIC Operations maintains a blocklist of pickup zone IDs. Build
-# MAGIC **`~F.col("pickup_location_id").isin(blocked)`** to keep trips whose zone is
-# MAGIC **not** on the list — **`~`** applies **`NOT`** to the **`isin(...)`**
-# MAGIC condition result.
+# MAGIC **Business question:** Compliance needs trips not picked up in blocked zones
+# MAGIC **74** or **231**.
 # MAGIC
-# MAGIC **Business question:** Which trips did **not** pick up in zones **74** or
-# MAGIC **231**?
-# MAGIC
-# MAGIC Inspect **`pickup_location_id`** in the sample data before you filter.
+# MAGIC Blocklist filter: **`~F.col("pickup_location_id").isin(blocked)`** — **`~`**
+# MAGIC applies **`NOT`** to the **`isin(...)`** condition result. Inspect
+# MAGIC **`pickup_location_id`** before you filter.
 
 # COMMAND ----------
 
@@ -179,9 +181,9 @@ df.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`isin(blocked)`** returns **`TRUE`** when **`pickup_location_id`** is on the
-# MAGIC blocklist. Prefix **`~`** to apply **`NOT`** to that condition result. The
-# MAGIC filter keeps rows where **`~isin(...)`** is **`TRUE`** — allowed zones.
+# MAGIC **`isin(blocked)`** is **`TRUE`** when **`pickup_location_id`** is on the
+# MAGIC blocklist. **`~isin(...)`** keeps rows where that result is **`FALSE`**
+# MAGIC (zones **74** and **231** drop out).
 
 # COMMAND ----------
 
@@ -191,11 +193,11 @@ df.filter(~F.col("pickup_location_id").isin(blocked)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Business question:** Same rule — exclude zones **74** and **231** — but
-# MAGIC the upstream blocklist accidentally includes Python **`None`**. Run the
-# MAGIC filter again. Why do you get no rows?
+# MAGIC **Business question:** Compliance needs trips not picked up in blocked zones
+# MAGIC **74** or **231**.
 # MAGIC
-# MAGIC PySpark treats Python **`None`** as **`NULL`** when it builds the
+# MAGIC The upstream blocklist includes Python **`None`**. Run the same filter — why
+# MAGIC no rows? PySpark treats Python **`None`** as **`NULL`** in the
 # MAGIC **`isin(...)`** condition.
 
 # COMMAND ----------
@@ -221,14 +223,13 @@ df.filter(~F.col("pickup_location_id").isin(blocked_with_null)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Business question:** Rebuild the blocklist without **`None`**, then decide
-# MAGIC separately whether trips whose **`pickup_location_id`** is **`NULL`** should
-# MAGIC be kept or dropped.
+# MAGIC **Business question:** Compliance needs trips not picked up in zones **74**
+# MAGIC or **231**, and trips whose pickup zone is unknown.
 # MAGIC
-# MAGIC The next filter keeps:
+# MAGIC Strip **`None`** from the blocklist first. The filter below keeps:
 # MAGIC
-# MAGIC - rows whose **`pickup_location_id`** column value is **`NULL`**
-# MAGIC - rows whose **`pickup_location_id`** is known and not on the blocklist
+# MAGIC - trips whose **`pickup_location_id`** is **`NULL`**
+# MAGIC - trips whose **`pickup_location_id`** is known and not **74** or **231**
 
 # COMMAND ----------
 
@@ -243,28 +244,30 @@ df.filter(location_allowed).select("trip_id", "pickup_location_id").show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The **`isNull()`** branch keeps rows whose **`pickup_location_id`** column
-# MAGIC value is **`NULL`**. For non-**`NULL`** locations, **`~isin(safe_blocked)`**
-# MAGIC keeps zones not on the blocklist.
+# MAGIC The **`isNull()`** branch covers unknown pickup zones. For known zones,
+# MAGIC **`~isin(safe_blocked)`** excludes **74** and **231**.
 # MAGIC
-# MAGIC This pipeline **keeps** rows with a **`NULL`** pickup location. To **drop**
-# MAGIC them instead, remove the **`isNull()`** branch.
+# MAGIC To **drop** trips with unknown pickup zones instead, remove the
+# MAGIC **`isNull()`** branch.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Compare values that may be `NULL`: `eqNullSafe`
 # MAGIC
-# MAGIC The previous examples asked whether a value was **`NULL`** or appeared in a
-# MAGIC list. Sometimes a pipeline must **compare** a value that may be **`NULL`**
-# MAGIC and still receive a definite **`TRUE`** or **`FALSE`**.
+# MAGIC **`isNull()`** tests whether a value is missing. **`eqNullSafe(...)`**
+# MAGIC (SQL **`<=>`**) **compares** two values and always returns **`TRUE`** or
+# MAGIC **`FALSE`** — even when either side is **`NULL`**.
 # MAGIC
-# MAGIC Normal equality returns **`NULL`** when either side is **`NULL`**.
-# MAGIC **`eqNullSafe(...)`** (SQL **`<=>`**) handles **`NULL`** explicitly:
+# MAGIC **Business question:** A matching report needs payment-method comparisons
+# MAGIC that never return **`NULL`**.
 # MAGIC
-# MAGIC - two **`NULL`** values are equal
-# MAGIC - a **`NULL`** and a known value are not equal
-# MAGIC - two known values use normal equality
+# MAGIC Normal **`==`** returns **`NULL`** when either side is **`NULL`**.
+# MAGIC **`eqNullSafe(...)`** rules:
+# MAGIC
+# MAGIC - two **`NULL`** values → **`TRUE`**
+# MAGIC - **`NULL`** vs a known value → **`FALSE`**
+# MAGIC - two known values → same as **`==`**
 
 # COMMAND ----------
 
@@ -292,14 +295,14 @@ df.select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Chain reward and pickup-location rules
+# MAGIC ## Chain reward and pickup-zone rules
 # MAGIC
-# MAGIC **Business question:** Which trips qualify for a card-tip reward **and** pass
-# MAGIC the pickup-location rules when payment methods or locations may be
-# MAGIC **`NULL`**?
+# MAGIC **Business question:** Operations needs a per-trip report with three columns:
+# MAGIC reward rule pass/fail, blocklist rule pass/fail, and final pass/fail.
 # MAGIC
-# MAGIC A trip must satisfy the reward condition **and** the location rule. Show
-# MAGIC both intermediate decisions and the final eligibility for every trip.
+# MAGIC Reward rule: **`"Card"`** and tip ≥ **`$2.00`**. Blocklist rule: not zones
+# MAGIC **74** or **231**, or unknown pickup zone (same as **`location_allowed`**
+# MAGIC above).
 
 # COMMAND ----------
 
@@ -317,10 +320,10 @@ reward_decisions.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Only trip **`1001`** is eligible: it is the sole row where both intermediate
-# MAGIC conditions are **`TRUE`**. Trip **`1003`** shows why a **`NULL`** condition
-# MAGIC result matters — the reward rule is **`NULL`**, so the combined rule is not
-# MAGIC **`TRUE`** even when the location rule is **`TRUE`**.
+# MAGIC Only trip **`1001`** has **`eligible_for_reward`** **`TRUE`**. Trip **`1003`**
+# MAGIC shows the trap: **`qualifies_for_reward`** is **`NULL`**, so
+# MAGIC **`qualifies_for_reward & location_allowed`** is not **`TRUE`** even though
+# MAGIC **`location_allowed`** is **`TRUE`**.
 
 # COMMAND ----------
 
@@ -368,7 +371,7 @@ reward_decisions.show()
 # MAGIC - **`eqNullSafe` / `<=>`** — comparisons that must always return
 # MAGIC   **`TRUE`** or **`FALSE`**
 # MAGIC - **Eligibility chain** — name intermediate predicates; combine with **`&`**
-# MAGIC   for downstream output
+# MAGIC   for a final pass/fail column
 # MAGIC
 # MAGIC Next up: **`02 - Missing, Blank, and Sentinel Values`** — how missing data
 # MAGIC hides as blanks, sentinels, and **`NaN`**, and how to normalize before
