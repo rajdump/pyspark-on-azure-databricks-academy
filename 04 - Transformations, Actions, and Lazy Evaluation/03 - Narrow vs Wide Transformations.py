@@ -24,11 +24,13 @@
 # MAGIC **Prerequisites.** `01 - Transformations vs Actions` and
 # MAGIC `02 - Lazy Evaluation and the Query Plan` in this module.
 # MAGIC
-# MAGIC **Setup.** Prefer classic all-purpose compute (Standard access mode) so Spark
-# MAGIC UI job and stage navigation is easy while you inspect this notebook. This
-# MAGIC notebook uses small, hand-built rideshare-style DataFrames aligned with the
-# MAGIC course `payment` schema. Partition count follows the cluster (often tied to
-# MAGIC cores) — observe what you get.
+# MAGIC **Setup.** Prefer classic all-purpose compute (**Dedicated** access mode) so
+# MAGIC Spark UI job and stage navigation is easy and small DataFrames can land in
+# MAGIC more than one partition. On Standard access mode, this hand-built sample
+# MAGIC may collapse into a single partition, which hides the narrow vs wide
+# MAGIC contrast. This notebook uses small, hand-built rideshare-style DataFrames
+# MAGIC aligned with the course `payment` schema. Partition count follows the
+# MAGIC cluster (often tied to cores) — observe what you get.
 
 # COMMAND ----------
 
@@ -86,7 +88,8 @@ payments.show()
 # MAGIC
 # MAGIC Print each partition separately so you can see which rows sit together.
 # MAGIC Your partition count may differ from a classmate's — that is expected on
-# MAGIC all-purpose compute.
+# MAGIC Dedicated all-purpose compute. You should still see more than one
+# MAGIC partition for this sample.
 
 # COMMAND ----------
 
