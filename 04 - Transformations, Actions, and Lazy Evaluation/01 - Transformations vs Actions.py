@@ -5,8 +5,8 @@
 # MAGIC Transformations such as **`select()`**, **`filter()`**, and
 # MAGIC **`withColumn()`** define processing steps and return new DataFrames without
 # MAGIC immediately processing the data. Actions such as **`show()`**, **`count()`**,
-# MAGIC or **`df.write.save(...)`** trigger Spark to execute the accumulated plan
-# MAGIC and produce output.
+# MAGIC or writing a DataFrame to storage trigger Spark to execute the accumulated
+# MAGIC plan and produce output.
 # MAGIC
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
 # MAGIC - Distinguish transformations, which return DataFrames and extend logical
@@ -149,7 +149,7 @@ print("Rows in labeled_trips:", row_count)
 # MAGIC - **Action:** executes a plan and produces output or a non-DataFrame result
 # MAGIC   — **`show`** and **`count`**
 # MAGIC
-# MAGIC Run few familiar transformations and inspect their Python return types.
+# MAGIC Run a few familiar transformations and inspect their Python return types.
 
 # COMMAND ----------
 
@@ -164,7 +164,7 @@ print("limit(...)  ->", type(limit_result).__name__, "(transformation)")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Run few familiar actions and inspect their return types.
+# MAGIC Run a few familiar actions and inspect their return types.
 
 # COMMAND ----------
 
@@ -173,8 +173,10 @@ print("show()  ->", type(select_result.show()).__name__, "(action)")
 
 # COMMAND ----------
 
-print("count()  ->", type(where_result.count()).__name__, "(action)")
-print(where_result.count())
+count_result = where_result.count()
+
+print("count() ->", type(count_result).__name__, "(action)")
+print("Number of records:", count_result)
 
 # COMMAND ----------
 
