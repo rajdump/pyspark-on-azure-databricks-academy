@@ -206,28 +206,17 @@ df.filter(~F.col("pickup_location_id").isin(blocked_with_null)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You expected trip **`1001`** (zone **`138`**) to pass, as it is not on the
-# MAGIC blocklist. However, the filter returns **no rows**. For each trip, trace the
-# MAGIC condition **`~F.col("pickup_location_id").isin(...)`** — the same
-# MAGIC **`TRUE` / `FALSE` / `NULL`** outcomes as the reward example.
+# MAGIC Zone **`138`** is not on the blocklist, but the filter returns **no rows**.
 # MAGIC
-# MAGIC - Trip **`1002`** (zone **`74`**) and trip **`1003`** (zone **`231`**):
-# MAGIC   **`isin(...)`** is **`TRUE`** (blocked). **`~`** applies **`NOT`**, so the
-# MAGIC   condition is **`FALSE`**. The filter drops these rows — as intended.
-# MAGIC - Trip **`1001`** (zone **`138`**): **`138`** is not blocked, but
-# MAGIC   **`isin(...)`** also runs **`138 == NULL`** because Python **`None`** in
-# MAGIC   the list becomes **`NULL`**. That comparison is **`NULL`**, not
-# MAGIC   **`FALSE`**. With **`OR`**, **`FALSE OR FALSE OR NULL`** is **`NULL`**.
-# MAGIC   **`~`** applies **`NOT`**, and **`NOT NULL`** is **`NULL`**. The filter
-# MAGIC   drops trip **`1001`** even though zone **`138`** is allowed.
-# MAGIC - Trip **`1004`** (**`pickup_location_id`** is **`NULL`**): comparisons inside
-# MAGIC   **`isin(...)`** produce **`NULL`**, so **`~`** still yields **`NULL`**. The
-# MAGIC   filter drops this row too.
+# MAGIC **`isin(...)`** compares the column to **each** list value and **`OR`s** the
+# MAGIC results. For zone **`138`**: **`138 == 74`** is **`FALSE`**, **`138 == 231`**
+# MAGIC is **`FALSE`**, and **`138 == NULL`** is **`NULL`** — Python **`None`** in
+# MAGIC the list becomes **`NULL`**. So **`isin(...)`** is **`FALSE OR FALSE OR
+# MAGIC NULL`**, which is **`NULL`**.
 # MAGIC
-# MAGIC **Takeaway:** Python **`None`** in the blocklist adds a **`NULL`** branch to
-# MAGIC **`isin(...)`**. After **`~`**, rows that are not explicitly blocked can
-# MAGIC still get condition result **`NULL`**, not **`TRUE`**. The filter keeps only
-# MAGIC **`TRUE`**, so every row disappears.
+# MAGIC **`~`** applies **`NOT`**. **`NOT NULL`** is still **`NULL`**, not **`TRUE`**,
+# MAGIC so the filter drops the row. Blocked zones get **`FALSE`** as intended; every
+# MAGIC other row gets **`NULL`**, not **`TRUE`**.
 
 # COMMAND ----------
 
