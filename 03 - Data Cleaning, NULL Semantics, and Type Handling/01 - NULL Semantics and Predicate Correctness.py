@@ -205,19 +205,26 @@ df.filter(~F.col("pickup_location_id").isin(blocked_with_null)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC This filter returns **no rows**:
+# MAGIC You expected trip **`1001`** (zone **`138`**) to pass — it is not blocked.
+# MAGIC Instead, the filter returns **no rows**. Walk through each trip using the
+# MAGIC same three-valued logic as the reward example above.
 # MAGIC
-# MAGIC - Locations **`74`** and **`231`** match the list. After **`~`** reverses
-# MAGIC   the result, their condition becomes **`FALSE`**.
-# MAGIC - For location **`138`**, **`isin(...)`** evaluates three comparisons:
-# MAGIC   **`138 == 74`** is **`FALSE`**, **`138 == 231`** is **`FALSE`**, and
-# MAGIC   **`138 == NULL`** is **`NULL`**. These results are joined with **`OR`**, so
-# MAGIC   **`FALSE OR FALSE OR NULL`** produces **`NULL`**. The **`~`** operator
-# MAGIC   changes this to **`NOT NULL`**, which remains **`NULL`**.
-# MAGIC - A **`NULL`** pickup location also produces **`NULL`**.
+# MAGIC - Trip **`1002`** (zone **`74`**) and trip **`1003`** (zone **`231`**):
+# MAGIC   **`isin(...)`** is **`TRUE`**, so **`~`** reverses it to **`FALSE`**. The
+# MAGIC   filter drops them — as intended.
+# MAGIC - Trip **`1001`** (zone **`138`**): **`138`** is not blocked, but
+# MAGIC   **`isin(...)`** also compares **`138 == NULL`** because Python **`None`**
+# MAGIC   in the list becomes **`NULL`**. That third comparison is **`NULL`**, not
+# MAGIC   **`FALSE`**. **`FALSE OR FALSE OR NULL`** is **`NULL`**, and **`NOT NULL`**
+# MAGIC   stays **`NULL`**. The filter drops trip **`1001`** even though zone
+# MAGIC   **`138`** is allowed.
+# MAGIC - Trip **`1004`** (missing **`pickup_location_id`**): comparisons against
+# MAGIC   the list also produce **`NULL`**, so **`~`** still yields **`NULL`**.
 # MAGIC
-# MAGIC The filter keeps only **`TRUE`**. Every row produced either **`FALSE`** or
-# MAGIC **`NULL`**, so no rows remain.
+# MAGIC **Takeaway:** One **`NULL`** inside an **`isin`** list can poison the
+# MAGIC negated condition for every row that is not explicitly blocked. The filter
+# MAGIC keeps only **`TRUE`**, so **`FALSE`** and **`NULL`** both disappear — and
+# MAGIC here, no row reaches **`TRUE`**.
 
 # COMMAND ----------
 
