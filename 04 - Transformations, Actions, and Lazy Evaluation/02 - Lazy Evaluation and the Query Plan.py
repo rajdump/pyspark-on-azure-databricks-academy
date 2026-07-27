@@ -17,7 +17,9 @@
 # MAGIC you should already know transformations, actions, and chaining before a
 # MAGIC single action.
 # MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
+# MAGIC **Setup.** Prefer **classic all-purpose** compute (Standard access mode).
+# MAGIC Spark UI job and stage navigation is clearer there than on serverless —
+# MAGIC useful when you compare actions in this notebook. This notebook uses
 # MAGIC small, hand-built rideshare-style DataFrames aligned with the course
 # MAGIC **`trip`** schema.
 
@@ -126,6 +128,10 @@ print("noop write finished — the plan ran as part of the save")
 # MAGIC Spark waits so it can see the full chain before choosing how to run it.
 # MAGIC That is the production reason for lazy evaluation: the optimizer works on
 # MAGIC the complete plan, not on each line as you type it.
+# MAGIC
+# MAGIC > **Good to know:** After **`show()`**, **`count()`**, or the write, open
+# MAGIC > **Spark UI → Jobs** on classic all-purpose compute. Each action should
+# MAGIC > appear as its own job for the same logical plan.
 
 # COMMAND ----------
 
