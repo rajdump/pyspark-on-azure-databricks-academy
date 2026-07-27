@@ -162,9 +162,14 @@ df.filter(F.col("payment_method").isNull()).show()
 # MAGIC **`NULL`**. A **`NULL`** can also enter a condition through a Python list
 # MAGIC passed to **`isin(...)`**.
 # MAGIC
-# MAGIC **Business question:** Remove trips from blocked pickup locations. First
-# MAGIC review the pickup locations in the sample data, then filter with a
-# MAGIC blocklist that contains only known location IDs.
+# MAGIC Operations maintains a list of pickup zone IDs where trips are not
+# MAGIC allowed. Filter with **`isin(...)`** and negate with **`~`** to keep
+# MAGIC allowed trips.
+# MAGIC
+# MAGIC **Business question:** Which trips did **not** pick up in zones **74** or
+# MAGIC **231**?
+# MAGIC
+# MAGIC Inspect **`pickup_location_id`** in the sample data before you filter.
 
 # COMMAND ----------
 
@@ -185,11 +190,12 @@ df.filter(~F.col("pickup_location_id").isin(blocked)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Now suppose the blocklist comes from another source and contains Python
-# MAGIC **`None`**. PySpark treats that **`None`** as **`NULL`** when it builds the
-# MAGIC **`isin(...)`** condition.
+# MAGIC **Business question:** Same rule — exclude zones **74** and **231** — but
+# MAGIC the upstream blocklist accidentally includes a missing value (**`None`**).
+# MAGIC Run the filter again. Why do you get no rows?
 # MAGIC
-# MAGIC Run the same filter with this new list.
+# MAGIC PySpark treats Python **`None`** as **`NULL`** when it builds the
+# MAGIC **`isin(...)`** condition.
 
 # COMMAND ----------
 
@@ -216,9 +222,9 @@ df.filter(~F.col("pickup_location_id").isin(blocked_with_null)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Remove **`None`** from the blocklist before building the **`isin(...)`**
-# MAGIC condition. Then decide separately what to do when **`pickup_location_id`**
-# MAGIC itself is **`NULL`**.
+# MAGIC **Business question:** Rebuild the blocklist without **`None`**, then decide
+# MAGIC separately whether trips with a missing **`pickup_location_id`** should be
+# MAGIC kept or dropped.
 # MAGIC
 # MAGIC The next filter keeps:
 # MAGIC
