@@ -10,7 +10,7 @@
 # MAGIC   be missing
 # MAGIC - Build NULL-safe predicates with `isNull` / `isNotNull`, the `isin` +
 # MAGIC   Python `None` trap, and `eqNullSafe` / `<=>`
-# MAGIC - Chain reward and blocklist rules into a reusable eligibility output
+# MAGIC - Chain reward and blocklist rules into a reusable eligibility report
 # MAGIC
 # MAGIC **Prerequisites.** Module 2 — especially `05 - Filtering Rows` and
 # MAGIC `06 - Querying DataFrames with SQL`. You should already know `F.col`,
@@ -36,18 +36,28 @@
 
 # COMMAND ----------
 
+from decimal import Decimal
+
 from pyspark.sql import functions as F
 
 rows = [
-    (1001, "Card", 3.50, 138),
+    (1001, "Card", Decimal("3.50"), 138),
     (1002, "Cash", None, 74),
-    (1003, None, 2.00, 231),
-    (1004, "Card", 1.00, None),
+    (1003, None, Decimal("2.00"), 231),
+    (1004, "Card", Decimal("1.00"), None),
 ]
 
-schema_ddl = "trip_id bigint, payment_method string, tip_amount double, pickup_location_id int"
+schema_ddl = """
+    trip_id bigint,
+    payment_method string,
+    tip_amount decimal(10,2),
+    pickup_location_id int
+"""
 
-df = spark.createDataFrame(rows, schema_ddl)  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+df = spark.createDataFrame(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    rows,
+    schema_ddl,
+)
 
 # COMMAND ----------
 
@@ -194,6 +204,14 @@ df.filter(~F.col("pickup_location_id").isin(blocked)).show()
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC Only trip **`1001`** remains. Trips **`1002`** and **`1003`** are on the
+# MAGIC blocklist. Trip **`1004`** has a **`NULL`** pickup zone, so **`isin(...)`**
+# MAGIC is **`NULL`**, **`~isin(...)`** is **`NULL`**, and the filter drops that row
+# MAGIC too.
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC **Business question:** Compliance needs trips whose pickup zone is not **74**
 # MAGIC or **231**.
 # MAGIC
@@ -278,6 +296,7 @@ df.select(
     "payment_method",
     (F.col("payment_method") == "Card").alias("plain_eq"),
     F.col("payment_method").eqNullSafe("Card").alias("null_safe_vs_card"),
+    F.expr("payment_method <=> 'Card'").alias("sql_null_safe_eq"),
     F.col("payment_method").eqNullSafe(None).alias("null_safe_vs_null"),
 ).show()
 
@@ -287,12 +306,12 @@ df.select(
 # MAGIC For trip **`1003`**, **`payment_method`** is **`NULL`**:
 # MAGIC
 # MAGIC - normal equality with **`"Card"`** returns **`NULL`**
-# MAGIC - **`eqNullSafe("Card")`** returns **`FALSE`**
+# MAGIC - **`eqNullSafe("Card")`** and SQL **`<=>`** both return **`FALSE`**
 # MAGIC - **`eqNullSafe(None)`** returns **`TRUE`**
 # MAGIC
 # MAGIC Use **`isNull()`** to check whether a column value is **`NULL`**. Use
-# MAGIC **`eqNullSafe(...)`** when you must compare values that may be **`NULL`**
-# MAGIC and still get **`TRUE`** or **`FALSE`**.
+# MAGIC **`eqNullSafe(...)`** (or SQL **`<=>`**) when you must compare values that
+# MAGIC may be **`NULL`** and still get **`TRUE`** or **`FALSE`**.
 
 # COMMAND ----------
 
