@@ -2,6 +2,11 @@
 # MAGIC %md
 # MAGIC # NULL Semantics and Predicate Correctness
 # MAGIC
+# MAGIC The focus of this notebook is NULL semantics and predicate correctness in
+# MAGIC PySpark. You will see how three-valued logic (`TRUE`, `FALSE`, `NULL`)
+# MAGIC affects condition columns and why `filter` / `where` keep only rows where
+# MAGIC the condition is `TRUE`.
+# MAGIC
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
 # MAGIC - Explain three-valued logic and show `TRUE`, `FALSE`, and `NULL` as
 # MAGIC   intermediate condition columns

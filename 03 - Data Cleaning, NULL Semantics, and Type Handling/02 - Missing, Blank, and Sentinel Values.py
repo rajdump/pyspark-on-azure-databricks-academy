@@ -2,6 +2,11 @@
 # MAGIC %md
 # MAGIC # Missing, Blank, and Sentinel Values
 # MAGIC
+# MAGIC The focus of this notebook is handling missing values in realistic forms:
+# MAGIC `NULL`, blank strings, sentinels, and `NaN`. You will normalize these to
+# MAGIC real `NULL` values before deciding where to use `na.drop`, `na.fill`,
+# MAGIC `na.replace`, and `F.coalesce`.
+# MAGIC
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
 # MAGIC - Identify missing data disguised as `NULL`, blank strings, sentinels,
 # MAGIC   and `NaN` in a messy rideshare-style DataFrame
