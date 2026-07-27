@@ -64,7 +64,7 @@ workflow.
 
 - **Full roadmap:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — all 19 modules, their purpose, and status
 - **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
-- **Currently authoring:** [`04 - Transformations, Actions, and Lazy Evaluation`](04%20-%20Transformations,%20Actions,%20and%20Lazy%20Evaluation/)
+- **Phase I complete** through Module 4 — next to author: **Module 5 — Reading, Writing, and Schemas** (see [`COURSE_MODULES.md`](COURSE_MODULES.md))
 
 ## Repository conventions
 

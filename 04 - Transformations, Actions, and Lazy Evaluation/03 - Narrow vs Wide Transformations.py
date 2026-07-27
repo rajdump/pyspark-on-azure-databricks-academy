@@ -24,13 +24,14 @@
 # MAGIC **Prerequisites.** `01 - Transformations vs Actions` and
 # MAGIC `02 - Lazy Evaluation and the Query Plan` in this module.
 # MAGIC
-# MAGIC **Setup.** Prefer classic all-purpose compute (**Dedicated** access mode) so
-# MAGIC Spark UI job and stage navigation is easy and small DataFrames can land in
-# MAGIC more than one partition. On Standard access mode, this hand-built sample
-# MAGIC may collapse into a single partition, which hides the narrow vs wide
-# MAGIC contrast. This notebook uses small, hand-built rideshare-style DataFrames
-# MAGIC aligned with the course `payment` schema. Partition count follows the
-# MAGIC cluster (often tied to cores) — observe what you get.
+# MAGIC **Setup.** Prefer classic all-purpose compute (**Dedicated** access mode) for
+# MAGIC the clearest partition and shuffle demos, and easy Spark UI navigation. The
+# MAGIC notebook also runs on Standard and serverless, but those environments may
+# MAGIC collapse this hand-built sample into a single partition, which weakens the
+# MAGIC narrow vs wide contrast. This notebook uses small, hand-built
+# MAGIC rideshare-style DataFrames aligned with the course `payment` schema.
+# MAGIC Partition count follows the cluster (often tied to cores) — observe what
+# MAGIC you get.
 
 # COMMAND ----------
 
