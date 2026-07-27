@@ -48,6 +48,8 @@ Four notebooks, in this order:
    - Inspect the plan with `.explain(mode="extended")`
    - See how the optimizer can apply a late filter earlier on one narrow chain
 3. **Narrow vs Wide Transformations**
+   - Prefer classic all-purpose compute (**Dedicated** access mode — Standard
+     may collapse this hand-built sample into one partition)
    - Inspect how rows are distributed across partitions
    - Run a narrow transformation (`filter`) and confirm it does not shuffle
      (no `Exchange`, one stage; rows stay in place)

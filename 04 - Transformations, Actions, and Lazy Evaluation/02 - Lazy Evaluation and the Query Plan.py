@@ -150,7 +150,7 @@ review_payments.explain(mode="extended")
 # MAGIC query → **Details for Query**
 # MAGIC
 # MAGIC In the plan visualization, look for the physical node that reads the final
-# MAGIC rows for this in-memory DataFrame.The row
+# MAGIC rows for this in-memory DataFrame. The row
 # MAGIC count should reflect only the non-zero-tip rows, not the full source.
 
 # COMMAND ----------
