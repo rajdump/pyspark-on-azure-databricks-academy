@@ -55,8 +55,16 @@ Four notebooks, in this order:
      shuffle / stage boundary; confirm in Spark UI
    - Review common shuffle triggers (deep tuning deferred to Module 16)
 4. **Common DataFrame Actions**
-   - Use `first()`, `head()`, `take()`, `tail()`, `isEmpty()`, and `toPandas()`
-   - Understand the driver-side memory risks of actions that return many rows
+   - Review return types and driver-side size risk for common actions
+     (`show` / `count` / `collect` already known; deepen the rest here)
+   - Sort for predictable order, then compare `first()`, `head()`, `head(n)`,
+     and `take(n)`
+   - Retrieve the last rows with `tail(n)` (order is not guaranteed unless
+     you sort)
+   - Check emptiness with `isEmpty()` (prefer over `count() == 0` for a
+     yes/no check)
+   - Convert a small result with `toPandas()` and note the same driver-memory
+     risk as `collect()`; writing with `DataFrame.write` waits for Module 5
 
 ## Dataset used
 
@@ -69,7 +77,8 @@ File-based reading begins in Module 5.
 
 Each notebook ends with a short hands-on task to reinforce the concepts —
 for example, building and explaining a transformation chain, inspecting an
-optimized plan, or predicting shuffle behavior.
+optimized plan, predicting shuffle behavior, or practicing pull/check
+actions on a small sorted DataFrame.
 
 ## Minimum privileges required
 
