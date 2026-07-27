@@ -27,17 +27,16 @@
 # MAGIC %md
 # MAGIC ## Set up the payments example
 # MAGIC
-# MAGIC **Business question:** Payments ops wants a quick look at the lowest and
-# MAGIC highest tips, a yes/no check that a filter found rows, and a small pandas
-# MAGIC table for a local chart — without pulling the whole warehouse to the
-# MAGIC driver.
-# MAGIC
 # MAGIC Build a small DataFrame with a few payment rows and different
 # MAGIC `tip_amount` values. Course `payment` columns used here: `trip_id`
 # MAGIC (`bigint`), `payment_method` (`string`), `base_fare_amount`
 # MAGIC (`decimal(10,2)`), and `tip_amount` (`decimal(10,2)`).
 # MAGIC
 # MAGIC Later, sort by `tip_amount` so the first and last rows are predictable.
+# MAGIC
+# MAGIC > **Caution:** Actions such as `collect()`, `toPandas()`, and large
+# MAGIC > `head(n)` / `take(n)` / `tail(n)` pull rows onto the **driver**. Use them
+# MAGIC > only on small, bounded results — a large pull can exhaust driver memory.
 
 # COMMAND ----------
 

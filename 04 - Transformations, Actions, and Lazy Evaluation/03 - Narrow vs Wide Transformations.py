@@ -37,11 +37,6 @@
 # MAGIC %md
 # MAGIC ## Set up the payments example
 # MAGIC
-# MAGIC **Business question:** Payments ops wants non-zero tips reviewed locally on
-# MAGIC each worker, then a count of payments by `payment_method` for the daily
-# MAGIC summary. Those two asks look similar in code — but Spark runs them very
-# MAGIC differently.
-# MAGIC
 # MAGIC Build a small DataFrame with enough rows to land in more than one partition
 # MAGIC and to aggregate by `payment_method` later. Course `payment` columns used
 # MAGIC here: `trip_id` (`bigint`), `payment_method` (`string`),
