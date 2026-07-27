@@ -205,8 +205,8 @@ df.filter(~F.col("pickup_location_id").isin(blocked_with_null)).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You expected trip **`1001`** (zone **`138`**) to pass — it is not blocked.
-# MAGIC Instead, the filter returns **no rows**. Walk through each trip using the
+# MAGIC You expected trip **`1001`** (zone **`138`**) to pass, as it is not blocked.
+# MAGIC However, the filter returns **no rows**. Walk through each trip using the
 # MAGIC same three-valued logic as the reward example above.
 # MAGIC
 # MAGIC - Trip **`1002`** (zone **`74`**) and trip **`1003`** (zone **`231`**):
@@ -221,10 +221,10 @@ df.filter(~F.col("pickup_location_id").isin(blocked_with_null)).show()
 # MAGIC - Trip **`1004`** (missing **`pickup_location_id`**): comparisons against
 # MAGIC   the list also produce **`NULL`**, so **`~`** still yields **`NULL`**.
 # MAGIC
-# MAGIC **Takeaway:** One **`NULL`** inside an **`isin`** list can poison the
-# MAGIC negated condition for every row that is not explicitly blocked. The filter
-# MAGIC keeps only **`TRUE`**, so **`FALSE`** and **`NULL`** both disappear — and
-# MAGIC here, no row reaches **`TRUE`**.
+# MAGIC **Takeaway:** One **`NULL`** inside an **`isin`** list can break the negated
+# MAGIC condition for every row that is not explicitly blocked. The filter keeps
+# MAGIC only **`TRUE`**, so **`FALSE`** and **`NULL`** both disappear — and here,
+# MAGIC no row reaches **`TRUE`**.
 
 # COMMAND ----------
 
