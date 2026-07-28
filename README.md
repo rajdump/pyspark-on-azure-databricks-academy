@@ -64,7 +64,7 @@ workflow.
 
 - **Full roadmap:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — all 19 modules, their purpose, and status
 - **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
-- **Phase I complete** through Module 4 — next to author: **Module 5 — Reading, Writing, and Schemas** (see [`COURSE_MODULES.md`](COURSE_MODULES.md))
+- **Phase I complete** through Module 4 — next to author: **Module 5 — Reading, Writing, and Schemas** (Volume-based file I/O, JDBC, and schemas — see [`COURSE_MODULES.md`](COURSE_MODULES.md))
 
 ## Repository conventions
 
