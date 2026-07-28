@@ -60,7 +60,7 @@ Four notebooks, in this order:
 Small, **ad-hoc** rideshare-flavored DataFrames built in code, aligned with
 column names and types from
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
-File-based reading begins in Module 5.
+Volume-based file reading begins in Module 5.
 
 ## Exercises
 

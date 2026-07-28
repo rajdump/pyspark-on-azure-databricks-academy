@@ -63,6 +63,8 @@ following:
 - PySpark code follows `coding-standards.md` (including `F` imports and
   `# noqa: F821` on Databricks-provided `spark` where needed).
 - No secrets, workspace URLs, cluster IDs, or personal catalog/schema names.
+  Use lab names from `docs/data/dataset-overview.md`; do not use personal
+  workspace catalog or schema names.
 - Do not update `COURSE_MODULES.md` or anything under `docs/validation/`.
 
 ## Scaffold bar (`/new-lesson`)

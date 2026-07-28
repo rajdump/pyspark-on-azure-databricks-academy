@@ -57,7 +57,7 @@ Notebooks in this module, in order:
 
 This module uses small, **ad-hoc** rideshare-flavored DataFrames (built by
 hand in code, a few rows), not the file-based dataset in `data/raw/`.
-File-based reading begins in Module 5. See
+Volume-based file reading begins in Module 5. See
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md) for the
 full dataset this course builds toward using.
 

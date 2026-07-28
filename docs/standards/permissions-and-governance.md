@@ -72,4 +72,5 @@ genuinely necessary context.
 - Compute selection/validation rules — see `compute-validation-policy.md`.
 - Actual catalog/schema names — those are hardcoded by the author,
   introduced progressively per module, and are not part of this policy
-  document.
+  document. Shared lab catalog, schema, and volume names for the rideshare
+  dataset are defined in `docs/data/dataset-overview.md`.

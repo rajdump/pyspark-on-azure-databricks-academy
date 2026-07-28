@@ -15,8 +15,8 @@ draft). No Cursor slash command writes to this file automatically.
 
 | Status | Meaning |
 |---|---|
-| Not Started | Roadmap entry only — no folder, no notebooks yet |
-| Current | Actively being authored — see its `README.md` for detailed design |
+| Not Started | Roadmap entry — no learner notebooks yet (module `README.md` optional) |
+| Current | Actively authoring notebooks — see its `README.md` for detailed design |
 | Complete | Notebooks written, authoring-quality checked, and runtime-validated in Azure Databricks (see `docs/validation/`) |
 
 ## The running use case

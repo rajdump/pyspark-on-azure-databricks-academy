@@ -36,6 +36,13 @@ validated in Azure Databricks.
 
 ## Where the real rules live
 
+Documentation layers (link down; do not duplicate content across tiers):
+
+- Roadmap and status: `COURSE_MODULES.md`
+- Dataset schemas, join keys, and physical layout: `docs/data/dataset-overview.md`
+- Module design when authoring (notebook navigation, privileges): that module's `README.md`
+- Process and pedagogy: `docs/standards/`
+
 - Coding standards: `docs/standards/coding-standards.md`
 - Notebook structure and formatting: `docs/standards/notebook-writing.md`
 - Naming conventions: `docs/standards/naming-conventions.md`

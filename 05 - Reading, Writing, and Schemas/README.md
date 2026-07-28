@@ -37,10 +37,12 @@ minimal reshape, write patterns, Delta/`saveAsTable` preview.
 **Out of scope:** Deep transforms, **`explode()`**, UC grants, medallion
 layering, Delta ACID/`MERGE` (Modules 6 and 10+).
 
-Module 5 may write practice outputs. Volume path rules, write ownership, repo
-→ Volume upload map, format-to-dataset map, and JDBC flow:
+Module 5 may write practice outputs. Schemas, column names, Volume path rules,
+write ownership, repo → Volume upload map, format-to-dataset map, and JDBC
+flow:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md) (Physical
-layout and **`payment` JDBC exercise** sections).
+layout and **`payment` JDBC exercise** sections). All five datasets under
+Volume **`raw/`** (and **`source/payment/`** for JDBC seed).
 
 ## Notebook navigation
 
@@ -83,12 +85,6 @@ or connection strings to this repository. Pattern:
 - Target table: **`el_lab.payments`**
 - Use **`dbutils.secrets.get`** in the notebook; document the variable names
   here, not the secret values
-
-## Dataset used
-
-All five datasets under Volume **`raw/`** (and **`source/payment/`** for JDBC
-seed). Column names and types:
-[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
 
 ## Exercises
 
