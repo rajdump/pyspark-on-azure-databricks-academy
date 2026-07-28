@@ -18,7 +18,7 @@ of the following:
 3. @docs/standards/teaching-guidelines.md — pedagogy and explanation style
 4. @docs/standards/coding-standards.md — Python/PySpark conventions
 5. @docs/standards/naming-conventions.md — folder and notebook naming
-6. @docs/data/dataset-overview.md — schemas, column names, join keys
+6. @docs/data/dataset-overview.md — schemas, column names, join keys, physical layout
 
 ## Additional reads (validate and review only)
 

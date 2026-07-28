@@ -53,7 +53,7 @@ Eight notebooks, in this order:
    - **`CREATE VOLUME IF NOT EXISTS`** for **`raw`**, **`processed`**, **`source`**
      under existing **`el_lab`**
    - **`dbutils.fs.mkdirs`** for dataset folders
-   - Copy repo files into Volume paths (see dataset-overview upload map); verify with **`ls`**
+   - Copy repo files into Volume paths (see dataset-overview Physical layout table); verify with **`ls`**
 2. **Azure SQL Load and Extract**
    - Read seed from **`source/payment/`**
    - JDBC write → **`el_lab.payments`**; JDBC read back

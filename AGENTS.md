@@ -50,7 +50,6 @@ Documentation layers (link down; do not duplicate content across tiers):
 - Compute selection and validation order: `docs/standards/compute-validation-policy.md`
 - Permissions and governance (Azure RBAC vs. workspace permissions vs. Unity
   Catalog privileges): `docs/standards/permissions-and-governance.md`
-- Dataset reference: `docs/data/dataset-overview.md`
 - Notebook authoring checklist (shared read list for slash commands):
   `docs/standards/notebook-authoring-checklist.md`
 

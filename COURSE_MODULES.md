@@ -5,8 +5,7 @@ major topics, prerequisites, production relevance, contribution to the final
 project, and planning status.
 
 This file does **not** contain notebook sequences, exercises, or code. Detailed
-design for the current module lives in that module's own `README.md`. Future
-modules stay at the roadmap level shown here until they become current.
+design lives in a module's `README.md` when present; see the status legend.
 
 Status updates in this file are author-owned (manual edit or chat-assisted
 draft). No Cursor slash command writes to this file automatically.
@@ -44,7 +43,7 @@ Read from Unity Catalog Volumes → transform with built-ins → join safely →
 
 | # | Module | Purpose | Major Topics | Prerequisites | Production Relevance | Final-Project Contribution | Status |
 |---|---|---|---|---|---|---|---|
-| 5 | Reading, Writing, and Schemas | Land rideshare files on UC Volumes and read/write production formats with explicit schemas | UC Volumes and data landing; JDBC extract for `payment`; CSV/JSON/Parquet/XML/Avro reads; explicit schemas vs inference; write modes; Delta/`saveAsTable` preview | Module 4 | Volume-based file I/O and JDBC patterns used in real ingestion jobs | Builds the Volume ingestion layer for the final project | Not Started |
+| 5 | Reading, Writing, and Schemas | Land rideshare files on UC Volumes and read/write production formats with explicit schemas | UC Volumes and data landing; JDBC extract for `payment`; CSV/JSON/Parquet/XML/Avro reads; explicit schemas vs inference; write modes; Delta/`saveAsTable` preview | Module 4 | Volume-based file I/O and JDBC patterns used in real ingestion jobs | Builds the Volume ingestion layer for the final project | Current |
 | 6 | Built-in Functions, Complex Types, and UDF Alternatives | Implement transforms with Spark-native expressions before reaching for UDFs | Built-in functions; complex types and `explode`; cleaned `processed/` outputs; built-in vs UDF; Pandas UDFs | Module 5 | Performant, idiomatic transformation logic | Implements cleaning, enrichment, and business rules | Not Started |
 | 7 | Joins and Set Operations | Combine rideshare tables without silent cardinality or key traps | Join types and correctness; semi/anti; broadcast and AQE; set operations | Module 6 | Multi-table integration — a core production pattern | Combines core tables (and flattened `drivers`) into unified views | Not Started |
 | 8 | Aggregations and Window Functions | Produce analytics-ready summaries and KPI tables | `groupBy` and window functions; pivot; Top-N per group; sampling | Module 7 | Analytics and reporting layers | Produces KPI/metric tables for the project | Not Started |

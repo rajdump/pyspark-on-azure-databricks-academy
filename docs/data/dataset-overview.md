@@ -5,7 +5,8 @@ join keys, and physical layout (Git source files + Unity Catalog Volume
 paths from Module 5). Referenced by `.cursor/rules/learner-notebooks.mdc`,
 `/new-lesson`, `/write-lesson`, `/validate-notebook`, `/review-module`, and
 Cmd+K sessions via `@docs/data/dataset-overview.md` — do not duplicate this
-content elsewhere. Shared read list: @docs/standards/notebook-authoring-checklist.md.
+content elsewhere. Module notebook sequences and privileges live in that
+module's `README.md`. Shared read list: @docs/standards/notebook-authoring-checklist.md.
 
 Intentionally small (100/100/100/20 rows) for fast iteration — not for
 demonstrating shuffle, spill, or skew at volume (Module 16 uses it for
