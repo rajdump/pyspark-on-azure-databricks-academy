@@ -22,8 +22,9 @@ draft). No Cursor slash command writes to this file automatically.
 ## The running use case
 
 Every module threads through the same small rideshare dataset — `trip`,
-`trip_time`, `payment`, and `zone_lookup` — so each topic builds on the same
-data instead of switching examples. Full schema, join keys, and file layout:
+`trip_time`, `payment`, and `zone_lookup`, plus a supplementary nested
+`drivers` dataset — so each topic builds on the same data instead of
+switching examples. Full schema, join keys, and physical layout:
 [`docs/data/dataset-overview.md`](docs/data/dataset-overview.md).
 
 ---

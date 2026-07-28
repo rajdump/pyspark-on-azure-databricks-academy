@@ -25,7 +25,7 @@ the current module's own `README.md` for detailed, in-progress design.
 
 A shared rideshare dataset (`trip`, `trip_time`, `payment`, `zone_lookup`,
 plus a supplementary nested `drivers` dataset) threads through every module.
-Full schema, join keys, and file layout: `docs/data/dataset-overview.md`.
+Full schema, join keys, and physical layout: `docs/data/dataset-overview.md`.
 
 ## Workflow
 

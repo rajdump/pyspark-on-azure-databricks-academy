@@ -1,28 +1,24 @@
 # Dataset Overview — Rideshare
 
 Canonical owner of the rideshare dataset's logical tables, columns/types,
-join keys, physical formats, and `data/raw/` layout. Referenced by
-`.cursor/rules/learner-notebooks.mdc`, `/new-lesson`, `/write-lesson`,
-`/validate-notebook`, `/review-module`, and Cmd+K inline-edit sessions (via
-explicit `@docs/data/dataset-overview.md`) — do not duplicate this content
-elsewhere. Shared read list: @docs/standards/notebook-authoring-checklist.md.
+join keys, and physical layout (Git source files + Unity Catalog Volume
+paths from Module 5). Referenced by `.cursor/rules/learner-notebooks.mdc`,
+`/new-lesson`, `/write-lesson`, `/validate-notebook`, `/review-module`, and
+Cmd+K sessions via `@docs/data/dataset-overview.md` — do not duplicate this
+content elsewhere. Shared read list: @docs/standards/notebook-authoring-checklist.md.
 
-This is the single running example threaded through every module. It is
-intentionally small and transformation-friendly, so the same data supports
-everything from hand-built DataFrames in Module 1 through Delta/Unity
-Catalog work in Modules 10–12.
+Intentionally small (100/100/100/20 rows) for fast iteration — not for
+demonstrating shuffle, spill, or skew at volume (Module 16 uses it for
+plan-reading only).
 
 ## Core logical tables
 
 | Table | Rows | Role |
 |---|---:|---|
 | `trip` | 100 | Central fact table |
-| `trip_time` | 100 | 1:1 extension of `trip` — date and time of the trip |
+| `trip_time` | 100 | 1:1 extension of `trip` — date and time |
 | `payment` | 100 | 1:1 extension of `trip` — fare breakdown |
-| `zone_lookup` | 20 | Dimension table, referenced for both pickup and dropoff |
-
-Later modules may use larger generated variants of this same shape — not
-part of this initial setup.
+| `zone_lookup` | 20 | Dimension — pickup and dropoff locations |
 
 ### `trip`
 
@@ -74,61 +70,66 @@ part of this initial setup.
 - `trip.pickup_location_id = zone_lookup.location_id`
 - `trip.dropoff_location_id = zone_lookup.location_id`
 
-`zone_lookup` is referenced twice (pickup and dropoff), which makes it
-useful for teaching multiple joins to the same lookup table (Module 7).
+## Supplementary: `drivers` (nested XML)
 
-## Supplementary dataset: `drivers` (nested XML)
-
-`drivers.xml` is a nested, non-flat dataset — 12 `<driver>` records — kept
-separately from the 4 core logical tables above. It exists specifically to
-teach nested-structure reading and `explode()` (Module 5 for the read, Module 6
-for complex-type handling), not as a fifth core table.
+12 `<driver>` records — not a fifth core table.
 
 | Field | Type |
 |---|---|
 | `driver_id` | string, e.g. `D001` |
 | `name` | string |
 | `license_number` | string |
-| `vehicle` | nested struct — `make`, `model`, `year`, `body_type` |
-| `trips_assigned` | nested repeated element — a list of `trip_id` values assigned to that driver |
+| `vehicle` | struct — `make`, `model`, `year`, `body_type` |
+| `trips_assigned` | repeated `trip_id` list |
 
-Joinable back to the core tables after flattening:
-`trip.trip_id = drivers.trips_assigned[].trip_id` (after `explode()`).
+Joinable to `trip` after `explode()` on `trips_assigned`.
 
-## Secondary live source: `payment` in Azure SQL Database
+## Physical layout
 
-In addition to the static bulk files below, the `payment` table also has a
-live source in an **Azure SQL Database**. This is used specifically for
-Module 5's reader/writer exercise: connect via JDBC from Azure Databricks
-(not locally), read `payment` from Azure SQL Database, and write the result
-to `data/raw/avro/` as an Avro file. This is why `data/raw/avro/` starts
-empty in this initial setup — it is populated as Module 5 content, not as a
-repository-setup data-prep step. Connection details (server name, auth
-method, secret scope) are Module 5 design, documented there, and are never
-committed to this repository.
+**Modules 1–4:** hand-built DataFrames in code (column names/types above).
+**Modules 5+:** learner notebooks use Unity Catalog Volume paths only — not
+`abfss://` URLs.
 
-## File layout
+| Platform piece | Value |
+|---|---|
+| Catalog / schema | `academy` / `rideshare` |
+| Volumes | `raw`, `processed`, `source` |
+| External location | `el_lab` (already exists; grants/credentials → Module 11) |
+| Secrets | `el-lab` / `sql-password` |
 
-```
-data/raw/
-├── csv/        trip.csv, trip_time.csv, payment.csv, zone_lookup.csv
-├── json/       trip.json, trip_time.json, payment.json, zone_lookup.json
-├── parquet/    trip.parquet, trip_time.parquet, payment.parquet, zone_lookup.parquet
-├── avro/       (empty at setup — populated by Module 5's Azure SQL Database exercise)
-└── xml/
-    └── drivers.xml
-```
+Volume path pattern: `/Volumes/academy/rideshare/{volume}/{dataset}/`
 
-- JSON files are newline-delimited (JSON Lines) — reads cleanly in Spark.
-- Parquet files preserve intended types, including decimals.
-- CSV and JSON drive the ingestion-format lessons, where explicit schemas
-  are taught alongside `inferSchema` (Module 5).
+**Write rule:** Module 6 owns cleaned `processed/{dataset}/`; Modules 7–9
+use new output names (`trip_enriched`, KPI tables, etc.) to avoid overwrites.
 
-## Note on scale
+### Datasets at a glance
 
-This dataset is intentionally tiny (100/100/100/20 rows). It's sized for
-fast iteration while learning syntax and patterns — it is not meant to
-demonstrate shuffle, spill, or skew behavior at volume. Module 16
-(Performance and Spark Internals) uses this same data for syntax and
-plan-reading; real performance-at-scale behavior is out of scope for this
-course.
+Academy folder names: `trip`, `trip_time`, `zone_lookup`, `payment`,
+`drivers`.
+
+| Dataset | Module 5 format | Repo source (Git) | Volume destination |
+|---|---|---|---|
+| `trip` | CSV | `data/raw/csv/trip.csv` | `raw/trip/` |
+| `trip_time` | Parquet | `data/raw/parquet/trip_time.parquet` | `raw/trip_time/` |
+| `zone_lookup` | JSON Lines | `data/raw/json/zone_lookup.json` | `raw/zone_lookup/` |
+| `drivers` | XML | `data/raw/xml/drivers.xml` | `raw/drivers/` |
+| `payment` | Avro | `data/raw/{csv,json,parquet}/payment.*` also in repo | `raw/payment/` |
+
+Module 5 copies repo files into Volume `raw/{dataset}/`. JSON is
+newline-delimited; Parquet preserves decimals. Other formats exist in the
+repo for authoring flexibility but each dataset has one primary read format
+in Module 5.
+
+### `payment` JDBC exercise (Module 5)
+
+`payment` also has a live **Azure SQL Database** source. Run on an
+all-purpose cluster (not serverless):
+
+1. Seed from `source/payment/`
+2. JDBC write → `el_lab.payments`
+3. JDBC read ← `el_lab.payments`
+4. Write Avro → `raw/payment/`
+
+SQL table `el_lab.payments` ≠ Volume folder `payment`. Connection details
+live in the Module 5 README — never committed here. Repo `data/raw/avro/` stays
+empty; Avro lands on the Volume only.

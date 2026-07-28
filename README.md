@@ -71,7 +71,7 @@ workflow.
 - Module folders and notebooks: `NN - Descriptive Title` — see
   `docs/standards/naming-conventions.md`
 - Coding and notebook-writing standards: `docs/standards/`
-- Dataset reference (schemas, join keys, file layout): `docs/data/dataset-overview.md`
+- Dataset reference (schemas, join keys, physical layout): `docs/data/dataset-overview.md`
 - Author-facing runtime validation evidence: `docs/validation/`
 
 ## Setup
