@@ -98,8 +98,10 @@ print(dbutils.fs.head(zone_json_path, 500))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Each line is a self-contained `{...}` object. Contrast that with
-# MAGIC pretty-printed JSON in section 7, where a single record spans multiple lines.
+# MAGIC
+# MAGIC Notice how each line is a complete `{...}` object — that is JSON Lines format.
+# MAGIC In section 7, you will see the opposite: a single record spread across
+# MAGIC multiple lines (pretty-printed JSON), which requires a different read option.
 
 # COMMAND ----------
 
@@ -123,16 +125,21 @@ zone_inferred.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Both builds return the same inferred schema. **`.json(path)`** is compact
-# MAGIC shorthand; **`format("json").load(path)`** is the generic DataSource API.
 # MAGIC
-# MAGIC **Recommended in this module:** **`format("json").load(...)`** and
-# MAGIC **`format("json").save(...)`** — the same **`format(...).load(...)`** pattern
-# MAGIC works for CSV, Parquet, Avro, and XML in this module. Shorthand is fine for
-# MAGIC quick JSON-only exploration.
+# MAGIC Both approaches give the same result. The difference is just syntax:
 # MAGIC
-# MAGIC The cells below use **`format("json")`**. **`zone_inferred`** carries forward
-# MAGIC until the explicit-schema read in section 5.
+# MAGIC | Syntax | When to use |
+# MAGIC |--------|-------------|
+# MAGIC | `.json(path)` | Quick exploration — short and convenient |
+# MAGIC | `.format("json").load(path)` | Recommended — same pattern works for CSV, Parquet, Avro, and XML |
+# MAGIC
+# MAGIC This notebook uses `format("json")` from here onward. The variable
+# MAGIC `zone_inferred` carries forward until section 5, where we apply an
+# MAGIC explicit schema.
+# MAGIC
+# MAGIC > **Note:** Columns appear in alphabetical order (`borough_name` first,
+# MAGIC > not `location_id`). When Spark infers a JSON schema, it sorts field
+# MAGIC > names A–Z. Use an explicit schema (section 5) to control column order.
 
 # COMMAND ----------
 
