@@ -21,6 +21,7 @@
 # MAGIC | Two read syntaxes | `.parquet(path)` shorthand vs `format("parquet").load(path)` |
 # MAGIC | Embedded schema | Inspect with `printSchema()`, a sample row, and row count |
 # MAGIC | Explicit schemas | Apply DDL string and `StructType` schemas for validation |
+# MAGIC | Schema mismatch | See cast, nulls, or dropped columns when the schema disagrees |
 # MAGIC | Light reshape | Select and rename columns after read |
 # MAGIC | Write Parquet | Save a practice output under `practice/` |
 # MAGIC | Round-trip test | Re-read written Parquet and confirm types are preserved |
@@ -210,43 +211,93 @@ trip_time_via_struct.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Use **`trip_time`** (DDL read) for the rest of this notebook.
+# MAGIC ### 5c. Schema mismatch
 # MAGIC
-# MAGIC > **Note:** If the explicit schema disagrees with Parquet metadata (wrong
-# MAGIC > type or missing columns), Spark may cast, null out values, or fail the
-# MAGIC > read depending on the mismatch. Keep the declared schema aligned with
-# MAGIC > the course contract.
+# MAGIC Sections 5a–5b declared a schema that **matches** the file. In production,
+# MAGIC the risk is a schema that looks fine in code but **does not** match Parquet
+# MAGIC metadata. The read often still succeeds — Spark may **cast**, fill
+# MAGIC **nulls**, or **drop** columns — so bad contracts are easy to miss. That is
+# MAGIC read-time behavior, not Delta schema evolution (Module 10).
+# MAGIC
+# MAGIC The next cells re-read landing **`trip_time.parquet`** with wrong schemas on
+# MAGIC purpose:
+# MAGIC
+# MAGIC 1. Compatible type widening → cast, values kept
+# MAGIC 2. Incompatible type → nulls (silent data loss)
+# MAGIC 3. Extra schema column not in the file → nulls
+# MAGIC 4. File column omitted from the schema → dropped from the DataFrame
+# MAGIC
+# MAGIC After the demos, keep using **`trip_time`** from the correct DDL read in
+# MAGIC 5a.
 
 # COMMAND ----------
 
-# DBTITLE 1,Schema mismatch scenarios
-# What happens when your explicit schema disagrees with the Parquet file?
-# The file has: trip_id (bigint), trip_date (date), hour_of_day (int)
+mismatch_widen = (
+    spark.read.format("parquet")
+    .schema("trip_id bigint, trip_date date, hour_of_day bigint")
+    .load(trip_time_parquet_path)
+)
 
-# Scenario 1: Compatible type widening (int → bigint) — Spark casts silently
-schema_1 = "trip_id bigint, trip_date date, hour_of_day bigint"
-df1 = spark.read.format("parquet").schema(schema_1).load(trip_time_parquet_path)
-print("Scenario 1 — int declared as bigint (compatible cast):")
-df1.select("hour_of_day").show(2)
+print("Compatible cast — file int, schema bigint:")
+mismatch_widen.printSchema()
+mismatch_widen.select("hour_of_day").show(2)
 
-# Scenario 2: Incompatible type (date column declared as int) — returns NULLs
-schema_2 = "trip_id bigint, trip_date int, hour_of_day int"
-df2 = spark.read.format("parquet").schema(schema_2).load(trip_time_parquet_path)
-print("Scenario 2 — date declared as int (incompatible) → NULLs:")
-df2.select("trip_date").show(2)
+# COMMAND ----------
 
-# Scenario 3: Extra column in schema that doesn't exist in file → NULLs
-schema_3 = "trip_id bigint, trip_date date, hour_of_day int, city string"
-df3 = spark.read.format("parquet").schema(schema_3).load(trip_time_parquet_path)
-print("Scenario 3 — 'city' not in file → NULLs:")
-df3.select("city").show(2)
+# MAGIC %md
+# MAGIC **`hour_of_day`** widens from **`int`** to **`bigint`**. Values are kept;
+# MAGIC Spark applies a compatible cast.
 
-# Scenario 4: Schema omits a file column → column is dropped (not in DataFrame)
-schema_4 = "trip_id bigint, trip_date date"
-df4 = spark.read.format("parquet").schema(schema_4).load(trip_time_parquet_path)
-print("Scenario 4 — 'hour_of_day' omitted from schema → dropped:")
-df4.printSchema()
-df4.show(2)
+# COMMAND ----------
+
+mismatch_bad_type = (
+    spark.read.format("parquet")
+    .schema("trip_id bigint, trip_date int, hour_of_day int")
+    .load(trip_time_parquet_path)
+)
+
+print("Incompatible type — file date, schema int → nulls:")
+mismatch_bad_type.select("trip_date").show(2)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Declaring **`trip_date`** as **`int`** does not convert the dates. The column
+# MAGIC appears with the declared type, but values become **`null`** — silent data
+# MAGIC loss if you do not notice.
+
+# COMMAND ----------
+
+mismatch_extra = (
+    spark.read.format("parquet")
+    .schema("trip_id bigint, trip_date date, hour_of_day int, city string")
+    .load(trip_time_parquet_path)
+)
+
+print("Extra schema column not in file → nulls:")
+mismatch_extra.select("city").show(2)
+
+# COMMAND ----------
+
+mismatch_omit = (
+    spark.read.format("parquet")
+    .schema("trip_id bigint, trip_date date")
+    .load(trip_time_parquet_path)
+)
+
+print("File column omitted from schema → dropped from DataFrame:")
+mismatch_omit.printSchema()
+mismatch_omit.show(2)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC A column in the schema but **not** in the file (**`city`**) is all
+# MAGIC **`null`**. A column in the file but **not** in the schema
+# MAGIC (**`hour_of_day`**) is omitted from the DataFrame.
+# MAGIC
+# MAGIC Keep the declared schema aligned with the course contract. Continue with
+# MAGIC **`trip_time`** from section 5a.
 
 # COMMAND ----------
 
@@ -356,6 +407,8 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC - **Embedded schema** — types come from file metadata; no **`inferSchema`**
 # MAGIC - **Explicit schema (DDL or `StructType`)** — still recommended for production
 # MAGIC   contracts and validation
+# MAGIC - **Schema mismatch** — wrong types may cast or null out; extra schema columns
+# MAGIC   are null; omitted file columns are dropped
 # MAGIC - **Light reshape** — **`select`** / rename before a practice write
 # MAGIC - **Parquet round trip** — writes a directory of part files; types are
 # MAGIC   preserved on re-read (unlike CSV)
