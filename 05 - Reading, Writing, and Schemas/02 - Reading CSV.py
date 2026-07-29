@@ -14,8 +14,9 @@
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
 # MAGIC - Read a CSV file from a Volume path under
 # MAGIC   `/Volumes/rideshare_dev/landing/source_files/`
-# MAGIC - Compare a default CSV read, **`inferSchema=True`**, and an explicit
-# MAGIC   **`StructType`**
+# MAGIC - See why **`header=True`** matters when the first row holds column names
+# MAGIC - Compare a default CSV read, **`inferSchema=True`**, and explicit schemas
+# MAGIC   (DDL string and **`StructType`**)
 # MAGIC - Validate that the read schema matches the expected file layout
 # MAGIC - Apply a light **`select`** reshape and write a practice CSV output
 # MAGIC - Re-read a written CSV and see that Spark types are not preserved
@@ -58,19 +59,6 @@ practice_root = "/Volumes/rideshare_dev/processed/output_files/practice"
 practice_output_path = f"{practice_root}/trip_csv_roundtrip/"
 malformed_demo_path = f"{practice_root}/malformed_csv_demo/"
 
-trip_schema = StructType(
-    [
-        StructField("trip_id", LongType(), False),
-        StructField("service_type", StringType(), False),
-        StructField("pickup_location_id", IntegerType(), False),
-        StructField("dropoff_location_id", IntegerType(), False),
-        StructField("trip_distance_miles", DecimalType(8, 2), False),
-        StructField("request_to_pickup_mins", IntegerType(), False),
-        StructField("ride_duration_mins", IntegerType(), False),
-        StructField("driver_arrival_to_pickup_mins", IntegerType(), False),
-    ]
-)
-
 print(f"trip_csv_path = {trip_csv_path}")
 print(f"practice_output_path = {practice_output_path}")
 
@@ -99,26 +87,57 @@ display(dbutils.fs.ls(f"{landing_root}/trip"))
 # MAGIC %md
 # MAGIC ## 2. Default CSV read
 # MAGIC
-# MAGIC Start with the smallest option set: tell Spark the first row is a header.
-# MAGIC Do **not** enable schema inference yet.
+# MAGIC Spark's CSV default is **`header=False`**: every row is treated as data and
+# MAGIC columns get generic names (**`_c0`**, **`_c1`**, …). Only after you see that
+# MAGIC behavior does **`header=True`** make sense.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 2a. Without header
+# MAGIC
+# MAGIC Read **`trip.csv`** with no options — the first line of the file (the real
+# MAGIC column names) is ingested as an ordinary data row.
+
+# COMMAND ----------
+
+trip_no_header = spark.read.csv(trip_csv_path)
+
+print("Default read without header (generic column names):")
+trip_no_header.printSchema()
+trip_no_header.show(1, vertical=True)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Column names are **`_c0`**, **`_c1`**, … and row 1 contains
+# MAGIC **`trip_id`**, **`service_type`**, … as **values** — not as schema. Legacy
+# MAGIC feeds without a header row look like this on purpose; our file **does** have
+# MAGIC a header, so we fix that next.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 2b. With **`header=True`**
+# MAGIC
+# MAGIC Tell Spark the first row is column names. Still no schema inference — every
+# MAGIC column stays **`string`**.
 
 # COMMAND ----------
 
 trip_strings = spark.read.option("header", True).csv(trip_csv_path)
 
-print("Default read dtypes (expect all string):")
-for name, dtype in trip_strings.dtypes:
-    print(f"  {name}: {dtype}")
-
-trip_strings.show(5)
+print("Read with header=True (expect all string types):")
+trip_strings.printSchema()
+trip_strings.show(1, vertical=True)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Every column arrived as **`string`**. That is Spark's safe default for CSV —
-# MAGIC text files do not embed type metadata. If you leave types as strings, numeric
-# MAGIC columns behave like text in filters and aggregations (Module 3 showed why
-# MAGIC typing matters).
+# MAGIC Column names now match the file header, and every column is still **`string`**.
+# MAGIC That is Spark's safe default for CSV — text files do not embed type metadata.
+# MAGIC If you leave types as strings, numeric columns behave like text in filters and
+# MAGIC aggregations (Module 3 showed why typing matters).
 
 # COMMAND ----------
 
@@ -126,7 +145,9 @@ trip_strings.show(5)
 # MAGIC ## 3. Schema inference
 # MAGIC
 # MAGIC **`inferSchema=True`** asks Spark to scan the file and guess column types.
-# MAGIC Convenient for exploration; less predictable in production.
+# MAGIC Convenient for exploration; less predictable in production. Use
+# MAGIC **`.show(1, vertical=True)`** on wide tables so one sample row is easy to
+# MAGIC read alongside **`printSchema()`**.
 
 # COMMAND ----------
 
@@ -134,11 +155,9 @@ trip_inferred = (
     spark.read.option("header", True).option("inferSchema", True).csv(trip_csv_path)
 )
 
-print("Inferred dtypes:")
-for name, dtype in trip_inferred.dtypes:
-    print(f"  {name}: {dtype}")
-
-trip_inferred.show(5)
+print("Inferred schema:")
+trip_inferred.printSchema()
+trip_inferred.show(1, vertical=True)
 
 # COMMAND ----------
 
@@ -155,23 +174,74 @@ trip_inferred.show(5)
 # MAGIC %md
 # MAGIC ## 4. Explicit schema
 # MAGIC
-# MAGIC The production pattern: define a **`StructType`** that matches the contract
-# MAGIC you expect, then pass it to **`.schema(...)`**. Types are applied at read
-# MAGIC time — no separate cast step needed when the file matches the contract.
-
-# COMMAND ----------
-
-trip = spark.read.option("header", True).schema(trip_schema).csv(trip_csv_path)
-
-trip.printSchema()
-trip.show(5)
+# MAGIC The production pattern: declare the contract up front and pass it to
+# MAGIC **`.schema(...)`**. Module 2 introduced two equivalent forms — a **DDL
+# MAGIC schema string** and a **`StructType`**. File reads accept either.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Use **`trip`** (explicit schema) for the rest of this notebook. When the
-# MAGIC source layout is stable, explicit schemas make pipelines repeatable and
-# MAGIC reviewable.
+# MAGIC ### 4a. DDL schema string
+# MAGIC
+# MAGIC A comma-separated list of **`column_name type`** pairs — the same style used
+# MAGIC in **`createDataFrame(..., schema_ddl)`** back in Module 2.
+
+# COMMAND ----------
+
+trip_schema_ddl = """
+trip_id bigint,
+service_type string,
+pickup_location_id int,
+dropoff_location_id int,
+trip_distance_miles decimal(8,2),
+request_to_pickup_mins int,
+ride_duration_mins int,
+driver_arrival_to_pickup_mins int
+"""
+
+trip = spark.read.option("header", True).schema(trip_schema_ddl).csv(trip_csv_path)
+
+print("Read with DDL schema:")
+trip.printSchema()
+trip.show(1, vertical=True)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 4b. `StructType` schema
+# MAGIC
+# MAGIC **`StructType`** is the same contract expressed as Python objects — useful
+# MAGIC when a schema is built or reused programmatically.
+
+# COMMAND ----------
+
+trip_schema = StructType(
+    [
+        StructField("trip_id", LongType(), False),
+        StructField("service_type", StringType(), False),
+        StructField("pickup_location_id", IntegerType(), False),
+        StructField("dropoff_location_id", IntegerType(), False),
+        StructField("trip_distance_miles", DecimalType(8, 2), False),
+        StructField("request_to_pickup_mins", IntegerType(), False),
+        StructField("ride_duration_mins", IntegerType(), False),
+        StructField("driver_arrival_to_pickup_mins", IntegerType(), False),
+    ]
+)
+
+trip_via_struct = (
+    spark.read.option("header", True).schema(trip_schema).csv(trip_csv_path)
+)
+
+print("Same file read with StructType (schemas should match):")
+trip_via_struct.printSchema()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Use **`trip`** (DDL read) for the rest of this notebook. When the source
+# MAGIC layout is stable, explicit schemas — DDL or **`StructType`** — make pipelines
+# MAGIC repeatable and reviewable. Types apply at read time; no separate cast step
+# MAGIC is needed when the file matches the contract.
 
 # COMMAND ----------
 
@@ -190,8 +260,8 @@ trip.printSchema()
 print(f"\nColumn names ({len(trip.columns)} columns):")
 print(trip.columns)
 
-print("\nSample rows:")
-trip.show(5)
+print("\nSample row:")
+trip.show(1, vertical=True)
 
 row_count = trip.count()
 print(f"\nRow count: {row_count} (expect 100 for the course trip file)")
@@ -283,7 +353,7 @@ trip_subset = trip.select(
     F.col("trip_distance_miles"),
 )
 
-trip_subset.show(5)
+trip_subset.show(3)
 
 # COMMAND ----------
 
@@ -307,28 +377,24 @@ roundtrip_strings = spark.read.option("header", True).csv(practice_output_path)
 
 print("Re-read without a schema (types revert to string):")
 roundtrip_strings.printSchema()
-roundtrip_strings.show(5)
+roundtrip_strings.show(1, vertical=True)
 
 # COMMAND ----------
 
-trip_subset_schema = StructType(
-    [
-        StructField("trip_id", LongType(), False),
-        StructField("service_type", StringType(), False),
-        StructField("pickup_location_id", IntegerType(), False),
-        StructField("trip_distance_miles", DecimalType(8, 2), False),
-    ]
+trip_subset_schema_ddl = (
+    "trip_id bigint, service_type string, pickup_location_id int, "
+    "trip_distance_miles decimal(8,2)"
 )
 
 roundtrip_typed = (
     spark.read.option("header", True)
-    .schema(trip_subset_schema)
+    .schema(trip_subset_schema_ddl)
     .csv(practice_output_path)
 )
 
 print("Re-read with explicit schema (types restored):")
 roundtrip_typed.printSchema()
-roundtrip_typed.show(5)
+roundtrip_typed.show(1, vertical=True)
 
 # COMMAND ----------
 
@@ -345,16 +411,18 @@ roundtrip_typed.show(5)
 # MAGIC
 # MAGIC Build a small practice extract without reusing **`trip_subset`**:
 # MAGIC
-# MAGIC 1. Read **`trip.csv`** again with the full **`trip_schema`** into a new
-# MAGIC    DataFrame (do not reuse **`trip`** or **`trip_subset`**).
+# MAGIC 1. Read **`trip.csv`** again with the full **`trip_schema_ddl`** (or
+# MAGIC    **`trip_schema`**) into a new DataFrame (do not reuse **`trip`** or
+# MAGIC    **`trip_subset`**).
 # MAGIC 2. **`select`** exactly these three columns: **`trip_id`**,
 # MAGIC    **`dropoff_location_id`**, **`ride_duration_mins`**.
 # MAGIC 3. Write the result to
 # MAGIC    **`/Volumes/rideshare_dev/processed/output_files/practice/trip_exercise/`**
 # MAGIC    with **`header=True`** and **`.mode("overwrite")`**.
-# MAGIC 4. Re-read the written folder **with an explicit schema** for those three
-# MAGIC    columns and print the schema. Confirm **`trip_id`** is **`bigint`** and
-# MAGIC    the two integer columns are **`int`**, not **`string`**.
+# MAGIC 4. Re-read the written folder with an explicit schema (DDL or
+# MAGIC    **`StructType`**) for those three columns and print the schema. Confirm
+# MAGIC    **`trip_id`** is **`bigint`** and the two integer columns are **`int`**,
+# MAGIC    not **`string`**.
 
 # COMMAND ----------
 
@@ -368,12 +436,13 @@ roundtrip_typed.show(5)
 # MAGIC - **Volume paths** — format reads use
 # MAGIC   **`/Volumes/rideshare_dev/landing/source_files/...`**, not raw
 # MAGIC   **`abfss://`** URLs
-# MAGIC - **Default CSV read** — with **`header=True`** only, every column is
-# MAGIC   **`string`**
+# MAGIC - **Default CSV read** — without **`header`**, Spark uses **`_c0`**, **`_c1`**, …
+# MAGIC   and treats every row as data; **`header=True`** uses the first row as
+# MAGIC   column names (still all **`string`** types without a schema)
 # MAGIC - **`inferSchema=True`** — Spark guesses types after an extra data pass;
 # MAGIC   fine for exploration, risky for production contracts
-# MAGIC - **Explicit `StructType`** — recommended production pattern; types apply
-# MAGIC   at read time
+# MAGIC - **Explicit schema (DDL or `StructType`)** — recommended production
+# MAGIC   pattern; types apply at read time
 # MAGIC - **Validation** — check **`printSchema()`**, column names, samples, and
 # MAGIC   row counts before trusting a landing file
 # MAGIC - **Malformed rows** — **`FAILFAST`** halts early; **`PERMISSIVE`** +
