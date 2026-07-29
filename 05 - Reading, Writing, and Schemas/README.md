@@ -87,16 +87,16 @@ content notebook number is **02** (ignore **99** for numbering).
    - Create external location `el_rideshare_dev`, catalog `rideshare_dev`,
      schemas, and volumes
    - `mkdirs` for dataset folders; copy repo files into landing; verify
-2. **Reading CSV with Schemas**
+2. **Reading CSV**
    - Read **`trip`** from landing; explicit schema vs **`inferSchema`**;
      light reshape; practice write
-3. **Reading JSON with Schemas**
+3. **Reading JSON**
    - Read **`zone_lookup`** (JSON Lines) from landing
-4. **Reading Parquet with Schemas**
+4. **Reading Parquet**
    - Read **`trip_time`** from landing
-5. **Reading XML with Schemas**
+5. **Reading XML**
    - Read **`drivers`** with **`rowTag`** only — no **`explode`** (Module 6)
-6. **Reading Avro with Schemas**
+6. **Reading Avro**
    - Read **`payment`** from landing (Avro landed in Notebook 01)
 7. **Write Patterns and Table Preview**
    - Save modes; brief partitioned write
