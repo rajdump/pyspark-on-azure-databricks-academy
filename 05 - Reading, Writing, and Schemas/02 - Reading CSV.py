@@ -14,6 +14,8 @@
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
 # MAGIC - Read a CSV file from a Volume path under
 # MAGIC   `/Volumes/rideshare_dev/landing/source_files/`
+# MAGIC - Use both CSV read/write syntaxes — **`.csv(...)`** shorthand and
+# MAGIC   **`format("csv").load(...)`** / **`format("csv").save(...)`**
 # MAGIC - See why **`header=True`** matters when the first row holds column names
 # MAGIC - Compare a default CSV read, **`inferSchema=True`**, and explicit schemas
 # MAGIC   (DDL string and **`StructType`**)
@@ -118,17 +120,42 @@ trip_no_header.show(1, vertical=True)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 2b. With **`header=True`**
+# MAGIC ### 2b. With **`header=True`** — two equivalent syntaxes
 # MAGIC
 # MAGIC Tell Spark the first row is column names. Still no schema inference — every
-# MAGIC column stays **`string`**.
+# MAGIC column stays **`string`**. Spark exposes two equivalent ways to read CSV:
 
 # COMMAND ----------
 
-trip_strings = spark.read.option("header", True).csv(trip_csv_path)
+trip_strings_shorthand = spark.read.option("header", True).csv(trip_csv_path)
 
-print("Read with header=True (expect all string types):")
+trip_strings = (
+    spark.read.format("csv").option("header", True).load(trip_csv_path)
+)
+
+print("Shorthand — .option(...).csv(path):")
+trip_strings_shorthand.printSchema()
+
+print("Generic — .format('csv').option(...).load(path):")
 trip_strings.printSchema()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Both builds return the same schema. **`.csv(path)`** is compact shorthand;
+# MAGIC **`format("csv").load(path)`** is the generic DataSource API.
+# MAGIC
+# MAGIC **Recommended in this module:** **`format("csv").load(...)`** and
+# MAGIC **`format("csv").save(...)`** — the same **`format(...).load(...)`** pattern
+# MAGIC works for JSON, Parquet, Avro, and XML in the notebooks ahead, so pipelines
+# MAGIC stay consistent. Shorthand is fine for quick CSV-only exploration.
+# MAGIC
+# MAGIC The cells below use the **`format("csv")`** form. **`trip_strings`** is the
+# MAGIC DataFrame we carry forward.
+
+# COMMAND ----------
+
+print("Sample row from trip_strings:")
 trip_strings.show(1, vertical=True)
 
 # COMMAND ----------
@@ -152,7 +179,10 @@ trip_strings.show(1, vertical=True)
 # COMMAND ----------
 
 trip_inferred = (
-    spark.read.option("header", True).option("inferSchema", True).csv(trip_csv_path)
+    spark.read.format("csv")
+    .option("header", True)
+    .option("inferSchema", True)
+    .load(trip_csv_path)
 )
 
 print("Inferred schema:")
@@ -199,7 +229,12 @@ ride_duration_mins int,
 driver_arrival_to_pickup_mins int
 """
 
-trip = spark.read.option("header", True).schema(trip_schema_ddl).csv(trip_csv_path)
+trip = (
+    spark.read.format("csv")
+    .option("header", True)
+    .schema(trip_schema_ddl)
+    .load(trip_csv_path)
+)
 
 print("Read with DDL schema:")
 trip.printSchema()
@@ -229,7 +264,10 @@ trip_schema = StructType(
 )
 
 trip_via_struct = (
-    spark.read.option("header", True).schema(trip_schema).csv(trip_csv_path)
+    spark.read.format("csv")
+    .option("header", True)
+    .schema(trip_schema)
+    .load(trip_csv_path)
 )
 
 print("Same file read with StructType (schemas should match):")
@@ -311,9 +349,10 @@ print(f"Wrote demo file to {malformed_csv_path}")
 
 try:
     (
-        spark.read.option("header", True)
+        spark.read.format("csv")
+        .option("header", True)
         .option("mode", "FAILFAST")
-        .csv(malformed_csv_path)
+        .load(malformed_csv_path)
         .show()
     )
 except Exception as exc:
@@ -329,10 +368,11 @@ except Exception as exc:
 # COMMAND ----------
 
 (
-    spark.read.option("header", True)
+    spark.read.format("csv")
+    .option("header", True)
     .option("mode", "PERMISSIVE")
     .option("columnNameOfCorruptRecord", "_corrupt_record")
-    .csv(malformed_csv_path)
+    .load(malformed_csv_path)
     .show(truncate=False)
 )
 
@@ -362,18 +402,27 @@ trip_subset.show(3)
 # MAGIC
 # MAGIC Write the subset to **`practice/trip_csv_roundtrip/`**, then read it back.
 # MAGIC CSV is still text on disk — Spark does **not** remember that
-# MAGIC **`trip_distance_miles`** was a decimal.
+# MAGIC **`trip_distance_miles`** was a decimal. Writes have the same two syntaxes
+# MAGIC as reads.
 
 # COMMAND ----------
 
-trip_subset.write.mode("overwrite").option("header", True).csv(practice_output_path)
+# Recommended — consistent with other formats in this module
+trip_subset.write.format("csv").mode("overwrite").option("header", True).save(
+    practice_output_path
+)
+
+# Shorthand equivalent:
+# trip_subset.write.mode("overwrite").option("header", True).csv(practice_output_path)
 
 print(f"Wrote CSV folder to {practice_output_path}")
 display(dbutils.fs.ls(practice_output_path))
 
 # COMMAND ----------
 
-roundtrip_strings = spark.read.option("header", True).csv(practice_output_path)
+roundtrip_strings = (
+    spark.read.format("csv").option("header", True).load(practice_output_path)
+)
 
 print("Re-read without a schema (types revert to string):")
 roundtrip_strings.printSchema()
@@ -387,9 +436,10 @@ trip_subset_schema_ddl = (
 )
 
 roundtrip_typed = (
-    spark.read.option("header", True)
+    spark.read.format("csv")
+    .option("header", True)
     .schema(trip_subset_schema_ddl)
-    .csv(practice_output_path)
+    .load(practice_output_path)
 )
 
 print("Re-read with explicit schema (types restored):")
@@ -418,7 +468,8 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC    **`dropoff_location_id`**, **`ride_duration_mins`**.
 # MAGIC 3. Write the result to
 # MAGIC    **`/Volumes/rideshare_dev/processed/output_files/practice/trip_exercise/`**
-# MAGIC    with **`header=True`** and **`.mode("overwrite")`**.
+# MAGIC    with **`header=True`** and **`.mode("overwrite")`** (use either
+# MAGIC    **`format("csv").save(...)`** or **`.csv(...)`** — same as section 8).
 # MAGIC 4. Re-read the written folder with an explicit schema (DDL or
 # MAGIC    **`StructType`**) for those three columns and print the schema. Confirm
 # MAGIC    **`trip_id`** is **`bigint`** and the two integer columns are **`int`**,
@@ -433,7 +484,11 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **Volume paths** — format reads use
+# MAGIC - **CSV syntax** — **`.csv(path)`** / **`.csv(...)`** shorthand and
+# MAGIC   **`format("csv").load(...)`** / **`format("csv").save(...)`** are
+# MAGIC   equivalent; prefer **`format("csv")`** in this module for consistency
+# MAGIC   across file formats
+# MAGIC - **Volume paths** — reads use
 # MAGIC   **`/Volumes/rideshare_dev/landing/source_files/...`**, not raw
 # MAGIC   **`abfss://`** URLs
 # MAGIC - **Default CSV read** — without **`header`**, Spark uses **`_c0`**, **`_c1`**, …
