@@ -43,11 +43,11 @@ transformations vs actions, lazy evaluation, and that **`write`** is an action.
    **storage credential** that already exists and can access that storage
    (how to create the Access Connector and credential is covered in the
    course PDF materials — not in this repository)
-4. This course repo available as a Databricks **Git folder**
+4. This course repo available as a Databricks **Git folder** (open Notebook
+   01 from that folder so the copy cell can find `data/raw`)
 5. Notebook attached to compute
 6. In Notebooks 01 and 99, overwrite the config cell with **your** storage
-   account, container, storage credential, and ADLS folder (optional
-   `repo_root` if auto-find of `data/raw` fails)
+   account, container, storage credential, and ADLS folder
 
 ## Approach and boundaries
 
@@ -109,9 +109,10 @@ content notebook number is **02** (ignore **99** for numbering).
 
 ## Exercises
 
-Each notebook ends with a short hands-on task — for example, verifying a
-Volume path, reading with an explicit schema, or writing with a chosen save
-mode.
+Each content notebook (01–07) ends with a short hands-on task — for example,
+verifying a Volume path, reading with an explicit schema, or writing with a
+chosen save mode. Notebook **99** is a utility cleanup notebook and has no
+exercise.
 
 ## Minimum privileges required
 

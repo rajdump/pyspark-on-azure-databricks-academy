@@ -3,12 +3,19 @@
 # MAGIC # 01 - Unity Catalog Volumes and Data Landing
 # MAGIC
 # MAGIC This notebook sets up the rideshare data infrastructure in **your** Azure
-# MAGIC Databricks account:
+# MAGIC Databricks account so later notebooks can read files from Volume paths.
 # MAGIC
-# MAGIC 1. Set lab config (storage account, container, credential, ADLS folder)
-# MAGIC 2. Create an ADLS project folder in the Azure Portal
-# MAGIC 3. Create an external location, catalog, schemas, and volumes
-# MAGIC 4. Copy raw source files (CSV, Parquet, JSON, Avro, XML) into the landing volume
+# MAGIC **Learning objectives.** After this notebook, you will be able to:
+# MAGIC - Fill the lab config cell with your storage account, container, storage
+# MAGIC   credential, and ADLS folder
+# MAGIC - Create the ADLS project folder in the Azure Portal, then create external
+# MAGIC   location `el_rideshare_dev`, catalog `rideshare_dev`, schemas, and volumes
+# MAGIC - Create dataset folders under the landing volume, copy repo files into
+# MAGIC   them, and verify the landed files
+# MAGIC
+# MAGIC **Prerequisites.** Module 4. Storage credential must already exist (course
+# MAGIC PDF). Open this notebook from the course Git folder so `data/raw` can be
+# MAGIC found. Overwrite the config cell with **your** Azure values before running.
 # MAGIC
 # MAGIC By the end, the following structure is ready:
 # MAGIC
@@ -22,10 +29,6 @@
 # MAGIC         └── curated/    ← Module 6+ pipeline outputs (created on first write)
 # MAGIC ```
 # MAGIC
-# MAGIC > **Before you run:** overwrite the config cell with **your** Azure values
-# MAGIC > (storage credential must already exist — see the course PDF). Open this
-# MAGIC > notebook from the course Git folder so `data/raw` can be found.
-# MAGIC >
 # MAGIC > Run all cells top-to-bottom. If something goes wrong, use
 # MAGIC > **Notebook 99 - Rideshare Project Cleanup and Reset** to start over.
 
@@ -38,10 +41,6 @@ storage_account = "sadevdbxeus2"
 container = "container-dev-dbx"
 storage_credential = "ac_dev_dbx_eus2"
 adls_folder = "rideshare"
-
-# Optional: set if auto-find of data/raw fails (Databricks Git folder path).
-# Example: "/Workspace/Users/you@example.com/PySpark on Azure Databricks Academy"
-repo_root = None  # or a string path
 
 abfss_root = (
     f"abfss://{container}@{storage_account}.dfs.core.windows.net/{adls_folder}"
@@ -224,10 +223,8 @@ display(dbutils.fs.ls(volume_path))
 # MAGIC %md
 # MAGIC > #### 6. Copy source files from the Git repository to the landing volume
 # MAGIC
-# MAGIC Open this notebook from the course **Git folder**. Auto-find looks for
-# MAGIC `data/raw` starting at `Path.cwd()`. If that fails, set `repo_root` in
-# MAGIC the config cell to your Git folder path and re-run the config cell, then
-# MAGIC this cell.
+# MAGIC Open this notebook from the course **Git folder** so the copy cell can
+# MAGIC find `data/raw` by walking up from the working directory.
 
 # COMMAND ----------
 
@@ -240,19 +237,10 @@ def find_repo_root(start: Path) -> Path:
             return path
     raise FileNotFoundError(
         "Could not find a folder containing data/raw. "
-        "Open this notebook from the course Git folder, or set repo_root "
-        "in the config cell to that path and re-run the config cell."
+        "Open this notebook from the course Git folder and try again."
     )
 
-if repo_root:
-    resolved_root = Path(repo_root)
-    if not (resolved_root / "data" / "raw").is_dir():
-        raise FileNotFoundError(
-            f"repo_root={repo_root!r} does not contain data/raw"
-        )
-else:
-    resolved_root = find_repo_root(Path.cwd())
-
+repo_root = find_repo_root(Path.cwd())
 volume_root = Path("/Volumes/rideshare_dev/landing/source_files")
 
 file_map = {
@@ -264,7 +252,7 @@ file_map = {
 }
 
 for src_rel, dst_rel in file_map.items():
-    src = resolved_root / src_rel
+    src = repo_root / src_rel
     dst = volume_root / dst_rel
     shutil.copy2(src, dst)
     print(f"✓ {src_rel} → {dst_rel}")
@@ -307,6 +295,27 @@ try:
     display(dbutils.fs.ls(output_root))
 except Exception as e:
     print(f"Processed volume is empty or not listable yet (OK): {e}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Exercise
+# MAGIC
+# MAGIC Confirm the landing volume looks right before you move on:
+# MAGIC
+# MAGIC 1. List `/Volumes/rideshare_dev/landing/source_files/` and check that you
+# MAGIC    see five dataset folders (`trip`, `trip_time`, `zone_lookup`,
+# MAGIC    `payment`, `drivers`).
+# MAGIC 2. List inside `trip/` and confirm `trip.csv` is present.
+# MAGIC 3. Print how many items are in the `payment/` folder (expect **1** file).
+# MAGIC
+# MAGIC Use `dbutils.fs.ls` (same pattern as the verification cells above).
+
+# COMMAND ----------
+
+# Your code here
+
+
 
 # COMMAND ----------
 

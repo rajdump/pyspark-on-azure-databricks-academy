@@ -5,6 +5,17 @@
 # MAGIC Use this notebook to reset your work if something goes wrong.
 # MAGIC All cleanup actions are **off by default** — change the flag to `True` only when needed.
 # MAGIC
+# MAGIC **Learning objectives.** After this notebook, you will be able to:
+# MAGIC - Clear Module 5 `practice/` outputs without touching `curated/`
+# MAGIC - Clear Module 6–9 `curated/` outputs (wide blast radius — rebuild from Module 6)
+# MAGIC - Clear landing source files and re-copy from Notebook 01
+# MAGIC - Fully tear down the rideshare catalog, external location, and ADLS folder
+# MAGIC   while leaving the storage credential in place
+# MAGIC
+# MAGIC **Prerequisites.** Notebook 01 completed at least once (or a partial setup
+# MAGIC you want to reset). Overwrite the config cell with **your** Azure values
+# MAGIC (same as Notebook 01).
+# MAGIC
 # MAGIC | Level | What it does | When to use |
 # MAGIC |-------|-------------|-------------|
 # MAGIC | 1 | Clear `practice/` outputs | Redo Module 5 write practice only |
@@ -21,8 +32,6 @@
 # MAGIC > cell is **never** removed.
 # MAGIC >
 # MAGIC > Run **only the cell you need** — do not run all cells at once.
-# MAGIC >
-# MAGIC > Overwrite the config cell with **your** Azure values (same as Notebook 01).
 
 # COMMAND ----------
 
