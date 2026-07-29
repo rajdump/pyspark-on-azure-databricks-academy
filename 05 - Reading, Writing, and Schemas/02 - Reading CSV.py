@@ -1,5 +1,4 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction (rewrite)
 # MAGIC %md
 # MAGIC
 # MAGIC # 02 - Reading CSV
@@ -29,7 +28,8 @@
 # MAGIC
 # MAGIC ---
 # MAGIC
-# MAGIC **Prerequisites:** Notebook 01 completed (landing volume has `trip/trip.csv`).
+# MAGIC **Prerequisites.** Module 4 and **01 - Unity Catalog Volumes and Data
+# MAGIC Landing** — landing volume populated with **`trip/trip.csv`**.
 # MAGIC
 # MAGIC **Compute:** Any cluster with PySpark. This notebook uses Volume paths only.
 
@@ -324,8 +324,8 @@ print(f"\nRow count: {row_count} (expect 100 for the course trip file)")
 # MAGIC
 # MAGIC Real feeds arrive with bad rows — missing fields, extra commas, truncated
 # MAGIC lines. Do **not** edit the landed **`trip.csv`** to simulate this. Instead,
-# MAGIC write a tiny demo file under **`practice/`** and read it with
-# MAGIC **`FAILFAST`** vs **`PERMISSIVE`**.
+# MAGIC write a tiny demo file under **`practice/`** and compare **`FAILFAST`**,
+# MAGIC **`PERMISSIVE`**, and **`DROPMALFORMED`**.
 
 # COMMAND ----------
 
@@ -389,6 +389,22 @@ permissive_schema = "trip_id int, service_type string, trip_distance_miles decim
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC **`DROPMALFORMED`** silently drops corrupt rows and returns only well-formed
+# MAGIC records — useful when bad rows should disappear without failing the job.
+
+# COMMAND ----------
+
+(
+    spark.read.format("csv")
+    .option("header", True)
+    .option("mode", "DROPMALFORMED")
+    .load(malformed_csv_path)
+    .show(truncate=False)
+)
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## 7. Light reshape
 # MAGIC
 # MAGIC Before writing, **`select`** a small column set for a downstream preview.
@@ -412,8 +428,9 @@ trip_subset.show(3)
 # MAGIC
 # MAGIC Write the subset to **`practice/trip_csv_roundtrip/`**, then read it back.
 # MAGIC CSV is still text on disk — Spark does **not** remember that
-# MAGIC **`trip_distance_miles`** was a decimal. Writes have the same two syntaxes
-# MAGIC as reads.
+# MAGIC **`trip_distance_miles`** was a decimal. Reads in section 2b showed both
+# MAGIC syntaxes; the write below uses **`format("csv").save(...)`** (recommended).
+# MAGIC The shorthand **`.csv(...)`** equivalent is shown as a comment only.
 
 # COMMAND ----------
 
@@ -511,7 +528,7 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC - **Validation** — check **`printSchema()`**, column names, samples, and
 # MAGIC   row counts before trusting a landing file
 # MAGIC - **Malformed rows** — **`FAILFAST`** halts early; **`PERMISSIVE`** +
-# MAGIC   **`_corrupt_record`** quarantines bad lines for inspection
+# MAGIC   **`_corrupt_record`** quarantines bad lines; **`DROPMALFORMED`** drops them
 # MAGIC - **CSV round trip** — writing CSV loses Spark types; re-apply a schema on
 # MAGIC   read (Parquet avoids this — coming up next)
 # MAGIC
