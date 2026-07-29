@@ -307,10 +307,11 @@ print(f"\nRow count: {row_count} (expect 100 for the course trip file)")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`printSchema()`** and **`.columns`** are transformations (they inspect
-# MAGIC metadata). **`count()`** is an action — it executes the read plan and scans
-# MAGIC the file. In production jobs, row-count checks often catch empty files or
-# MAGIC partial loads early.
+# MAGIC **`printSchema()`** and **`.columns`** inspect metadata on the driver — they
+# MAGIC do not modify data, add steps to the logical plan, or trigger a Spark job.
+# MAGIC **`count()`** is an action — it executes the read plan and scans the file.
+# MAGIC In production jobs, row-count checks often catch empty files or partial loads
+# MAGIC early.
 
 # COMMAND ----------
 
@@ -364,11 +365,11 @@ except Exception as exc:
 # MAGIC %md
 # MAGIC **`PERMISSIVE`** keeps good rows and parks corrupt lines in a
 # MAGIC **`_corrupt_record`** column so you can inspect or quarantine them later.
+# MAGIC Include **`_corrupt_record`** in your explicit schema — otherwise Spark
+# MAGIC will not surface the corrupt lines in a dedicated column.
 
 # COMMAND ----------
 
-# DBTITLE 1,PERMISSIVE mode with _corrupt_record
-# _corrupt_record only appears when you include it in an explicit schema
 permissive_schema = "trip_id int, service_type string, trip_distance_miles decimal(8,2), _corrupt_record string"
 
 (
