@@ -367,11 +367,16 @@ except Exception as exc:
 
 # COMMAND ----------
 
+# DBTITLE 1,PERMISSIVE mode with _corrupt_record
+# _corrupt_record only appears when you include it in an explicit schema
+permissive_schema = "trip_id int, service_type string, trip_distance_miles decimal(8,2), _corrupt_record string"
+
 (
     spark.read.format("csv")
     .option("header", True)
     .option("mode", "PERMISSIVE")
     .option("columnNameOfCorruptRecord", "_corrupt_record")
+    .schema(permissive_schema)
     .load(malformed_csv_path)
     .show(truncate=False)
 )
