@@ -21,7 +21,7 @@
 # MAGIC | Two read syntaxes | `.parquet(path)` shorthand vs `format("parquet").load(path)` |
 # MAGIC | Embedded schema | Inspect with `printSchema()`, a sample row, and row count |
 # MAGIC | Explicit schemas | Apply DDL string and `StructType` schemas for validation |
-# MAGIC | Schema mismatch | See cast, nulls, or dropped columns when the schema disagrees |
+# MAGIC | Schema mismatch | See casts, misleading values, nulls, or dropped columns on disagreement |
 # MAGIC | Light reshape | Select and rename columns after read |
 # MAGIC | Write Parquet | Save a practice output under `practice/` |
 # MAGIC | Round-trip test | Re-read written Parquet and confirm types are preserved |
@@ -215,15 +215,16 @@ trip_time_via_struct.printSchema()
 # MAGIC
 # MAGIC Sections 5a–5b declared a schema that **matches** the file. In production,
 # MAGIC the risk is a schema that looks fine in code but **does not** match Parquet
-# MAGIC metadata. The read often still succeeds — Spark may **cast**, fill
-# MAGIC **nulls**, or **drop** columns — so bad contracts are easy to miss. That is
-# MAGIC read-time behavior, not Delta schema evolution (Module 10).
+# MAGIC metadata. The read often still succeeds — Spark may **cast** (sometimes to
+# MAGIC misleading values), fill **nulls**, or **drop** columns — so bad contracts
+# MAGIC are easy to miss. That is read-time behavior, not Delta schema evolution
+# MAGIC (Module 10).
 # MAGIC
 # MAGIC The next cells re-read landing **`trip_time.parquet`** with wrong schemas on
 # MAGIC purpose:
 # MAGIC
 # MAGIC 1. Compatible type widening → cast, values kept
-# MAGIC 2. Incompatible type → nulls (silent data loss)
+# MAGIC 2. Date declared as int → rows kept, values become day-counts (not calendar dates)
 # MAGIC 3. Extra schema column not in the file → nulls
 # MAGIC 4. File column omitted from the schema → dropped from the DataFrame
 # MAGIC
@@ -256,15 +257,21 @@ mismatch_bad_type = (
     .load(trip_time_parquet_path)
 )
 
-print("Incompatible type — file date, schema int → nulls:")
+print("Correct read (date):")
+trip_time.select("trip_date").show(2)
+
+print("File date, schema int — rows kept; values are days since 1970-01-01:")
+mismatch_bad_type.printSchema()
 mismatch_bad_type.select("trip_date").show(2)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Declaring **`trip_date`** as **`int`** does not convert the dates. The column
-# MAGIC appears with the declared type, but values become **`null`** — silent data
-# MAGIC loss if you do not notice.
+# MAGIC Declaring **`trip_date`** as **`int`** does **not** null the column or drop
+# MAGIC rows. Spark surfaces Parquet's stored day number (days since
+# MAGIC **`1970-01-01`**) as an integer — so **`20522`** is a date encoding, not a
+# MAGIC calendar date you can filter or join on as **`date`**. The job "succeeds"
+# MAGIC with the wrong meaning.
 
 # COMMAND ----------
 
@@ -407,8 +414,8 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC - **Embedded schema** — types come from file metadata; no **`inferSchema`**
 # MAGIC - **Explicit schema (DDL or `StructType`)** — still recommended for production
 # MAGIC   contracts and validation
-# MAGIC - **Schema mismatch** — wrong types may cast or null out; extra schema columns
-# MAGIC   are null; omitted file columns are dropped
+# MAGIC - **Schema mismatch** — wrong types may cast (including misleading encodings);
+# MAGIC   extra schema columns are null; omitted file columns are dropped
 # MAGIC - **Light reshape** — **`select`** / rename before a practice write
 # MAGIC - **Parquet round trip** — writes a directory of part files; types are
 # MAGIC   preserved on re-read (unlike CSV)
