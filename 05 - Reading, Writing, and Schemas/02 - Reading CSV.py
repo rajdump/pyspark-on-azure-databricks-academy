@@ -1,36 +1,4 @@
 # Databricks notebook source
-# MAGIC %md
-# MAGIC # 02 - Reading CSV
-# MAGIC
-# MAGIC CSV is still one of the most common file formats in batch ingestion — exports
-# MAGIC from legacy systems, ad hoc uploads, and partner feeds often arrive as
-# MAGIC `.csv` files. The catch: CSV stores text only. Spark does not know your column
-# MAGIC types until you tell it (or ask it to guess).
-# MAGIC
-# MAGIC This notebook reads the course **`trip`** dataset from the landing volume,
-# MAGIC compares three read approaches, validates the result, handles a controlled
-# MAGIC parsing failure, and writes a small practice output.
-# MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Read a CSV file from a Volume path under
-# MAGIC   `/Volumes/rideshare_dev/landing/source_files/`
-# MAGIC - Use both CSV read/write syntaxes — **`.csv(...)`** shorthand and
-# MAGIC   **`format("csv").load(...)`** / **`format("csv").save(...)`**
-# MAGIC - See why **`header=True`** matters when the first row holds column names
-# MAGIC - Compare a default CSV read, **`inferSchema=True`**, and explicit schemas
-# MAGIC   (DDL string and **`StructType`**)
-# MAGIC - Validate that the read schema matches the expected file layout
-# MAGIC - Apply a light **`select`** reshape and write a practice CSV output
-# MAGIC - Re-read a written CSV and see that Spark types are not preserved
-# MAGIC
-# MAGIC **Prerequisites.** Module 4 and **01 - Unity Catalog Volumes and Data
-# MAGIC Landing** — landing volume populated with **`trip/trip.csv`**.
-# MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook reads
-# MAGIC from Volume paths only (not **`abfss://`** URLs).
-
-# COMMAND ----------
-
 # DBTITLE 1,Introduction (rewrite)
 # MAGIC %md
 # MAGIC
