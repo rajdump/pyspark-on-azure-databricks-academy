@@ -73,6 +73,8 @@ learning/dev catalog from anything resembling production) and avoid
 embedding personal identifiers. Do not commit real catalog or schema names
 to public-facing files if they reveal personal workspace details.
 
-Shared lab catalog, schema, and volume names for the rideshare dataset are
-defined in `docs/data/dataset-overview.md` — use those for learner notebooks
-rather than inventing alternate names.
+Course catalog, schema, and volume names for the rideshare dataset are
+defined in `docs/data/dataset-overview.md` — use those for learner
+notebooks rather than inventing alternate names. Azure storage account,
+container, and storage credential names vary per learner and belong in the
+Module 5 config cell (not as alternate UC object names).

@@ -88,49 +88,66 @@ Joinable to `trip` after `explode()` on `trips_assigned`.
 ## Physical layout
 
 **Modules 1–4:** hand-built DataFrames in code (column names/types above).
-**Modules 5+:** learner notebooks use Unity Catalog Volume paths only — not
-`abfss://` URLs.
+**Modules 5+:** learners use Unity Catalog Volume paths for reads and writes.
+Setup and teardown notebooks (Module 5 Notebooks 01 and 99) may use a
+config-built `abfss://` root for external-location / managed-location DDL
+and ADLS teardown only. Format and transform notebooks use `/Volumes/...`
+paths only — not hardcoded `abfss://` URLs.
+
+Each student uses their own Azure storage and Databricks workspace. Course
+object names below are fixed; Azure account/container/credential values are
+set in the Notebook 01 / 99 config cell.
 
 | Platform piece | Value |
 |---|---|
-| Catalog / schema | `academy` / `rideshare` |
-| Volumes | `raw`, `processed`, `source` |
-| External location | `el_lab` (already exists; grants/credentials → Module 11) |
-| Secrets | `el-lab` / `sql-password` |
+| Catalog | `rideshare_dev` |
+| Schemas | `landing`, `processed` |
+| Volumes | `landing.source_files`, `processed.output_files` |
+| External location | `el_rideshare_dev` (created in Module 5 Notebook 01) |
+| Storage credential | Student-provided name in the config cell (creation how-to is outside this repo) |
 
-Volume path pattern: `/Volumes/academy/rideshare/{volume}/{dataset}/`
+### Glossary (avoid shorthand)
 
-**Write rule:** Module 6 owns cleaned `processed/{dataset}/`; Modules 7–9
-use new output names (`trip_enriched`, KPI tables, etc.) to avoid overwrites.
+| Term | Meaning |
+|---|---|
+| Schema `landing` / `processed` | Unity Catalog schemas under `rideshare_dev` |
+| Volume `source_files` / `output_files` | External volumes under those schemas |
+| Folder `practice/` / `curated/` | Directories inside `output_files` (created on first write) |
+
+Do not write “processed/” alone in notebooks — say the full Volume path or
+`practice/` / `curated/` tier. Schema names `landing` / `processed` are
+**not** medallion Bronze/Silver/Gold (Module 12).
+
+### Path patterns
+
+```text
+/Volumes/rideshare_dev/landing/source_files/{dataset}/
+/Volumes/rideshare_dev/processed/output_files/practice/{output_name}/
+/Volumes/rideshare_dev/processed/output_files/curated/{output_name}/
+```
+
+**Write rules:**
+
+- Module 5 practice writes → `…/processed/output_files/practice/{output_name}/`
+- Module 6+ pipeline outputs → `…/processed/output_files/curated/{output_name}/`
+  (cleaned datasets, enrichments, KPIs — descriptive snake_case folder names)
+- Do not read `practice/` after Module 5; later modules read landing and/or
+  prior `curated/` outputs
 
 ### Datasets at a glance
 
-Academy folder names: `trip`, `trip_time`, `zone_lookup`, `payment`,
+Dataset folder names: `trip`, `trip_time`, `zone_lookup`, `payment`,
 `drivers`.
 
 | Dataset | Module 5 format | Repo source (Git) | Volume destination |
 |---|---|---|---|
-| `trip` | CSV | `data/raw/csv/trip.csv` | `raw/trip/` |
-| `trip_time` | Parquet | `data/raw/parquet/trip_time.parquet` | `raw/trip_time/` |
-| `zone_lookup` | JSON Lines | `data/raw/json/zone_lookup.json` | `raw/zone_lookup/` |
-| `drivers` | XML | `data/raw/xml/drivers.xml` | `raw/drivers/` |
-| `payment` | Avro | `data/raw/{csv,json,parquet}/payment.*` also in repo | `raw/payment/` |
+| `trip` | CSV | `data/raw/csv/trip.csv` | `landing/source_files/trip/` |
+| `trip_time` | Parquet | `data/raw/parquet/trip_time.parquet` | `landing/source_files/trip_time/` |
+| `zone_lookup` | JSON Lines | `data/raw/json/zone_lookup.json` | `landing/source_files/zone_lookup/` |
+| `drivers` | XML | `data/raw/xml/drivers.xml` | `landing/source_files/drivers/` |
+| `payment` | Avro | `data/raw/avro/payment.avro` | `landing/source_files/payment/` |
 
-Module 5 copies repo files into Volume `raw/{dataset}/`. JSON is
-newline-delimited; Parquet preserves decimals. Other formats exist in the
-repo for authoring flexibility but each dataset has one primary read format
-in Module 5.
-
-### `payment` JDBC exercise (Module 5)
-
-`payment` also has a live **Azure SQL Database** source. Run on an
-all-purpose cluster (not serverless):
-
-1. Seed from `source/payment/`
-2. JDBC write → `el_lab.payments`
-3. JDBC read ← `el_lab.payments`
-4. Write Avro → `raw/payment/`
-
-SQL table `el_lab.payments` ≠ Volume folder `payment`. Connection details
-live in the Module 5 README — never committed here. Repo `data/raw/avro/` stays
-empty; Avro lands on the Volume only.
+Module 5 Notebook 01 copies repo files into the landing volume. JSON is
+newline-delimited; Parquet preserves decimals. Other payment formats may
+exist under `data/raw/` for authoring flexibility; Module 5’s primary
+`payment` read format is Avro.

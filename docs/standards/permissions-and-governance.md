@@ -20,10 +20,10 @@ be explicit about which one applies.
 
 A learner can have full Databricks workspace access and still be unable to
 query a table because Unity Catalog privileges are missing — and vice
-versa. Azure RBAC is effectively invisible to most learners day-to-day,
-since the course author manages it, but it's worth naming so learners
-understand it's a separate layer if they ever administer their own
-workspace.
+versa. Azure RBAC is often invisible when storage is already provisioned,
+but **Module 5** expects each learner to use **their own** Azure storage
+and storage credential — so Azure RBAC on that storage is learner-visible
+for external-location setup and File Events troubleshooting.
 
 ## Unity Catalog privilege chaining
 
@@ -37,14 +37,24 @@ USE CATALOG <catalog>  -->  USE SCHEMA <schema>  -->  SELECT (or other object-le
 Missing any link in this chain produces an access error even if the final
 object-level grant looks correct.
 
+## Module 5 vs Module 11
+
+- **Module 5** creates the rideshare catalog, external location, schemas,
+  and volumes in each learner’s own account (see that module’s README for
+  privileges and the config cell). Creating the storage credential itself
+  is documented outside this repository (course PDF).
+- **Module 11** governs those **existing** objects (managed vs external,
+  grants, ownership, credentials, least privilege) — it does not recreate
+  the Module 5 setup.
+
 ## The course author's role
 
 The course author can create and manage all Unity Catalog objects
 (catalogs, schemas, managed tables, external tables, volumes, external
 locations, storage credentials, grants) and is not blocked by any of this.
-**Do not assume every learner has the same permissions as the course
-author** — a learner following along in their own workspace may have a
-more restricted role.
+Module 5’s supported path assumes learners can create catalogs and
+external locations in **their own** metastore. Learners without those
+privileges cannot complete Module 5 setup as written.
 
 ## Minimum-privilege documentation pattern
 
@@ -65,12 +75,18 @@ section, using this shape:
 
 Only list what that specific module's examples actually require — do not
 restate the full catalog/schema hierarchy at every level unless it's
-genuinely necessary context.
+genuinely necessary context. Module 5 lists CREATE privileges and Azure
+RBAC on the learner’s storage because Notebook 01 creates platform
+objects.
 
 ## What this file does not cover
 
 - Compute selection/validation rules — see `compute-validation-policy.md`.
-- Actual catalog/schema names — those are hardcoded by the author,
-  introduced progressively per module, and are not part of this policy
-  document. Shared lab catalog, schema, and volume names for the rideshare
-  dataset are defined in `docs/data/dataset-overview.md`.
+- Actual catalog/schema/volume names — defined in
+  `docs/data/dataset-overview.md` for the rideshare course objects.
+- Module 5 Notebooks 01 and 99 use a Python **config cell** for Azure
+  storage account, container, storage credential, and ADLS folder
+  (author defaults; learners overwrite). That is the Module 5
+  parameterization mechanism for Tier 1 Azure identifiers — not widgets.
+  Course UC object names (`rideshare_dev`, etc.) stay fixed per
+  dataset-overview.

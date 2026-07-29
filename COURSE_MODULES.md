@@ -39,22 +39,24 @@ switching examples. Full schema, join keys, and physical layout:
 
 ## Phase II — Core Data Engineering Skills (Modules 5–9)
 
-Read from Unity Catalog Volumes → transform with built-ins → join safely → aggregate and window → query bilingually and synthesize.
+Land on Unity Catalog Volumes (`practice/` then `curated/`) → transform with
+built-ins → join safely → aggregate and window → query bilingually and
+synthesize.
 
 | # | Module | Purpose | Major Topics | Prerequisites | Production Relevance | Final-Project Contribution | Status |
 |---|---|---|---|---|---|---|---|
-| 5 | Reading, Writing, and Schemas | Land rideshare files on UC Volumes and read/write production formats with explicit schemas | UC Volumes and data landing; JDBC extract for `payment`; CSV/JSON/Parquet/XML/Avro reads; explicit schemas vs inference; write modes; Delta/`saveAsTable` preview | Module 4 | Volume-based file I/O and JDBC patterns used in real ingestion jobs | Builds the Volume ingestion layer for the final project | Current |
-| 6 | Built-in Functions, Complex Types, and UDF Alternatives | Implement transforms with Spark-native expressions before reaching for UDFs | Built-in functions; complex types and `explode`; cleaned `processed/` outputs; built-in vs UDF; Pandas UDFs | Module 5 | Performant, idiomatic transformation logic | Implements cleaning, enrichment, and business rules | Not Started |
-| 7 | Joins and Set Operations | Combine rideshare tables without silent cardinality or key traps | Join types and correctness; semi/anti; broadcast and AQE; set operations | Module 6 | Multi-table integration — a core production pattern | Combines core tables (and flattened `drivers`) into unified views | Not Started |
-| 8 | Aggregations and Window Functions | Produce analytics-ready summaries and KPI tables | `groupBy` and window functions; pivot; Top-N per group; sampling | Module 7 | Analytics and reporting layers | Produces KPI/metric tables for the project | Not Started |
-| 9 | Spark SQL and DataFrame Interoperability | Express and validate pipeline logic in both DataFrame and SQL APIs | Dual API patterns; SQL joins, windows, and `QUALIFY`; CTEs and params; end-to-end pipeline | Module 8 | Supports SQL-first collaboration and dual-API validation | Enables SQL-based transforms and tests | Not Started |
+| 5 | Reading, Writing, and Schemas | Land rideshare files on UC Volumes and read/write production formats with explicit schemas | UC Volumes and data landing; CSV/JSON/Parquet/XML/Avro reads; explicit schemas vs inference; write modes; Delta file write and managed `saveAsTable` preview | Module 4 | Volume-based file I/O patterns used in real ingestion jobs | Builds the Volume ingestion layer for the final project | Current |
+| 6 | Built-in Functions, Complex Types, and UDF Alternatives | Implement transforms with Spark-native expressions before reaching for UDFs | Built-in functions; complex types and `explode`; cleaned `curated/` outputs; built-in vs UDF; Pandas UDFs | Module 5 | Performant, idiomatic transformation logic | Implements cleaning, enrichment, and business rules | Not Started |
+| 7 | Joins and Set Operations | Combine rideshare tables without silent cardinality or key traps | Join types and correctness; semi/anti; broadcast and AQE; set operations; read prior `curated/` / write new `curated/` names | Module 6 | Multi-table integration — a core production pattern | Combines core tables (and flattened `drivers`) into unified views | Not Started |
+| 8 | Aggregations and Window Functions | Produce analytics-ready summaries and KPI tables | `groupBy` and window functions; pivot; Top-N per group; sampling; KPI folders under `curated/` | Module 7 | Analytics and reporting layers | Produces KPI/metric tables for the project | Not Started |
+| 9 | Spark SQL and DataFrame Interoperability | Express and validate pipeline logic in both DataFrame and SQL APIs | Dual API patterns; SQL joins, windows, and `QUALIFY`; CTEs and params; end-to-end pipeline using prior `curated/` outputs | Module 8 | Supports SQL-first collaboration and dual-API validation | Enables SQL-based transforms and tests | Not Started |
 
 ## Phase III — Lakehouse and Governance (Modules 10–12)
 
 | # | Module | Purpose | Major Topics | Prerequisites | Production Relevance | Final-Project Contribution | Status |
 |---|---|---|---|---|---|---|---|
 | 10 | Delta Lake | Adopt Delta Lake as the storage foundation | ACID tables, time travel, `MERGE`, schema evolution basics | Module 9 | Lakehouse storage foundation for all later modules | Backs the project's tables with Delta | Not Started |
-| 11 | Unity Catalog and Governed Data | Work within a governed data platform | Catalogs, schemas, managed/external tables, volumes, grants, minimum-privilege documentation | Module 10 | Governance compliance — required in any real Databricks environment | Produces UC-governed data assets | Not Started |
+| 11 | Unity Catalog and Governed Data | Govern existing rideshare UC objects with least privilege | Managed vs external objects; grants and privileges; ownership; storage credentials; minimum-privilege design; governance boundaries (inspect existing `rideshare_dev` — do not recreate Module 5 setup) | Module 10 | Governance compliance — required in any real Databricks environment | Produces UC-governed data assets | Not Started |
 | 12 | Lakehouse and Medallion Architecture | Structure a pipeline using the medallion pattern | Bronze/silver/gold layering, layered pipeline design | Module 11 | The standard lakehouse architecture pattern | Establishes the project's medallion structure | Not Started |
 
 ## Phase IV — Production Batch Engineering (Modules 13–15)

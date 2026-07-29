@@ -63,8 +63,9 @@ following:
 - PySpark code follows `coding-standards.md` (including `F` imports and
   `# noqa: F821` on Databricks-provided `spark` where needed).
 - No secrets, workspace URLs, cluster IDs, or personal catalog/schema names.
-  Use lab names from `docs/data/dataset-overview.md`; do not use personal
-  workspace catalog or schema names.
+  Use course object names from `docs/data/dataset-overview.md`. Module 5
+  Notebooks 01/99 may keep author Azure defaults in the Tier 1 config cell
+  for learners to overwrite — that is intentional, not a personal UC rename.
 - Do not update `COURSE_MODULES.md` or anything under `docs/validation/`.
 
 ## Scaffold bar (`/new-lesson`)
