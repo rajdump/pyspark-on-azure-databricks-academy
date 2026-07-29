@@ -31,6 +31,42 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Introduction (rewrite)
+# MAGIC %md
+# MAGIC
+# MAGIC # 02 - Reading CSV
+# MAGIC
+# MAGIC CSV files store everything as text. Spark has no way to know your column
+# MAGIC types unless you tell it (or ask it to guess). This notebook walks through
+# MAGIC three approaches to reading CSV — from the simplest default to
+# MAGIC production-ready explicit schemas.
+# MAGIC
+# MAGIC **Source file:** `trip.csv` in the landing volume (copied in Notebook 01).
+# MAGIC
+# MAGIC ---
+# MAGIC
+# MAGIC ### What you will learn
+# MAGIC
+# MAGIC | Topic | What you will do |
+# MAGIC |-------|------------------|
+# MAGIC | Default read | See what happens with no options (generic column names, all strings) |
+# MAGIC | Header option | Use `header=True` to get real column names |
+# MAGIC | Two read syntaxes | `.csv(path)` shorthand vs `format("csv").load(path)` |
+# MAGIC | Schema inference | Let Spark guess types with `inferSchema=True` |
+# MAGIC | Explicit schemas | Declare types with a DDL string or `StructType` |
+# MAGIC | Schema validation | Confirm schema, column names, and row count after reading |
+# MAGIC | Malformed data | Handle bad rows with PERMISSIVE, DROPMALFORMED, and FAILFAST modes |
+# MAGIC | Write CSV | Reshape with `select()` and write a practice output |
+# MAGIC | Round-trip test | Re-read written CSV and see that Spark types are not preserved |
+# MAGIC
+# MAGIC ---
+# MAGIC
+# MAGIC **Prerequisites:** Notebook 01 completed (landing volume has `trip/trip.csv`).
+# MAGIC
+# MAGIC **Compute:** Any cluster with PySpark. This notebook uses Volume paths only.
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC

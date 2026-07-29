@@ -1,33 +1,37 @@
 # Databricks notebook source
+# DBTITLE 1,Introduction (rewrite)
 # MAGIC %md
+# MAGIC
 # MAGIC # 03 - Reading JSON
 # MAGIC
-# MAGIC JSON is common for APIs, microservice exports, and config-style dimension
-# MAGIC feeds. The course **`zone_lookup`** file lands as **JSON Lines** — one JSON
-# MAGIC object per line — under the landing volume.
+# MAGIC JSON is the most common format for API responses, microservice exports,
+# MAGIC and configuration data. In this notebook, we read the **`zone_lookup`**
+# MAGIC dataset — stored as a JSON Lines file in the landing volume.
 # MAGIC
-# MAGIC Unlike CSV (where columns default to strings), Spark's JSON reader **infers
-# MAGIC field names and types** when you do not supply a schema. Production jobs still
-# MAGIC prefer an explicit contract.
+# MAGIC **Key difference from CSV:** Spark's JSON reader automatically detects
+# MAGIC field names and types. No need to manually cast columns like we did
+# MAGIC with CSV. But for production, an explicit schema is still best practice.
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Read a JSON Lines file from a Volume path under
-# MAGIC   `/Volumes/rideshare_dev/landing/source_files/`
-# MAGIC - Use both JSON read/write syntaxes — **`.json(...)`** shorthand and
-# MAGIC   **`format("json").load(...)`** / **`format("json").save(...)`**
-# MAGIC - Explain JSON Lines vs multiline JSON and when **`multiLine=True`**
-# MAGIC   is required
-# MAGIC - Compare an inferred read with explicit schemas (DDL string and
-# MAGIC   **`StructType`**)
-# MAGIC - See how missing and extra JSON fields behave with an explicit schema
-# MAGIC - Apply a light **`select`** reshape and write a practice JSON output
+# MAGIC ---
 # MAGIC
-# MAGIC **Prerequisites.** Module 4, **01 - Unity Catalog Volumes and Data
-# MAGIC Landing**, and **02 - Reading CSV** — landing volume populated with
-# MAGIC **`zone_lookup/zone_lookup.json`**.
+# MAGIC ### What you will learn
 # MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook reads
-# MAGIC from Volume paths only (not **`abfss://`** URLs).
+# MAGIC | Topic | What you will do |
+# MAGIC |-------|------------------|
+# MAGIC | Read JSON | Load a JSON Lines file from a Volume path |
+# MAGIC | Two read syntaxes | `.json(path)` shorthand vs `format("json").load(path)` |
+# MAGIC | JSON Lines vs multiline | Understand when `multiLine=True` is needed |
+# MAGIC | Explicit schemas | Apply DDL string and `StructType` schemas |
+# MAGIC | Missing/extra fields | See how Spark handles mismatched JSON keys |
+# MAGIC | Write JSON | Reshape data with `select()` and write output |
+# MAGIC
+# MAGIC ---
+# MAGIC
+# MAGIC **Prerequisites:** Notebooks 01 (volumes created) and 02 (CSV reading).
+# MAGIC
+# MAGIC **Source file:** `/Volumes/rideshare_dev/landing/source_files/zone_lookup/zone_lookup.json`
+# MAGIC
+# MAGIC **Compute:** Any cluster with PySpark. This notebook uses Volume paths only.
 
 # COMMAND ----------
 
