@@ -219,6 +219,37 @@ trip_time_via_struct.printSchema()
 
 # COMMAND ----------
 
+# DBTITLE 1,Schema mismatch scenarios
+# What happens when your explicit schema disagrees with the Parquet file?
+# The file has: trip_id (bigint), trip_date (date), hour_of_day (int)
+
+# Scenario 1: Compatible type widening (int → bigint) — Spark casts silently
+schema_1 = "trip_id bigint, trip_date date, hour_of_day bigint"
+df1 = spark.read.format("parquet").schema(schema_1).load(trip_time_parquet_path)
+print("Scenario 1 — int declared as bigint (compatible cast):")
+df1.select("hour_of_day").show(2)
+
+# Scenario 2: Incompatible type (date column declared as int) — returns NULLs
+schema_2 = "trip_id bigint, trip_date int, hour_of_day int"
+df2 = spark.read.format("parquet").schema(schema_2).load(trip_time_parquet_path)
+print("Scenario 2 — date declared as int (incompatible) → NULLs:")
+df2.select("trip_date").show(2)
+
+# Scenario 3: Extra column in schema that doesn't exist in file → NULLs
+schema_3 = "trip_id bigint, trip_date date, hour_of_day int, city string"
+df3 = spark.read.format("parquet").schema(schema_3).load(trip_time_parquet_path)
+print("Scenario 3 — 'city' not in file → NULLs:")
+df3.select("city").show(2)
+
+# Scenario 4: Schema omits a file column → column is dropped (not in DataFrame)
+schema_4 = "trip_id bigint, trip_date date"
+df4 = spark.read.format("parquet").schema(schema_4).load(trip_time_parquet_path)
+print("Scenario 4 — 'hour_of_day' omitted from schema → dropped:")
+df4.printSchema()
+df4.show(2)
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## 6. Light reshape
 # MAGIC
