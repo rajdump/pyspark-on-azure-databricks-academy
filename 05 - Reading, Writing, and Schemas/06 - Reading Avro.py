@@ -376,8 +376,11 @@ mismatch_dropped.select("trip_id", "promo_code").show(3)
 # MAGIC %md
 # MAGIC #### Landing changed a type (compatible)
 # MAGIC
-# MAGIC File stores **`tip_amount`** as decimal; the contract asks for
-# MAGIC **`double`**. Spark may widen/cast and keep values.
+# MAGIC File stores **`trip_id`** as **`bigint`** (Avro **`long`**); the contract
+# MAGIC asks for **`double`**. Avro schema resolution allows promoting
+# MAGIC **`long` → `double`**, so values are kept. (A Parquet-style
+# MAGIC **`decimal` → `double`** cast often **fails** on Avro — do not assume
+# MAGIC every Spark cast that works for Parquet works here.)
 
 # COMMAND ----------
 
@@ -385,12 +388,12 @@ mismatch_type_ok = (
     spark.read.format("avro")
     .schema(
         """
-        trip_id bigint,
+        trip_id double,
         payment_method string,
         base_fare_amount decimal(10,2),
         surge_amount decimal(10,2),
         tax_amount decimal(10,2),
-        tip_amount double,
+        tip_amount decimal(10,2),
         discount_amount decimal(10,2),
         driver_payout_amount decimal(10,2)
         """
@@ -398,9 +401,9 @@ mismatch_type_ok = (
     .load(payment_avro_path)
 )
 
-print("Compatible cast — file decimal, schema double:")
+print("Compatible promotion — file bigint, schema double:")
 mismatch_type_ok.printSchema()
-mismatch_type_ok.select("tip_amount").show(3)
+mismatch_type_ok.select("trip_id").show(3)
 
 # COMMAND ----------
 
