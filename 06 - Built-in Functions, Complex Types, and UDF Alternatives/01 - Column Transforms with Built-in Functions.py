@@ -136,6 +136,45 @@ trip_time_from_table.show(3)
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 10
+# Apply transforms directly — see each expression in action
+trip_time_volume_transformed = trip_time_from_volume.select(
+    F.col("trip_id"),
+    F.col("trip_date"),
+    F.col("hour_of_day"),
+    F.year(F.col("trip_date")).alias("trip_year"),
+    F.month(F.col("trip_date")).alias("trip_month"),
+    F.date_format(F.col("trip_date"), "EEEE").alias("trip_day_name"),
+    (
+        F.when(F.col("hour_of_day") < 6, "overnight")
+        .when(F.col("hour_of_day") < 12, "morning")
+        .when(F.col("hour_of_day") < 18, "afternoon")
+        .otherwise("evening")
+        .alias("day_part")
+    ),
+)
+
+print("Volume DataFrame with transforms applied inline:")
+trip_time_volume_transformed.show(5, truncate=False)
+
+# COMMAND ----------
+
+# DBTITLE 1,Cell 11
+# MAGIC %md
+# MAGIC ### Production pattern: extract and reuse
+# MAGIC
+# MAGIC The inline approach above is clear, but what if you load the same dataset from
+# MAGIC multiple sources (a file today, a table tomorrow)? Copy-pasting the same
+# MAGIC expressions violates DRY (Don't Repeat Yourself).
+# MAGIC
+# MAGIC **Solution:** store the expressions in a Python list, then unpack with `*` into
+# MAGIC `.select()`. The list is just a plain `list[Column]` — Spark doesn't know about
+# MAGIC it; it's purely a Python convenience.
+
+# COMMAND ----------
+
+# DBTITLE 1,Cell 12
+# Extract the same expressions into a reusable list
 trip_time_transformations = [
     F.col("trip_id"),
     F.col("trip_date"),
@@ -152,21 +191,10 @@ trip_time_transformations = [
     ),
 ]
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Reuse that one expression list with both DataFrames. Only the source-loading
-# MAGIC code is different.
-
-# COMMAND ----------
-
-trip_time_volume_transformed = trip_time_from_volume.select(*trip_time_transformations)
+# Now apply the SAME list to the table-sourced DataFrame — zero duplication
 trip_time_table_transformed = trip_time_from_table.select(*trip_time_transformations)
 
-print("Transforms applied after the Volume load:")
-trip_time_volume_transformed.show(5, truncate=False)
-
-print("Transforms applied after the managed-table load:")
+print("Same transforms applied to the managed-table DataFrame:")
 trip_time_table_transformed.show(5, truncate=False)
 
 # COMMAND ----------
