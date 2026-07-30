@@ -57,7 +57,6 @@ print(f"trip_time_table = {trip_time_table}")
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 4
 # MAGIC %md
 # MAGIC ## 1. Built-in functions create Column expressions
 # MAGIC
@@ -74,15 +73,6 @@ print(f"trip_time_table = {trip_time_table}")
 # MAGIC When you write `F.upper(F.col("service_type"))`, nothing executes yet. Spark
 # MAGIC records the instruction in the DataFrame's **logical plan** and evaluates it
 # MAGIC across all partitions when an action (`.show()`, `.write`, `.collect()`) runs.
-# MAGIC
-# MAGIC ### Two essential helpers
-# MAGIC
-# MAGIC - **`F.col("name")`** — reference an existing column by name
-# MAGIC - **`.alias("new_name")`** — give the resulting column a meaningful name
-# MAGIC
-# MAGIC ```python
-# MAGIC F.upper(F.col("service_type")).alias("service_type_upper")
-# MAGIC ```
 # MAGIC
 # MAGIC > **Module production rule:** use built-ins first. They keep the optimizer
 # MAGIC > informed, avoid Python-per-row overhead, and compose cleanly.
