@@ -19,19 +19,40 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC Same two payments (logical table):
+# MAGIC
+# MAGIC | trip_id | tip_amount | payment_method |
+# MAGIC |--------:|-----------:|:---------------|
+# MAGIC | 1 | 2.50 | card |
+# MAGIC | 2 | 1.00 | cash |
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Avro — stored by row
+# MAGIC
+# MAGIC Each box is one full payment on disk (fields travel together):
+# MAGIC
 # MAGIC ```mermaid
-# MAGIC flowchart TB
-# MAGIC   subgraph avroLayout ["Avro — row-oriented"]
-# MAGIC     direction TB
-# MAGIC     R1["Record 1: trip_id=1, tip_amount=2.50, payment_method=card"]
-# MAGIC     R2["Record 2: trip_id=2, tip_amount=1.00, payment_method=cash"]
-# MAGIC   end
-# MAGIC   subgraph parquetLayout ["Parquet — column-oriented"]
-# MAGIC     direction TB
-# MAGIC     C1["trip_id: 1, 2"]
-# MAGIC     C2["tip_amount: 2.50, 1.00"]
-# MAGIC     C3["payment_method: card, cash"]
-# MAGIC   end
+# MAGIC flowchart LR
+# MAGIC   R1["Record 1<br/>─────────────<br/>trip_id = 1<br/>tip_amount = 2.50<br/>payment_method = card"]
+# MAGIC   R2["Record 2<br/>─────────────<br/>trip_id = 2<br/>tip_amount = 1.00<br/>payment_method = cash"]
+# MAGIC   R1 -->|"next record"| R2
+# MAGIC ```
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Parquet — stored by column
+# MAGIC
+# MAGIC Each box is one column on disk (values from every payment):
+# MAGIC
+# MAGIC ```mermaid
+# MAGIC flowchart LR
+# MAGIC   C1["trip_id<br/>─────────────<br/>1<br/>2"]
+# MAGIC   C2["tip_amount<br/>─────────────<br/>2.50<br/>1.00"]
+# MAGIC   C3["payment_method<br/>─────────────<br/>card<br/>cash"]
+# MAGIC   C1 -->|"next column"| C2 --> C3
 # MAGIC ```
 
 # COMMAND ----------
