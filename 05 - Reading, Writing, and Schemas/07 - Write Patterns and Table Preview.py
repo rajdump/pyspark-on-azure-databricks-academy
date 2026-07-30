@@ -29,7 +29,10 @@
 # MAGIC ---
 # MAGIC
 # MAGIC **Prerequisites.** Module 4 and Module 5 Notebooks **01–06** — landing
-# MAGIC volume populated with **`trip_time/trip_time.parquet`**.
+# MAGIC volume populated with **`trip_time/trip_time.parquet`**. Prior format
+# MAGIC notebooks already used **`.mode("overwrite")`** on practice writes.
+# MAGIC
+# MAGIC **Source file:** `/Volumes/rideshare_dev/landing/source_files/trip_time/trip_time.parquet`
 # MAGIC
 # MAGIC **Write root:** `/Volumes/rideshare_dev/processed/output_files/practice/`
 # MAGIC
@@ -41,24 +44,54 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Import helpers, set practice paths, and load a small **`trip_time`**
-# MAGIC extract for write demos.
+# MAGIC Import PySpark helpers and set paths for the **`trip_time`** write demos.
 # MAGIC
 # MAGIC Course **`trip_time`** columns (from `docs/data/dataset-overview.md`):
 # MAGIC **`trip_id`** (bigint), **`trip_date`** (date), **`hour_of_day`** (int).
+# MAGIC
+# MAGIC Practice outputs for this notebook:
+# MAGIC **`write_modes_demo/`**, **`trip_time_partitioned/`**,
+# MAGIC **`trip_time_delta_file/`**, plus managed table
+# MAGIC **`rideshare_dev.processed.trip_time_preview`**.
 
 # COMMAND ----------
 
 from pyspark.sql import functions as F
 
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
-trip_time_path = f"{landing_root}/trip_time/trip_time.parquet"
+trip_time_parquet_path = f"{landing_root}/trip_time/trip_time.parquet"
 practice_root = "/Volumes/rideshare_dev/processed/output_files/practice"
 
 save_modes_path = f"{practice_root}/write_modes_demo/"
 partitioned_path = f"{practice_root}/trip_time_partitioned/"
 delta_file_path = f"{practice_root}/trip_time_delta_file/"
 managed_table = "rideshare_dev.processed.trip_time_preview"
+
+print(f"trip_time_parquet_path = {trip_time_parquet_path}")
+print(f"practice_root = {practice_root}")
+print(f"managed_table = {managed_table}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 1. Source path
+# MAGIC
+# MAGIC **`trip_time/trip_time.parquet`** was copied into the landing volume in
+# MAGIC Notebook 01 and read in **04 - Reading Parquet**. Format notebooks in
+# MAGIC this module read through **`/Volumes/...`** paths only.
+
+# COMMAND ----------
+
+display(dbutils.fs.ls(f"{landing_root}/trip_time"))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC You should see **`trip_time.parquet`** in that folder. Load it with an
+# MAGIC explicit schema into **`write_source`** for the write demos below —
+# MAGIC same production pattern as Notebook 04.
+
+# COMMAND ----------
 
 trip_time_schema_ddl = """
 trip_id bigint,
@@ -67,7 +100,9 @@ hour_of_day int
 """
 
 trip_time = (
-    spark.read.format("parquet").schema(trip_time_schema_ddl).load(trip_time_path)
+    spark.read.format("parquet")
+    .schema(trip_time_schema_ddl)
+    .load(trip_time_parquet_path)
 )
 
 write_source = trip_time.select(
@@ -76,24 +111,26 @@ write_source = trip_time.select(
     F.col("hour_of_day"),
 )
 
-print(f"write_source rows = {write_source.count()}")
-print(f"practice_root = {practice_root}")
-print(f"managed_table = {managed_table}")
+print(f"write_source rows = {write_source.count()} (expect 100)")
+write_source.printSchema()
 write_source.show(3)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Save modes
+# MAGIC ## 2. Save modes
 # MAGIC
 # MAGIC **`.mode(...)`** controls what happens when the output path already
 # MAGIC exists. **`write`** is an **action** (Module 4) — each cell below
 # MAGIC executes immediately.
+# MAGIC
+# MAGIC Prior notebooks defaulted to **`overwrite`** so re-runs replaced the
+# MAGIC practice folder. Here you compare all four common modes on one path.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 1a. `overwrite`
+# MAGIC ### 2a. `overwrite`
 # MAGIC
 # MAGIC Replace any existing files at the path.
 
@@ -113,7 +150,7 @@ display(dbutils.fs.ls(save_modes_path))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 1b. `append`
+# MAGIC ### 2b. `append`
 # MAGIC
 # MAGIC Add another batch of files alongside what is already there. Row count
 # MAGIC grows — useful for incremental loads, risky if you re-run the same
@@ -134,7 +171,7 @@ print(spark.read.format("parquet").load(save_modes_path).count())
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 1c. `ignore`
+# MAGIC ### 2c. `ignore`
 # MAGIC
 # MAGIC If the path already has data, **do nothing** — no error, no update.
 
@@ -156,7 +193,7 @@ print(f"After ignore:  {count_after_ignore} (unchanged when path already exists)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 1d. `errorifexists`
+# MAGIC ### 2d. `errorifexists`
 # MAGIC
 # MAGIC Fail if the path already exists. Use this when a re-run should be loud
 # MAGIC instead of silently appending or overwriting. Spark also accepts
@@ -191,7 +228,7 @@ except Exception as exc:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Brief partitioned write
+# MAGIC ## 3. Brief partitioned write
 # MAGIC
 # MAGIC **`.partitionBy("hour_of_day")`** lays out folders like
 # MAGIC **`hour_of_day=8/`** under the output path. Partitioning is a layout
@@ -219,6 +256,7 @@ display(dbutils.fs.ls(partitioned_path))
 # COMMAND ----------
 
 partitioned_read = spark.read.format("parquet").load(partitioned_path)
+
 print("Schema after partitioned read:")
 partitioned_read.printSchema()
 print(f"Row count: {partitioned_read.count()} (expect 100)")
@@ -227,12 +265,15 @@ partitioned_read.groupBy("hour_of_day").count().orderBy("hour_of_day").show(10)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Delta file write under `practice/`
+# MAGIC ## 4. Delta file write under `practice/`
 # MAGIC
 # MAGIC Write Delta as a **file format** to the external volume — same
 # MAGIC **`/Volumes/.../practice/`** pattern as Parquet/JSON, but with
 # MAGIC **`format("delta")`**. This is a preview only: ACID, **`MERGE`**, and
 # MAGIC time travel belong in Module 10.
+# MAGIC
+# MAGIC Delta does not replace every file format — Module 5 still uses CSV,
+# MAGIC JSON, Parquet, XML, and Avro for landing and practice writes.
 
 # COMMAND ----------
 
@@ -264,7 +305,7 @@ delta_from_path.show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Managed `saveAsTable` into `rideshare_dev.processed`
+# MAGIC ## 5. Managed `saveAsTable` into `rideshare_dev.processed`
 # MAGIC
 # MAGIC **`saveAsTable`** registers a **managed** table in Unity Catalog. The
 # MAGIC files go to the catalog's **managed location** (created in Notebook 01),
@@ -301,7 +342,7 @@ display(spark.sql(f"DESCRIBE EXTENDED {managed_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5. Files vs tables
+# MAGIC ## 6. Files vs tables
 # MAGIC
 # MAGIC Same logical rows, two homes: a Delta **path** on the external volume,
 # MAGIC and a managed **table** in **`rideshare_dev.processed`**.
@@ -364,7 +405,8 @@ spark.table(managed_table).show(3)
 # MAGIC - **Partitioned write** — **`.partitionBy(...)`** creates
 # MAGIC   **`column=value/`** folders under **`practice/`**
 # MAGIC - **Delta file write** — **`format("delta").save(volume_path)`** stores
-# MAGIC   Delta on the external volume (preview only; deep Delta → Module 10)
+# MAGIC   Delta on the external volume (preview only; deep Delta → Module 10).
+# MAGIC   Delta does not replace CSV/JSON/Parquet/Avro for every use case
 # MAGIC - **Managed `saveAsTable`** — registers a table in
 # MAGIC   **`rideshare_dev.processed`**; managed location ≠ external volume
 # MAGIC - **Files vs tables** — path-based files vs catalog-governed tables
