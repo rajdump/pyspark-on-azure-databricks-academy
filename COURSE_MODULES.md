@@ -39,9 +39,12 @@ switching examples. Full schema, join keys, and physical layout:
 
 ## Phase II — Core Data Engineering Skills (Modules 5–9)
 
-Land on Unity Catalog Volumes (`practice/` then `curated/`) → transform with
-built-ins → join safely → aggregate and window → query bilingually and
-synthesize.
+Land on UC Volumes → transform and write `curated/` outputs → join safely →
+aggregate and window → query bilingually and synthesize.
+
+Module 5 has additional environment prerequisites beyond "Module 4" (personal
+Azure workspace/storage setup and UC create privileges). See
+`05 - Reading, Writing, and Schemas/README.md` ("Before Notebook 01").
 
 | # | Module | Purpose | Major Topics | Prerequisites | Production Relevance | Final-Project Contribution | Status |
 |---|---|---|---|---|---|---|---|

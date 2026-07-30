@@ -13,7 +13,8 @@ By the end of this module, you'll be able to:
 
 - Distinguish between **transformations** (which return a new DataFrame and
   build a logical plan) and **actions** (which execute that plan and return a
-  result or write data)
+  result or trigger terminal writes such as **`.save()`** /
+  **`.saveAsTable()`** via `DataFrameWriter`)
 - Explain **lazy evaluation**: why Spark waits for an action before executing
   a DataFrame's logical plan
 - Inspect a DataFrame's logical and physical plans with **`.explain()`** and
