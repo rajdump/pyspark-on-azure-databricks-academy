@@ -2,23 +2,38 @@
 # MAGIC %md
 # MAGIC
 # MAGIC # 06 - Reading Avro
+# MAGIC
 # MAGIC ## What is Avro?
 # MAGIC
-# MAGIC Avro is a **row-oriented binary format** commonly used to exchange structured records between systems.
+# MAGIC Avro is a **row-oriented binary format** commonly used to exchange
+# MAGIC structured records between systems — for example Kafka events,
+# MAGIC application messages, and ingestion pipelines.
 # MAGIC
-# MAGIC ## Row-oriented storage
+# MAGIC ## Row-oriented vs column-oriented
 # MAGIC
-# MAGIC In a row-oriented format, all values for one record are stored together.
+# MAGIC **Row-oriented** (Avro): all fields of one payment sit together on disk.
+# MAGIC **Column-oriented** (Parquet): all values of one column sit together.
 # MAGIC
-# MAGIC For example, a payment record may contain **`payment_method`**, **`trip_id`**, **`base_fare_amount`**, and **`surge_amount`**. This makes Avro suitable for Kafka events, application messages, and ingestion pipelines that usually produce or consume complete records.
+# MAGIC Two payments with three fields — how each format lays them out:
 # MAGIC
-# MAGIC ## How is Parquet different?
+# MAGIC ```mermaid
+# MAGIC flowchart TB
+# MAGIC   subgraph avroLayout ["Avro — row-oriented"]
+# MAGIC     direction TB
+# MAGIC     R1["Record 1: trip_id=1, tip_amount=2.50, payment_method=card"]
+# MAGIC     R2["Record 2: trip_id=2, tip_amount=1.00, payment_method=cash"]
+# MAGIC   end
+# MAGIC   subgraph parquetLayout ["Parquet — column-oriented"]
+# MAGIC     direction TB
+# MAGIC     C1["trip_id: 1, 2"]
+# MAGIC     C2["tip_amount: 2.50, 1.00"]
+# MAGIC     C3["payment_method: card, cash"]
+# MAGIC   end
+# MAGIC ```
 # MAGIC
-# MAGIC Parquet is **column-oriented**, meaning values from the same column are stored together.
-# MAGIC
-# MAGIC If a dataset has ten columns but a query needs only **`tip_amount`**, Parquet can read mainly the data for that column. Avro returns only the selected column, but it must process the records containing the other fields.
-# MAGIC
-# MAGIC Therefore, Parquet is better suited for analytical queries that read a small number of columns from large datasets.
+# MAGIC If a query needs only **`tip_amount`**, Parquet can read mainly that
+# MAGIC column. Avro can return just **`tip_amount`**, but it still walks each
+# MAGIC full record on disk — better when you need the whole payment message.
 # MAGIC
 # MAGIC ## When to use each format
 # MAGIC
@@ -28,15 +43,19 @@
 # MAGIC
 # MAGIC ## Dataset used in this notebook
 # MAGIC
-# MAGIC In this notebook, we read the **`payment`** Avro dataset copied to the landing volume in Notebook 01.
+# MAGIC In this notebook, we read the **`payment`** Avro dataset copied to the
+# MAGIC landing volume in Notebook 01.
 # MAGIC
 # MAGIC ## Schema handling
 # MAGIC
-# MAGIC Avro files store schema information in the file header. Parquet files also store schema metadata.
+# MAGIC Avro files store schema information in the file header. Parquet files
+# MAGIC also store schema metadata.
 # MAGIC
-# MAGIC Spark can therefore read typed columns from both formats without using **`inferSchema`**.
+# MAGIC Spark can therefore read typed columns from both formats without using
+# MAGIC **`inferSchema`**.
 # MAGIC
-# MAGIC In production pipelines, the discovered schema should still be validated against the expected data contract.
+# MAGIC In production pipelines, the discovered schema should still be validated
+# MAGIC against the expected data contract.
 # MAGIC
 # MAGIC ---
 # MAGIC
