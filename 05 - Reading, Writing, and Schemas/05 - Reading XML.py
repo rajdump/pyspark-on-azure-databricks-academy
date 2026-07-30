@@ -173,7 +173,7 @@ drivers.select(F.col("driver_id"), F.col("trips_assigned")).show(2, truncate=Fal
 # MAGIC | Column | Type | What it holds |
 # MAGIC |--------|------|---------------|
 # MAGIC | `vehicle` | struct | A single object with fields: `make`, `model`, `year`, `body_type` |
-# MAGIC | `trips_assigned` | array of structs | A list of `trip_id` values — one driver can have many trips |
+# MAGIC | `trips_assigned` | struct containing an array of longs | A wrapper with a `trip_id` field holding a list of trip IDs |
 # MAGIC
 # MAGIC You can access struct fields using dot notation (e.g. `vehicle.make`) —
 # MAGIC we do this in section 5.
