@@ -3,9 +3,29 @@
 # MAGIC
 # MAGIC # 07 - Write Patterns and Table Preview
 # MAGIC
-# MAGIC Earlier notebooks used the practice output with **`.mode("overwrite")`**. This notebook takes a deeper look at different save modes, including a brief explanation of partitioned writes, a Delta **file** write in the **`practice/`** directory, and a managed **`saveAsTable`** operation into **`rideshare_dev.processed`**.
+# MAGIC Earlier notebooks wrote practice outputs with **`.mode("overwrite")`**.
+# MAGIC That was enough for round trips. This notebook focuses on **how** writes
+# MAGIC behave when the destination already exists, and on two different places
+# MAGIC data can live after a write.
 # MAGIC
-# MAGIC **Files vs. Tables:** The paths under **`/Volumes/rideshare_dev/processed/output_files/practice/`** refer to files stored on the external volume. In contrast, a managed table in **`rideshare_dev.processed`** resides in the catalog's managed location, which is different from the external volume. For further insights, refer to Deep Delta Lake in Module 10 and UC grants in Module 11.
+# MAGIC You will:
+# MAGIC
+# MAGIC 1. Compare the four Spark **save modes** (`overwrite`, `append`,
+# MAGIC    `ignore`, `errorifexists`)
+# MAGIC 2. Write a small **partitioned** Parquet folder under **`practice/`**
+# MAGIC 3. Write Delta two ways — as **files** on the external volume path, and as
+# MAGIC    a **managed table** in **`rideshare_dev.processed`**
+# MAGIC
+# MAGIC **Files vs tables (the key contrast):**
+# MAGIC
+# MAGIC | | Files under `practice/` | Managed table |
+# MAGIC |---|-------------------------|---------------|
+# MAGIC | How you name it | A Volume path string | `catalog.schema.table` |
+# MAGIC | Where it lives | External volume `output_files` | Catalog managed location |
+# MAGIC | Example in this notebook | `/Volumes/.../practice/trip_time_delta_file/` | `rideshare_dev.processed.trip_time_preview` |
+# MAGIC
+# MAGIC Same logical rows can use either home. Deep Delta (ACID, **`MERGE`**,
+# MAGIC time travel) → Module 10. UC table grants → Module 11.
 # MAGIC
 # MAGIC ---
 # MAGIC
@@ -69,9 +89,12 @@ print(f"managed_table = {managed_table}")
 # MAGIC %md
 # MAGIC ## 1. Source path
 # MAGIC
-# MAGIC **`trip_time/trip_time.parquet`** was copied into the landing volume in
-# MAGIC Notebook 01 and read in **04 - Reading Parquet**. Format notebooks in
-# MAGIC this module read through **`/Volumes/...`** paths only.
+# MAGIC The write demos below reuse **`trip_time`**. Notebook 01 copied
+# MAGIC **`trip_time.parquet`** into the landing volume. You already read that
+# MAGIC file in **04 - Reading Parquet**.
+# MAGIC
+# MAGIC Confirm the file is still there, then load it with an explicit schema.
+# MAGIC Use the **`/Volumes/...`** path — do not hardcode an **`abfss://`** URL.
 
 # COMMAND ----------
 
@@ -80,9 +103,8 @@ display(dbutils.fs.ls(f"{landing_root}/trip_time"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You should see **`trip_time.parquet`** in that folder. Load it with an
-# MAGIC explicit schema into **`write_source`** for the write demos below —
-# MAGIC same production pattern as Notebook 04.
+# MAGIC You should see **`trip_time.parquet`**. The next cell builds
+# MAGIC **`write_source`** — the DataFrame every save-mode and write demo uses.
 
 # COMMAND ----------
 
