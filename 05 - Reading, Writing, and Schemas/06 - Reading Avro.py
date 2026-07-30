@@ -16,7 +16,7 @@
 # MAGIC
 # MAGIC Parquet is **column-oriented**, meaning values from the same column are stored together.
 # MAGIC
-# MAGIC If a dataset has ten columns but a query needs only **`amount`**, Parquet can read mainly the data for that column. Avro returns only the selected column, but it must process the records containing the other fields.
+# MAGIC If a dataset has ten columns but a query needs only **`tip_amount`**, Parquet can read mainly the data for that column. Avro returns only the selected column, but it must process the records containing the other fields.
 # MAGIC
 # MAGIC Therefore, Parquet is better suited for analytical queries that read a small number of columns from large datasets.
 # MAGIC
@@ -38,16 +38,13 @@
 # MAGIC
 # MAGIC In production pipelines, the discovered schema should still be validated against the expected data contract.
 # MAGIC
-# MAGIC
-# MAGIC
-# MAGIC
 # MAGIC ---
 # MAGIC
 # MAGIC ### What you will learn
 # MAGIC
 # MAGIC | Topic | What you will do |
 # MAGIC |-------|------------------|
-# MAGIC | When to use Avro | Contrast Avro with Parquet and Delta for landing vs analytics vs tables |
+# MAGIC | When to use Avro | Contrast Avro with Parquet for ingestion vs analytics |
 # MAGIC | Read Avro | Load **`payment`** from a Volume path |
 # MAGIC | DataSource syntax | Use `format("avro").load(...)` / `.save(...)` |
 # MAGIC | Embedded schema | Inspect with `printSchema()`, a sample row, and row count |
@@ -120,7 +117,7 @@ display(dbutils.fs.ls(f"{landing_root}/payment"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Read syntax
+# MAGIC ## 2. Read syntax
 # MAGIC
 # MAGIC Use the generic DataSource API — the same **`format(...).load(...)`**
 # MAGIC pattern as CSV, JSON, Parquet, and XML in this module. Avro does not have
@@ -138,12 +135,12 @@ payment_embedded.printSchema()
 # MAGIC %md
 # MAGIC Prefer **`format("avro")`** for both reads and writes so pipelines stay
 # MAGIC consistent across formats. The variable **`payment_embedded`** carries
-# MAGIC forward until section 5, where we apply an explicit schema.
+# MAGIC forward until section 4, where we apply an explicit schema.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Read and inspect
+# MAGIC ## 3. Read and inspect
 # MAGIC
 # MAGIC Without **`inferSchema`**, Avro already returns typed columns from file
 # MAGIC metadata. Confirm schema, a sample row, and row count.
@@ -170,7 +167,7 @@ print(f"\nRow count: {row_count} (expect 100 for the course payment file)")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5. Explicit schema
+# MAGIC ## 4. Explicit schema
 # MAGIC
 # MAGIC Even though Avro carries types, production pipelines still declare the
 # MAGIC contract up front. Module 2 introduced DDL strings and **`StructType`**;
@@ -179,7 +176,7 @@ print(f"\nRow count: {row_count} (expect 100 for the course payment file)")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 5a. DDL schema string
+# MAGIC ### 4a. DDL schema string
 
 # COMMAND ----------
 
@@ -205,7 +202,7 @@ payment.show(1, vertical=True)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 5b. `StructType` schema
+# MAGIC ### 4b. `StructType` schema
 
 # COMMAND ----------
 
@@ -241,7 +238,7 @@ payment_via_struct.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 6. Light reshape
+# MAGIC ## 5. Light reshape
 # MAGIC
 # MAGIC **`select`** a small fare extract for later joins to **`trip`** on
 # MAGIC **`trip_id`**. Deeper transforms belong in Module 6.
@@ -261,7 +258,7 @@ payment_subset.show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 7. Avro round trip
+# MAGIC ## 6. Avro round trip
 # MAGIC
 # MAGIC Write the subset to **`practice/payment_avro_roundtrip/`**, then read it
 # MAGIC back. Spark writes **`part-*.avro`** files under that directory. Like
@@ -338,9 +335,8 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **When to use** — Avro for ingestion and exchange; Parquet for analytical
-# MAGIC   files; Delta for managed Databricks tables (Parquet storage plus a
-# MAGIC   transaction log — Delta does not replace Avro at landing)
+# MAGIC - **When to use** — Avro for ingestion and record exchange; Parquet for
+# MAGIC   analytical file storage and column-based queries
 # MAGIC - **Avro syntax** — use **`format("avro").load(...)`** /
 # MAGIC   **`format("avro").save(...)`** (no compact **`.avro(path)`** reader like
 # MAGIC   Parquet)
