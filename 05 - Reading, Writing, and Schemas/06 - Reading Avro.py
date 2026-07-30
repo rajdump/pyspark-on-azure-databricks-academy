@@ -1,4 +1,5 @@
 # Databricks notebook source
+
 # MAGIC %md
 # MAGIC
 # MAGIC # 06 - Reading Avro
@@ -6,68 +7,96 @@
 # MAGIC ## What is Avro?
 # MAGIC
 # MAGIC Avro is a **row-oriented binary format** commonly used to exchange
-# MAGIC structured records between systems — for example Kafka events,
-# MAGIC application messages, and ingestion pipelines.
+# MAGIC structured records between systems.
 # MAGIC
-# MAGIC ## Row-oriented vs column-oriented
+# MAGIC ## Row-oriented storage
 # MAGIC
-# MAGIC **Row-oriented** (Avro): all fields of one payment sit together on disk.
-# MAGIC **Column-oriented** (Parquet): all values of one column sit together.
+# MAGIC In a row-oriented format, all values for one record are stored together.
 # MAGIC
-# MAGIC Two payments with three fields — how each format lays them out:
+# MAGIC For example, a payment record may contain **`trip_id`**,
+# MAGIC **`payment_method`**, **`base_fare_amount`**, and **`tip_amount`**.
+# MAGIC This makes Avro suitable for Kafka events, application messages, and
+# MAGIC ingestion pipelines that usually produce or consume complete records.
+# MAGIC
+# MAGIC The diagram below uses three small payments to show how Avro lays those
+# MAGIC fields out on disk.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Same two payments (logical table):
+# MAGIC Same three payments (logical table):
 # MAGIC
 # MAGIC | trip_id | tip_amount | payment_method |
 # MAGIC |--------:|-----------:|:---------------|
 # MAGIC | 1 | 2.50 | card |
 # MAGIC | 2 | 1.00 | cash |
+# MAGIC | 3 | 3.25 | card |
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Avro — stored by row
+# MAGIC ### Avro — row-oriented (on disk)
 # MAGIC
-# MAGIC Each box is one full payment. Fields for a record sit together on disk:
+# MAGIC Storage follows each payment **across** (→), then the next payment.
+# MAGIC One record stays together on disk.
 # MAGIC
 # MAGIC ```text
-# MAGIC   +----------------------------+     +----------------------------+
-# MAGIC   | Record 1                   |     | Record 2                   |
-# MAGIC   |----------------------------|     |----------------------------|
-# MAGIC   | trip_id        = 1         | --> | trip_id        = 2         |
-# MAGIC   | tip_amount     = 2.50      |     | tip_amount     = 1.00      |
-# MAGIC   | payment_method = card      |     | payment_method = cash      |
-# MAGIC   +----------------------------+     +----------------------------+
-# MAGIC              next record on disk -->
+# MAGIC Logical rows (read →):
+# MAGIC
+# MAGIC   trip_id   tip_amount   payment_method
+# MAGIC   -------   ----------   --------------
+# MAGIC      1         2.50           card      ← payment 1
+# MAGIC      2         1.00           cash      ← payment 2
+# MAGIC      3         3.25           card      ← payment 3
+# MAGIC
+# MAGIC On disk (payment after payment):
+# MAGIC
+# MAGIC   [ 1 | 2.50 | card ]  [ 2 | 1.00 | cash ]  [ 3 | 3.25 | card ]
+# MAGIC    <-- payment 1 -->    <-- payment 2 -->    <-- payment 3 -->
 # MAGIC ```
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Parquet — stored by column
+# MAGIC ## How is Parquet different?
 # MAGIC
-# MAGIC Each box is one column. Values from every payment sit together on disk:
+# MAGIC Parquet is **column-oriented**, meaning values from the same column are
+# MAGIC stored together.
+# MAGIC
+# MAGIC If a dataset has ten columns but a query needs only **`tip_amount`**,
+# MAGIC Parquet can read mainly the data for that column. Avro returns only the
+# MAGIC selected column, but it must process the records containing the other
+# MAGIC fields.
+# MAGIC
+# MAGIC Therefore, Parquet is better suited for analytical queries that read a
+# MAGIC small number of columns from large datasets.
+# MAGIC
+# MAGIC The same three payments, stored the Parquet way:
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Parquet — column-oriented (on disk)
+# MAGIC
+# MAGIC Storage follows each column **down** (↓), then the next column.
+# MAGIC Values from the same field sit together on disk.
 # MAGIC
 # MAGIC ```text
-# MAGIC   +----------+     +------------+     +-----------------+
-# MAGIC   | trip_id  |     | tip_amount |     | payment_method  |
-# MAGIC   |----------|     |------------|     |-----------------|
-# MAGIC   | 1        | --> | 2.50       | --> | card            |
-# MAGIC   | 2        |     | 1.00       |     | cash            |
-# MAGIC   +----------+     +------------+     +-----------------+
-# MAGIC              next column on disk -->
+# MAGIC Same table, regrouped by column (read ↓):
+# MAGIC
+# MAGIC   trip_id values:         1      2      3
+# MAGIC   tip_amount values:      2.50   1.00   3.25
+# MAGIC   payment_method values:  card   cash   card
+# MAGIC
+# MAGIC On disk (column after column):
+# MAGIC
+# MAGIC   [ 1 | 2 | 3 ]  [ 2.50 | 1.00 | 3.25 ]  [ card | cash | card ]
+# MAGIC    <-- trip_id -->  <---- tip_amount ---->  <- payment_method ->
 # MAGIC ```
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC If a query needs only **`tip_amount`**, Parquet can read mainly that
-# MAGIC column. Avro can return just **`tip_amount`**, but it still walks each
-# MAGIC full record on disk — better when you need the whole payment message.
-# MAGIC
 # MAGIC ## When to use each format
 # MAGIC
 # MAGIC Use **Avro** for ingestion and record-based data exchange.
