@@ -1,5 +1,4 @@
 # Databricks notebook source
-
 # MAGIC %md
 # MAGIC
 # MAGIC # 06 - Reading Avro
@@ -130,6 +129,7 @@
 # MAGIC | DataSource syntax | Use `format("avro").load(...)` / `.save(...)` |
 # MAGIC | Embedded schema | Inspect with `printSchema()`, a sample row, and row count |
 # MAGIC | Explicit schemas | Apply DDL string and `StructType` schemas for validation |
+# MAGIC | Schema mismatch | See drop / type change / omitted columns when the contract drifts from landing Avro |
 # MAGIC | Light reshape | Select fare columns for a practice write |
 # MAGIC | Write Avro | Save a practice output under `practice/` |
 # MAGIC | Round-trip test | Re-read written Avro and confirm types are preserved |
@@ -310,11 +310,179 @@ payment_via_struct.printSchema()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Use **`payment`** (DDL read) for the rest of this notebook.
+# MAGIC Use **`payment`** (DDL read) for the rest of this notebook after the
+# MAGIC mismatch demos below.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### 4c. Schema mismatch (ingestion drift)
 # MAGIC
-# MAGIC > **Note:** If the explicit schema disagrees with Avro metadata (wrong type
-# MAGIC > or missing columns), Spark may cast, null out values, or fail the read.
-# MAGIC > Keep the declared schema aligned with the course contract.
+# MAGIC Avro is common at **ingestion**. The landing file can change while your
+# MAGIC pipeline still declares yesterday's contract:
+# MAGIC
+# MAGIC 1. Landing **dropped** a column the contract still expects
+# MAGIC 2. Landing **changed** a column's type
+# MAGIC 3. The contract **omits** a column that is still in the file
+# MAGIC
+# MAGIC We keep **`payment.avro`** fixed and change **`.schema(...)`** on purpose
+# MAGIC — the same technique as Parquet in Notebook **04**, but framed as
+# MAGIC ingestion drift. Parquet often keeps reading with casts, nulls, or
+# MAGIC dropped columns (sometimes with a **wrong meaning**). Avro may cast,
+# MAGIC null, drop, or **fail** depending on the drift — always check the
+# MAGIC result; do not assume silence is safety.
+# MAGIC
+# MAGIC After these demos, keep using **`payment`** from section 4a.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Landing dropped a column
+# MAGIC
+# MAGIC The contract still expects **`promo_code`**, but the file does not have
+# MAGIC it (as if upstream stopped sending that field).
+
+# COMMAND ----------
+
+mismatch_dropped = (
+    spark.read.format("avro")
+    .schema(
+        """
+        trip_id bigint,
+        payment_method string,
+        base_fare_amount decimal(10,2),
+        surge_amount decimal(10,2),
+        tax_amount decimal(10,2),
+        tip_amount decimal(10,2),
+        discount_amount decimal(10,2),
+        driver_payout_amount decimal(10,2),
+        promo_code string
+        """
+    )
+    .load(payment_avro_path)
+)
+
+print("Contract field missing from file → nulls:")
+mismatch_dropped.select("trip_id", "promo_code").show(3)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **`promo_code`** is all **`null`**. The job can still succeed — easy to
+# MAGIC miss in an ingestion pipeline until a downstream check fails.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Landing changed a type (compatible)
+# MAGIC
+# MAGIC File stores **`tip_amount`** as decimal; the contract asks for
+# MAGIC **`double`**. Spark may widen/cast and keep values.
+
+# COMMAND ----------
+
+mismatch_type_ok = (
+    spark.read.format("avro")
+    .schema(
+        """
+        trip_id bigint,
+        payment_method string,
+        base_fare_amount decimal(10,2),
+        surge_amount decimal(10,2),
+        tax_amount decimal(10,2),
+        tip_amount double,
+        discount_amount decimal(10,2),
+        driver_payout_amount decimal(10,2)
+        """
+    )
+    .load(payment_avro_path)
+)
+
+print("Compatible cast — file decimal, schema double:")
+mismatch_type_ok.printSchema()
+mismatch_type_ok.select("tip_amount").show(3)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Landing changed a type (incompatible)
+# MAGIC
+# MAGIC Declaring **`tip_amount`** as **`string`** when the file has a decimal
+# MAGIC is not a safe contract. Unlike Parquet's date-as-**`int`** demo (Notebook
+# MAGIC **04**), which kept rows with a misleading value, Avro **may fail** or
+# MAGIC cast — run the cell and read the output. Wrap the action so the
+# MAGIC notebook can continue either way.
+
+# COMMAND ----------
+
+try:
+    mismatch_bad_type = (
+        spark.read.format("avro")
+        .schema(
+            """
+            trip_id bigint,
+            payment_method string,
+            base_fare_amount decimal(10,2),
+            surge_amount decimal(10,2),
+            tax_amount decimal(10,2),
+            tip_amount string,
+            discount_amount decimal(10,2),
+            driver_payout_amount decimal(10,2)
+            """
+        )
+        .load(payment_avro_path)
+    )
+    print("Read succeeded — check whether tip_amount looks like a safe string:")
+    mismatch_bad_type.printSchema()
+    mismatch_bad_type.select("tip_amount").show(3)
+except Exception as exc:
+    print(f"Incompatible type stopped the read: {type(exc).__name__}")
+    print(str(exc)[:500])
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Contract omits a file column
+# MAGIC
+# MAGIC The file still has **`discount_amount`**, but this contract does not list
+# MAGIC it — as if you have not yet adopted that landing field. Undeclared
+# MAGIC columns do not appear in the DataFrame.
+
+# COMMAND ----------
+
+mismatch_added = (
+    spark.read.format("avro")
+    .schema(
+        """
+        trip_id bigint,
+        payment_method string,
+        base_fare_amount decimal(10,2),
+        surge_amount decimal(10,2),
+        tax_amount decimal(10,2),
+        tip_amount decimal(10,2),
+        driver_payout_amount decimal(10,2)
+        """
+    )
+    .load(payment_avro_path)
+)
+
+print("File column omitted from contract → dropped from DataFrame:")
+mismatch_added.printSchema()
+mismatch_added.show(2)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **`discount_amount`** is gone from the result. Add it to the contract when
+# MAGIC you intentionally read that landing field.
+# MAGIC
+# MAGIC > **Avro note:** For *compatible* evolution (for example a new field with
+# MAGIC > a default), Spark also supports **`.option("avroSchema", <Avro JSON>)`**
+# MAGIC > — a reader schema that differs from the file but still resolves. That
+# MAGIC > is Avro's strength at ingestion; keep everyday pipelines on an explicit
+# MAGIC > **`.schema(...)`** contract aligned with the file.
+# MAGIC
+# MAGIC Continue with **`payment`** from section 4a.
 
 # COMMAND ----------
 
@@ -424,6 +592,9 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC - **Embedded schema** — types come from file metadata; no **`inferSchema`**
 # MAGIC - **Explicit schema (DDL or `StructType`)** — still recommended for production
 # MAGIC   contracts and validation
+# MAGIC - **Schema mismatch** — landing drop / type change / contract omits a file
+# MAGIC   column; some drifts null or drop quietly, incompatible types may fail or
+# MAGIC   cast (contrast Parquet Notebook **04**)
 # MAGIC - **Light reshape** — **`select`** fare columns before a practice write
 # MAGIC - **Avro round trip** — writes a directory of part files; types are
 # MAGIC   preserved on re-read (unlike CSV)
