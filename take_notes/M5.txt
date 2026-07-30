@@ -2,3 +2,6 @@ Date: July 30th 2026
 
 As part of this module, note the important terms: column-oriented vs. row-oriented files, 
 data warehouse vs. data lake vs. lakehouse. We need to cover these topics in the course.
+
+Do we need to clarify when to use Avro and Parquet? 
+In this era of Delta files, learners should understand that Delta does not replace every file format.
