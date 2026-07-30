@@ -175,12 +175,15 @@ drivers.select(F.col("driver_id"), F.col("trips_assigned")).show(2, truncate=Fal
 # MAGIC | `vehicle` | struct | A single object with fields: `make`, `model`, `year`, `body_type` |
 # MAGIC | `trips_assigned` | struct containing an array of longs | A wrapper with a `trip_id` field holding a list of trip IDs |
 # MAGIC
-# MAGIC You can access struct fields using dot notation (e.g. `vehicle.make`) —
+# MAGIC You can access struct fields using dot notation (e.g. **`vehicle.make`**) —
 # MAGIC we do this in section 5.
 # MAGIC
-# MAGIC To turn the nested `trip_id` array (`trips_assigned.trip_id`) into
-# MAGIC separate rows (one row per trip), you need `explode()` — that's covered
-# MAGIC in Module 6. For now, we just read and inspect without flattening.
+# MAGIC **Why `explode()` matters.** Each driver row holds an **array** of
+# MAGIC **`trip_id`** values under **`trips_assigned.trip_id`**. You cannot join
+# MAGIC that array directly to the **`trip`** table's scalar **`trip_id`** —
+# MAGIC Spark needs one **`trip_id` per row**. **`explode()`** turns the array
+# MAGIC into separate rows so the join is possible. That pattern is Module 6;
+# MAGIC here we only read and inspect without flattening.
 
 # COMMAND ----------
 
@@ -266,7 +269,8 @@ roundtrip.show(3, truncate=False)
 # MAGIC   nested; inspect without **`explode`**
 # MAGIC - **Struct field access** — paths like **`vehicle.make`** reshape without
 # MAGIC   flattening arrays
-# MAGIC - **`explode()`** on **`trips_assigned`** for joins to **`trip`** → Module 6
+# MAGIC - **`explode()`** on **`trips_assigned.trip_id`** — required before joining
+# MAGIC   drivers to **`trip`** on **`trip_id`** → Module 6
 # MAGIC
 # MAGIC **Next:** **06 - Reading Avro** — read **`payment`** from the landing
 # MAGIC volume.
