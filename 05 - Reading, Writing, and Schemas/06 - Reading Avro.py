@@ -31,13 +31,17 @@
 # MAGIC %md
 # MAGIC ### Avro — stored by row
 # MAGIC
-# MAGIC Each box is one full payment on disk (fields travel together):
+# MAGIC Each box is one full payment. Fields for a record sit together on disk:
 # MAGIC
-# MAGIC ```mermaid
-# MAGIC flowchart LR
-# MAGIC   R1["Record 1<br/>─────────────<br/>trip_id = 1<br/>tip_amount = 2.50<br/>payment_method = card"]
-# MAGIC   R2["Record 2<br/>─────────────<br/>trip_id = 2<br/>tip_amount = 1.00<br/>payment_method = cash"]
-# MAGIC   R1 -->|"next record"| R2
+# MAGIC ```text
+# MAGIC   +----------------------------+     +----------------------------+
+# MAGIC   | Record 1                   |     | Record 2                   |
+# MAGIC   |----------------------------|     |----------------------------|
+# MAGIC   | trip_id        = 1         | --> | trip_id        = 2         |
+# MAGIC   | tip_amount     = 2.50      |     | tip_amount     = 1.00      |
+# MAGIC   | payment_method = card      |     | payment_method = cash      |
+# MAGIC   +----------------------------+     +----------------------------+
+# MAGIC              next record on disk -->
 # MAGIC ```
 
 # COMMAND ----------
@@ -45,14 +49,16 @@
 # MAGIC %md
 # MAGIC ### Parquet — stored by column
 # MAGIC
-# MAGIC Each box is one column on disk (values from every payment):
+# MAGIC Each box is one column. Values from every payment sit together on disk:
 # MAGIC
-# MAGIC ```mermaid
-# MAGIC flowchart LR
-# MAGIC   C1["trip_id<br/>─────────────<br/>1<br/>2"]
-# MAGIC   C2["tip_amount<br/>─────────────<br/>2.50<br/>1.00"]
-# MAGIC   C3["payment_method<br/>─────────────<br/>card<br/>cash"]
-# MAGIC   C1 -->|"next column"| C2 --> C3
+# MAGIC ```text
+# MAGIC   +----------+     +------------+     +-----------------+
+# MAGIC   | trip_id  |     | tip_amount |     | payment_method  |
+# MAGIC   |----------|     |------------|     |-----------------|
+# MAGIC   | 1        | --> | 2.50       | --> | card            |
+# MAGIC   | 2        |     | 1.00       |     | cash            |
+# MAGIC   +----------+     +------------+     +-----------------+
+# MAGIC              next column on disk -->
 # MAGIC ```
 
 # COMMAND ----------
