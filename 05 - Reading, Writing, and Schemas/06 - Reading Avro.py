@@ -15,7 +15,10 @@
 # MAGIC **Column-oriented** (Parquet): all values of one column sit together.
 # MAGIC
 # MAGIC Two payments with three fields — how each format lays them out:
-# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ```mermaid
 # MAGIC flowchart TB
 # MAGIC   subgraph avroLayout ["Avro — row-oriented"]
@@ -30,7 +33,10 @@
 # MAGIC     C3["payment_method: card, cash"]
 # MAGIC   end
 # MAGIC ```
-# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC If a query needs only **`tip_amount`**, Parquet can read mainly that
 # MAGIC column. Avro can return just **`tip_amount`**, but it still walks each
 # MAGIC full record on disk — better when you need the whole payment message.
