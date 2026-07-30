@@ -3,10 +3,12 @@
 # MAGIC
 # MAGIC # 07 - Write Patterns and Table Preview
 # MAGIC
-# MAGIC Earlier notebooks wrote practice outputs with **`.mode("overwrite")`**.
-# MAGIC That was enough for round trips. This notebook focuses on **how** writes
-# MAGIC behave when the destination already exists, and on two different places
-# MAGIC data can live after a write.
+# MAGIC Earlier notebooks wrote to
+# MAGIC **`/Volumes/rideshare_dev/processed/output_files/practice/`** with
+# MAGIC **`.mode("overwrite")`**, which replaces any files already at that path.
+# MAGIC This notebook covers the full set of Spark save modes, a partitioned
+# MAGIC write, and writing the same DataFrame either to a Volume folder or into
+# MAGIC a managed Unity Catalog table with **`saveAsTable`**.
 # MAGIC
 # MAGIC You will:
 # MAGIC
@@ -24,8 +26,9 @@
 # MAGIC | Where it lives | External volume `output_files` | Catalog managed location |
 # MAGIC | Example in this notebook | `/Volumes/.../practice/trip_time_delta_file/` | `rideshare_dev.processed.trip_time_preview` |
 # MAGIC
-# MAGIC Same logical rows can use either home. Deep Delta (ACID, **`MERGE`**,
-# MAGIC time travel) → Module 10. UC table grants → Module 11.
+# MAGIC Both targets can hold the same columns and rows. Delta features such as
+# MAGIC ACID transactions, **`MERGE`**, and time travel → Module 10. Unity
+# MAGIC Catalog table privileges → Module 11.
 # MAGIC
 # MAGIC ---
 # MAGIC
@@ -42,8 +45,8 @@
 # MAGIC ---
 # MAGIC
 # MAGIC **Prerequisites.** Module 4 and Module 5 Notebooks **01–06** — landing
-# MAGIC volume populated with **`trip_time/trip_time.parquet`**. Prior format
-# MAGIC notebooks already used **`.mode("overwrite")`** on practice writes.
+# MAGIC volume populated with **`trip_time/trip_time.parquet`**. Notebooks
+# MAGIC **02–06** already wrote practice folders with **`.mode("overwrite")`**.
 # MAGIC
 # MAGIC **Source file:** `/Volumes/rideshare_dev/landing/source_files/trip_time/trip_time.parquet`
 # MAGIC
@@ -57,7 +60,8 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Import PySpark helpers and set paths for the **`trip_time`** write demos.
+# MAGIC Import PySpark helpers and set the landing path, practice output paths,
+# MAGIC and managed table name used below.
 # MAGIC
 # MAGIC Course **`trip_time`** columns (from `docs/data/dataset-overview.md`):
 # MAGIC **`trip_id`** (bigint), **`trip_date`** (date), **`hour_of_day`** (int).
@@ -135,19 +139,21 @@ write_source.show(3)
 # MAGIC %md
 # MAGIC ## 2. Save modes
 # MAGIC
-# MAGIC **`.mode(...)`** controls what happens when the output path already
-# MAGIC exists. **`write`** is an **action** (Module 4) — each cell below
-# MAGIC executes immediately.
+# MAGIC **`.mode(...)`** tells Spark what to do when the output path already
+# MAGIC has data. **`write`** is an **action** (Module 4) — each cell below
+# MAGIC runs the write as soon as you execute it.
 # MAGIC
-# MAGIC Prior notebooks defaulted to **`overwrite`** so re-runs replaced the
-# MAGIC practice folder. Here you compare all four common modes on one path.
+# MAGIC All four modes write to the same path:
+# MAGIC **`practice/write_modes_demo/`**. Run the cells in order so the counts
+# MAGIC match the notes.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### 2a. `overwrite`
 # MAGIC
-# MAGIC Replace any existing files at the path.
+# MAGIC Delete existing files at the path, then write the new DataFrame.
+# MAGIC After this cell, the folder should contain **5** rows.
 
 # COMMAND ----------
 
@@ -167,9 +173,9 @@ display(dbutils.fs.ls(save_modes_path))
 # MAGIC %md
 # MAGIC ### 2b. `append`
 # MAGIC
-# MAGIC Add another batch of files alongside what is already there. Row count
-# MAGIC grows — useful for incremental loads, risky if you re-run the same
-# MAGIC batch by accident.
+# MAGIC Keep the existing files and add new ones. Row count increases. Useful
+# MAGIC when each run adds a new batch; risky if you re-run the same batch by
+# MAGIC mistake and double the rows.
 
 # COMMAND ----------
 
@@ -188,7 +194,8 @@ print(spark.read.format("parquet").load(save_modes_path).count())
 # MAGIC %md
 # MAGIC ### 2c. `ignore`
 # MAGIC
-# MAGIC If the path already has data, **do nothing** — no error, no update.
+# MAGIC If the path already has data, Spark skips the write. No error. No
+# MAGIC change to the existing files or row count.
 
 # COMMAND ----------
 
@@ -210,9 +217,10 @@ print(f"After ignore:  {count_after_ignore} (unchanged when path already exists)
 # MAGIC %md
 # MAGIC ### 2d. `errorifexists`
 # MAGIC
-# MAGIC Fail if the path already exists. Use this when a re-run should be loud
-# MAGIC instead of silently appending or overwriting. Spark also accepts
-# MAGIC **`"error"`** as an alias.
+# MAGIC If the path already has data, Spark raises an error and does not write.
+# MAGIC Use this when a second write to the same path should fail loudly.
+# MAGIC Spark also accepts **`"error"`** as the same mode (the default when you
+# MAGIC omit **`.mode(...)`**).
 
 # COMMAND ----------
 
@@ -230,24 +238,26 @@ except Exception as exc:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC | Mode | If path exists |
-# MAGIC |------|----------------|
-# MAGIC | **`overwrite`** | Replace contents |
-# MAGIC | **`append`** | Add more files / rows |
-# MAGIC | **`ignore`** | Leave existing data alone |
-# MAGIC | **`errorifexists`** / **`error`** | Raise an error |
+# MAGIC | Mode | If the path already has data |
+# MAGIC |------|------------------------------|
+# MAGIC | **`overwrite`** | Replace the existing files |
+# MAGIC | **`append`** | Add more files (row count grows) |
+# MAGIC | **`ignore`** | Skip the write; leave existing files |
+# MAGIC | **`errorifexists`** / **`error`** | Raise an error (default) |
 # MAGIC
-# MAGIC Production tip: prefer an intentional mode every time — never rely on the
-# MAGIC default if you care about idempotent re-runs.
+# MAGIC Always set **`.mode(...)`** explicitly. Relying on the default
+# MAGIC (**`error`**) or on habit (**`overwrite`**) without checking the path
+# MAGIC is a common source of failed jobs or lost data.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 3. Brief partitioned write
 # MAGIC
-# MAGIC **`.partitionBy("hour_of_day")`** lays out folders like
-# MAGIC **`hour_of_day=8/`** under the output path. Partitioning is a layout
-# MAGIC choice for selective reads later — this module only shows the write.
+# MAGIC **`.partitionBy("hour_of_day")`** writes subfolders named
+# MAGIC **`hour_of_day=<value>/`** under the output path — for example
+# MAGIC **`hour_of_day=8/`**. Later jobs can read one folder instead of the
+# MAGIC whole dataset. This module only shows the write layout.
 
 # COMMAND ----------
 
@@ -265,8 +275,8 @@ display(dbutils.fs.ls(partitioned_path))
 
 # MAGIC %md
 # MAGIC You should see directories named **`hour_of_day=<value>`**. Reading the
-# MAGIC parent folder still returns all rows; Spark discovers partitions from
-# MAGIC the directory names.
+# MAGIC parent folder still returns every row; Spark adds **`hour_of_day`**
+# MAGIC from the folder names.
 
 # COMMAND ----------
 
@@ -282,13 +292,13 @@ partitioned_read.groupBy("hour_of_day").count().orderBy("hour_of_day").show(10)
 # MAGIC %md
 # MAGIC ## 4. Delta file write under `practice/`
 # MAGIC
-# MAGIC Write Delta as a **file format** to the external volume — same
-# MAGIC **`/Volumes/.../practice/`** pattern as Parquet/JSON, but with
-# MAGIC **`format("delta")`**. This is a preview only: ACID, **`MERGE`**, and
-# MAGIC time travel belong in Module 10.
+# MAGIC Write with **`format("delta")`** to a Volume path under **`practice/`**
+# MAGIC — the same folder pattern as Parquet or JSON, different format name.
+# MAGIC This notebook only creates and re-reads the folder. ACID transactions,
+# MAGIC **`MERGE`**, and time travel are covered in Module 10.
 # MAGIC
-# MAGIC Delta does not replace every file format — Module 5 still uses CSV,
-# MAGIC JSON, Parquet, XML, and Avro for landing and practice writes.
+# MAGIC Delta is one storage format among others. Module 5 still lands and
+# MAGIC writes CSV, JSON, Parquet, XML, and Avro where those formats fit.
 
 # COMMAND ----------
 
@@ -313,18 +323,19 @@ delta_from_path.show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Notice **`_delta_log/`** in the directory listing — that is Delta's
-# MAGIC transaction log on the volume. The data still lives as files under
-# MAGIC **`practice/`**, not as a catalog table yet.
+# MAGIC The directory listing should include **`_delta_log/`** — Delta’s
+# MAGIC transaction log next to the data files. You still address this output
+# MAGIC with a Volume path string, not a catalog table name.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 5. Managed `saveAsTable` into `rideshare_dev.processed`
 # MAGIC
-# MAGIC **`saveAsTable`** registers a **managed** table in Unity Catalog. The
-# MAGIC files go to the catalog's **managed location** (created in Notebook 01),
-# MAGIC which is **not** the external **`output_files`** volume.
+# MAGIC **`saveAsTable`** creates (or replaces) a **managed** table in Unity
+# MAGIC Catalog. Spark stores the files in the catalog’s **managed location**
+# MAGIC from Notebook 01 — not under
+# MAGIC **`/Volumes/rideshare_dev/processed/output_files/`**.
 
 # COMMAND ----------
 
@@ -345,22 +356,24 @@ display(spark.sql(f"DESCRIBE EXTENDED {managed_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC In the **`DESCRIBE EXTENDED`** output, find **`Type`** / **`Location`**
-# MAGIC (wording can vary slightly by runtime). The location should point at
-# MAGIC managed storage under the catalog — not
+# MAGIC In the **`DESCRIBE EXTENDED`** output, check **`Type`** and
+# MAGIC **`Location`** (labels can vary slightly by runtime). **`Location`**
+# MAGIC should be the catalog managed storage path — not
 # MAGIC **`/Volumes/rideshare_dev/processed/output_files/...`**.
 # MAGIC
-# MAGIC Re-runs: **`DROP TABLE IF EXISTS`** above keeps this notebook idempotent.
-# MAGIC Notebook **99** Level 4 drops the whole **`rideshare_dev`** catalog
-# MAGIC (including managed tables). Level 1 only clears **`practice/`** files.
+# MAGIC **`DROP TABLE IF EXISTS`** above lets you re-run this section cleanly.
+# MAGIC Notebook **99** Level 1 deletes files under **`practice/`** only.
+# MAGIC Level 4 drops the whole **`rideshare_dev`** catalog, including managed
+# MAGIC tables.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 6. Files vs tables
 # MAGIC
-# MAGIC Same logical rows, two homes: a Delta **path** on the external volume,
-# MAGIC and a managed **table** in **`rideshare_dev.processed`**.
+# MAGIC Compare the two outputs you just created: Delta files at
+# MAGIC **`delta_file_path`**, and the managed table **`managed_table`**. Same
+# MAGIC columns and row count; different name and storage location.
 
 # COMMAND ----------
 
@@ -380,21 +393,22 @@ spark.table(managed_table).show(3)
 # MAGIC %md
 # MAGIC | | Delta file under `practice/` | Managed `saveAsTable` |
 # MAGIC |---|------------------------------|------------------------|
-# MAGIC | How you address it | Volume path string | Catalog.schema.table |
-# MAGIC | Storage | External volume (`output_files`) | Catalog managed location |
-# MAGIC | Governance | Path permissions on the volume | UC table privileges (Module 11) |
-# MAGIC | Deep Delta features | Module 10 | Module 10 |
+# MAGIC | How you name it | Volume path string | `catalog.schema.table` |
+# MAGIC | Where files are stored | External volume `output_files` | Catalog managed location |
+# MAGIC | Who controls access | Volume / path permissions | Unity Catalog table privileges (Module 11) |
+# MAGIC | Delta features (MERGE, time travel, …) | Module 10 | Module 10 |
 # MAGIC
-# MAGIC Both can use the Delta format. The important Module 5 takeaway is
-# MAGIC **where** the data lives and **how** you name it.
+# MAGIC Both can use **`format("delta")`**. In Module 5, the point is which
+# MAGIC name you use and which storage location holds the files.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Build a second write preview without reusing the worked-output paths
-# MAGIC above:
+# MAGIC Write a second extract. Do not reuse the worked-output paths above
+# MAGIC (**`write_modes_demo/`**, **`trip_time_partitioned/`**,
+# MAGIC **`trip_time_delta_file/`**, or **`trip_time_preview`**).
 # MAGIC
 # MAGIC 1. From **`write_source`** (or a fresh read of **`trip_time.parquet`**),
 # MAGIC    **`select`** **`trip_id`** and **`trip_date`** only.
@@ -415,18 +429,22 @@ spark.table(managed_table).show(3)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **Save modes** — **`overwrite`**, **`append`**, **`ignore`**,
-# MAGIC   **`errorifexists`** control re-run behavior; **`write`** is an action
+# MAGIC - **Save modes** — **`overwrite`**, **`append`**, **`ignore`**, and
+# MAGIC   **`errorifexists`** / **`error`** control what happens when the path
+# MAGIC   already has data; **`write`** is an action
 # MAGIC - **Partitioned write** — **`.partitionBy(...)`** creates
 # MAGIC   **`column=value/`** folders under **`practice/`**
-# MAGIC - **Delta file write** — **`format("delta").save(volume_path)`** stores
-# MAGIC   Delta on the external volume (preview only; deep Delta → Module 10).
-# MAGIC   Delta does not replace CSV/JSON/Parquet/Avro for every use case
-# MAGIC - **Managed `saveAsTable`** — registers a table in
-# MAGIC   **`rideshare_dev.processed`**; managed location ≠ external volume
-# MAGIC - **Files vs tables** — path-based files vs catalog-governed tables
-# MAGIC   (UC grants → Module 11)
+# MAGIC - **Delta file write** — **`format("delta").save(volume_path)`** writes
+# MAGIC   Delta files on the external volume (Module 10 covers **`MERGE`**,
+# MAGIC   time travel, and related features). Delta does not replace CSV,
+# MAGIC   JSON, Parquet, or Avro for every job
+# MAGIC - **Managed `saveAsTable`** — registers
+# MAGIC   **`rideshare_dev.processed.<table>`**; files go to the catalog
+# MAGIC   managed location, not the external **`output_files`** volume
+# MAGIC - **Files vs tables** — Volume path vs **`catalog.schema.table`**
+# MAGIC   (table privileges → Module 11)
 # MAGIC
-# MAGIC **Next:** Module 6 — systematic transforms (including **`explode`** on
-# MAGIC **`drivers`**). Use **99 - Rideshare Project Cleanup and Reset** when you
-# MAGIC need to clear **`practice/`** or tear down the project.
+# MAGIC **Next:** Module 6 — column transforms and nested data (including
+# MAGIC **`explode`** on **`drivers`**). Use
+# MAGIC **99 - Rideshare Project Cleanup and Reset** to clear **`practice/`**
+# MAGIC or tear down the project.
