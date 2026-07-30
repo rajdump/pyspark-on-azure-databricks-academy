@@ -1,0 +1,4 @@
+Date: July 30th 2026
+
+As part of this module, note the important terms: column-oriented vs. row-oriented files, 
+data warehouse vs. data lake vs. lakehouse. We need to cover these topics in the course.

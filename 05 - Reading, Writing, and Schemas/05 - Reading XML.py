@@ -178,9 +178,9 @@ drivers.select(F.col("driver_id"), F.col("trips_assigned")).show(2, truncate=Fal
 # MAGIC You can access struct fields using dot notation (e.g. `vehicle.make`) —
 # MAGIC we do this in section 5.
 # MAGIC
-# MAGIC To turn the `trips_assigned` list into separate rows (one row per trip),
-# MAGIC you need `explode()` — that's covered in Module 6. For now, we just
-# MAGIC read and inspect without flattening.
+# MAGIC To turn the nested `trip_id` array (`trips_assigned.trip_id`) into
+# MAGIC separate rows (one row per trip), you need `explode()` — that's covered
+# MAGIC in Module 6. For now, we just read and inspect without flattening.
 
 # COMMAND ----------
 
