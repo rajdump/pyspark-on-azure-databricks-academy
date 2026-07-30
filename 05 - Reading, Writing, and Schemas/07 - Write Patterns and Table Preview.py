@@ -3,16 +3,9 @@
 # MAGIC
 # MAGIC # 07 - Write Patterns and Table Preview
 # MAGIC
-# MAGIC Earlier notebooks wrote practice outputs with **`.mode("overwrite")`**.
-# MAGIC This notebook goes deeper: save modes, a brief partitioned write, a
-# MAGIC Delta **file** write under **`practice/`**, and a managed
-# MAGIC **`saveAsTable`** into **`rideshare_dev.processed`**.
+# MAGIC Earlier notebooks used the practice output with **`.mode("overwrite")`**. This notebook takes a deeper look at different save modes, including a brief explanation of partitioned writes, a Delta **file** write in the **`practice/`** directory, and a managed **`saveAsTable`** operation into **`rideshare_dev.processed`**.
 # MAGIC
-# MAGIC **Files vs tables:** Volume paths under
-# MAGIC **`/Volumes/rideshare_dev/processed/output_files/practice/`** are files
-# MAGIC on the external volume. A managed table in **`rideshare_dev.processed`**
-# MAGIC lives in the catalog's managed location — not the same as the external
-# MAGIC volume. Deep Delta Lake → Module 10; UC grants → Module 11.
+# MAGIC **Files vs. Tables:** The paths under **`/Volumes/rideshare_dev/processed/output_files/practice/`** refer to files stored on the external volume. In contrast, a managed table in **`rideshare_dev.processed`** resides in the catalog's managed location, which is different from the external volume. For further insights, refer to Deep Delta Lake in Module 10 and UC grants in Module 11.
 # MAGIC
 # MAGIC ---
 # MAGIC
