@@ -178,7 +178,7 @@ drivers.select(F.col("driver_id"), F.col("trips_assigned")).show(2, truncate=Fal
 # MAGIC You can access struct fields using dot notation (e.g. **`vehicle.make`**) —
 # MAGIC we do this in section 5.
 # MAGIC
-# MAGIC **Why `explode()` matters.** Each driver row holds an **array** of
+# MAGIC Each driver row holds an **array** of
 # MAGIC **`trip_id`** values under **`trips_assigned.trip_id`**. You cannot join
 # MAGIC that array directly to the **`trip`** table's scalar **`trip_id`** —
 # MAGIC Spark needs one **`trip_id` per row**. **`explode()`** turns the array
