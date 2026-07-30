@@ -165,11 +165,22 @@ drivers.select(F.col("driver_id"), F.col("trips_assigned")).show(2, truncate=Fal
 
 # COMMAND ----------
 
+# DBTITLE 1,Nested columns explained
 # MAGIC %md
-# MAGIC **`vehicle`** is a **struct**; **`trips_assigned`** holds the repeated
-# MAGIC **`trip_id`** values as a nested type. Joining drivers to **`trip`** on
-# MAGIC those IDs needs **`explode()`** — that is Module 6. Here we only read and
-# MAGIC inspect.
+# MAGIC
+# MAGIC Looking at the output above, notice two kinds of nested columns:
+# MAGIC
+# MAGIC | Column | Type | What it holds |
+# MAGIC |--------|------|---------------|
+# MAGIC | `vehicle` | struct | A single object with fields: `make`, `model`, `year`, `body_type` |
+# MAGIC | `trips_assigned` | array of structs | A list of `trip_id` values — one driver can have many trips |
+# MAGIC
+# MAGIC You can access struct fields using dot notation (e.g. `vehicle.make`) —
+# MAGIC we do this in section 5.
+# MAGIC
+# MAGIC To turn the `trips_assigned` list into separate rows (one row per trip),
+# MAGIC you need `explode()` — that's covered in Module 6. For now, we just
+# MAGIC read and inspect without flattening.
 
 # COMMAND ----------
 
