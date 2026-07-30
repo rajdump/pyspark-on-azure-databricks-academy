@@ -322,15 +322,15 @@ payment_via_struct.printSchema()
 # MAGIC pipeline still declares yesterday's contract:
 # MAGIC
 # MAGIC 1. Landing **dropped** a column the contract still expects
-# MAGIC 2. Landing **changed** a column's type
+# MAGIC 2. Landing **changed** a column's type (Avro read often **fails**)
 # MAGIC 3. The contract **omits** a column that is still in the file
 # MAGIC
 # MAGIC We keep **`payment.avro`** fixed and change **`.schema(...)`** on purpose
 # MAGIC — the same technique as Parquet in Notebook **04**, but framed as
 # MAGIC ingestion drift. Parquet often keeps reading with casts, nulls, or
-# MAGIC dropped columns (sometimes with a **wrong meaning**). Avro may cast,
-# MAGIC null, drop, or **fail** depending on the drift — always check the
-# MAGIC result; do not assume silence is safety.
+# MAGIC dropped columns (sometimes with a **wrong meaning**). For type
+# MAGIC mismatches on this Avro file, Spark typically **fails the read**
+# MAGIC instead — always align the contract with the file.
 # MAGIC
 # MAGIC After these demos, keep using **`payment`** from section 4a.
 
@@ -374,52 +374,46 @@ mismatch_dropped.select("trip_id", "promo_code").show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Landing changed a type (compatible)
+# MAGIC #### Landing changed a type
 # MAGIC
-# MAGIC File stores **`trip_id`** as **`bigint`** (Avro **`long`**); the contract
-# MAGIC asks for **`double`**. Avro schema resolution allows promoting
-# MAGIC **`long` → `double`**, so values are kept. (A Parquet-style
-# MAGIC **`decimal` → `double`** cast often **fails** on Avro — do not assume
-# MAGIC every Spark cast that works for Parquet works here.)
-
-# COMMAND ----------
-
-mismatch_type_ok = (
-    spark.read.format("avro")
-    .schema(
-        """
-        trip_id double,
-        payment_method string,
-        base_fare_amount decimal(10,2),
-        surge_amount decimal(10,2),
-        tax_amount decimal(10,2),
-        tip_amount decimal(10,2),
-        discount_amount decimal(10,2),
-        driver_payout_amount decimal(10,2)
-        """
-    )
-    .load(payment_avro_path)
-)
-
-print("Compatible promotion — file bigint, schema double:")
-mismatch_type_ok.printSchema()
-mismatch_type_ok.select("trip_id").show(3)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC #### Landing changed a type (incompatible)
+# MAGIC Notebook **04** (Parquet) showed an **`int` → `bigint`** widen that
+# MAGIC still returned rows. With Avro and **`.schema(...)`**, declaring a
+# MAGIC different type for a payment column typically **fails the file read**
+# MAGIC — including changes that look "numeric compatible" (for example
+# MAGIC **`bigint` → `double`** or **`decimal` → `double`**).
 # MAGIC
-# MAGIC Declaring **`tip_amount`** as **`string`** when the file has a decimal
-# MAGIC is not a safe contract. Unlike Parquet's date-as-**`int`** demo (Notebook
-# MAGIC **04**), which kept rows with a misleading value, Avro **may fail** or
-# MAGIC cast — run the cell and read the output. Wrap the action so the
-# MAGIC notebook can continue either way.
+# MAGIC Run both attempts below. Expect a failure message, not a quiet cast.
 
 # COMMAND ----------
 
 try:
-    mismatch_bad_type = (
+    mismatch_type_numeric = (
+        spark.read.format("avro")
+        .schema(
+            """
+            trip_id double,
+            payment_method string,
+            base_fare_amount decimal(10,2),
+            surge_amount decimal(10,2),
+            tax_amount decimal(10,2),
+            tip_amount decimal(10,2),
+            discount_amount decimal(10,2),
+            driver_payout_amount decimal(10,2)
+            """
+        )
+        .load(payment_avro_path)
+    )
+    print("Unexpected success — inspect trip_id:")
+    mismatch_type_numeric.printSchema()
+    mismatch_type_numeric.select("trip_id").show(3)
+except Exception as exc:
+    print(f"bigint → double stopped the read: {type(exc).__name__}")
+    print(str(exc)[:500])
+
+# COMMAND ----------
+
+try:
+    mismatch_type_string = (
         spark.read.format("avro")
         .schema(
             """
@@ -435,12 +429,20 @@ try:
         )
         .load(payment_avro_path)
     )
-    print("Read succeeded — check whether tip_amount looks like a safe string:")
-    mismatch_bad_type.printSchema()
-    mismatch_bad_type.select("tip_amount").show(3)
+    print("Unexpected success — inspect tip_amount:")
+    mismatch_type_string.printSchema()
+    mismatch_type_string.select("tip_amount").show(3)
 except Exception as exc:
-    print(f"Incompatible type stopped the read: {type(exc).__name__}")
+    print(f"decimal → string stopped the read: {type(exc).__name__}")
     print(str(exc)[:500])
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Both attempts should fail (or surprise you if your runtime differs).
+# MAGIC Unlike Parquet's date-as-**`int`** demo — which kept rows with a
+# MAGIC misleading value — Avro type drift here tends to **stop the job**.
+# MAGIC Fix the landing file or update the contract; do not rely on a silent cast.
 
 # COMMAND ----------
 
@@ -596,8 +598,9 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC - **Explicit schema (DDL or `StructType`)** — still recommended for production
 # MAGIC   contracts and validation
 # MAGIC - **Schema mismatch** — landing drop / type change / contract omits a file
-# MAGIC   column; some drifts null or drop quietly, incompatible types may fail or
-# MAGIC   cast (contrast Parquet Notebook **04**)
+# MAGIC   column; drop and omit can stay quiet (nulls / missing cols); type
+# MAGIC   mismatches on this Avro file typically **fail** the read (contrast
+# MAGIC   Parquet Notebook **04**, where some wrong types still return rows)
 # MAGIC - **Light reshape** — **`select`** fare columns before a practice write
 # MAGIC - **Avro round trip** — writes a directory of part files; types are
 # MAGIC   preserved on re-read (unlike CSV)
