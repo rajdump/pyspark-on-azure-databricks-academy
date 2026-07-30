@@ -57,23 +57,35 @@ print(f"trip_time_table = {trip_time_table}")
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 4
 # MAGIC %md
 # MAGIC ## 1. Built-in functions create Column expressions
 # MAGIC
-# MAGIC Functions such as **`F.upper`**, **`F.round`**, and **`F.date_format`** do
-# MAGIC not process one Python value at a time. They create Spark **Column
-# MAGIC expressions**. Spark adds those expressions to the DataFrame's logical plan and
-# MAGIC evaluates them across the dataset when an action runs.
+# MAGIC A regular Python function like `str.upper()` processes **one value at a time**
+# MAGIC in your driver process. Spark built-in functions work differently:
 # MAGIC
-# MAGIC Use **`F.col("column_name")`** to refer to an existing column. Use
-# MAGIC **`.alias("new_name")`** to name the result.
+# MAGIC | | Python function | Spark built-in (`F.*`) |
+# MAGIC |---|---|---|
+# MAGIC | **What it produces** | A computed value | A **Column expression** (a plan node) |
+# MAGIC | **When it runs** | Immediately | Only when an action triggers execution |
+# MAGIC | **Where it runs** | Driver (single machine) | Executors (distributed, JVM-optimized) |
+# MAGIC | **Optimizer visibility** | Opaque | Full — Spark can reorder, prune, or fuse |
+# MAGIC
+# MAGIC When you write `F.upper(F.col("service_type"))`, nothing executes yet. Spark
+# MAGIC records the instruction in the DataFrame's **logical plan** and evaluates it
+# MAGIC across all partitions when an action (`.show()`, `.write`, `.collect()`) runs.
+# MAGIC
+# MAGIC ### Two essential helpers
+# MAGIC
+# MAGIC - **`F.col("name")`** — reference an existing column by name
+# MAGIC - **`.alias("new_name")`** — give the resulting column a meaningful name
 # MAGIC
 # MAGIC ```python
 # MAGIC F.upper(F.col("service_type")).alias("service_type_upper")
 # MAGIC ```
 # MAGIC
-# MAGIC Keeping the work in built-in expressions lets Spark understand and optimize the
-# MAGIC transformation plan. This module's production rule is: **use built-ins first**.
+# MAGIC > **Module production rule:** use built-ins first. They keep the optimizer
+# MAGIC > informed, avoid Python-per-row overhead, and compose cleanly.
 
 # COMMAND ----------
 
