@@ -110,8 +110,8 @@ Each notebook ends with a short hands-on task that repeats the notebook's
 pattern on a slightly different rideshare DataFrame — for example, defining
 an explicit schema, inspecting with `columns`/`dtypes`, projecting and
 adding a derived column, filtering with a reusable condition, or querying a
-temp view. Notebook 1 includes one medium-difficulty exercise on inferred
-vs explicit schema inspection.
+temp view. Module 2 **`01 - Creating DataFrames`** includes one
+medium-difficulty exercise on inferred vs explicit schema inspection.
 
 ## Minimum privileges required
 
@@ -119,5 +119,5 @@ vs explicit schema inspection.
   (`CAN ATTACH TO` or `CAN RESTART` on the cluster/policy your workspace
   provides for this course)
 - Unity Catalog: none — this module doesn't read or write governed data
-- Global temporary view demo (notebook 6): classic all-purpose compute;
-  not available on serverless
+- Global temporary view demo in Module 2 **`06 - Querying DataFrames with
+  SQL`**: classic all-purpose compute; not available on serverless

@@ -37,11 +37,15 @@ transformations vs actions, lazy evaluation, and that **`DataFrame.write`**
 returns a writer interface; execution occurs when you call terminal write
 methods such as **`.save()`**, **`.parquet()`**, or **`.saveAsTable()`**.
 
-### Before **01 - Unity Catalog Volumes and Data Landing**
+### Before Notebook 01
+
+Complete these requirements before running
+**`01 - Unity Catalog Volumes and Data Landing`**:
 
 1. Own Azure Databricks workspace with Unity Catalog (Premium-capable)
-2. Ability to **`CREATE CATALOG`**, **`CREATE EXTERNAL LOCATION`**, and
-   **`CREATE VOLUME`** in your metastore
+2. Ability to **`CREATE CATALOG`** and **`CREATE EXTERNAL LOCATION`** on the
+   Unity Catalog metastore, plus **`CREATE EXTERNAL LOCATION`** on the storage
+   credential named in the config cell
 3. Azure Data Lake Storage Gen2 account + container, and a Unity Catalog
    **storage credential** that already exists and can access that storage
    (how to create the Access Connector and credential is covered in the
@@ -131,9 +135,11 @@ and has no exercise.
 
 - Databricks workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the
   compute used in this module
-- Unity Catalog: ability to **`CREATE CATALOG`**, **`CREATE EXTERNAL
-  LOCATION`**, **`CREATE SCHEMA`**, **`CREATE VOLUME`**, and read/write the
-  course volumes under `rideshare_dev` after creation
+- Unity Catalog: ability to **`CREATE CATALOG`** and **`CREATE EXTERNAL
+  LOCATION`** on the metastore, **`CREATE EXTERNAL LOCATION`** on the storage
+  credential named in the config cell, **`CREATE SCHEMA`**, **`CREATE
+  VOLUME`**, and read/write the course volumes under `rideshare_dev` after
+  creation
 - Azure RBAC: roles on **your** storage account for the access connector
   behind your storage credential (including File Events–related roles when
   testing the external location — see **`01 - Unity Catalog Volumes and Data

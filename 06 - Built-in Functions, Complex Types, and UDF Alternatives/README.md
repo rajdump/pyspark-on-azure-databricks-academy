@@ -53,9 +53,12 @@ curated state.
 
 ## Approach and boundaries
 
-**API used:** PySpark **DataFrame** methods and built-in **`F.*`** Column
-expressions only. `F.expr` and `selectExpr` were taught in Module 2 — not
-used here. Pure SQL and dual-API patterns belong in Module 9.
+**API used:** Notebooks **01–03** use PySpark **DataFrame** methods and
+built-in **`F.*`** Column expressions. **`04 - Built-ins First: When (Not) to
+Use UDFs`** introduces Python UDFs and Pandas UDFs only as alternatives for
+logic that cannot be expressed with built-ins. `F.expr` and `selectExpr` were
+taught in Module 2 and are not used here. Pure SQL and dual-API patterns
+belong in Module 9.
 
 **In scope:** built-in transforms, struct/array/`explode`, curated writes
 (below), built-in vs UDF decision guidance.

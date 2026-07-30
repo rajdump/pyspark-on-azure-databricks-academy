@@ -3,9 +3,9 @@
 ## Purpose
 
 Understand Spark's lazy execution model: how DataFrames build logical plans
-that execute only when an action is called, how the Spark optimizer can reorder
-your steps, and how different transformations may or may not require shuffling
-data between worker nodes.
+that execute only when an action is called, how the Spark optimizer can rewrite
+the logical plan — for example, by applying a filter earlier — and how different
+transformations may or may not require shuffling data between worker nodes.
 
 ## Learning objectives
 
