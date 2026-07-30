@@ -318,7 +318,7 @@ payment_via_struct.printSchema()
 # MAGIC %md
 # MAGIC ### 4c. Schema mismatch (ingestion drift)
 # MAGIC
-# MAGIC Avro stores a writer schema in the file header, but production pipelines
+# MAGIC Avro stores schema in the file header, but production pipelines
 # MAGIC still pass an explicit **`.schema(...)`** contract. When that contract
 # MAGIC disagrees with the file, Spark Avro does **not** invent safe values for
 # MAGIC every case:
