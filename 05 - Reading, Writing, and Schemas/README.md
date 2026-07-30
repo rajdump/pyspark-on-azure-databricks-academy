@@ -78,11 +78,11 @@ Notebook 01 creates platform objects; **Module 11** explains governance
 
 ## Notebook navigation
 
-Seven content notebooks plus cleanup, in this order. **Only Notebooks 01 and
-99 exist on disk today**; 02–07 are planned next. When authoring, the next
-content notebook number is **02** (ignore **99** for numbering).
+Seven content notebooks plus cleanup, in this order. All notebooks
+**01–07** and **99** are on disk and runtime-validated (see
+`docs/validation/05 - Reading, Writing, and Schemas.md`).
 
-1. **Unity Catalog Volumes and Data Landing** *(exists)*
+1. **Unity Catalog Volumes and Data Landing**
    - Config cell (your Azure values); create ADLS project folder in Portal
    - Create external location `el_rideshare_dev`, catalog `rideshare_dev`,
      schemas, and volumes
@@ -103,7 +103,7 @@ content notebook number is **02** (ignore **99** for numbering).
    - Delta **file** write under `practice/` and managed **`saveAsTable`**
      into `rideshare_dev.processed` (managed location ≠ external volume)
    - Files vs tables; deep Delta → Module 10
-99. **Rideshare Project Cleanup and Reset** *(exists)*
+99. **Rideshare Project Cleanup and Reset**
    - Level 1 clear `practice/`; Level 2 clear `curated/` (blast radius);
      Level 3 clear landing; Level 4 full teardown
 
