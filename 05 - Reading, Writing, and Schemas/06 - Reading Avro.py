@@ -129,7 +129,7 @@
 # MAGIC | DataSource syntax | Use `format("avro").load(...)` / `.save(...)` |
 # MAGIC | Embedded schema | Inspect with `printSchema()`, a sample row, and row count |
 # MAGIC | Explicit schemas | Apply DDL string and `StructType` schemas for validation |
-# MAGIC | Schema mismatch | Contrast `.schema(...)` drift vs compatible `avroSchema` evolution |
+# MAGIC | Schema mismatch | See nulls, dropped columns, or hard fails when `.schema(...)` disagrees |
 # MAGIC | Light reshape | Select fare columns for a practice write |
 # MAGIC | Write Avro | Save a practice output under `practice/` |
 # MAGIC | Round-trip test | Re-read written Avro and confirm types are preserved |
@@ -173,11 +173,9 @@ landing_root = "/Volumes/rideshare_dev/landing/source_files"
 payment_avro_path = f"{landing_root}/payment/payment.avro"
 practice_root = "/Volumes/rideshare_dev/processed/output_files/practice"
 practice_output_path = f"{practice_root}/payment_avro_roundtrip/"
-avro_evolution_demo_path = f"{practice_root}/avro_schema_evolution_demo/"
 
 print(f"payment_avro_path = {payment_avro_path}")
 print(f"practice_output_path = {practice_output_path}")
-print(f"avro_evolution_demo_path = {avro_evolution_demo_path}")
 
 # COMMAND ----------
 
@@ -320,28 +318,28 @@ payment_via_struct.printSchema()
 # MAGIC %md
 # MAGIC ### 4c. Schema mismatch (ingestion drift)
 # MAGIC
-# MAGIC Avro is common at **ingestion**. Official Spark docs describe **two**
-# MAGIC different schema knobs — do not mix them up:
+# MAGIC Avro stores a writer schema in the file header, but production pipelines
+# MAGIC still pass an explicit **`.schema(...)`** contract. When that contract
+# MAGIC disagrees with the file, Spark Avro does **not** invent safe values for
+# MAGIC every case:
 # MAGIC
-# MAGIC | API | What it is | Typical use |
-# MAGIC |-----|------------|-------------|
-# MAGIC | **`.schema(...)`** | Spark SQL (Catalyst) contract | Everyday pipeline contract |
-# MAGIC | **`.option("avroSchema", ...)`** | Avro JSON **reader** schema | Compatible evolution (writer vs reader) |
+# MAGIC | Drift | What Spark Avro typically does |
+# MAGIC |-------|--------------------------------|
+# MAGIC | Contract has an **extra** column | Column appears; values are **`null`** |
+# MAGIC | Contract uses a **wrong type** | Read **fails** (including many "widenings") |
+# MAGIC | Contract **omits** a file column | Column is **absent** from the DataFrame |
 # MAGIC
-# MAGIC With **`.schema(...)`**, Spark is intentionally **strict** about wrong
-# MAGIC types (Spark 3.5+ can raise incompatible-read errors rather than return
-# MAGIC corrupt values). Column add/drop via Catalyst still often "succeeds"
-# MAGIC with nulls or omitted columns.
-# MAGIC
-# MAGIC Compatible evolution (for example a **new field with a default**) is
-# MAGIC documented on **`avroSchema`**, not on Catalyst type casts.
+# MAGIC Wrong-type failures include obvious mismatches (**`decimal` → `string`**)
+# MAGIC and ones that look compatible (**`decimal` → `double`**, **`bigint` →
+# MAGIC `double`**). Treat **`.schema(...)`** as a validation contract, not as a
+# MAGIC quiet cast layer.
 # MAGIC
 # MAGIC After these demos, keep using **`payment`** from section 4a.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### `.schema(...)` — landing dropped a column
+# MAGIC #### Landing dropped a column
 # MAGIC
 # MAGIC The contract still expects **`promo_code`**, but **`payment.avro`** does
 # MAGIC not have it.
@@ -378,13 +376,12 @@ mismatch_dropped.select("trip_id", "promo_code").show(3)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### `.schema(...)` — wrong type (strict fail)
+# MAGIC #### Wrong type — read fails
 # MAGIC
 # MAGIC Declaring **`tip_amount`** as **`string`** when the file stores a decimal
-# MAGIC is an incompatible Catalyst type. Modern Spark Avro refuses this rather
-# MAGIC than inventing a quiet wrong value (see Spark's Avro incompatible-read
-# MAGIC behavior / migration notes since 3.5). Contrast Parquet Notebook **04**,
-# MAGIC where some wrong types still return rows.
+# MAGIC is incompatible. Spark Avro stops the read rather than returning an
+# MAGIC invented string. The same hard fail happens for **`decimal` → `double`**
+# MAGIC and **`bigint` → `double`** on this format.
 
 # COMMAND ----------
 
@@ -408,13 +405,13 @@ try:
         .show(3)
     )
 except Exception as exc:
-    print(f"Wrong Catalyst type stopped the read: {type(exc).__name__}")
+    print(f"Wrong type stopped the Avro read: {type(exc).__name__}")
     print(str(exc)[:500])
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### `.schema(...)` — contract omits a file column
+# MAGIC #### Contract omits a file column
 # MAGIC
 # MAGIC The file has **`discount_amount`**, but this contract does not list it.
 # MAGIC Undeclared columns do not appear in the DataFrame.
@@ -446,78 +443,10 @@ mismatch_omit.show(2)
 # MAGIC %md
 # MAGIC **`discount_amount`** is gone from the result.
 # MAGIC
-# MAGIC #### `avroSchema` — compatible evolution (official pattern)
-# MAGIC
-# MAGIC [Spark Avro docs](https://spark.apache.org/docs/latest/sql-data-sources-avro.html):
-# MAGIC set **`avroSchema`** to an evolved Avro JSON schema that is **compatible
-# MAGIC but different** from the file (for example one **additional field with a
-# MAGIC default**). Deserialization follows the reader schema.
-# MAGIC
-# MAGIC We write a tiny practice Avro with a **known** writer schema, then read it
-# MAGIC with a reader schema that adds **`region`**.
-
-# COMMAND ----------
-
-payment_avro_writer_schema = """
-{
-  "type": "record",
-  "name": "PaymentEvent",
-  "fields": [
-    {"name": "trip_id", "type": "long"},
-    {"name": "payment_method", "type": "string"}
-  ]
-}
-"""
-
-payment_avro_reader_schema = """
-{
-  "type": "record",
-  "name": "PaymentEvent",
-  "fields": [
-    {"name": "trip_id", "type": "long"},
-    {"name": "payment_method", "type": "string"},
-    {"name": "region", "type": "string", "default": "unknown"}
-  ]
-}
-"""
-
-evolution_rows = spark.createDataFrame(
-    [(1, "card"), (2, "cash")],
-    "trip_id long, payment_method string",
-)
-
-(
-    evolution_rows.write.format("avro")
-    .option("avroSchema", payment_avro_writer_schema)
-    .mode("overwrite")
-    .save(avro_evolution_demo_path)
-)
-
-print(f"Wrote writer-schema Avro to {avro_evolution_demo_path}")
-
-# COMMAND ----------
-
-evolution_read = (
-    spark.read.format("avro")
-    .option("avroSchema", payment_avro_reader_schema)
-    .load(avro_evolution_demo_path)
-)
-
-print("Reader schema adds region with default 'unknown':")
-evolution_read.printSchema()
-evolution_read.show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **`region`** appears with the default **`unknown`** even though the written
-# MAGIC file never stored that field — that is Avro writer/reader resolution via
-# MAGIC **`avroSchema`**, not a Catalyst **`.schema(...)`** cast.
-# MAGIC
-# MAGIC **Takeaway for ingestion:** keep a clear **`.schema(...)`** contract for
-# MAGIC everyday reads; use **`avroSchema`** when you deliberately accept a
-# MAGIC compatible Avro evolution. Do not expect **`.schema(...)`** to quietly
-# MAGIC remap **`decimal` → `double`** or **`bigint` → `double`**.
+# MAGIC **Takeaway:** for Avro ingestion, keep **`.schema(...)`** aligned with
+# MAGIC the landed file. Extra contract fields become nulls; omitted file fields
+# MAGIC disappear; wrong types fail the job. Do not expect quiet remaps such as
+# MAGIC **`decimal` → `double`**.
 # MAGIC
 # MAGIC Continue with **`payment`** from section 4a.
 
@@ -629,10 +558,8 @@ roundtrip_typed.show(1, vertical=True)
 # MAGIC - **Embedded schema** — types come from file metadata; no **`inferSchema`**
 # MAGIC - **Explicit schema (DDL or `StructType`)** — still recommended for production
 # MAGIC   contracts and validation
-# MAGIC - **Schema mismatch** — **`.schema(...)`**: drop→nulls, omit→missing col,
-# MAGIC   wrong type→usually **fails**; **`avroSchema`**: compatible Avro evolution
-# MAGIC   (new field + default). Not the same as Parquet's quiet wrong-type reads
-# MAGIC   (Notebook **04**)
+# MAGIC - **Schema mismatch** — with **`.schema(...)`** on Avro: extra→nulls,
+# MAGIC   omit→missing column, wrong type (including many widenings)→**fails**
 # MAGIC - **Light reshape** — **`select`** fare columns before a practice write
 # MAGIC - **Avro round trip** — writes a directory of part files; types are
 # MAGIC   preserved on re-read (unlike CSV)
