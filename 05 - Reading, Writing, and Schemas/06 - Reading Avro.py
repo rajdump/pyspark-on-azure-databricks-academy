@@ -2,20 +2,44 @@
 # MAGIC %md
 # MAGIC
 # MAGIC # 06 - Reading Avro
+# MAGIC ## What is Avro?
 # MAGIC
-# MAGIC Avro is a row-oriented binary format with an embedded schema, common in
-# MAGIC Kafka and event-pipeline exports. In this notebook, we read the
-# MAGIC **`payment`** dataset — Avro landed in the volume in Notebook 01.
+# MAGIC Avro is a **row-oriented binary format** commonly used to exchange structured records between systems.
 # MAGIC
-# MAGIC **Avro** is mainly an ingestion and data-exchange format. **Parquet** is
-# MAGIC an analytical file format. On Databricks, use **Delta** for production
-# MAGIC tables because it combines Parquet storage with transactional table
-# MAGIC management.
+# MAGIC ## Row-oriented storage
 # MAGIC
-# MAGIC **Key difference from CSV / JSON:** like Parquet, Avro carries schema
-# MAGIC metadata in the file. Spark reads typed columns without
-# MAGIC **`inferSchema`**. An explicit schema remains useful for production
-# MAGIC contracts.
+# MAGIC In a row-oriented format, all values for one record are stored together.
+# MAGIC
+# MAGIC For example, a payment record may contain **`payment_method`**, **`trip_id`**, **`base_fare_amount`**, and **`surge_amount`**. This makes Avro suitable for Kafka events, application messages, and ingestion pipelines that usually produce or consume complete records.
+# MAGIC
+# MAGIC ## How is Parquet different?
+# MAGIC
+# MAGIC Parquet is **column-oriented**, meaning values from the same column are stored together.
+# MAGIC
+# MAGIC If a dataset has ten columns but a query needs only **`amount`**, Parquet can read mainly the data for that column. Avro returns only the selected column, but it must process the records containing the other fields.
+# MAGIC
+# MAGIC Therefore, Parquet is better suited for analytical queries that read a small number of columns from large datasets.
+# MAGIC
+# MAGIC ## When to use each format
+# MAGIC
+# MAGIC Use **Avro** for ingestion and record-based data exchange.
+# MAGIC
+# MAGIC Use **Parquet** for analytical file storage and column-based queries.
+# MAGIC
+# MAGIC ## Dataset used in this notebook
+# MAGIC
+# MAGIC In this notebook, we read the **`payment`** Avro dataset copied to the landing volume in Notebook 01.
+# MAGIC
+# MAGIC ## Schema handling
+# MAGIC
+# MAGIC Avro files store schema information in the file header. Parquet files also store schema metadata.
+# MAGIC
+# MAGIC Spark can therefore read typed columns from both formats without using **`inferSchema`**.
+# MAGIC
+# MAGIC In production pipelines, the discovered schema should still be validated against the expected data contract.
+# MAGIC
+# MAGIC
+# MAGIC
 # MAGIC
 # MAGIC ---
 # MAGIC
@@ -92,96 +116,6 @@ display(dbutils.fs.ls(f"{landing_root}/payment"))
 # MAGIC %md
 # MAGIC You should see **`payment.avro`** in that folder. The path variable
 # MAGIC **`payment_avro_path`** points to the full file for the reads below.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 2. Avro format
-# MAGIC
-# MAGIC Avro stores rows in a **binary** container with an **embedded schema**.
-# MAGIC Contrast with formats you already read:
-# MAGIC
-# MAGIC | Format | How types arrive |
-# MAGIC |--------|------------------|
-# MAGIC | CSV | Text only — default **`string`**, or **`inferSchema`** / explicit schema |
-# MAGIC | JSON | Infers names and types from values (or use explicit schema) |
-# MAGIC | Parquet | Columnar binary — types in file metadata |
-# MAGIC | Avro | Row-oriented binary — types in file metadata (no **`inferSchema`**) |
-# MAGIC
-# MAGIC Do not peek with **`dbutils.fs.head`** — inspect schema after you read the
-# MAGIC DataFrame.
-# MAGIC
-# MAGIC ### Row-oriented vs column-oriented
-# MAGIC
-# MAGIC Avro is **row-oriented**: each payment is stored as a full record. That
-# MAGIC fits event pipelines where consumers usually need the whole message.
-# MAGIC
-# MAGIC Parquet is **column-oriented**: values for one column are stored
-# MAGIC together. Analytics queries that need only a few columns (for example
-# MAGIC tip amounts) can skip the rest.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### When to use Avro, Parquet, or Delta
-# MAGIC
-# MAGIC > **Avro** is mainly an ingestion and data-exchange format. **Parquet** is
-# MAGIC > an analytical file format. On Databricks, use **Delta** for production
-# MAGIC > tables because it combines Parquet storage with transactional table
-# MAGIC > management.
-# MAGIC
-# MAGIC **Use Avro when**
-# MAGIC
-# MAGIC - You are serialising and transferring records between applications
-# MAGIC - Kafka, Kinesis, or another event pipeline produces structured records
-# MAGIC - Producers and consumers need a clear schema contract
-# MAGIC - The workload usually processes the **complete record** (not a few columns)
-# MAGIC - Avro is the source or landing format — not the final analytical table
-# MAGIC
-# MAGIC **Use Parquet when**
-# MAGIC
-# MAGIC - You store large, mostly immutable datasets for analytics
-# MAGIC - Queries usually read only a subset of columns
-# MAGIC - You need good compression and efficient bulk scans
-# MAGIC - You exchange analytical files with systems that support Parquet but not
-# MAGIC   Delta
-# MAGIC
-# MAGIC **Use Delta when**
-# MAGIC
-# MAGIC - Data lives as a Bronze, Silver, or Gold **table** in Databricks
-# MAGIC - You need updates, deletes, upserts (`MERGE`), schema enforcement, time
-# MAGIC   travel, or concurrent writers
-# MAGIC - The dataset is queried or modified regularly from Databricks
-# MAGIC
-# MAGIC Delta does **not** replace Avro. It stores table data in Parquet files and
-# MAGIC adds a transaction log (`_delta_log`) plus table-management features. You
-# MAGIC still land Avro (or CSV / JSON / XML) when that is what the source
-# MAGIC produces.
-# MAGIC
-# MAGIC | You need… | Prefer |
-# MAGIC |-----------|--------|
-# MAGIC | Kafka / event / landing exchange | Avro |
-# MAGIC | Analytical file share (no table features) | Parquet |
-# MAGIC | Managed Databricks table | Delta |
-# MAGIC | Updates, deletes, upserts, history | Delta |
-# MAGIC | Consumer supports Parquet but not Delta | Parquet |
-# MAGIC
-# MAGIC Payment path in this course:
-# MAGIC
-# MAGIC ```text
-# MAGIC Payment events (Avro) → landing Volume (Avro)
-# MAGIC   → Databricks table (Delta)
-# MAGIC   → optional export to a partner (Parquet)
-# MAGIC ```
-# MAGIC
-# MAGIC > **Production note:** Avro **object container files** (like
-# MAGIC > **`payment.avro`** on the Volume) embed the schema with the data. In
-# MAGIC > Kafka, the schema is often managed separately in a **schema registry**,
-# MAGIC > and each message carries a schema id rather than repeating the full
-# MAGIC > schema.
-# MAGIC
-# MAGIC Notebook **07** previews Delta writes; Module **10** covers Delta table
-# MAGIC features in depth.
 
 # COMMAND ----------
 
