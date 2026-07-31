@@ -207,16 +207,7 @@ drivers_flat.show(10, truncate=False)
 
 # COMMAND ----------
 
-drivers_exercise = drivers.select(
-    F.col("driver_id"),
-    F.col("license_number"),
-    F.col("vehicle.make").alias("vehicle_make"),
-    F.col("vehicle.body_type").alias("vehicle_body_type"),
-    F.size(F.col("trips_assigned.trip_id")).alias("assigned_trip_count"),
-    F.explode_outer(F.col("trips_assigned.trip_id")).alias("trip_id"),
-)
-
-drivers_exercise.show(10, truncate=False)
+# Your code here.
 
 # COMMAND ----------
 

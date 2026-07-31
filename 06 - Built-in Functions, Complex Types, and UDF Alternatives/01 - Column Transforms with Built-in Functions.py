@@ -72,7 +72,8 @@ print(f"trip_time_table = {trip_time_table}")
 # MAGIC
 # MAGIC When you write `F.upper(F.col("service_type"))`, nothing executes yet. Spark
 # MAGIC records the instruction in the DataFrame's **logical plan** and evaluates it
-# MAGIC across all partitions when an action (`.show()`, `.write`, `.collect()`) runs.
+# MAGIC across all partitions when an action (`.show()`, `.collect()`, or a terminal
+# MAGIC write method such as `.write.parquet()`) runs.
 # MAGIC
 # MAGIC > **Module production rule:** use built-ins first. They keep the optimizer
 # MAGIC > informed, avoid Python-per-row overhead, and compose cleanly.
@@ -163,9 +164,10 @@ trip_time_volume_inline.show(5, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Production pattern: extract and reuse.** The inline approach above is clear, but what if you load the same dataset from
-# MAGIC multiple sources (a file today, a table tomorrow)? Copy-pasting the same
-# MAGIC expressions violates DRY (Don't Repeat Yourself).
+# MAGIC **Production pattern: extract and reuse.** The inline approach above is
+# MAGIC clear, but what if you load the same dataset from multiple sources (a file
+# MAGIC today, a table tomorrow)? Copy-pasting the same expressions violates DRY
+# MAGIC (Don't Repeat Yourself).
 # MAGIC
 # MAGIC **Solution:** store the expressions in a Python list, then unpack with `*` into
 # MAGIC `.select()`. The list is just a plain `list[Column]` — Spark doesn't know about
@@ -286,24 +288,24 @@ trip_strings.show(10, truncate=False)
 # MAGIC %md
 # MAGIC ## 6. Numeric and decimal transformations
 # MAGIC
-# MAGIC Built-in numeric functions let us create useful metric.
+# MAGIC Built-in numeric functions let us create useful metrics.
 # MAGIC
 # MAGIC We will use these three time columns from `trip`:
 # MAGIC
 # MAGIC | Column | Plain meaning |
 # MAGIC |---|---|
-# MAGIC | `request_to_pickup_mins` | The passenger waits from the moment of the request until being picked up, includes the passenger's entry into the car. |
+# MAGIC | `request_to_pickup_mins` | Wait from request until pickup, including boarding |
 # MAGIC | `driver_arrival_to_pickup_mins` | Driver waits at pickup spot until passenger boards |
 # MAGIC | `ride_duration_mins` | Time in the car from pickup to destination |
 # MAGIC
 # MAGIC These represent different parts of one trip timeline, so each subtraction
 # MAGIC answers a different question:
 # MAGIC
-# MAGIC | Expression | Meaning |
+# MAGIC | Derived column | Meaning |
 # MAGIC |---|---|
-# MAGIC | `request_to_pickup_mins - driver_arrival_to_pickup_mins` | The actual time it took for the driver to reach the pickup location, excluding boarding time. |
-# MAGIC | `ride_duration_mins - request_to_pickup_mins` | Sometimes pickup wait is longer than ride duration,, which can be negative value. |
-# MAGIC | `abs(ride_duration_mins - request_to_pickup_mins)` | Ignore the sign, Return only the gap size (always >= 0). |
+# MAGIC | `request_to_driver_arrival_mins` | Time to reach pickup, excluding boarding |
+# MAGIC | `ride_minus_wait_to_pickup_mins` | Negative when pickup wait exceeds ride duration |
+# MAGIC | `ride_wait_to_pickup_gap_mins` | Absolute gap size regardless of sign (always >= 0) |
 # MAGIC
 # MAGIC In this cell we also convert miles to kilometers with multiplication and
 # MAGIC round to 2 decimals using `F.round`.
@@ -319,9 +321,9 @@ trip_metrics = trip.select(
     ).alias("trip_distance_km"),
     F.col("request_to_pickup_mins"),
     F.col("driver_arrival_to_pickup_mins"),
-    (
-        F.col("request_to_pickup_mins") - F.col("driver_arrival_to_pickup_mins")
-    ).alias("request_to_driver_arrival_mins"),
+    (F.col("request_to_pickup_mins") - F.col("driver_arrival_to_pickup_mins")).alias(
+        "request_to_driver_arrival_mins"
+    ),
     F.col("ride_duration_mins"),
     (F.col("ride_duration_mins") - F.col("request_to_pickup_mins")).alias(
         "ride_minus_wait_to_pickup_mins"

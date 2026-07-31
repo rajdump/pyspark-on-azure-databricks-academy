@@ -199,8 +199,10 @@ print("empty filter isEmpty():", empty_df.isEmpty())
 # MAGIC the driver.
 # MAGIC
 # MAGIC Use it only for small, bounded DataFrames. A large result can exhaust
-# MAGIC driver memory — the same risk as `collect()`. Writing results with
-# MAGIC `DataFrame.write` is also an action; Module 5 covers it.
+# MAGIC driver memory — the same risk as `collect()`. Writing results is also an
+# MAGIC action, but `DataFrame.write` itself only returns a writer interface — a
+# MAGIC terminal method such as `.save()` or `.saveAsTable()` triggers execution.
+# MAGIC Module 5 covers it.
 
 # COMMAND ----------
 
@@ -247,8 +249,9 @@ pdf
 # MAGIC   `count() == 0` when you only need emptiness
 # MAGIC - **`collect()`** and **`toPandas()`** move the full result to the driver
 # MAGIC   — keep the DataFrame small
-# MAGIC - **Writing** with `DataFrame.write` is also an action — Module 5 covers
-# MAGIC   it
+# MAGIC - **Writing** is also an action, but `DataFrame.write` itself returns a
+# MAGIC   writer interface — a terminal method such as `.save()` or
+# MAGIC   `.saveAsTable()` triggers it; Module 5 covers it
 # MAGIC
 # MAGIC **Module 4 complete.**
 # MAGIC
