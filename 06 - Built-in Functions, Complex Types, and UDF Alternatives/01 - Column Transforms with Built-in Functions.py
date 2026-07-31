@@ -278,25 +278,22 @@ trip_strings.show(10, truncate=False)
 # MAGIC %md
 # MAGIC ## 6. Numeric and decimal transformations
 # MAGIC
-# MAGIC Built-in numeric functions let us create useful metrics directly in Spark.
-# MAGIC This keeps the logic distributed and easy to read.
+# MAGIC Built-in numeric functions let us create useful metric.
 # MAGIC
 # MAGIC We will use these three time columns from `trip`:
 # MAGIC
 # MAGIC | Column | Plain meaning |
 # MAGIC |---|---|
-# MAGIC | `request_to_pickup_mins` | Passenger waits from request until pickup |
+# MAGIC | `request_to_pickup_mins` | The passenger waits from the moment of the request until being picked up, includes the passenger's entry into the car. |
 # MAGIC | `driver_arrival_to_pickup_mins` | Driver waits at pickup spot until passenger boards |
 # MAGIC | `ride_duration_mins` | Time in the car from pickup to destination |
 # MAGIC
 # MAGIC These represent different parts of one trip timeline, so each subtraction
 # MAGIC answers a different question:
 # MAGIC
-# MAGIC - `request_to_pickup_mins - driver_arrival_to_pickup_mins` -> time before the
-# MAGIC   driver reaches the pickup point.
-# MAGIC - `ride_duration_mins - request_to_pickup_mins` -> signed comparison of ride
-# MAGIC   time versus pre-ride wait.
-# MAGIC - `abs(ride_duration_mins - request_to_pickup_mins)` -> gap size only.
+# MAGIC - `request_to_pickup_mins - driver_arrival_to_pickup_mins` -> The actual time it took for the driver to reach the pickup location, excluding boarding time.
+# MAGIC - `ride_duration_mins - request_to_pickup_mins` -> Sometimes pickup wait is longer than ride duration,, which can be negative value.
+# MAGIC - `abs(ride_duration_mins - request_to_pickup_mins)` -> Ignore the sign, Return only the gap size (always >= 0).
 # MAGIC
 # MAGIC In this cell we also convert miles to kilometers with multiplication and
 # MAGIC round to 2 decimals using `F.round`.
