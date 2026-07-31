@@ -19,8 +19,9 @@ By the end of this module, you'll be able to:
   Catalog table**, then apply identical transform chains after load
 - Access **struct** fields, work with **array** columns, and flatten nested
   data with **`explode`** / **`explode_outer`**
-- Apply Module 3 cleaning patterns (NULL-safe predicates, normalization,
-  safe casts) to Volume landing data and write **curated** outputs
+- Review Module 3 cleaning patterns (NULL-safe predicates, normalization,
+  safe casts) on messy demo data, apply the relevant guards to Volume
+  landing data, and write **curated** outputs
 - Explain when to prefer built-ins over **Python UDFs** and **Pandas UDFs**
 
 ## Prerequisites
