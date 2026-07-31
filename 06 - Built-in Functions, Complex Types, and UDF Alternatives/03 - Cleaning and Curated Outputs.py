@@ -116,12 +116,14 @@ driver_payout_amount string
 # MAGIC
 # MAGIC - reject rows whose `trip_id` cannot become a non-NULL `bigint`
 # MAGIC - trim and lowercase `service_type`; map blanks and `n/a` to `unknown`
-# MAGIC - use `try_cast` for every typed field
+# MAGIC - use `try_cast` for every typed field; keep raw text beside cast results when you
+# MAGIC   need to detect rejected conversions with
+# MAGIC   **`raw.isNotNull() & casted.isNull()`**
 # MAGIC - turn non-positive distances into `NULL` so an invalid measurement is not treated
-# MAGIC   as a real distance
+# MAGIC   as a real distance (distinct from a cast rejection)
 # MAGIC
-# MAGIC A **forward-moving chain** always derives the next state from the previous state.
-# MAGIC This makes the order—normalize, cast, repair, reject, select—easy to audit.
+# MAGIC Each stage below derives from the previous DataFrame so you can inspect normalization,
+# MAGIC casting, range repair, and key rejection before the consolidated production chain.
 
 # COMMAND ----------
 
@@ -139,22 +141,158 @@ bad_trip_raw.show(truncate=False)
 
 # COMMAND ----------
 
-bad_trip_clean = (
-    bad_trip_raw.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
+# MAGIC %md
+# MAGIC ### Normalize text labels
+
+# COMMAND ----------
+
+bad_trip_normalized = bad_trip_raw.withColumn(
+    "service_type",
+    F.lower(F.trim(F.col("service_type"))),
+).withColumn(
+    "service_type",
+    F.coalesce(
+        F.when(
+            ~F.col("service_type").isin("", "n/a"),
+            F.col("service_type"),
+        ),
+        F.lit("unknown"),
+    ),
+)
+
+print("After service_type normalization:")
+bad_trip_normalized.select("trip_id", "service_type").show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Cast typed fields and detect rejected conversions
+# MAGIC
+# MAGIC Keep **`trip_distance_miles_src`** so a failed `try_cast` is not confused with a
+# MAGIC blank source value.
+
+# COMMAND ----------
+
+bad_trip_cast = (
+    bad_trip_normalized.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
     .withColumn(
-        "service_type",
-        F.lower(F.trim(F.col("service_type"))),
+        "pickup_location_id",
+        F.col("pickup_location_id").try_cast("int"),
     )
     .withColumn(
+        "dropoff_location_id",
+        F.col("dropoff_location_id").try_cast("int"),
+    )
+    .withColumn("trip_distance_miles_src", F.col("trip_distance_miles"))
+    .withColumn(
+        "trip_distance_miles",
+        F.col("trip_distance_miles").try_cast("decimal(8,2)"),
+    )
+    .withColumn(
+        "request_to_pickup_mins",
+        F.col("request_to_pickup_mins").try_cast("int"),
+    )
+    .withColumn(
+        "ride_duration_mins",
+        F.col("ride_duration_mins").try_cast("int"),
+    )
+    .withColumn(
+        "driver_arrival_to_pickup_mins",
+        F.col("driver_arrival_to_pickup_mins").try_cast("int"),
+    )
+)
+
+print("Rows where distance text was present but try_cast returned NULL:")
+bad_trip_cast.filter(
+    F.col("trip_distance_miles_src").isNotNull()
+    & (F.trim(F.col("trip_distance_miles_src")) != "")
+    & F.col("trip_distance_miles").isNull(),
+).select(
+    F.col("trip_id"),
+    F.col("trip_distance_miles_src"),
+    F.col("trip_distance_miles"),
+).show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Repair invalid measurements and reject missing keys
+# MAGIC
+# MAGIC Non-positive distances become `NULL` after a successful cast. That is range repair,
+# MAGIC not a cast rejection.
+
+# COMMAND ----------
+
+bad_trip_repaired = bad_trip_cast.withColumn(
+    "trip_distance_miles",
+    F.when(
+        F.col("trip_distance_miles") > 0,
+        F.col("trip_distance_miles"),
+    ).otherwise(F.lit(None).cast("decimal(8,2)")),
+)
+
+print("After non-positive distance repair (trip_id 3):")
+bad_trip_repaired.filter(F.col("trip_id") == 3).select(
+    F.col("trip_id"),
+    F.col("trip_distance_miles_src"),
+    F.col("trip_distance_miles"),
+).show(truncate=False)
+
+bad_trip_clean = bad_trip_repaired.filter(F.col("trip_id").isNotNull()).select(
+    F.col("trip_id"),
+    F.col("service_type"),
+    F.col("pickup_location_id"),
+    F.col("dropoff_location_id"),
+    F.col("trip_distance_miles"),
+    F.col("request_to_pickup_mins"),
+    F.col("ride_duration_mins"),
+    F.col("driver_arrival_to_pickup_mins"),
+)
+
+bad_trip_source_count = bad_trip_raw.count()
+bad_trip_clean_count = bad_trip_clean.count()
+
+print(f"Bad trip rows: {bad_trip_source_count} -> {bad_trip_clean_count}")
+assert bad_trip_source_count == 7
+assert bad_trip_clean_count == 6
+
+bad_trip_clean.orderBy(F.col("trip_id")).show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Rejected **`trip_id`** values (missing key) — compare to cast rejections above.
+
+# COMMAND ----------
+
+bad_trip_cast.filter(F.col("trip_id").isNull()).select(
+    F.col("trip_id"),
+    F.col("service_type"),
+    F.col("pickup_location_id"),
+).show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Consolidated production chain
+# MAGIC
+# MAGIC The stages above are for learning. In a job notebook, the same rules collapse into
+# MAGIC one forward-moving chain from `bad_trip_raw`.
+
+# COMMAND ----------
+
+bad_trip_clean = (
+    bad_trip_raw.withColumn(
         "service_type",
         F.coalesce(
             F.when(
-                ~F.col("service_type").isin("", "n/a"),
-                F.col("service_type"),
+                ~F.lower(F.trim(F.col("service_type"))).isin("", "n/a"),
+                F.lower(F.trim(F.col("service_type"))),
             ),
             F.lit("unknown"),
         ),
     )
+    .withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
     .withColumn(
         "pickup_location_id",
         F.col("pickup_location_id").try_cast("int"),
@@ -199,30 +337,7 @@ bad_trip_clean = (
     )
 )
 
-bad_trip_source_count = bad_trip_raw.count()
-bad_trip_clean_count = bad_trip_clean.count()
-
-print(f"Bad trip rows: {bad_trip_source_count} -> {bad_trip_clean_count}")
-assert bad_trip_source_count == 7
-assert bad_trip_clean_count == 6
-
-bad_trip_clean.orderBy(F.col("trip_id")).show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC The count changes from **7 to 6** because the missing `trip_id` is rejected.
-# MAGIC Recoverable rows remain: spelling and whitespace are normalized, while invalid or
-# MAGIC missing distances become `NULL`.
-# MAGIC
-# MAGIC The next cell makes the rejected key visible. It is diagnostic only; the complete
-# MAGIC production transformation remains the single chain above.
-
-# COMMAND ----------
-
-bad_trip_raw.filter(
-    F.col("trip_id").try_cast("bigint").isNull(),
-).show(truncate=False)
+assert bad_trip_clean.count() == 6
 
 # COMMAND ----------
 
@@ -256,18 +371,194 @@ bad_payment_raw.show(truncate=False)
 
 # COMMAND ----------
 
+# MAGIC - converts negative amounts to `NULL` instead of inventing a replacement amount
+# MAGIC
+# MAGIC Work through normalization, casting (with rejected-conversion detection), range
+# MAGIC repair, and key rejection in separate cells, then review the consolidated chain.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Normalize payment method
+
+# COMMAND ----------
+
+bad_payment_normalized = bad_payment_raw.withColumn(
+    "payment_method",
+    F.lower(F.trim(F.col("payment_method"))),
+).withColumn(
+    "payment_method",
+    F.coalesce(
+        F.when(
+            F.col("payment_method") != "",
+            F.col("payment_method"),
+        ),
+        F.lit("unknown"),
+    ),
+)
+
+print("After payment_method normalization:")
+bad_payment_normalized.select("trip_id", "payment_method").show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Cast amounts and detect rejected conversions
+
+# COMMAND ----------
+
+bad_payment_cast = (
+    bad_payment_normalized.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
+    .withColumn("base_fare_amount_src", F.col("base_fare_amount"))
+    .withColumn(
+        "base_fare_amount",
+        F.col("base_fare_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn("surge_amount_src", F.col("surge_amount"))
+    .withColumn(
+        "surge_amount",
+        F.col("surge_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "tax_amount",
+        F.col("tax_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "tip_amount",
+        F.col("tip_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "discount_amount",
+        F.col("discount_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "driver_payout_amount",
+        F.col("driver_payout_amount").try_cast("decimal(10,2)"),
+    )
+)
+
+print("Rows where base fare text was present but try_cast returned NULL:")
+bad_payment_cast.filter(
+    F.col("base_fare_amount_src").isNotNull()
+    & (F.trim(F.col("base_fare_amount_src")) != "")
+    & F.col("base_fare_amount").isNull(),
+).select(
+    F.col("trip_id"),
+    F.col("base_fare_amount_src"),
+    F.col("base_fare_amount"),
+).show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Repair invalid amounts and reject missing keys
+# MAGIC
+# MAGIC Negative amounts become `NULL` after a successful cast. Trip `102` keeps its row
+# MAGIC but loses the invalid surge value. Trip `104` keeps its row but loses a negative
+# MAGIC base fare for the same reason — that is range repair, not a cast rejection.
+
+# COMMAND ----------
+
+bad_payment_repaired = (
+    bad_payment_cast.withColumn(
+        "base_fare_amount",
+        F.when(
+            F.col("base_fare_amount") >= 0,
+            F.col("base_fare_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "surge_amount",
+        F.when(
+            F.col("surge_amount") >= 0,
+            F.col("surge_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "tax_amount",
+        F.when(
+            F.col("tax_amount") >= 0,
+            F.col("tax_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "tip_amount",
+        F.when(
+            F.col("tip_amount") >= 0,
+            F.col("tip_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "discount_amount",
+        F.when(
+            F.col("discount_amount") >= 0,
+            F.col("discount_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "driver_payout_amount",
+        F.when(
+            F.col("driver_payout_amount") >= 0,
+            F.col("driver_payout_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+)
+
+print("After negative surge repair (trip_id 102):")
+bad_payment_repaired.filter(F.col("trip_id") == 102).select(
+    F.col("trip_id"),
+    F.col("surge_amount_src"),
+    F.col("surge_amount"),
+).show(truncate=False)
+
+bad_payment_clean = bad_payment_repaired.filter(F.col("trip_id").isNotNull()).select(
+    F.col("trip_id"),
+    F.col("payment_method"),
+    F.col("base_fare_amount"),
+    F.col("surge_amount"),
+    F.col("tax_amount"),
+    F.col("tip_amount"),
+    F.col("discount_amount"),
+    F.col("driver_payout_amount"),
+)
+
+bad_payment_source_count = bad_payment_raw.count()
+bad_payment_clean_count = bad_payment_clean.count()
+
+print(f"Bad payment rows: {bad_payment_source_count} -> {bad_payment_clean_count}")
+assert bad_payment_source_count == 6
+assert bad_payment_clean_count == 5
+
+bad_payment_clean.orderBy(F.col("trip_id")).show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Rejected **`trip_id`** values (missing key):
+
+# COMMAND ----------
+
+bad_payment_cast.filter(F.col("trip_id").isNull()).select(
+    F.col("trip_id"),
+    F.col("payment_method"),
+    F.col("base_fare_amount_src"),
+).show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Consolidated production chain
+
+# COMMAND ----------
+
 bad_payment_clean = (
     bad_payment_raw.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
     .withColumn(
         "payment_method",
-        F.lower(F.trim(F.col("payment_method"))),
-    )
-    .withColumn(
-        "payment_method",
         F.coalesce(
             F.when(
-                F.col("payment_method") != "",
-                F.col("payment_method"),
+                F.lower(F.trim(F.col("payment_method"))) != "",
+                F.lower(F.trim(F.col("payment_method"))),
             ),
             F.lit("unknown"),
         ),
@@ -351,28 +642,7 @@ bad_payment_clean = (
     )
 )
 
-bad_payment_source_count = bad_payment_raw.count()
-bad_payment_clean_count = bad_payment_clean.count()
-
-print(f"Bad payment rows: {bad_payment_source_count} -> {bad_payment_clean_count}")
-assert bad_payment_source_count == 6
-assert bad_payment_clean_count == 5
-
-bad_payment_clean.orderBy(F.col("trip_id")).show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC The count changes from **6 to 5** because only the missing `trip_id` is rejected.
-# MAGIC Trip `102` remains, but its negative surge is repaired to `NULL`. Trip `104` also
-# MAGIC remains with a `NULL` base fare, making the quality problem visible without
-# MAGIC assigning a false monetary value.
-
-# COMMAND ----------
-
-bad_payment_raw.filter(
-    F.col("trip_id").try_cast("bigint").isNull(),
-).show(truncate=False)
+assert bad_payment_clean.count() == 5
 
 # COMMAND ----------
 
@@ -382,10 +652,12 @@ bad_payment_raw.filter(
 # MAGIC The small samples proved the rules. Production code now re-reads the canonical
 # MAGIC landing files rather than carrying sample data forward.
 # MAGIC
-# MAGIC The curated contract keeps the same row grain as each canonical source. We reject
-# MAGIC rows without a join key, normalize labels, and turn invalid measurements into
-# MAGIC `NULL`. The current canonical files contain 100 valid keys each, so both cleaned
-# MAGIC outputs should preserve all 100 rows.
+# MAGIC The curated contract keeps the same row grain as each canonical source. Apply the
+# MAGIC **relevant sample guards** plus **canonical domain checks** on the full landing
+# MAGIC files: reject rows without `trip_id`, normalize labels, repair invalid
+# MAGIC measurements, and for trip only require non-negative duration and wait columns
+# MAGIC (zero minutes is valid). The current canonical files contain 100 valid keys each,
+# MAGIC so both cleaned outputs should preserve all 100 rows.
 
 # COMMAND ----------
 
@@ -416,9 +688,13 @@ payment.printSchema()
 # MAGIC %md
 # MAGIC ### Clean and enrich canonical trip data
 # MAGIC
-# MAGIC This chain repeats the sample guards, preserves `trip_id` and both location join
-# MAGIC keys, and persists the string, numeric, and conditional enrichments demonstrated
-# MAGIC in Module 6 **`01 - Column Transforms with Built-in Functions`**.
+# MAGIC This chain applies the bad-trip sample guards (key, labels, distance) plus canonical
+# MAGIC domain checks on `request_to_pickup_mins`, `ride_duration_mins`, and
+# MAGIC `driver_arrival_to_pickup_mins`: keep values when they are **greater than or equal
+# MAGIC to zero** so zero-minute waits and rides remain valid. It preserves `trip_id` and
+# MAGIC both location join keys, and persists the string, numeric, and conditional
+# MAGIC enrichments demonstrated in Module 6
+# MAGIC **`01 - Column Transforms with Built-in Functions`**.
 # MAGIC
 # MAGIC Notice the explicit NULL branch in `ride_duration_band`. Without it, a NULL
 # MAGIC duration would reach `.otherwise("long")` and be mislabeled as a long ride.
@@ -722,8 +998,9 @@ payment_curated.printSchema()
 # MAGIC
 # MAGIC - Read supplementary CSV fields as strings so `try_cast` could expose malformed
 # MAGIC   values safely under ANSI mode.
-# MAGIC - Used forward-moving chains to normalize text, cast types, repair recoverable
-# MAGIC   values, and reject rows without required keys.
+# MAGIC - Used staged forward-moving chains to normalize text, cast types, surface rejected
+# MAGIC   conversions with **`raw.isNotNull() & casted.isNull()`**, repair invalid ranges,
+# MAGIC   and reject rows without required keys.
 # MAGIC - Applied the demonstrated guards to canonical `trip` and `payment` landing data.
 # MAGIC - Persisted the string, numeric, and conditional enrichments from Module 6
 # MAGIC   **`01 - Column Transforms with Built-in Functions`** only after cleaning.
