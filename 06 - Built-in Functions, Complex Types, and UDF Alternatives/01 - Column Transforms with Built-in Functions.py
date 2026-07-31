@@ -296,7 +296,7 @@ trip_strings.show(10, truncate=False)
 # MAGIC - Use **`F.round`** to keep two decimal places.
 # MAGIC - **Subtract** when one duration is a sub-segment of another — subtracting
 # MAGIC   `driver_arrival_to_pickup_mins` from `request_to_pickup_mins` isolates
-# MAGIC   **`wait_before_boarding_mins`** (dispatch and drive-to-pickup only).
+# MAGIC   **`request_to_driver_arrival_mins`** (dispatch and drive-to-pickup only).
 # MAGIC - Use **`F.abs`** when two independent measurements can differ in either
 # MAGIC   direction and you care about the size of the gap, not the sign. For
 # MAGIC   `ride_duration_mins` vs `request_to_pickup_mins`, some short trips have a
@@ -313,12 +313,18 @@ trip_metrics = trip.select(
     ).alias("trip_distance_km"),
     F.col("request_to_pickup_mins"),
     F.col("driver_arrival_to_pickup_mins"),
+    # Request -> driver arrival (excludes final boarding lag).
     (
         F.col("request_to_pickup_mins") - F.col("driver_arrival_to_pickup_mins")
-    ).alias("wait_before_boarding_mins"),
+    ).alias("request_to_driver_arrival_mins"),
     F.col("ride_duration_mins"),
+    # Signed comparison: positive means ride took longer than wait-to-pickup.
+    (F.col("ride_duration_mins") - F.col("request_to_pickup_mins")).alias(
+        "ride_minus_wait_to_pickup_mins"
+    ),
+    # Absolute gap size between ride time and wait-to-pickup.
     F.abs(F.col("ride_duration_mins") - F.col("request_to_pickup_mins")).alias(
-        "ride_vs_wait_gap_mins"
+        "ride_wait_to_pickup_gap_mins"
     ),
 )
 
@@ -327,15 +333,10 @@ trip_metrics.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`wait_before_boarding_mins`** removes the boarding lag from the total pre-ride
-# MAGIC wait, leaving only dispatch and drive-to-pickup time. **`ride_vs_wait_gap_mins`**
-# MAGIC uses **`F.abs`** because a short trip can have a longer wait than the ride itself
-# MAGIC (e.g. a 7-minute ride with a 10-minute wait), so `ride − request_to_pickup` is
-# MAGIC sometimes negative — `F.abs` keeps the result consistent.
-# MAGIC
-# MAGIC The original columns remain available, and the calculated columns make their
-# MAGIC business meaning explicit. Keeping both during exploration makes the result
-# MAGIC easy to check.
+# MAGIC The derived columns keep each purpose distinct:
+# MAGIC `request_to_driver_arrival_mins` (timeline sub-segment),
+# MAGIC `ride_minus_wait_to_pickup_mins` (signed comparison), and
+# MAGIC `ride_wait_to_pickup_gap_mins` (absolute comparison with `F.abs`).
 
 # COMMAND ----------
 
