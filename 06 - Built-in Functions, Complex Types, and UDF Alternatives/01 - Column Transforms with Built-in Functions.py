@@ -291,9 +291,11 @@ trip_strings.show(10, truncate=False)
 # MAGIC These represent different parts of one trip timeline, so each subtraction
 # MAGIC answers a different question:
 # MAGIC
-# MAGIC - `request_to_pickup_mins - driver_arrival_to_pickup_mins` -> The actual time it took for the driver to reach the pickup location, excluding boarding time.
-# MAGIC - `ride_duration_mins - request_to_pickup_mins` -> Sometimes pickup wait is longer than ride duration,, which can be negative value.
-# MAGIC - `abs(ride_duration_mins - request_to_pickup_mins)` -> Ignore the sign, Return only the gap size (always >= 0).
+# MAGIC | Expression | Meaning |
+# MAGIC |---|---|
+# MAGIC | `request_to_pickup_mins - driver_arrival_to_pickup_mins` | The actual time it took for the driver to reach the pickup location, excluding boarding time. |
+# MAGIC | `ride_duration_mins - request_to_pickup_mins` | Sometimes pickup wait is longer than ride duration,, which can be negative value. |
+# MAGIC | `abs(ride_duration_mins - request_to_pickup_mins)` | Ignore the sign, Return only the gap size (always >= 0). |
 # MAGIC
 # MAGIC In this cell we also convert miles to kilometers with multiplication and
 # MAGIC round to 2 decimals using `F.round`.
