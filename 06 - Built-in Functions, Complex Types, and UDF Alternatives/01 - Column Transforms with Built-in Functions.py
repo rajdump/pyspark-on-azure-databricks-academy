@@ -269,9 +269,13 @@ trip_strings.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `service_type_standardized` is suitable for consistent comparisons.
-# MAGIC `service_label` shows how built-ins can be composed: the output from
-# MAGIC **`F.trim`** becomes input to **`F.upper`**, then to **`F.concat_ws`**.
+# MAGIC `service_type_standardized` makes comparisons reliable by removing extra spaces
+# MAGIC and normalizing case (for example, `Premium`, ` premium `, and `PREMIUM` become
+# MAGIC the same value).
+# MAGIC `service_label` creates a readable tagged value such as `SERVICE-PREMIUM`,
+# MAGIC which is useful for display, quick filtering, and grouped summaries.
+# MAGIC It also shows function composition: output from **`F.trim`** feeds
+# MAGIC **`F.upper`**, then **`F.concat_ws`** builds the final label.
 
 # COMMAND ----------
 
