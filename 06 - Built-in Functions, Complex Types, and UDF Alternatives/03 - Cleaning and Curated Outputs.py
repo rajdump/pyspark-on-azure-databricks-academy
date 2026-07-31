@@ -3,19 +3,15 @@
 # MAGIC
 # MAGIC # 03 - Cleaning and Curated Outputs
 # MAGIC
-# MAGIC A clear cleaning pipeline should start with the source data that needs cleaning and
-# MAGIC carry that same data through to the curated output. The two CSV files in this
-# MAGIC notebook contain the original 100 course records plus a small set of controlled bad
-# MAGIC records. This gives each dataset one complete path from source to curated files.
+# MAGIC To create reliable datasets, we need clear rules to handle bad data. This includes deciding when to reject invalid rows, standardising the values, and keeping the keys needed for later processing. This notebook shows how we make these decisions with two small files that have bad data, and then applies the same rules to the main data we are working with.
 # MAGIC
 # MAGIC You will:
 # MAGIC
-# MAGIC 1. Read every CSV field as text so malformed values do not stop the read.
-# MAGIC 2. Safely cast fields while retaining the raw values needed for diagnosis.
-# MAGIC 3. Reject records without a usable key, normalize labels, and convert invalid
-# MAGIC    numeric values to NULL.
-# MAGIC 4. Add the existing Module 6 enrichment columns to the cleaned DataFrames.
-# MAGIC 5. Write and validate the curated `trip` and `payment` outputs.
+# MAGIC 1. Review how to safely handle null values, clean up bad data, and ensure safe data type conversions.
+# MAGIC 2. Create a single step-by-step process for fixing each bad-data file.
+# MAGIC 3. Apply production-style guards to ensure the quality of the main `trip` and `payment` data.
+# MAGIC 4. Save the cleaned and enhanced columns in the final outputs.
+# MAGIC 5. Write and check the final `trip` and `payment` datasets.
 # MAGIC
 # MAGIC **Prerequisites.** Complete Module 6 **`01 - Column Transforms with Built-in
 # MAGIC Functions`** and **`02 - Complex Types: Structs, Arrays, and explode`**. Run Module
