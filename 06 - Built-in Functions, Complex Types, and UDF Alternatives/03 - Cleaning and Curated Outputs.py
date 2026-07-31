@@ -122,8 +122,8 @@ driver_payout_amount string
 # MAGIC - turn non-positive distances into `NULL` so an invalid measurement is not treated
 # MAGIC   as a real distance (distinct from a cast rejection)
 # MAGIC
-# MAGIC Each stage below derives from the previous DataFrame so you can inspect normalization,
-# MAGIC casting, range repair, and key rejection before the consolidated production chain.
+# MAGIC Each stage below derives from the previous DataFrame in one forward-moving pipeline
+# MAGIC so you can inspect normalization, casting, range repair, and key rejection.
 
 # COMMAND ----------
 
@@ -274,74 +274,6 @@ bad_trip_cast.filter(F.col("trip_id").isNull()).select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Consolidated production chain
-# MAGIC
-# MAGIC The stages above are for learning. In a job notebook, the same rules collapse into
-# MAGIC one forward-moving chain from `bad_trip_raw`.
-
-# COMMAND ----------
-
-bad_trip_clean = (
-    bad_trip_raw.withColumn(
-        "service_type",
-        F.coalesce(
-            F.when(
-                ~F.lower(F.trim(F.col("service_type"))).isin("", "n/a"),
-                F.lower(F.trim(F.col("service_type"))),
-            ),
-            F.lit("unknown"),
-        ),
-    )
-    .withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
-    .withColumn(
-        "pickup_location_id",
-        F.col("pickup_location_id").try_cast("int"),
-    )
-    .withColumn(
-        "dropoff_location_id",
-        F.col("dropoff_location_id").try_cast("int"),
-    )
-    .withColumn(
-        "trip_distance_miles",
-        F.col("trip_distance_miles").try_cast("decimal(8,2)"),
-    )
-    .withColumn(
-        "trip_distance_miles",
-        F.when(
-            F.col("trip_distance_miles") > 0,
-            F.col("trip_distance_miles"),
-        ).otherwise(F.lit(None).cast("decimal(8,2)")),
-    )
-    .withColumn(
-        "request_to_pickup_mins",
-        F.col("request_to_pickup_mins").try_cast("int"),
-    )
-    .withColumn(
-        "ride_duration_mins",
-        F.col("ride_duration_mins").try_cast("int"),
-    )
-    .withColumn(
-        "driver_arrival_to_pickup_mins",
-        F.col("driver_arrival_to_pickup_mins").try_cast("int"),
-    )
-    .filter(F.col("trip_id").isNotNull())
-    .select(
-        F.col("trip_id"),
-        F.col("service_type"),
-        F.col("pickup_location_id"),
-        F.col("dropoff_location_id"),
-        F.col("trip_distance_miles"),
-        F.col("request_to_pickup_mins"),
-        F.col("ride_duration_mins"),
-        F.col("driver_arrival_to_pickup_mins"),
-    )
-)
-
-assert bad_trip_clean.count() == 6
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## 2. Clean the landed bad payment sample
 # MAGIC
 # MAGIC The payment sample adds another important distinction: a required row key can
@@ -354,6 +286,9 @@ assert bad_trip_clean.count() == 6
 # MAGIC - trims and lowercases `payment_method`; fills a blank with `unknown`
 # MAGIC - safely casts every amount to `decimal(10,2)`
 # MAGIC - converts negative amounts to `NULL` instead of inventing a replacement amount
+# MAGIC
+# MAGIC Work through normalization, casting (with rejected-conversion detection), range
+# MAGIC repair, and key rejection in separate cells within one forward-moving pipeline.
 
 # COMMAND ----------
 
@@ -368,13 +303,6 @@ bad_payment_raw = (
 
 print("Bad payment source:")
 bad_payment_raw.show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC - converts negative amounts to `NULL` instead of inventing a replacement amount
-# MAGIC
-# MAGIC Work through normalization, casting (with rejected-conversion detection), range
-# MAGIC repair, and key rejection in separate cells, then review the consolidated chain.
 
 # COMMAND ----------
 
@@ -404,6 +332,10 @@ bad_payment_normalized.select("trip_id", "payment_method").show(truncate=False)
 
 # MAGIC %md
 # MAGIC ### Cast amounts and detect rejected conversions
+# MAGIC
+# MAGIC No rows are expected from the base-fare rejection filter below: every non-empty
+# MAGIC base-fare value in this file is valid numeric text. Range problems (negative
+# MAGIC amounts) appear in the repair step, not as cast rejections.
 
 # COMMAND ----------
 
@@ -543,106 +475,6 @@ bad_payment_cast.filter(F.col("trip_id").isNull()).select(
     F.col("payment_method"),
     F.col("base_fare_amount_src"),
 ).show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Consolidated production chain
-
-# COMMAND ----------
-
-bad_payment_clean = (
-    bad_payment_raw.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
-    .withColumn(
-        "payment_method",
-        F.coalesce(
-            F.when(
-                F.lower(F.trim(F.col("payment_method"))) != "",
-                F.lower(F.trim(F.col("payment_method"))),
-            ),
-            F.lit("unknown"),
-        ),
-    )
-    .withColumn(
-        "base_fare_amount",
-        F.col("base_fare_amount").try_cast("decimal(10,2)"),
-    )
-    .withColumn(
-        "surge_amount",
-        F.col("surge_amount").try_cast("decimal(10,2)"),
-    )
-    .withColumn(
-        "tax_amount",
-        F.col("tax_amount").try_cast("decimal(10,2)"),
-    )
-    .withColumn(
-        "tip_amount",
-        F.col("tip_amount").try_cast("decimal(10,2)"),
-    )
-    .withColumn(
-        "discount_amount",
-        F.col("discount_amount").try_cast("decimal(10,2)"),
-    )
-    .withColumn(
-        "driver_payout_amount",
-        F.col("driver_payout_amount").try_cast("decimal(10,2)"),
-    )
-    .withColumn(
-        "base_fare_amount",
-        F.when(
-            F.col("base_fare_amount") >= 0,
-            F.col("base_fare_amount"),
-        ).otherwise(F.lit(None).cast("decimal(10,2)")),
-    )
-    .withColumn(
-        "surge_amount",
-        F.when(
-            F.col("surge_amount") >= 0,
-            F.col("surge_amount"),
-        ).otherwise(F.lit(None).cast("decimal(10,2)")),
-    )
-    .withColumn(
-        "tax_amount",
-        F.when(
-            F.col("tax_amount") >= 0,
-            F.col("tax_amount"),
-        ).otherwise(F.lit(None).cast("decimal(10,2)")),
-    )
-    .withColumn(
-        "tip_amount",
-        F.when(
-            F.col("tip_amount") >= 0,
-            F.col("tip_amount"),
-        ).otherwise(F.lit(None).cast("decimal(10,2)")),
-    )
-    .withColumn(
-        "discount_amount",
-        F.when(
-            F.col("discount_amount") >= 0,
-            F.col("discount_amount"),
-        ).otherwise(F.lit(None).cast("decimal(10,2)")),
-    )
-    .withColumn(
-        "driver_payout_amount",
-        F.when(
-            F.col("driver_payout_amount") >= 0,
-            F.col("driver_payout_amount"),
-        ).otherwise(F.lit(None).cast("decimal(10,2)")),
-    )
-    .filter(F.col("trip_id").isNotNull())
-    .select(
-        F.col("trip_id"),
-        F.col("payment_method"),
-        F.col("base_fare_amount"),
-        F.col("surge_amount"),
-        F.col("tax_amount"),
-        F.col("tip_amount"),
-        F.col("discount_amount"),
-        F.col("driver_payout_amount"),
-    )
-)
-
-assert bad_payment_clean.count() == 5
 
 # COMMAND ----------
 
