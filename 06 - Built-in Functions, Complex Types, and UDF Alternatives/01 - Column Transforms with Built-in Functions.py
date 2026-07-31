@@ -113,8 +113,7 @@ trip_time_from_volume.show(3)
 # MAGIC
 # MAGIC Reference: Module 5 notebook
 # MAGIC **`07 - Write Patterns and Table Preview`**, section
-# MAGIC **`## 5. Managed saveAsTable into rideshare_dev.processed`**
-# MAGIC (the cell that runs **`.saveAsTable(managed_table)`**).
+# MAGIC **`## 5 cell runs `saveAsTable(managed_table)`**).
 
 # COMMAND ----------
 
