@@ -137,7 +137,7 @@ trip_time_from_table.show(3)
 # COMMAND ----------
 
 # Apply transforms directly — see each expression in action
-trip_time_volume_transformed = trip_time_from_volume.select(
+trip_time_volume_inline = trip_time_from_volume.select(
     F.col("trip_id"),
     F.col("trip_date"),
     F.col("hour_of_day"),
@@ -154,7 +154,7 @@ trip_time_volume_transformed = trip_time_from_volume.select(
 )
 
 print("Volume DataFrame with transforms applied inline:")
-trip_time_volume_transformed.show(5, truncate=False)
+trip_time_volume_inline.show(5, truncate=False)
 
 # COMMAND ----------
 
@@ -186,18 +186,21 @@ trip_time_transformations = [
     ),
 ]
 
-# Now apply the SAME list to the table-sourced DataFrame — zero duplication
+# Apply the SAME list to both sources — one list, two loads, zero duplication
+trip_time_volume_transformed = trip_time_from_volume.select(*trip_time_transformations)
 trip_time_table_transformed = trip_time_from_table.select(*trip_time_transformations)
 
-print("Same transforms applied to the managed-table DataFrame:")
+print("Transforms applied to the Volume source:")
+trip_time_volume_transformed.show(5, truncate=False)
+
+print("Same transforms applied to the managed-table source:")
 trip_time_table_transformed.show(5, truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Both results have the same transformation columns. This separation is useful in
-# MAGIC production: source-specific code performs the load, while the transformation
-# MAGIC expressions can remain consistent.
+# MAGIC Both results have identical columns — the same list drove both. In production,
+# MAGIC only the load line changes per source; the transformation logic stays in one place.
 
 # COMMAND ----------
 
@@ -277,12 +280,27 @@ trip_strings.show(10, truncate=False)
 # MAGIC
 # MAGIC Built-ins also create derived measurements without moving data into Python.
 # MAGIC
+# MAGIC Three `trip` columns describe how time is spent across a single trip:
+# MAGIC
+# MAGIC | Column | Covers |
+# MAGIC |---|---|
+# MAGIC | `request_to_pickup_mins` | Request → passenger gets into the car (full pre-ride wait) |
+# MAGIC | `driver_arrival_to_pickup_mins` | Driver at pickup location → passenger gets into the car (boarding lag only) |
+# MAGIC | `ride_duration_mins` | Passenger in the car → destination |
+# MAGIC
+# MAGIC These are sequential, non-overlapping segments of the journey:
+# MAGIC `request_to_pickup_mins` ends where `ride_duration_mins` begins, and
+# MAGIC `driver_arrival_to_pickup_mins` is the final slice inside `request_to_pickup_mins`.
+# MAGIC
 # MAGIC - Multiply miles by **1.60934** to calculate kilometers.
 # MAGIC - Use **`F.round`** to keep two decimal places.
-# MAGIC - Subtract when one duration is part of another — total request-to-pickup wait
-# MAGIC   minus boarding lag gives **`wait_before_boarding_mins`** (dispatch and travel).
-# MAGIC - Use **`F.abs`** when two separate measurements can differ in either direction
-# MAGIC   and you care about separation, not sign.
+# MAGIC - **Subtract** when one duration is a sub-segment of another — subtracting
+# MAGIC   `driver_arrival_to_pickup_mins` from `request_to_pickup_mins` isolates
+# MAGIC   **`wait_before_boarding_mins`** (dispatch and drive-to-pickup only).
+# MAGIC - Use **`F.abs`** when two independent measurements can differ in either
+# MAGIC   direction and you care about the size of the gap, not the sign. For
+# MAGIC   `ride_duration_mins` vs `request_to_pickup_mins`, some short trips have a
+# MAGIC   longer pre-ride wait than the trip itself — so the subtraction can go either way.
 
 # COMMAND ----------
 
@@ -309,9 +327,11 @@ trip_metrics.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **`wait_before_boarding_mins`** splits total wait into boarding versus everything
-# MAGIC before it. **`ride_vs_wait_gap_mins`** compares ride length to pre-pickup wait with
-# MAGIC **`F.abs`** so the result is always non-negative regardless of which is larger.
+# MAGIC **`wait_before_boarding_mins`** removes the boarding lag from the total pre-ride
+# MAGIC wait, leaving only dispatch and drive-to-pickup time. **`ride_vs_wait_gap_mins`**
+# MAGIC uses **`F.abs`** because a short trip can have a longer wait than the ride itself
+# MAGIC (e.g. a 7-minute ride with a 10-minute wait), so `ride − request_to_pickup` is
+# MAGIC sometimes negative — `F.abs` keeps the result consistent.
 # MAGIC
 # MAGIC The original columns remain available, and the calculated columns make their
 # MAGIC business meaning explicit. Keeping both during exploration makes the result
