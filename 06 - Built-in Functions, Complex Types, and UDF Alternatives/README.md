@@ -41,9 +41,11 @@ Module 5 — Reading, Writing, and Schemas (complete content notebooks
   methods such as **`.save()`**, **`.parquet()`**, or **`.saveAsTable()`**
   (Module 4)
 
-Recall Module 3 — Data Cleaning, NULL Semantics, and Type Handling for
-**`03 - Cleaning and Curated Outputs`** (NULL-aware filters,
-normalize-before-drop, `F.coalesce`, `try_cast`).
+Recall Module 3 — Data Cleaning, NULL Semantics, and Type Handling:
+**`01 - NULL Semantics and Predicate Correctness`**,
+**`02 - Missing, Blank, and Sentinel Values`**, and
+**`03 - Safe Type Casting`** cover NULL-aware filters,
+normalize-before-drop, `F.coalesce`, and `try_cast`.
 
 This module reads from the **landing volume** and (in
 **`01 - Column Transforms with Built-in Functions`** only) one **managed

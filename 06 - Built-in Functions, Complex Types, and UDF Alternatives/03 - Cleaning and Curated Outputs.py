@@ -3,68 +3,60 @@
 # MAGIC
 # MAGIC # 03 - Cleaning and Curated Outputs
 # MAGIC
-# MAGIC Landing data is loaded as-is from source files. Values may be missing,
-# MAGIC inconsistently formatted, or out of range. Downstream joins and aggregations
-# MAGIC in later modules depend on a clean, reliable `trip` and `payment` dataset.
-# MAGIC
-# MAGIC In this notebook you will review the Module 3 cleaning patterns — NULL-safe
-# MAGIC predicates, normalize-before-drop, `F.coalesce`, and `try_cast` — on two
-# MAGIC deliberately bad CSV files. You will then apply the relevant guards to
-# MAGIC canonical landing CSV and Avro data and persist the results as curated Parquet.
+# MAGIC Reliable curated datasets need explicit rules for rejecting invalid rows, repairing
+# MAGIC recoverable values, and preserving the keys used by downstream pipelines. This
+# MAGIC notebook first makes those decisions visible on two small bad-data files, then
+# MAGIC applies the same guards to the canonical landing data.
 # MAGIC
 # MAGIC You will:
 # MAGIC
-# MAGIC 1. Re-read landing `trip` and `payment` with explicit schemas
-# MAGIC 2. Clean landed bad-data `trip` and `payment` CSV files step by step
-# MAGIC 3. Apply production-style guards to landing `trip` and write `curated/trip/`
-# MAGIC 4. Apply production-style guards to landing `payment` and write `curated/payment/`
+# MAGIC 1. Review NULL-safe predicates, normalization, and safe casts on landed bad data
+# MAGIC 2. Build one forward-moving transformation chain for each bad-data file
+# MAGIC 3. Apply production-style guards to canonical `trip` and `payment` data
+# MAGIC 4. Persist cleaning and enrichment columns in curated outputs
+# MAGIC 5. Write and verify curated `trip` and `payment` datasets
 # MAGIC
-# MAGIC **Prerequisites.** Complete Module 3 (NULL semantics, missing values, safe casts)
-# MAGIC and Module 5 landing-data notebooks. The landing Volume must be populated.
-# MAGIC This notebook reads landing data only — it does not read `practice/`.
+# MAGIC **Prerequisites.** Complete Module 6 **`01 - Column Transforms with Built-in
+# MAGIC Functions`** and **`02 - Complex Types: Structs, Arrays, and explode`**. Run Module
+# MAGIC 5 **`01 - Unity Catalog Volumes and Data Landing`** so the canonical files and both
+# MAGIC supplementary bad-data CSV files exist in the landing Volume.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC | Dataset | Canonical source | Bad-data learning file | Curated output |
-# MAGIC |---|---|---|---|
-# MAGIC | `trip` | `trip/trip.csv` | `trip/bad_trip_data.csv` | `curated/trip/` |
-# MAGIC | `payment` | `payment/payment.avro` | `payment/bad_payment_data.csv` | `curated/payment/` |
+# MAGIC The supplementary CSV files deliberately store every field as text. Reading them
+# MAGIC with string schemas lets `try_cast` expose malformed values without stopping the
+# MAGIC notebook under ANSI mode.
 # MAGIC
-# MAGIC Enrichment and cleaning columns (normalized labels, guards) are added only here —
-# MAGIC not in Module 6, `01 - Column Transforms with Built-in Functions`.
+# MAGIC The canonical contracts are:
+# MAGIC
+# MAGIC - `trip`: `trip_id` plus service type, location keys, distance, and duration fields
+# MAGIC - `payment`: `trip_id` plus payment method and decimal fare-breakdown fields
+# MAGIC
+# MAGIC Only canonical data is written to the full curated Volume paths. The bad-data
+# MAGIC samples are inspected in memory and are never written.
 
 # COMMAND ----------
 
 from pyspark.sql import functions as F
 
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
+curated_root = "/Volumes/rideshare_dev/processed/output_files/curated"
+
 trip_csv_path = f"{landing_root}/trip/trip.csv"
 bad_trip_csv_path = f"{landing_root}/trip/bad_trip_data.csv"
 payment_avro_path = f"{landing_root}/payment/payment.avro"
 bad_payment_csv_path = f"{landing_root}/payment/bad_payment_data.csv"
 
-curated_root = "/Volumes/rideshare_dev/processed/output_files/curated"
 curated_trip_path = f"{curated_root}/trip"
 curated_payment_path = f"{curated_root}/payment"
 
-print(f"trip_csv_path       = {trip_csv_path}")
-print(f"bad_trip_csv_path   = {bad_trip_csv_path}")
-print(f"payment_avro_path   = {payment_avro_path}")
-print(f"bad_payment_csv_path= {bad_payment_csv_path}")
-print(f"curated_trip_path   = {curated_trip_path}")
-print(f"curated_payment_path= {curated_payment_path}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 1. Read landing `trip` and `payment` data
-# MAGIC
-# MAGIC Landing CSV does not carry type metadata; the explicit schema applies the
-# MAGIC expected types at read time. Landing Avro already carries its schema, but
-# MAGIC declaring it in code keeps the expected contract visible.
+print(f"bad_trip_csv_path = {bad_trip_csv_path}")
+print(f"bad_payment_csv_path = {bad_payment_csv_path}")
+print(f"curated_trip_path = {curated_trip_path}")
+print(f"curated_payment_path = {curated_payment_path}")
 
 # COMMAND ----------
 
@@ -79,19 +71,6 @@ ride_duration_mins int,
 driver_arrival_to_pickup_mins int
 """
 
-trip_landing = (
-    spark.read.format("csv")  # noqa: F821
-    .option("header", "true")
-    .schema(trip_schema_ddl)
-    .load(trip_csv_path)
-)
-
-print("trip schema:")
-trip_landing.printSchema()
-trip_landing.show(3, truncate=False)
-
-# COMMAND ----------
-
 payment_schema_ddl = """
 trip_id bigint,
 payment_method string,
@@ -103,256 +82,172 @@ discount_amount decimal(10,2),
 driver_payout_amount decimal(10,2)
 """
 
-payment_landing = (
-    spark.read.format("avro")  # noqa: F821
-    .schema(payment_schema_ddl)
-    .load(payment_avro_path)
-)
+bad_trip_schema_ddl = """
+trip_id string,
+service_type string,
+pickup_location_id string,
+dropoff_location_id string,
+trip_distance_miles string,
+request_to_pickup_mins string,
+ride_duration_mins string,
+driver_arrival_to_pickup_mins string
+"""
 
-print("payment schema:")
-payment_landing.printSchema()
-payment_landing.show(3, truncate=False)
+bad_payment_schema_ddl = """
+trip_id string,
+payment_method string,
+base_fare_amount string,
+surge_amount string,
+tax_amount string,
+tip_amount string,
+discount_amount string,
+driver_payout_amount string
+"""
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Clean bad `trip` data step by step
+# MAGIC ## 1. Clean the landed bad trip sample
 # MAGIC
-# MAGIC Before touching the canonical landing data, read `bad_trip_data.csv` and move
-# MAGIC it through one forward-only cleaning chain. Every stage uses the DataFrame
-# MAGIC produced by the preceding stage and displays proof of that change.
+# MAGIC The trip sample contains mixed text casing, surrounding spaces, a sentinel
+# MAGIC (`n/a`), a missing key, a negative distance, malformed numeric text, and blanks.
 # MAGIC
-# MAGIC Distance is intentionally read as a string so the same file can demonstrate
-# MAGIC valid, malformed, negative, and missing numeric input.
+# MAGIC The cleaning policy is:
+# MAGIC
+# MAGIC - reject rows whose `trip_id` cannot become a non-NULL `bigint`
+# MAGIC - trim and lowercase `service_type`; map blanks and `n/a` to `unknown`
+# MAGIC - use `try_cast` for every typed field
+# MAGIC - turn non-positive distances into `NULL` so an invalid measurement is not treated
+# MAGIC   as a real distance
+# MAGIC
+# MAGIC A **forward-moving chain** always derives the next state from the previous state.
+# MAGIC This makes the order—normalize, cast, repair, reject, select—easy to audit.
 
 # COMMAND ----------
 
-bad_trip_schema_ddl = """
-trip_id bigint,
-service_type string,
-pickup_location_id int,
-dropoff_location_id int,
-trip_distance_miles string,
-request_to_pickup_mins int,
-ride_duration_mins int,
-driver_arrival_to_pickup_mins int
-"""
-
 bad_trip_raw = (
-    spark.read.format("csv")  # noqa: F821
+    spark.read.format(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        "csv"
+    )
     .option("header", "true")
     .schema(bad_trip_schema_ddl)
     .load(bad_trip_csv_path)
-    .withColumnRenamed("trip_distance_miles", "trip_distance_raw")
 )
 
 print("Bad trip source:")
-bad_trip_raw.printSchema()
 bad_trip_raw.show(truncate=False)
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### 2a. Filter rows with no `trip_id`
-# MAGIC
-# MAGIC A missing `trip_id` makes a row unjoinable. `isNotNull()` gives a definite
-# MAGIC answer even when the column value is `NULL`. Store the retained complete rows
-# MAGIC in a new DataFrame before continuing.
-
-# COMMAND ----------
-
-trip_key_filtered = bad_trip_raw.filter(F.col("trip_id").isNotNull())
-
-print("Rejected rows with no trip_id (should see one):")
-bad_trip_raw.filter(F.col("trip_id").isNull()).show(truncate=False)
-
-print(f"Before key filter: {bad_trip_raw.count()}")
-print(f"After key filter : {trip_key_filtered.count()}")
-trip_key_filtered.show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### 2b. Normalize `service_type`, then replace sentinels
-# MAGIC
-# MAGIC Normalize the label first (`F.trim` + `F.upper`) so `"standard"`, `"Standard"`,
-# MAGIC and `" STANDARD "` all become `"STANDARD"` before any comparison. Then filter
-# MAGIC or replace known sentinels. This example converts the padded, lowercase sentinel
-# MAGIC `" n/a "` to `NULL` and preserves its row for the `F.coalesce` decision in
-# MAGIC section 2e.
-
-# COMMAND ----------
-
-trip_service_normalized = trip_key_filtered.withColumn(
-    "service_type_clean",
-    F.upper(F.trim(F.col("service_type"))),
-)
-
-print("After normalization:")
-trip_service_normalized.select(
-    "trip_id",
-    "service_type",
-    "service_type_clean",
-).show(truncate=False)
-
-# COMMAND ----------
-
-trip_sentinels_replaced = trip_service_normalized.withColumn(
-    "service_type_clean",
-    F.when(F.col("service_type_clean") == "N/A", F.lit(None)).otherwise(
-        F.col("service_type_clean")
-    ),
-)
-
-print("After converting sentinel 'N/A' to NULL:")
-trip_sentinels_replaced.select(
-    "trip_id",
-    "service_type",
-    "service_type_clean",
-).show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### 2c. Safely cast string distances
-# MAGIC
-# MAGIC `try_cast` converts valid numeric strings to decimal and returns `NULL` for
-# MAGIC malformed input instead of raising an error under Spark 4 / ANSI mode. Detect
-# MAGIC rejected input when the raw value is not NULL but the cast result is NULL.
-
-# COMMAND ----------
-
-trip_distance_casted = trip_sentinels_replaced.withColumn(
-    "trip_distance_miles",
-    F.col("trip_distance_raw").try_cast("decimal(8,2)"),
-)
-
-print("After try_cast:")
-trip_distance_casted.select(
-    "trip_id",
-    "trip_distance_raw",
-    "trip_distance_miles",
-).show(truncate=False)
-
-print("Rows rejected by the cast:")
-trip_distance_casted.filter(
-    F.col("trip_distance_raw").isNotNull() & F.col("trip_distance_miles").isNull()
-).select("trip_id", "trip_distance_raw", "trip_distance_miles").show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### 2d. Guard against out-of-range distances
-# MAGIC
-# MAGIC A negative trip distance cannot be correct. Replace it with `NULL` using
-# MAGIC `F.when` rather than dropping the whole row — the other columns may still be
-# MAGIC useful.
-
-# COMMAND ----------
-
-trip_distance_checked = trip_distance_casted.withColumn(
-    "trip_distance_miles",
-    F.when(F.col("trip_distance_miles") >= 0, F.col("trip_distance_miles")).otherwise(F.lit(None)),
-)
-
-print("After nulling negative distances:")
-trip_distance_checked.select(
-    "trip_id",
-    "trip_distance_raw",
-    "trip_distance_miles",
-).show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### 2e. Fill missing labels with `F.coalesce`
-# MAGIC
-# MAGIC `F.coalesce` returns the first non-NULL expression. Use `"UNKNOWN"` when the
-# MAGIC row is still useful but a descriptive label is missing. The required-key
-# MAGIC decision already happened in section 2a.
-
-# COMMAND ----------
-
-trip_sample_cleaned = trip_distance_checked.withColumn(
-    "service_type_clean",
-    F.coalesce(F.col("service_type_clean"), F.lit("UNKNOWN")),
-)
-
-print("Final cleaned trip learning sample:")
-trip_sample_cleaned.show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 3. Clean landing `trip` data
-# MAGIC
-# MAGIC Apply the relevant guards to the full landing `trip` dataset:
-# MAGIC
-# MAGIC - Drop rows where `trip_id` is NULL — they cannot be matched in an equality
-# MAGIC   join.
-# MAGIC - Normalize `service_type`: trim whitespace and standardize to uppercase.
-# MAGIC   The real landing CSV does not contain sentinel values such as `"N/A"`, so
-# MAGIC   normalization alone is sufficient here — no sentinel filter is needed.
-# MAGIC - NULL out negative `trip_distance_miles` and non-positive `ride_duration_mins`.
-# MAGIC   For this course, treat these values as invalid — the dataset contract in
-# MAGIC   `dataset-overview.md` defines their types only, not this domain rule.
-# MAGIC - Preserve all join keys (`trip_id`, `pickup_location_id`,
-# MAGIC   `dropoff_location_id`) and all source columns at the same row grain.
-# MAGIC
-# MAGIC The landing `trip` data has no NULL `trip_id`, sentinel `service_type`
-# MAGIC values, or out-of-range distances/durations, so the row counts below are
-# MAGIC expected to match — these guards protect the pipeline if a future load
-# MAGIC introduces one of these problems.
-
-# COMMAND ----------
-
-trip_clean = (
-    trip_landing.filter(F.col("trip_id").isNotNull())
+bad_trip_clean = (
+    bad_trip_raw.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
     .withColumn(
         "service_type",
-        F.upper(F.trim(F.col("service_type"))),
+        F.lower(F.trim(F.col("service_type"))),
     )
     .withColumn(
-        "trip_distance_miles",
-        F.when(F.col("trip_distance_miles") >= 0, F.col("trip_distance_miles")).otherwise(
-            F.lit(None)
+        "service_type",
+        F.coalesce(
+            F.when(
+                ~F.col("service_type").isin("", "n/a"),
+                F.col("service_type"),
+            ),
+            F.lit("unknown"),
         ),
     )
     .withColumn(
+        "pickup_location_id",
+        F.col("pickup_location_id").try_cast("int"),
+    )
+    .withColumn(
+        "dropoff_location_id",
+        F.col("dropoff_location_id").try_cast("int"),
+    )
+    .withColumn(
+        "trip_distance_miles",
+        F.col("trip_distance_miles").try_cast("decimal(8,2)"),
+    )
+    .withColumn(
+        "trip_distance_miles",
+        F.when(
+            F.col("trip_distance_miles") > 0,
+            F.col("trip_distance_miles"),
+        ).otherwise(F.lit(None).cast("decimal(8,2)")),
+    )
+    .withColumn(
+        "request_to_pickup_mins",
+        F.col("request_to_pickup_mins").try_cast("int"),
+    )
+    .withColumn(
         "ride_duration_mins",
-        F.when(F.col("ride_duration_mins") > 0, F.col("ride_duration_mins")).otherwise(F.lit(None)),
+        F.col("ride_duration_mins").try_cast("int"),
+    )
+    .withColumn(
+        "driver_arrival_to_pickup_mins",
+        F.col("driver_arrival_to_pickup_mins").try_cast("int"),
+    )
+    .filter(F.col("trip_id").isNotNull())
+    .select(
+        F.col("trip_id"),
+        F.col("service_type"),
+        F.col("pickup_location_id"),
+        F.col("dropoff_location_id"),
+        F.col("trip_distance_miles"),
+        F.col("request_to_pickup_mins"),
+        F.col("ride_duration_mins"),
+        F.col("driver_arrival_to_pickup_mins"),
     )
 )
 
-print(f"Landing trip row count : {trip_landing.count()}")
-print(f"Cleaned trip row count : {trip_clean.count()}")
-trip_clean.show(5, truncate=False)
+bad_trip_source_count = bad_trip_raw.count()
+bad_trip_clean_count = bad_trip_clean.count()
+
+print(f"Bad trip rows: {bad_trip_source_count} -> {bad_trip_clean_count}")
+assert bad_trip_source_count == 7
+assert bad_trip_clean_count == 6
+
+bad_trip_clean.orderBy(F.col("trip_id")).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Clean `payment` data
+# MAGIC The count changes from **7 to 6** because the missing `trip_id` is rejected.
+# MAGIC Recoverable rows remain: spelling and whitespace are normalized, while invalid or
+# MAGIC missing distances become `NULL`.
 # MAGIC
-# MAGIC First prove the payment guards on `bad_payment_data.csv`, then apply the same
-# MAGIC rules to the canonical landing Avro data.
-# MAGIC
-# MAGIC - Drop rows where `trip_id` is NULL.
-# MAGIC - Normalize `payment_method`: trim and uppercase.
-# MAGIC - NULL out negative `base_fare_amount`. For this course, treat a negative
-# MAGIC   base fare as a data quality problem rather than a valid value.
-# MAGIC - Preserve `trip_id` and all fare columns at the same row grain.
+# MAGIC The next cell makes the rejected key visible. It is diagnostic only; the complete
+# MAGIC production transformation remains the single chain above.
+
+# COMMAND ----------
+
+bad_trip_raw.filter(
+    F.col("trip_id").try_cast("bigint").isNull(),
+).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 4a. Prove the guards on bad payment data
+# MAGIC ## 2. Clean the landed bad payment sample
+# MAGIC
+# MAGIC The payment sample adds another important distinction: a required row key can
+# MAGIC justify rejection, while an invalid optional amount can often remain as `NULL` for
+# MAGIC later review.
+# MAGIC
+# MAGIC This chain:
+# MAGIC
+# MAGIC - rejects only a missing or malformed `trip_id`
+# MAGIC - trims and lowercases `payment_method`; fills a blank with `unknown`
+# MAGIC - safely casts every amount to `decimal(10,2)`
+# MAGIC - converts negative amounts to `NULL` instead of inventing a replacement amount
 
 # COMMAND ----------
 
 bad_payment_raw = (
-    spark.read.format("csv")  # noqa: F821
+    spark.read.format(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        "csv"
+    )
     .option("header", "true")
-    .schema(payment_schema_ddl)
+    .schema(bad_payment_schema_ddl)
     .load(bad_payment_csv_path)
 )
 
@@ -361,136 +256,479 @@ bad_payment_raw.show(truncate=False)
 
 # COMMAND ----------
 
-payment_sample_key_filtered = bad_payment_raw.filter(F.col("trip_id").isNotNull())
+bad_payment_clean = (
+    bad_payment_raw.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
+    .withColumn(
+        "payment_method",
+        F.lower(F.trim(F.col("payment_method"))),
+    )
+    .withColumn(
+        "payment_method",
+        F.coalesce(
+            F.when(
+                F.col("payment_method") != "",
+                F.col("payment_method"),
+            ),
+            F.lit("unknown"),
+        ),
+    )
+    .withColumn(
+        "base_fare_amount",
+        F.col("base_fare_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "surge_amount",
+        F.col("surge_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "tax_amount",
+        F.col("tax_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "tip_amount",
+        F.col("tip_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "discount_amount",
+        F.col("discount_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "driver_payout_amount",
+        F.col("driver_payout_amount").try_cast("decimal(10,2)"),
+    )
+    .withColumn(
+        "base_fare_amount",
+        F.when(
+            F.col("base_fare_amount") >= 0,
+            F.col("base_fare_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "surge_amount",
+        F.when(
+            F.col("surge_amount") >= 0,
+            F.col("surge_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "tax_amount",
+        F.when(
+            F.col("tax_amount") >= 0,
+            F.col("tax_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "tip_amount",
+        F.when(
+            F.col("tip_amount") >= 0,
+            F.col("tip_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "discount_amount",
+        F.when(
+            F.col("discount_amount") >= 0,
+            F.col("discount_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "driver_payout_amount",
+        F.when(
+            F.col("driver_payout_amount") >= 0,
+            F.col("driver_payout_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .filter(F.col("trip_id").isNotNull())
+    .select(
+        F.col("trip_id"),
+        F.col("payment_method"),
+        F.col("base_fare_amount"),
+        F.col("surge_amount"),
+        F.col("tax_amount"),
+        F.col("tip_amount"),
+        F.col("discount_amount"),
+        F.col("driver_payout_amount"),
+    )
+)
 
-print("Rejected payment rows with no trip_id (should see one):")
-bad_payment_raw.filter(F.col("trip_id").isNull()).show(truncate=False)
+bad_payment_source_count = bad_payment_raw.count()
+bad_payment_clean_count = bad_payment_clean.count()
 
-print(f"Before key filter: {bad_payment_raw.count()}")
-print(f"After key filter : {payment_sample_key_filtered.count()}")
-payment_sample_key_filtered.show(truncate=False)
+print(f"Bad payment rows: {bad_payment_source_count} -> {bad_payment_clean_count}")
+assert bad_payment_source_count == 6
+assert bad_payment_clean_count == 5
+
+bad_payment_clean.orderBy(F.col("trip_id")).show(truncate=False)
 
 # COMMAND ----------
 
-payment_sample_method_normalized = payment_sample_key_filtered.withColumn(
-    "payment_method",
-    F.upper(F.trim(F.col("payment_method"))),
-)
-
-print("After payment_method normalization:")
-payment_sample_method_normalized.select("trip_id", "payment_method").show(truncate=False)
+# MAGIC %md
+# MAGIC The count changes from **6 to 5** because only the missing `trip_id` is rejected.
+# MAGIC Trip `102` remains, but its negative surge is repaired to `NULL`. Trip `104` also
+# MAGIC remains with a `NULL` base fare, making the quality problem visible without
+# MAGIC assigning a false monetary value.
 
 # COMMAND ----------
 
-payment_sample_base_fare_checked = payment_sample_method_normalized.withColumn(
-    "base_fare_amount",
-    F.when(F.col("base_fare_amount") >= 0, F.col("base_fare_amount")).otherwise(F.lit(None)),
-)
-
-print("After nulling negative base fares:")
-payment_sample_base_fare_checked.select(
-    "trip_id",
-    "payment_method",
-    "base_fare_amount",
+bad_payment_raw.filter(
+    F.col("trip_id").try_cast("bigint").isNull(),
 ).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 4b. Apply the guards to canonical landing payment
+# MAGIC ## 3. Apply production-style guards to canonical landing data
 # MAGIC
-# MAGIC The canonical landing data has no NULL `trip_id` or negative
-# MAGIC `base_fare_amount` values, so the row counts below are expected to match.
+# MAGIC The small samples proved the rules. Production code now re-reads the canonical
+# MAGIC landing files rather than carrying sample data forward.
+# MAGIC
+# MAGIC The curated contract keeps the same row grain as each canonical source. We reject
+# MAGIC rows without a join key, normalize labels, and turn invalid measurements into
+# MAGIC `NULL`. The current canonical files contain 100 valid keys each, so both cleaned
+# MAGIC outputs should preserve all 100 rows.
+
+# COMMAND ----------
+
+trip = (
+    spark.read.format(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        "csv"
+    )
+    .option("header", "true")
+    .schema(trip_schema_ddl)
+    .load(trip_csv_path)
+)
+
+payment = (
+    spark.read.format(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        "avro"
+    )
+    .schema(payment_schema_ddl)
+    .load(payment_avro_path)
+)
+
+print("Canonical trip schema:")
+trip.printSchema()
+print("Canonical payment schema:")
+payment.printSchema()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Clean and enrich canonical trip data
+# MAGIC
+# MAGIC This chain repeats the sample guards, preserves `trip_id` and both location join
+# MAGIC keys, and persists the string, numeric, and conditional enrichments demonstrated
+# MAGIC in Module 6 **`01 - Column Transforms with Built-in Functions`**.
+# MAGIC
+# MAGIC Notice the explicit NULL branch in `ride_duration_band`. Without it, a NULL
+# MAGIC duration would reach `.otherwise("long")` and be mislabeled as a long ride.
+
+# COMMAND ----------
+
+trip_clean = (
+    trip.filter(F.col("trip_id").isNotNull())
+    .withColumn(
+        "service_type",
+        F.lower(F.trim(F.col("service_type"))),
+    )
+    .withColumn(
+        "service_type",
+        F.coalesce(
+            F.when(
+                ~F.col("service_type").isin("", "n/a"),
+                F.col("service_type"),
+            ),
+            F.lit("unknown"),
+        ),
+    )
+    .withColumn(
+        "trip_distance_miles",
+        F.when(
+            F.col("trip_distance_miles") > 0,
+            F.col("trip_distance_miles"),
+        ).otherwise(F.lit(None).cast("decimal(8,2)")),
+    )
+    .withColumn(
+        "request_to_pickup_mins",
+        F.when(
+            F.col("request_to_pickup_mins") >= 0,
+            F.col("request_to_pickup_mins"),
+        ),
+    )
+    .withColumn(
+        "ride_duration_mins",
+        F.when(
+            F.col("ride_duration_mins") >= 0,
+            F.col("ride_duration_mins"),
+        ),
+    )
+    .withColumn(
+        "driver_arrival_to_pickup_mins",
+        F.when(
+            F.col("driver_arrival_to_pickup_mins") >= 0,
+            F.col("driver_arrival_to_pickup_mins"),
+        ),
+    )
+    .withColumn(
+        "service_type_standardized",
+        F.upper(F.col("service_type")),
+    )
+    .withColumn(
+        "service_label",
+        F.concat_ws(
+            "-",
+            F.lit("SERVICE"),
+            F.upper(F.col("service_type")),
+        ),
+    )
+    .withColumn(
+        "trip_distance_km",
+        F.round(F.col("trip_distance_miles") * F.lit(1.60934), 2),
+    )
+    .withColumn(
+        "request_to_driver_arrival_mins",
+        F.col("request_to_pickup_mins") - F.col("driver_arrival_to_pickup_mins"),
+    )
+    .withColumn(
+        "ride_minus_wait_to_pickup_mins",
+        F.col("ride_duration_mins") - F.col("request_to_pickup_mins"),
+    )
+    .withColumn(
+        "ride_wait_to_pickup_gap_mins",
+        F.abs(F.col("ride_duration_mins") - F.col("request_to_pickup_mins")),
+    )
+    .withColumn(
+        "ride_duration_band",
+        F.when(F.col("ride_duration_mins").isNull(), F.lit(None).cast("string"))
+        .when(F.col("ride_duration_mins") < 15, "short")
+        .when(F.col("ride_duration_mins") < 30, "medium")
+        .otherwise("long"),
+    )
+    .select(
+        F.col("trip_id"),
+        F.col("service_type"),
+        F.col("service_type_standardized"),
+        F.col("service_label"),
+        F.col("pickup_location_id"),
+        F.col("dropoff_location_id"),
+        F.col("trip_distance_miles"),
+        F.col("trip_distance_km"),
+        F.col("request_to_pickup_mins"),
+        F.col("ride_duration_mins"),
+        F.col("driver_arrival_to_pickup_mins"),
+        F.col("request_to_driver_arrival_mins"),
+        F.col("ride_minus_wait_to_pickup_mins"),
+        F.col("ride_wait_to_pickup_gap_mins"),
+        F.col("ride_duration_band"),
+    )
+)
+
+trip_source_count = trip.count()
+trip_clean_count = trip_clean.count()
+
+print(f"Canonical trip rows: {trip_source_count} -> {trip_clean_count}")
+assert trip_source_count == 100
+assert trip_clean_count == 100
+
+trip_clean.show(10, truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Clean and enrich canonical payment data
+# MAGIC
+# MAGIC Payment uses the same normalize-and-guard sequence as the sample. The derived
+# MAGIC `charge_before_tip` uses zero only as a calculation fallback for optional amounts;
+# MAGIC it does not overwrite a source NULL. `tip_percent_of_base` remains NULL when its
+# MAGIC denominator is missing or zero.
 
 # COMMAND ----------
 
 payment_clean = (
-    payment_landing.filter(F.col("trip_id").isNotNull())
+    payment.filter(F.col("trip_id").isNotNull())
     .withColumn(
         "payment_method",
-        F.upper(F.trim(F.col("payment_method"))),
+        F.lower(F.trim(F.col("payment_method"))),
+    )
+    .withColumn(
+        "payment_method",
+        F.coalesce(
+            F.when(
+                F.col("payment_method") != "",
+                F.col("payment_method"),
+            ),
+            F.lit("unknown"),
+        ),
     )
     .withColumn(
         "base_fare_amount",
-        F.when(F.col("base_fare_amount") >= 0, F.col("base_fare_amount")).otherwise(F.lit(None)),
+        F.when(
+            F.col("base_fare_amount") >= 0,
+            F.col("base_fare_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "surge_amount",
+        F.when(
+            F.col("surge_amount") >= 0,
+            F.col("surge_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "tax_amount",
+        F.when(
+            F.col("tax_amount") >= 0,
+            F.col("tax_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "tip_amount",
+        F.when(
+            F.col("tip_amount") >= 0,
+            F.col("tip_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "discount_amount",
+        F.when(
+            F.col("discount_amount") >= 0,
+            F.col("discount_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "driver_payout_amount",
+        F.when(
+            F.col("driver_payout_amount") >= 0,
+            F.col("driver_payout_amount"),
+        ).otherwise(F.lit(None).cast("decimal(10,2)")),
+    )
+    .withColumn(
+        "charge_before_tip",
+        F.round(
+            F.col("base_fare_amount")
+            + F.coalesce(F.col("surge_amount"), F.lit(0))
+            + F.coalesce(F.col("tax_amount"), F.lit(0))
+            - F.coalesce(F.col("discount_amount"), F.lit(0)),
+            2,
+        ),
+    )
+    .withColumn(
+        "tip_percent_of_base",
+        F.when(
+            (F.col("base_fare_amount") > 0) & F.col("tip_amount").isNotNull(),
+            F.round(
+                F.col("tip_amount") / F.col("base_fare_amount") * 100,
+                1,
+            ),
+        ).otherwise(F.lit(None)),
+    )
+    .select(
+        F.col("trip_id"),
+        F.col("payment_method"),
+        F.col("base_fare_amount"),
+        F.col("surge_amount"),
+        F.col("tax_amount"),
+        F.col("tip_amount"),
+        F.col("discount_amount"),
+        F.col("driver_payout_amount"),
+        F.col("charge_before_tip"),
+        F.col("tip_percent_of_base"),
     )
 )
 
-print(f"Landing payment row count : {payment_landing.count()}")
-print(f"Cleaned payment row count : {payment_clean.count()}")
-payment_clean.show(5, truncate=False)
+payment_source_count = payment.count()
+payment_clean_count = payment_clean.count()
+
+print(f"Canonical payment rows: {payment_source_count} -> {payment_clean_count}")
+assert payment_source_count == 100
+assert payment_clean_count == 100
+
+payment_clean.show(10, truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5. Write curated outputs
+# MAGIC ## 4. Write and verify curated outputs
 # MAGIC
-# MAGIC Write both cleaned DataFrames as Parquet with `.mode("overwrite")`. Module 7
-# MAGIC reads these curated folders when it joins `trip`, `payment`, and `zone_lookup`.
+# MAGIC `.mode("overwrite")` makes the result idempotent for this course workflow: rerunning
+# MAGIC the notebook replaces its previous output instead of appending duplicate rows.
+# MAGIC
+# MAGIC Only `trip_clean` and `payment_clean`, both derived from canonical sources, are
+# MAGIC written. The supplementary samples never enter either write path.
 
 # COMMAND ----------
 
 trip_clean.write.mode("overwrite").parquet(curated_trip_path)
-print(f"Wrote curated trip to {curated_trip_path}")
-
-# COMMAND ----------
-
 payment_clean.write.mode("overwrite").parquet(curated_payment_path)
-print(f"Wrote curated payment to {curated_payment_path}")
+
+print(f"Wrote curated trip data to {curated_trip_path}")
+print(f"Wrote curated payment data to {curated_payment_path}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Read back a sample from each curated folder to confirm the writes succeeded.
+# MAGIC Read both folders back instead of validating only the in-memory DataFrames. This
+# MAGIC checks the actual files that downstream notebooks will consume.
 
 # COMMAND ----------
 
-print("Curated trip sample:")
-spark.read.parquet(curated_trip_path).show(5, truncate=False)  # noqa: F821
+trip_curated = spark.read.parquet(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    curated_trip_path
+)
+payment_curated = spark.read.parquet(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    curated_payment_path
+)
 
-print("Curated payment sample:")
-spark.read.parquet(curated_payment_path).show(5, truncate=False)  # noqa: F821
+trip_curated_count = trip_curated.count()
+payment_curated_count = payment_curated.count()
+
+print(f"Curated trip readback: {trip_curated_count} rows")
+print(f"Curated payment readback: {payment_curated_count} rows")
+
+assert trip_curated_count == 100
+assert payment_curated_count == 100
+
+trip_curated.printSchema()
+payment_curated.printSchema()
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC `bad_payment_data.csv` also contains a missing `tip_amount` and a negative
-# MAGIC `surge_amount`. Start with `payment_sample_base_fare_checked` from section 4,
-# MAGIC then apply two more guards:
+# MAGIC Build `payment_exercise` from the already loaded `bad_payment_raw` DataFrame:
 # MAGIC
-# MAGIC 1. Keep only rows where `tip_amount` is NOT NULL.
-# MAGIC 2. NULL out any `surge_amount` that is negative (use `F.when`).
+# MAGIC 1. Safely cast `trip_id`, `base_fare_amount`, and `surge_amount` to their canonical
+# MAGIC    types.
+# MAGIC 2. Normalize `payment_method` with `trim` and `lower`; replace a blank or NULL
+# MAGIC    method with `unknown`.
+# MAGIC 3. Convert a negative `surge_amount` to NULL.
+# MAGIC 4. Reject rows where `trip_id` is NULL after casting.
+# MAGIC 5. Reject rows where `base_fare_amount` is NULL or not greater than zero.
+# MAGIC 6. Select `trip_id`, `payment_method`, `base_fare_amount`, and `surge_amount`, then
+# MAGIC    order by `trip_id` and show the result.
 # MAGIC
-# MAGIC Display the result. Do not write it.
+# MAGIC Keep this as one forward-moving chain and do not write it. Your result should have
+# MAGIC four rows. Trip `102` should remain with `surge_amount = NULL`.
 
 # COMMAND ----------
 
-payment_exercise = payment_sample_base_fare_checked.filter(
-    F.lit(True)  # TODO: replace with an isNotNull predicate for tip_amount
-)
-# TODO: add a withColumn on surge_amount that uses F.when to NULL out negative
-# values and otherwise keeps the original surge_amount.
-
-payment_exercise.select("trip_id", "tip_amount", "surge_amount").show(truncate=False)
+# Your code here.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **NULL-safe predicates** — use `isNotNull()` to remove rows missing a
-# MAGIC   required key such as `trip_id` before an ordinary equality join.
-# MAGIC - **Normalize before drop** — apply `F.trim` and `F.upper` before comparing,
-# MAGIC   replacing, or dropping sentinel values.
-# MAGIC - **`F.coalesce`** — supply a fallback when a descriptive value is missing but
-# MAGIC   the row should remain.
-# MAGIC - **Out-of-range guards** — use `F.when` to NULL unphysical values rather than
-# MAGIC   dropping the whole row.
-# MAGIC - **`try_cast`** — converts string inputs to typed values safely; use
-# MAGIC   `source.isNotNull() & casted.isNull()` to surface rows the cast rejected.
-# MAGIC - Wrote curated Parquet outputs to `curated/trip/` and `curated/payment/`.
+# MAGIC - Read supplementary CSV fields as strings so `try_cast` could expose malformed
+# MAGIC   values safely under ANSI mode.
+# MAGIC - Used forward-moving chains to normalize text, cast types, repair recoverable
+# MAGIC   values, and reject rows without required keys.
+# MAGIC - Applied the demonstrated guards to canonical `trip` and `payment` landing data.
+# MAGIC - Persisted the string, numeric, and conditional enrichments from Module 6
+# MAGIC   **`01 - Column Transforms with Built-in Functions`** only after cleaning.
+# MAGIC - Wrote canonical data—not bad-data samples—to `curated/trip/` and
+# MAGIC   `curated/payment/`, then verified exactly 100 rows in each readback.
 # MAGIC
-# MAGIC **Next:** Module 6 **`04 - Built-ins First: When (Not) to Use UDFs`** — compare
-# MAGIC built-in functions to Python UDFs and Pandas UDFs.
+# MAGIC **Next:** Module 6 **`04 - Built-ins First: When (Not) to Use UDFs`** compares
+# MAGIC built-in expressions with Python and Pandas UDF alternatives.
