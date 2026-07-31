@@ -20,8 +20,8 @@ By the end of this module, you'll be able to:
 - Access **struct** fields, work with **array** columns, and flatten nested
   data with **`explode`** / **`explode_outer`**
 - Review Module 3 cleaning patterns (NULL-safe predicates, normalization,
-  safe casts) on supplementary bad-data CSV files, apply the relevant guards
-  to canonical Volume landing data, and write **curated** outputs
+  safe casts) on full-size controlled-bad CSV variants and carry those same
+  cleaned DataFrames into **curated** outputs
 - Explain when to prefer built-ins over **Python UDFs** and **Pandas UDFs**
 
 ## Prerequisites
@@ -32,8 +32,8 @@ Module 5 — Reading, Writing, and Schemas (complete content notebooks
 
 - Landing volume populated under
   `/Volumes/rideshare_dev/landing/source_files/{dataset}/`
-- Supplementary `trip/bad_trip_data.csv` and
-  `payment/bad_payment_data.csv` files landed by Module 5 Notebook 01
+- Full-size controlled-bad `trip/bad_trip_data.csv` and
+  `payment/bad_payment_data.csv` source variants landed by Module 5 Notebook 01
 - Managed table **`rideshare_dev.processed.trip_time_preview`** created in
   Module 5 **`07 - Write Patterns and Table Preview`**
 - Comfort with transformations vs actions, and that **`DataFrame.write`**
@@ -88,8 +88,8 @@ Schemas, column names, join keys, and Volume path rules:
 | Output | Path | Grain / contract |
 |---|---|---|
 | Flattened drivers | `…/curated/drivers_flat/` | One row per **`driver_id`** + **`trip_id`** after **`explode`** on **`trips_assigned`** |
-| Cleaned trip | `…/curated/trip/` | Same row grain as landing **`trip`**; preserve **`trip_id`** and join keys |
-| Cleaned payment | `…/curated/payment/` | Same row grain as landing **`payment`**; preserve **`trip_id`** |
+| Cleaned trip | `…/curated/trip/` | One row per usable **`trip_id`** from **`bad_trip_data.csv`**; expected 106 rows; preserve location join keys |
+| Cleaned payment | `…/curated/payment/` | One row per usable **`trip_id`** from **`bad_payment_data.csv`**; expected 105 rows |
 
 Write curated outputs as **Parquet** under each folder with
 **`.mode("overwrite")`** unless a notebook states otherwise. Module 7 reads
@@ -124,11 +124,10 @@ Four notebooks, in this order:
      **`explode_outer`** on **`trips_assigned`**
    - Write **`…/curated/drivers_flat/`**
 3. **Cleaning and Curated Outputs**
-   - Module 3 cleaning patterns on landed **`bad_trip_data.csv`** and
-     **`bad_payment_data.csv`**, with one forward-moving DataFrame chain per
-     file and visible rejection/repair results
-   - Apply the same production-style guards to canonical landing **`trip`**
-     and **`payment`**
+   - Full-size **`bad_trip_data.csv`** and **`bad_payment_data.csv`** source
+     variants contain the original 100 records plus controlled bad records
+   - One forward-moving DataFrame chain per file, with visible key rejection,
+     normalization, failed-conversion, and invalid-value results
    - Persist enrichment/cleaning columns only here — not in
      **`01 - Column Transforms with Built-in Functions`**
    - Write **`…/curated/trip/`** and **`…/curated/payment/`**

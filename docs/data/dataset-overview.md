@@ -147,18 +147,24 @@ Dataset folder names: `trip`, `trip_time`, `zone_lookup`, `payment`,
 | `drivers` | XML | `data/raw/xml/drivers.xml` | `landing/source_files/drivers/` |
 | `payment` | Avro | `data/raw/avro/payment.avro` | `landing/source_files/payment/` |
 
-Module 5 Notebook 01 also lands two supplementary bad-data learning files:
+Module 5 Notebook 01 also lands two full-size controlled-bad source variants:
 
-| Purpose | Repo source (Git) | Volume destination |
-|---|---|---|
-| Trip cleaning | `data/raw/csv/bad_trip_data.csv` | `landing/source_files/trip/bad_trip_data.csv` |
-| Payment cleaning | `data/raw/csv/bad_payment_data.csv` | `landing/source_files/payment/bad_payment_data.csv` |
+| Purpose | Repo source (Git) | Volume destination | Source rows | Curated rows |
+|---|---|---|---:|---:|
+| Trip cleaning | `data/raw/csv/bad_trip_data.csv` | `landing/source_files/trip/bad_trip_data.csv` | 107 | 106 |
+| Payment cleaning | `data/raw/csv/bad_payment_data.csv` | `landing/source_files/payment/bad_payment_data.csv` | 106 | 105 |
 
-These small CSV files exist only to make rejection and repair behavior
-visible in Module 6 **`03 - Cleaning and Curated Outputs`**. They are not
-additional logical datasets and are never written directly to `curated/`.
-Canonical `trip.csv` and `payment.avro` remain the sources for curated
-pipeline outputs.
+Each variant keeps the corresponding CSV header and all 100 original records
+unchanged. `bad_trip_data.csv` appends six uniquely keyed records plus one
+missing-key record. `bad_payment_data.csv` appends five uniquely keyed records
+plus one missing-key record. The appended records make normalization, failed
+casts, invalid numeric values, and key rejection visible.
+
+Module 6 **`03 - Cleaning and Curated Outputs`** uses these variants as its
+only trip and payment inputs. It rejects the missing-key record from each file,
+cleans the remaining records, and writes those same DataFrames to
+`curated/trip/` and `curated/payment/`. The variants do not replace the core
+100-row logical-table contracts used by other source-reading notebooks.
 
 JSON is newline-delimited; Parquet preserves decimals. Other payment formats
 may exist under `data/raw/` for authoring flexibility; Module 5’s primary

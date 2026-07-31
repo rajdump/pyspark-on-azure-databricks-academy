@@ -19,8 +19,8 @@ By the end of this module, you'll be able to:
   ADLS folder) and create `rideshare_dev` landing/processed volumes
 - Copy repo source files into
   `/Volumes/rideshare_dev/landing/source_files/{dataset}/` and verify
-- Land supplementary `bad_trip_data.csv` and `bad_payment_data.csv` files for
-  the Module 6 cleaning walkthrough
+- Land full-size controlled-bad `bad_trip_data.csv` and `bad_payment_data.csv`
+  variants for the Module 6 cleaning walkthrough
 - Read one production format per dataset — CSV, JSON Lines, Parquet, XML,
   Avro — with explicit schemas and informed use of **`inferSchema`**
 - Apply light reshape after read; compare format trade-offs
@@ -100,8 +100,8 @@ Seven content notebooks plus cleanup, in this order. All notebooks
    - Config cell (your Azure values); create ADLS project folder in Portal
    - Create external location `el_rideshare_dev`, catalog `rideshare_dev`,
      schemas, and volumes
-   - `mkdirs` for dataset folders; copy canonical and bad-data learning files
-     into landing; verify
+   - `mkdirs` for dataset folders; copy canonical and controlled-bad source
+     files into landing; verify
 2. **Reading CSV**
    - Read **`trip`** from landing; explicit schema vs **`inferSchema`**;
      light reshape; practice write
