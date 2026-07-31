@@ -278,29 +278,28 @@ trip_strings.show(10, truncate=False)
 # MAGIC %md
 # MAGIC ## 6. Numeric and decimal transformations
 # MAGIC
-# MAGIC Built-ins also create derived measurements without moving data into Python.
+# MAGIC Built-in numeric functions let us create useful metrics directly in Spark.
+# MAGIC This keeps the logic distributed and easy to read.
 # MAGIC
-# MAGIC Three `trip` columns describe how time is spent across a single trip:
+# MAGIC We will use these three time columns from `trip`:
 # MAGIC
-# MAGIC | Column | Covers |
+# MAGIC | Column | Plain meaning |
 # MAGIC |---|---|
-# MAGIC | `request_to_pickup_mins` | Request → passenger gets into the car (full pre-ride wait) |
-# MAGIC | `driver_arrival_to_pickup_mins` | Driver at pickup location → passenger gets into the car (boarding lag only) |
-# MAGIC | `ride_duration_mins` | Passenger in the car → destination |
+# MAGIC | `request_to_pickup_mins` | Passenger waits from request until pickup |
+# MAGIC | `driver_arrival_to_pickup_mins` | Driver waits at pickup spot until passenger boards |
+# MAGIC | `ride_duration_mins` | Time in the car from pickup to destination |
 # MAGIC
-# MAGIC These are sequential, non-overlapping segments of the journey:
-# MAGIC `request_to_pickup_mins` ends where `ride_duration_mins` begins, and
-# MAGIC `driver_arrival_to_pickup_mins` is the final slice inside `request_to_pickup_mins`.
+# MAGIC These represent different parts of one trip timeline, so each subtraction
+# MAGIC answers a different question:
 # MAGIC
-# MAGIC - Multiply miles by **1.60934** to calculate kilometers.
-# MAGIC - Use **`F.round`** to keep two decimal places.
-# MAGIC - **Subtract** when one duration is a sub-segment of another — subtracting
-# MAGIC   `driver_arrival_to_pickup_mins` from `request_to_pickup_mins` isolates
-# MAGIC   **`request_to_driver_arrival_mins`** (dispatch and drive-to-pickup only).
-# MAGIC - Use **`F.abs`** when two independent measurements can differ in either
-# MAGIC   direction and you care about the size of the gap, not the sign. For
-# MAGIC   `ride_duration_mins` vs `request_to_pickup_mins`, some short trips have a
-# MAGIC   longer pre-ride wait than the trip itself — so the subtraction can go either way.
+# MAGIC - `request_to_pickup_mins - driver_arrival_to_pickup_mins` -> time before the
+# MAGIC   driver reaches the pickup point.
+# MAGIC - `ride_duration_mins - request_to_pickup_mins` -> signed comparison of ride
+# MAGIC   time versus pre-ride wait.
+# MAGIC - `abs(ride_duration_mins - request_to_pickup_mins)` -> gap size only.
+# MAGIC
+# MAGIC In this cell we also convert miles to kilometers with multiplication and
+# MAGIC round to 2 decimals using `F.round`.
 
 # COMMAND ----------
 
@@ -313,16 +312,13 @@ trip_metrics = trip.select(
     ).alias("trip_distance_km"),
     F.col("request_to_pickup_mins"),
     F.col("driver_arrival_to_pickup_mins"),
-    # Request -> driver arrival (excludes final boarding lag).
     (
         F.col("request_to_pickup_mins") - F.col("driver_arrival_to_pickup_mins")
     ).alias("request_to_driver_arrival_mins"),
     F.col("ride_duration_mins"),
-    # Signed comparison: positive means ride took longer than wait-to-pickup.
     (F.col("ride_duration_mins") - F.col("request_to_pickup_mins")).alias(
         "ride_minus_wait_to_pickup_mins"
     ),
-    # Absolute gap size between ride time and wait-to-pickup.
     F.abs(F.col("ride_duration_mins") - F.col("request_to_pickup_mins")).alias(
         "ride_wait_to_pickup_gap_mins"
     ),
@@ -333,10 +329,11 @@ trip_metrics.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The derived columns keep each purpose distinct:
-# MAGIC `request_to_driver_arrival_mins` (timeline sub-segment),
-# MAGIC `ride_minus_wait_to_pickup_mins` (signed comparison), and
-# MAGIC `ride_wait_to_pickup_gap_mins` (absolute comparison with `F.abs`).
+# MAGIC Read the three derived time columns this way:
+# MAGIC
+# MAGIC - `request_to_driver_arrival_mins`: timeline segment before curbside waiting.
+# MAGIC - `ride_minus_wait_to_pickup_mins`: signed result (`+` ride longer, `-` wait longer).
+# MAGIC - `ride_wait_to_pickup_gap_mins`: same comparison without sign (`F.abs`).
 
 # COMMAND ----------
 
