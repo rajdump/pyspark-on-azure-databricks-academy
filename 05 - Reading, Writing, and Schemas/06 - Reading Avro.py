@@ -192,8 +192,9 @@ display(dbutils.fs.ls(f"{landing_root}/payment"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You should see **`payment.avro`** in that folder. The path variable
-# MAGIC **`payment_avro_path`** points to the full file for the reads below.
+# MAGIC You should see **`payment.avro`** and the supplementary
+# MAGIC **`bad_payment_data.csv`** learning file in that folder. The path variable
+# MAGIC **`payment_avro_path`** points specifically to **`payment.avro`** below.
 
 # COMMAND ----------
 

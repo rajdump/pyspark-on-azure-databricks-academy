@@ -1,0 +1,7 @@
+trip_id,payment_method,base_fare_amount,surge_amount,tax_amount,tip_amount,discount_amount,driver_payout_amount
+101,Card,18.50,2.00,1.50,3.00,0.00,15.00
+102," cash ",22.00,-1.50,1.80,4.50,0.00,18.00
+103,wallet,9.75,0.75,0.80,,0.00,8.00
+,Card,14.25,0.00,1.14,2.00,0.00,11.00
+104,CARD,-5.00,0.00,0.40,1.00,0.00,4.00
+105,,12.00,1.25,1.06,2.50,1.00,10.00

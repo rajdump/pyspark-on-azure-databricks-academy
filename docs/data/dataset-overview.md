@@ -147,7 +147,19 @@ Dataset folder names: `trip`, `trip_time`, `zone_lookup`, `payment`,
 | `drivers` | XML | `data/raw/xml/drivers.xml` | `landing/source_files/drivers/` |
 | `payment` | Avro | `data/raw/avro/payment.avro` | `landing/source_files/payment/` |
 
-Module 5 Notebook 01 copies repo files into the landing volume. JSON is
-newline-delimited; Parquet preserves decimals. Other payment formats may
-exist under `data/raw/` for authoring flexibility; Module 5’s primary
+Module 5 Notebook 01 also lands two supplementary bad-data learning files:
+
+| Purpose | Repo source (Git) | Volume destination |
+|---|---|---|
+| Trip cleaning | `data/raw/csv/bad_trip_data.csv` | `landing/source_files/trip/bad_trip_data.csv` |
+| Payment cleaning | `data/raw/csv/bad_payment_data.csv` | `landing/source_files/payment/bad_payment_data.csv` |
+
+These small CSV files exist only to make rejection and repair behavior
+visible in Module 6 **`03 - Cleaning and Curated Outputs`**. They are not
+additional logical datasets and are never written directly to `curated/`.
+Canonical `trip.csv` and `payment.avro` remain the sources for curated
+pipeline outputs.
+
+JSON is newline-delimited; Parquet preserves decimals. Other payment formats
+may exist under `data/raw/` for authoring flexibility; Module 5’s primary
 `payment` read format is Avro.

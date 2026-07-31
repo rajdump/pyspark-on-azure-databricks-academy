@@ -20,8 +20,8 @@ By the end of this module, you'll be able to:
 - Access **struct** fields, work with **array** columns, and flatten nested
   data with **`explode`** / **`explode_outer`**
 - Review Module 3 cleaning patterns (NULL-safe predicates, normalization,
-  safe casts) on messy demo data, apply the relevant guards to Volume
-  landing data, and write **curated** outputs
+  safe casts) on supplementary bad-data CSV files, apply the relevant guards
+  to canonical Volume landing data, and write **curated** outputs
 - Explain when to prefer built-ins over **Python UDFs** and **Pandas UDFs**
 
 ## Prerequisites
@@ -32,6 +32,8 @@ Module 5 — Reading, Writing, and Schemas (complete content notebooks
 
 - Landing volume populated under
   `/Volumes/rideshare_dev/landing/source_files/{dataset}/`
+- Supplementary `trip/bad_trip_data.csv` and
+  `payment/bad_payment_data.csv` files landed by Module 5 Notebook 01
 - Managed table **`rideshare_dev.processed.trip_time_preview`** created in
   Module 5 **`07 - Write Patterns and Table Preview`**
 - Comfort with transformations vs actions, and that **`DataFrame.write`**
@@ -120,9 +122,11 @@ Four notebooks, in this order:
      **`explode_outer`** on **`trips_assigned`**
    - Write **`…/curated/drivers_flat/`**
 3. **Cleaning and Curated Outputs**
-   - Module 3 cleaning patterns on landing **`trip`** and **`payment`**
-     (production-style guards on real landing data; use a small messy demo
-     slice where needed to show rejection/normalization patterns)
+   - Module 3 cleaning patterns on landed **`bad_trip_data.csv`** and
+     **`bad_payment_data.csv`**, with one forward-moving DataFrame chain per
+     file and visible rejection/repair results
+   - Apply the same production-style guards to canonical landing **`trip`**
+     and **`payment`**
    - Persist enrichment/cleaning columns only here — not in
      **`01 - Column Transforms with Built-in Functions`**
    - Write **`…/curated/trip/`** and **`…/curated/payment/`**

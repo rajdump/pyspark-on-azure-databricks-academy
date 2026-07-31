@@ -85,8 +85,9 @@ display(dbutils.fs.ls(f"{landing_root}/trip"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC You should see **`trip.csv`** in that folder. The path variable
-# MAGIC **`trip_csv_path`** points to the full file location for the reads below.
+# MAGIC You should see **`trip.csv`** and the supplementary
+# MAGIC **`bad_trip_data.csv`** learning file in that folder. The path variable
+# MAGIC **`trip_csv_path`** points specifically to **`trip.csv`** for the reads below.
 
 # COMMAND ----------
 

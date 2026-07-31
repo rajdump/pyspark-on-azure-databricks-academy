@@ -245,9 +245,11 @@ volume_root = Path("/Volumes/rideshare_dev/landing/source_files")
 
 file_map = {
     "data/raw/csv/trip.csv": "trip/trip.csv",
+    "data/raw/csv/bad_trip_data.csv": "trip/bad_trip_data.csv",
     "data/raw/parquet/trip_time.parquet": "trip_time/trip_time.parquet",
     "data/raw/json/zone_lookup.json": "zone_lookup/zone_lookup.json",
     "data/raw/avro/payment.avro": "payment/payment.avro",
+    "data/raw/csv/bad_payment_data.csv": "payment/bad_payment_data.csv",
     "data/raw/xml/drivers.xml": "drivers/drivers.xml",
 }
 
@@ -306,8 +308,10 @@ except Exception as e:
 # MAGIC 1. List `/Volumes/rideshare_dev/landing/source_files/` and check that you
 # MAGIC    see five dataset folders (`trip`, `trip_time`, `zone_lookup`,
 # MAGIC    `payment`, `drivers`).
-# MAGIC 2. List inside `trip/` and confirm `trip.csv` is present.
-# MAGIC 3. Print how many items are in the `payment/` folder (expect **1** file).
+# MAGIC 2. List inside `trip/` and confirm `trip.csv` and `bad_trip_data.csv`
+# MAGIC    are present.
+# MAGIC 3. Print how many items are in the `payment/` folder (expect **2** files:
+# MAGIC    `payment.avro` and `bad_payment_data.csv`).
 # MAGIC
 # MAGIC Use `dbutils.fs.ls` (same pattern as the verification cells above).
 
@@ -331,7 +335,7 @@ except Exception as e:
 # MAGIC | Catalog | `rideshare_dev` | Top-level container for all rideshare data |
 # MAGIC | Schema | `rideshare_dev.landing` | Holds raw source files as-is |
 # MAGIC | Schema | `rideshare_dev.processed` | Holds file outputs (and later managed-table previews) |
-# MAGIC | Volume | `landing.source_files` | 5 datasets in original formats (CSV, Parquet, JSON, Avro, XML) |
+# MAGIC | Volume | `landing.source_files` | 5 source datasets + 2 bad-data CSV files |
 # MAGIC | Volume | `processed.output_files` | Outputs under `practice/` (Module 5) and `curated/` (Module 6+) |
 # MAGIC
 # MAGIC `practice/` and `curated/` appear under `output_files` on **first write** —
