@@ -328,15 +328,6 @@ trip_metrics.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Read the three derived time columns this way:
-# MAGIC
-# MAGIC - `request_to_driver_arrival_mins`: timeline segment before curbside waiting.
-# MAGIC - `ride_minus_wait_to_pickup_mins`: signed result (`+` ride longer, `-` wait longer).
-# MAGIC - `ride_wait_to_pickup_gap_mins`: same comparison without sign (`F.abs`).
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## 7. Conditional transformations
 # MAGIC
 # MAGIC Conditional columns turn numeric measurements into business-friendly labels.
