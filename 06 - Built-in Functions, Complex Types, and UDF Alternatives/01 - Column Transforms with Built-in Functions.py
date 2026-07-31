@@ -136,7 +136,6 @@ trip_time_from_table.show(3)
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 10
 # Apply transforms directly — see each expression in action
 trip_time_volume_transformed = trip_time_from_volume.select(
     F.col("trip_id"),
@@ -159,11 +158,8 @@ trip_time_volume_transformed.show(5, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 11
 # MAGIC %md
-# MAGIC ### Production pattern: extract and reuse
-# MAGIC
-# MAGIC The inline approach above is clear, but what if you load the same dataset from
+# MAGIC **Production pattern: extract and reuse.** The inline approach above is clear, but what if you load the same dataset from
 # MAGIC multiple sources (a file today, a table tomorrow)? Copy-pasting the same
 # MAGIC expressions violates DRY (Don't Repeat Yourself).
 # MAGIC
@@ -173,7 +169,6 @@ trip_time_volume_transformed.show(5, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 12
 # Extract the same expressions into a reusable list
 trip_time_transformations = [
     F.col("trip_id"),
@@ -284,7 +279,10 @@ trip_strings.show(10, truncate=False)
 # MAGIC
 # MAGIC - Multiply miles by **1.60934** to calculate kilometers.
 # MAGIC - Use **`F.round`** to keep two decimal places.
-# MAGIC - Use **`F.abs`** when only the size of a difference matters.
+# MAGIC - Subtract when one duration is part of another — total request-to-pickup wait
+# MAGIC   minus boarding lag gives **`wait_before_boarding_mins`** (dispatch and travel).
+# MAGIC - Use **`F.abs`** when two separate measurements can differ in either direction
+# MAGIC   and you care about separation, not sign.
 
 # COMMAND ----------
 
@@ -297,8 +295,12 @@ trip_metrics = trip.select(
     ).alias("trip_distance_km"),
     F.col("request_to_pickup_mins"),
     F.col("driver_arrival_to_pickup_mins"),
-    F.abs(F.col("request_to_pickup_mins") - F.col("driver_arrival_to_pickup_mins")).alias(
-        "pickup_timing_gap_mins"
+    (
+        F.col("request_to_pickup_mins") - F.col("driver_arrival_to_pickup_mins")
+    ).alias("wait_before_boarding_mins"),
+    F.col("ride_duration_mins"),
+    F.abs(F.col("ride_duration_mins") - F.col("request_to_pickup_mins")).alias(
+        "ride_vs_wait_gap_mins"
     ),
 )
 
@@ -307,6 +309,10 @@ trip_metrics.show(10, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC **`wait_before_boarding_mins`** splits total wait into boarding versus everything
+# MAGIC before it. **`ride_vs_wait_gap_mins`** compares ride length to pre-pickup wait with
+# MAGIC **`F.abs`** so the result is always non-negative regardless of which is larger.
+# MAGIC
 # MAGIC The original columns remain available, and the calculated columns make their
 # MAGIC business meaning explicit. Keeping both during exploration makes the result
 # MAGIC easy to check.
