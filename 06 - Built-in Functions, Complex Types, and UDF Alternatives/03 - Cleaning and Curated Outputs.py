@@ -3,18 +3,15 @@
 # MAGIC
 # MAGIC # 03 - Cleaning and Curated Outputs
 # MAGIC
-# MAGIC Reliable curated datasets need explicit rules for rejecting invalid rows, repairing
-# MAGIC recoverable values, and preserving the keys used by downstream pipelines. This
-# MAGIC notebook first makes those decisions visible on two small bad-data files, then
-# MAGIC applies the same guards to the canonical landing data.
+# MAGIC To create reliable datasets, we need clear rules to handle bad data. This includes deciding when to reject invalid rows, standardising the values, and keeping the keys needed for later processing. This notebook shows how we make these decisions with two small files that have bad data, and then applies the same rules to the main data we are working with.
 # MAGIC
 # MAGIC You will:
 # MAGIC
-# MAGIC 1. Review NULL-safe predicates, normalization, and safe casts on landed bad data
-# MAGIC 2. Build one forward-moving transformation chain for each bad-data file
-# MAGIC 3. Apply production-style guards to canonical `trip` and `payment` data
-# MAGIC 4. Persist cleaning and enrichment columns in curated outputs
-# MAGIC 5. Write and verify curated `trip` and `payment` datasets
+# MAGIC 1. Review how to safely handle null values, clean up bad data, and ensure safe data type conversions.
+# MAGIC 2. Create a single step-by-step process for fixing each bad-data file.
+# MAGIC 3. Apply production-style safeguards to ensure the quality of the `trip` and `payment` data.
+# MAGIC 4. Save the cleaned and enhanced columns in the final outputs.
+# MAGIC 5. Write and check the final `trip` and `payment` datasets.
 # MAGIC
 # MAGIC **Prerequisites.** Complete Module 6 **`01 - Column Transforms with Built-in
 # MAGIC Functions`** and **`02 - Complex Types: Structs, Arrays, and explode`**. Run Module
