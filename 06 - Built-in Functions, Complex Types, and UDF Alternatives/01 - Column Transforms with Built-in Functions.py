@@ -110,6 +110,11 @@ trip_time_from_volume.show(3)
 # MAGIC %md
 # MAGIC Now load the managed table with **`spark.table`**. The table created in Module 5
 # MAGIC contains the same logical `trip_time` dataset.
+# MAGIC
+# MAGIC Reference: Module 5 notebook
+# MAGIC **`07 - Write Patterns and Table Preview`**, section
+# MAGIC **`## 5. Managed saveAsTable into rideshare_dev.processed`**
+# MAGIC (the cell that runs **`.saveAsTable(managed_table)`**).
 
 # COMMAND ----------
 
