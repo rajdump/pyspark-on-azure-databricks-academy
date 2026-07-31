@@ -33,7 +33,8 @@ Module 5 — Reading, Writing, and Schemas (complete content notebooks
 - Landing volume populated under
   `/Volumes/rideshare_dev/landing/source_files/{dataset}/`
 - Full-size controlled-bad `trip/bad_trip_data.csv` and
-  `payment/bad_payment_data.csv` source variants landed by Module 5 Notebook 01
+  `payment/bad_payment_data.csv` source variants landed by Module 5
+  **`01 - Unity Catalog Volumes and Data Landing`**
 - Managed table **`rideshare_dev.processed.trip_time_preview`** created in
   Module 5 **`07 - Write Patterns and Table Preview`**
 - Comfort with transformations vs actions, and that **`DataFrame.write`**

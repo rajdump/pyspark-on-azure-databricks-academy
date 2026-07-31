@@ -82,7 +82,7 @@ payments.show()
 # MAGIC | `tail(n)` | `list` of `n` `Row`s | Grows with `n` |
 # MAGIC | `isEmpty()` | `True` or `False` | Low (no row payload) |
 # MAGIC | `toPandas()` | pandas `DataFrame` (all rows) | High if the Spark result is large |
-# MAGIC | `write.save()` / `write.saveAsTable()` | Writes output (no row payload) | Storage / write path (not driver row memory) |
+# MAGIC | `write.save()` / `write.saveAsTable()` | Writes output | Storage, not driver memory |
 # MAGIC
 # MAGIC You already used `show()`, `count()`, and `collect()`. This notebook demos
 # MAGIC the other pull/check actions. Writing is covered in Module 5.
@@ -143,7 +143,7 @@ print(head_row)
 
 head_rows = ordered.head(3)
 print("head(3) returned:", type(head_rows).__name__, "len =", len(head_rows))
-head_rows
+head_rows  # noqa: B018 -- bare expression triggers Databricks' rich cell display
 
 # COMMAND ----------
 
@@ -156,7 +156,7 @@ head_rows
 
 take_rows = ordered.take(3)
 print("take(3) returned:", type(take_rows).__name__, "len =", len(take_rows))
-take_rows
+take_rows  # noqa: B018 -- bare expression triggers Databricks' rich cell display
 
 # COMMAND ----------
 
@@ -172,7 +172,7 @@ take_rows
 
 tail_rows = ordered.tail(3)
 print("tail(3) returned:", type(tail_rows).__name__, "len =", len(tail_rows))
-tail_rows
+tail_rows  # noqa: B018 -- bare expression triggers Databricks' rich cell display
 
 # COMMAND ----------
 
@@ -208,7 +208,7 @@ print("empty filter isEmpty():", empty_df.isEmpty())
 
 pdf = ordered.toPandas()
 print("toPandas() returned:", type(pdf).__name__, "shape =", pdf.shape)
-pdf
+pdf  # noqa: B018 -- bare expression triggers Databricks' rich cell display
 
 # COMMAND ----------
 

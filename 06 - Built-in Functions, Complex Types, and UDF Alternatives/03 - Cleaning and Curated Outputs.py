@@ -746,7 +746,7 @@ payment_curated.printSchema()
 # MAGIC
 # MAGIC 1. Safely cast `trip_id` and `base_fare_amount` with `try_cast` to their
 # MAGIC    canonical types.
-# MAGIC 2. Reject the record whose `trip_id` becomes NULL after casting.
+# MAGIC 2. Reject the record whose `trip_id` is NULL after casting.
 # MAGIC 3. Trim and lowercase `payment_method`; replace a blank or NULL method with
 # MAGIC    `unknown`.
 # MAGIC 4. Convert a negative `base_fare_amount` to NULL.
