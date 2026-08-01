@@ -112,6 +112,8 @@ trip_source.filter(
     | (F.trim(F.col("trip_id")) == "")
 ).show(truncate=False)
 
+trip_source.printSchema()
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -175,9 +177,8 @@ trip_cast.filter(
 
 # MAGIC %md
 # MAGIC ### Reject records without a usable key
+# MAGIC `trip_id` is necessary for joins. Remove the row with a missing trip_id. The remaining data consists of 100 clean rows and 5 rows that still have a trip_id but contain data-quality issues.
 # MAGIC
-# MAGIC A required key controls the row grain and later joins. Keep the rejected record
-# MAGIC visible for diagnosis, then carry only non-NULL keys into the next stage.
 
 # COMMAND ----------
 
@@ -185,22 +186,47 @@ trip_rejected = trip_cast.filter(F.col("trip_id").isNull())
 
 print("Rejected trip records:")
 trip_rejected.select(
-    F.col("trip_id_src"),
+    F.col("trip_id"),
     F.col("service_type"),
     F.col("pickup_location_id"),
 ).show(truncate=False)
 
+##Remove the row with a missing trip_id
 trip_key_filtered = trip_cast.filter(F.col("trip_id").isNotNull())
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 12
 # MAGIC %md
 # MAGIC ### Normalize service labels
 # MAGIC
-# MAGIC Normalize before checking for sentinels so values such as `" n/a "` become
-# MAGIC `"n/a"` first. Blank, NULL, and `n/a` labels then become `unknown`.
+# MAGIC Raw `service_type` values arrive with inconsistent casing, extra whitespace,
+# MAGIC and placeholder sentinels. The next cell applies a two-step normalization so
+# MAGIC downstream joins and aggregations work reliably:
+# MAGIC
+# MAGIC | Step | What it does | Function used |
+# MAGIC |------|-------------|---------------|
+# MAGIC | 1. Trim & lowercase | Removes leading/trailing spaces, converts to lowercase | `F.lower(F.trim(...))` |
+# MAGIC | 2. Replace sentinels | Replaces `""`, `"n/a"`, and NULL with `"unknown"` | `F.coalesce(F.when(...), F.lit("unknown"))` |
+# MAGIC
+# MAGIC **Example transformations:**
+# MAGIC
+# MAGIC | Raw input | After step 1 | After step 2 (final) |
+# MAGIC |-----------|-------------|----------------------|
+# MAGIC | `"  Premium "` | `"premium"` | `"premium"` |
+# MAGIC | `" N/A "` | `"n/a"` | `"unknown"` |
+# MAGIC | `""` (empty) | `""` | `"unknown"` |
+# MAGIC | NULL | NULL | `"unknown"` |
+# MAGIC | `"shared"` | `"shared"` | `"shared"` |
+# MAGIC
+# MAGIC > **Why two steps?** Trim and lowercase run first so that `" N/A "` becomes
+# MAGIC > `"n/a"` before the sentinel check. Reversing the order would let dirty
+# MAGIC > variants slip through uncaught.
+# MAGIC
 
 # COMMAND ----------
+
+
 
 trip_labels_normalized = trip_key_filtered.withColumn(
     "service_type",
@@ -217,10 +243,7 @@ trip_labels_normalized = trip_key_filtered.withColumn(
 )
 
 print("Controlled trip labels after normalization:")
-trip_labels_normalized.filter(F.col("trip_id").between(101, 106)).select(
-    F.col("trip_id"),
-    F.col("service_type"),
-).orderBy(F.col("trip_id")).show(truncate=False)
+trip_labels_normalized.filter(F.col("trip_id").between(101, 106)).orderBy(F.col("trip_id")).show(truncate=False)
 
 # COMMAND ----------
 
