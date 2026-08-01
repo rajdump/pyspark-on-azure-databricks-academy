@@ -89,8 +89,8 @@ Schemas, column names, join keys, and Volume path rules:
 | Output | Path | Grain / contract |
 |---|---|---|
 | Flattened drivers | `…/curated/drivers_flat/` | One row per **`driver_id`** + **`trip_id`** after **`explode`** on **`trips_assigned`** |
-| Cleaned trip | `…/curated/trip/` | One row per usable **`trip_id`** from **`bad_trip_data.csv`**; expected 106 rows; preserve location join keys |
-| Cleaned payment | `…/curated/payment/` | One row per usable **`trip_id`** from **`bad_payment_data.csv`**; expected 105 rows |
+| Cleaned trip | `…/curated/trip/` | One row per **`trip_id`** from **`bad_trip_data.csv`** after missing-key rejection and **`dropDuplicates`**; 106 rows; preserve location join keys |
+| Cleaned payment | `…/curated/payment/` | One row per **`trip_id`** from **`bad_payment_data.csv`** after missing-key rejection; 105 rows |
 
 Write curated outputs as **Parquet** under each folder with
 **`.mode("overwrite")`** unless a notebook states otherwise. Module 7 reads
@@ -125,10 +125,12 @@ Four notebooks, in this order:
      **`explode_outer`** on **`trips_assigned`**
    - Write **`…/curated/drivers_flat/`**
 3. **Cleaning and Curated Outputs**
-   - Full-size **`bad_trip_data.csv`** and **`bad_payment_data.csv`** source
-     variants contain the original 100 records plus controlled bad records
-   - One forward-moving DataFrame chain per file, with visible key rejection,
-     normalization, failed-conversion, and invalid-value results
+   - Full-size **`bad_trip_data.csv`** (108 source rows) and
+     **`bad_payment_data.csv`** (106 source rows); layout in
+     [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
+   - One forward-moving DataFrame chain per file: missing-key rejection,
+     **`dropDuplicates`** on trip **`trip_id`**, normalization,
+     failed-conversion handling, and invalid-value rules
    - Persist enrichment/cleaning columns only here — not in
      **`01 - Column Transforms with Built-in Functions`**
    - Write **`…/curated/trip/`** and **`…/curated/payment/`**

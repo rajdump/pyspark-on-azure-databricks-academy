@@ -151,20 +151,22 @@ Module 5 Notebook 01 also lands two full-size controlled-bad source variants:
 
 | Purpose | Repo source (Git) | Volume destination | Source rows | Curated rows |
 |---|---|---|---:|---:|
-| Trip cleaning | `data/raw/csv/bad_trip_data.csv` | `landing/source_files/trip/bad_trip_data.csv` | 107 | 106 |
+| Trip cleaning | `data/raw/csv/bad_trip_data.csv` | `landing/source_files/trip/bad_trip_data.csv` | 108 | 106 |
 | Payment cleaning | `data/raw/csv/bad_payment_data.csv` | `landing/source_files/payment/bad_payment_data.csv` | 106 | 105 |
 
 Each variant keeps the corresponding CSV header and all 100 original records
-unchanged. `bad_trip_data.csv` appends six uniquely keyed records plus one
-missing-key record. `bad_payment_data.csv` appends five uniquely keyed records
-plus one missing-key record. The appended records make normalization, failed
-casts, invalid numeric values, and key rejection visible.
+unchanged. `bad_trip_data.csv` appends trip_ids 101–106, one duplicate row for
+trip_id 101, and one missing-key record. `bad_payment_data.csv` appends five
+uniquely keyed records plus one missing-key record. The appended records make
+normalization, failed casts, invalid numeric values, key rejection, and trip
+`dropDuplicates` on `trip_id` visible.
 
 Module 6 **`03 - Cleaning and Curated Outputs`** uses these variants as its
 only trip and payment inputs. It rejects the missing-key record from each file,
-cleans the remaining records, and writes those same DataFrames to
-`curated/trip/` and `curated/payment/`. The variants do not replace the core
-100-row logical-table contracts used by other source-reading notebooks.
+drops duplicate `trip_id` values on trip, cleans the remaining records, and
+writes those same DataFrames to `curated/trip/` and `curated/payment/`. The
+variants do not replace the core 100-row logical-table contracts used by other
+source-reading notebooks.
 
 JSON is newline-delimited; Parquet preserves decimals. Other payment formats
 may exist under `data/raw/` for authoring flexibility; Module 5’s primary
