@@ -148,12 +148,28 @@ trip_cast = (
 )
 
 
-print("Bad records from trip source after :try_cast")
+print("Bad records from trip source after try_cast:")
 trip_cast.filter(
     F.col("trip_id").isin("101", "102", "103", "104", "105", "106")
     | F.col("trip_id").isNull()
     | (F.trim(F.col("trip_id")) == "")
 ).show(truncate=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Compare the table above to **Bad records from trip source**. Only one value
+# MAGIC changes at this step in the output; the rest stay the same until later rules.
+# MAGIC
+# MAGIC | trip_id | Column | Source value | After `try_cast` | Why |
+# MAGIC |--------:|--------|--------------|------------------|-----|
+# MAGIC | 101 | `service_type` | ` Premium ` | Same | Cast does not normalize labels; fixed later. |
+# MAGIC | 102 | `service_type` | ` n/a ` | Same | Same. |
+# MAGIC | 103 | `trip_distance_miles` | `-1.00` | `-1.00` | Cast succeeds; negative distance fixed later (`> 0` rule). |
+# MAGIC | 104 | `service_type` | NULL (blank) | Same | Cast does not normalize labels; fixed later. |
+# MAGIC | 105 | `trip_distance_miles` | `not_a_number` | NULL | Invalid decimal text; `try_cast` returns NULL. |
+# MAGIC | 106 | `trip_distance_miles` | NULL (blank) | NULL | Missing field, not a failed cast; compare to trip 105. |
+# MAGIC | NULL | `trip_id` | NULL (missing key) | NULL | No key to cast; row rejected in the next step. |
 
 # COMMAND ----------
 
