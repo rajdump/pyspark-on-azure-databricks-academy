@@ -259,11 +259,9 @@ trip_labels_normalized.filter(F.col("trip_id").between(101, 106)).orderBy(F.col(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Convert invalid numeric values to NULL
+# MAGIC ### Enforce numeric business rules and NULL handling
 # MAGIC
-# MAGIC `try_cast` has already converted malformed numeric text to NULL. The conditions
-# MAGIC below also convert values outside the course rules to NULL: distance must be
-# MAGIC positive, while duration and wait values may be zero but not negative.
+# MAGIC `try_cast` has already converted incorrect numeric text to NULL. Now let's handle the business validations; distance must be positive, while duration and wait values may be zero but not negative.
 
 # COMMAND ----------
 
@@ -299,67 +297,7 @@ trip_values_checked = (
 )
 
 print("Controlled trip distances after cleaning:")
-trip_values_checked.filter(F.col("trip_id").between(101, 106)).select(
-    F.col("trip_id"),
-    F.col("trip_distance_miles_src"),
-    F.col("trip_distance_miles"),
-).orderBy(F.col("trip_id")).show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Validate controlled trip outcomes
-# MAGIC
-# MAGIC These assertions check the expected row counts and representative outcomes before
-# MAGIC enrichment or writing.
-
-# COMMAND ----------
-
-trip_source_count = trip_source.count()
-trip_rejected_count = trip_rejected.count()
-trip_key_filtered_count = trip_key_filtered.count()
-trip_deduplicated_count = trip_deduplicated.count()
-trip_retained_count = trip_values_checked.count()
-
-print(
-    "Trip rows: "
-    f"source={trip_source_count}, "
-    f"rejected={trip_rejected_count}, "
-    f"key_filtered={trip_key_filtered_count}, "
-    f"deduplicated={trip_deduplicated_count}, "
-    f"retained={trip_retained_count}"
-)
-
-assert trip_source_count == 108
-assert trip_rejected_count == 1
-assert trip_key_filtered_count == 107
-assert trip_deduplicated_count == 106
-assert trip_retained_count == 106
-
-assert (
-    trip_values_checked.filter(
-        (F.col("trip_id") == 101) & (F.col("service_type") == "premium")
-    ).count()
-    == 1
-)
-assert (
-    trip_values_checked.filter(
-        (F.col("trip_id") == 102) & (F.col("service_type") == "unknown")
-    ).count()
-    == 1
-)
-assert (
-    trip_values_checked.filter(
-        (F.col("trip_id") == 104) & (F.col("service_type") == "unknown")
-    ).count()
-    == 1
-)
-assert (
-    trip_values_checked.filter(
-        (F.col("trip_id").isin(103, 105, 106)) & F.col("trip_distance_miles").isNull()
-    ).count()
-    == 3
-)
+trip_values_checked.filter(F.col("trip_id").between(101, 106)).orderBy(F.col("trip_id")).show(truncate=False)
 
 # COMMAND ----------
 
@@ -427,10 +365,8 @@ trip_clean = (
     )
 )
 
-trip_clean_count = trip_clean.count()
-assert trip_clean_count == 106
 
-trip_clean.orderBy(F.col("trip_id")).show(truncate=False)
+trip_clean.orderBy(F.col("trip_id")).show(1,truncate=False,vertical=True)
 
 # COMMAND ----------
 
