@@ -312,7 +312,7 @@ trip_values_checked.filter(F.col("trip_id").between(101, 106)).orderBy(F.col("tr
 
 trip_clean = (
     trip_values_checked.withColumn(
-        "service_type_standardized",
+        "service_type",
         F.upper(F.col("service_type")),
     )
     .withColumn(
@@ -349,7 +349,6 @@ trip_clean = (
     .select(
         F.col("trip_id"),
         F.col("service_type"),
-        F.col("service_type_standardized"),
         F.col("service_label"),
         F.col("pickup_location_id"),
         F.col("dropoff_location_id"),
