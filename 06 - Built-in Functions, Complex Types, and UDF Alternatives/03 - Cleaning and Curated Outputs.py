@@ -3,15 +3,14 @@
 # MAGIC
 # MAGIC # 03 - Cleaning and Curated Outputs
 # MAGIC
-# MAGIC To create reliable datasets, we need clear rules to handle bad data. This includes deciding when to reject invalid rows, standardising the values, and keeping the keys needed for later processing. This notebook shows how we make these decisions with two small files that have bad data, and then applies the same rules to the main data we are working with.
+# MAGIC Production pipelines can fail due to inconsistent raw data. This notebook demonstrates a standard batch-cleaning pattern commonly used in real projects. It applies technical and business validation rules, rejects invalid rows, normalises business fields, maintains the necessary rows for later processing and saves curated outputs for downstream application/projects
 # MAGIC
 # MAGIC You will:
 # MAGIC
-# MAGIC 1. Review how to safely handle null values, clean up bad data, and ensure safe data type conversions.
-# MAGIC 2. Create a single step-by-step process for fixing each bad-data file.
-# MAGIC 3. Apply production-style guards to ensure the quality of the main `trip` and `payment` data.
-# MAGIC 4. Save the cleaned and enhanced columns in the final outputs.
-# MAGIC 5. Write and check the final `trip` and `payment` datasets.
+# MAGIC 1. Implement methods for safely handling null values, cleaning up inaccurate data, and ensuring safe data type conversions.
+# MAGIC 2. Apply production-quality checks to ensure the integrity of the `trip` and `payment` data.
+# MAGIC 3. Save the cleaned and enhanced columns in the final output.
+# MAGIC 4. Write and verify the final `trip` and `payment` datasets.
 # MAGIC
 # MAGIC **Prerequisites.** Complete Module 6 **`01 - Column Transforms with Built-in
 # MAGIC Functions`** and **`02 - Complex Types: Structs, Arrays, and explode`**. Run Module
@@ -23,17 +22,17 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Both source files use the canonical column names, but every field is read as a
-# MAGIC string. `try_cast` can then return NULL for malformed text without stopping the
-# MAGIC notebook under ANSI mode.
+# MAGIC This notebook reads all CSV columns as string intentionally.
+# MAGIC In production, do not default every column to STRING.
+# MAGIC Use explicit business data types when source format and data quality are reliable.
+# MAGIC Use string-first ingestion only for unreliable inputs where raw values must be validated before casting to target types.
 # MAGIC
 # MAGIC The source files contain:
 # MAGIC
 # MAGIC - `bad_trip_data.csv`: 100 original trip records and 7 controlled bad records
 # MAGIC - `bad_payment_data.csv`: 100 original payment records and 6 controlled bad records
 # MAGIC
-# MAGIC One record in each file has no `trip_id` and will be rejected. The other controlled
-# MAGIC records remain after their values are cleaned.
+# MAGIC Each file contains one record that lacks a `trip_id`, and unfortunately, this record will not be accepted. All other valid records will stay in the dataset after their values have been properly cleaned.
 
 # COMMAND ----------
 
@@ -88,12 +87,12 @@ driver_payout_amount string
 # MAGIC
 # MAGIC The pipeline will:
 # MAGIC
-# MAGIC - cast each typed field with `try_cast`
-# MAGIC - retain the raw key and distance text for diagnosis
-# MAGIC - isolate and reject the record whose `trip_id` becomes NULL
-# MAGIC - trim and lowercase `service_type`; map blanks and `n/a` to `unknown`
-# MAGIC - convert malformed or non-positive distance values to NULL
-# MAGIC - convert negative duration and wait values to NULL while keeping zero as valid
+# MAGIC - Use `try_cast` to convert each typed field.
+# MAGIC - Retain the original raw key and distance text for diagnostic purposes.
+# MAGIC - Identify and reject records where the `trip_id` is NULL.
+# MAGIC - Trim and convert `service_type` to lowercase; map blank values and "n/a" to "unknown."
+# MAGIC - Convert malformed or non-positive distance values to NULL.
+# MAGIC - Convert negative duration and wait values to NULL, while keeping zero as a valid entry.
 
 # COMMAND ----------
 
@@ -106,7 +105,7 @@ trip_source = (
     .load(trip_source_path)
 )
 
-print("Controlled trip source records:")
+print("Bad records from trip source:")
 trip_source.filter(
     F.col("trip_id").isin("101", "102", "103", "104", "105", "106")
     | F.col("trip_id").isNull()
@@ -117,17 +116,11 @@ trip_source.filter(
 
 # MAGIC %md
 # MAGIC ### Safely cast typed fields
-# MAGIC
-# MAGIC `trip_distance_miles_src` keeps the original text beside the cast result. A
-# MAGIC nonblank raw value followed by a NULL cast result identifies malformed numeric
-# MAGIC text. A blank CSV field is read as NULL, so it remains distinguishable from a
-# MAGIC failed conversion.
 
 # COMMAND ----------
 
 trip_cast = (
-    trip_source.withColumn("trip_id_src", F.col("trip_id"))
-    .withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
+    trip_source.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
     .withColumn(
         "pickup_location_id",
         F.col("pickup_location_id").try_cast("int"),
@@ -136,7 +129,6 @@ trip_cast = (
         "dropoff_location_id",
         F.col("dropoff_location_id").try_cast("int"),
     )
-    .withColumn("trip_distance_miles_src", F.col("trip_distance_miles"))
     .withColumn(
         "trip_distance_miles",
         F.col("trip_distance_miles").try_cast("decimal(8,2)"),
@@ -155,15 +147,12 @@ trip_cast = (
     )
 )
 
-print("Trip records where distance text was present but try_cast returned NULL:")
+
+print("Bad records from trip source after :try_cast")
 trip_cast.filter(
-    F.col("trip_distance_miles_src").isNotNull()
-    & (F.trim(F.col("trip_distance_miles_src")) != "")
-    & F.col("trip_distance_miles").isNull(),
-).select(
-    F.col("trip_id"),
-    F.col("trip_distance_miles_src"),
-    F.col("trip_distance_miles"),
+    F.col("trip_id").isin("101", "102", "103", "104", "105", "106")
+    | F.col("trip_id").isNull()
+    | (F.trim(F.col("trip_id")) == "")
 ).show(truncate=False)
 
 # COMMAND ----------
