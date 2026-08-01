@@ -179,8 +179,8 @@ trip_cast.filter(
 
 # MAGIC %md
 # MAGIC ### Reject records without a usable key
-# MAGIC `trip_id` is necessary for joins. Remove the row with a missing trip_id. The remaining data has 107 rows.
-# MAGIC
+# MAGIC `trip_id` is necessary for joins. Remove the row with a missing trip_id.
+
 
 # COMMAND ----------
 
@@ -205,6 +205,9 @@ trip_key_filtered = trip_cast.filter(F.col("trip_id").isNotNull())
 # COMMAND ----------
 
 trip_deduplicated = trip_key_filtered.dropDuplicates(["trip_id"])
+
+print(f"Trip rows after key filter: {trip_key_filtered.count()}")
+print(f"Trip rows after dropDuplicates: {trip_deduplicated.count()}")
 
 # COMMAND ----------
 
@@ -301,9 +304,6 @@ trip_values_checked.filter(F.col("trip_id").between(101, 106)).orderBy(F.col("tr
 # MAGIC %md
 # MAGIC ### Add trip enrichments and select the curated contract
 # MAGIC
-# MAGIC The enrichment columns come from Module 6 **`01 - Column Transforms with Built-in
-# MAGIC Functions`**.
-# MAGIC
 # MAGIC ### Trip timing columns at a glance
 # MAGIC
 # MAGIC | Column | Business meaning | Formula / Source |
@@ -369,7 +369,7 @@ trip_clean = (
 )
 
 
-trip_clean.orderBy(F.col("trip_id")).show(5,truncate=False)
+trip_clean.orderBy(F.col("trip_id")).show(5, truncate=False)
 
 # COMMAND ----------
 
@@ -467,8 +467,7 @@ payment_cast.filter(
 
 # MAGIC %md
 # MAGIC ### Reject records without a usable key
-# MAGIC `trip_id` is necessary for joins. Remove the row with a missing trip_id. The remaining data has 105 rows.
-# MAGIC
+# MAGIC `trip_id` is necessary for joins. Remove the row with a missing trip_id.
 
 # COMMAND ----------
 
