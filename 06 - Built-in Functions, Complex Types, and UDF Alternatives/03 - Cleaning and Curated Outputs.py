@@ -8,9 +8,9 @@
 # MAGIC You will:
 # MAGIC
 # MAGIC 1. Implement methods for safely handling null values, cleaning up inaccurate data, and ensuring safe data type conversions.
-# MAGIC 2. Apply production-quality checks to ensure the integrity of the `trip` and `payment` data.
+# MAGIC 2. Apply production-quality cleaning rules to ensure reliable `trip` and `payment` outputs.
 # MAGIC 3. Save the cleaned and enhanced columns in the final output.
-# MAGIC 4. Write and verify the final `trip` and `payment` datasets.
+# MAGIC 4. Write and review the final `trip` and `payment` datasets.
 # MAGIC
 # MAGIC **Prerequisites.** Complete Module 6 **`01 - Column Transforms with Built-in
 # MAGIC Functions`** and **`02 - Complex Types: Structs, Arrays, and explode`**. Run Module
@@ -199,7 +199,7 @@ trip_key_filtered = trip_cast.filter(F.col("trip_id").isNotNull())
 
 # MAGIC %md
 # MAGIC ### Drop duplicate `trip_id` values
-# MAGIC Keep one row per `trip_id` before normalization and downstream validation.
+# MAGIC Keep one row per `trip_id` before normalization and downstream transforms.
 
 # COMMAND ----------
 
@@ -315,7 +315,7 @@ trip_values_checked.filter(F.col("trip_id").between(101, 106)).orderBy(F.col("tr
 # MAGIC | `driver_arrival_to_pickup_mins` | Indicates the time taken for the passenger to board the vehicle after the driver arrives at the pickup point. | Source column |
 # MAGIC | `request_to_driver_arrival_mins` | Refers to the estimated time taken for the driver to arrive at the pickup location. | `request_to_pickup_mins - driver_arrival_to_pickup_mins` |
 # MAGIC | `ride_duration_mins` | Refers to the actual travel time from the moment the passenger is picked up until they are dropped off. | Source column |
-# MAGIC | `ride_pickup_wait_gap_mins` | Refers to the difference between the travel time during the ride and the waiting time before pickup. If the value is negative, it means the ride took less time than the wait before pickup. | `ride_duration_mins - request_to_pickup_mins` |
+# MAGIC | `diff_ride_duration_wait_mins` | Refers to the difference between the travel time during the ride and the waiting time before pickup. If the value is negative, it means the ride took less time than the wait before pickup. | `ride_duration_mins - request_to_pickup_mins` |
 # MAGIC
 # MAGIC The explicit NULL branch in `ride_duration_band` prevents a missing duration
 # MAGIC from being mislabeled as a long ride.
@@ -772,7 +772,7 @@ payment_exercise_source.show(truncate=False)
 # MAGIC   NULL.
 # MAGIC - Added the existing Module 6 enrichments to those same cleaned DataFrames.
 # MAGIC - Wrote `trip_clean` and `payment_clean` to `curated/trip/` and
-# MAGIC   `curated/payment/`, then verified 106 trip records and 105 payment records.
+# MAGIC   `curated/payment/`, then reviewed 106 trip records and validated 105 payment records.
 # MAGIC
 # MAGIC **Next:** Module 6 **`04 - Built-ins First: When (Not) to Use UDFs`** compares
 # MAGIC built-in expressions with Python and Pandas UDF alternatives.
