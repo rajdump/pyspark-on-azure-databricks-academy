@@ -384,11 +384,11 @@ trip_clean.orderBy(F.col("trip_id")).show(5,truncate=False)
 # MAGIC
 # MAGIC The pipeline will:
 # MAGIC
-# MAGIC - cast the key and each amount with `try_cast`
-# MAGIC - retain the raw key and selected amount text for diagnosis
-# MAGIC - isolate and reject the record whose `trip_id` becomes NULL
-# MAGIC - trim and lowercase `payment_method`; map blanks to `unknown`
-# MAGIC - convert malformed or negative amounts to NULL
+# MAGIC - Use `try_cast` to convert each typed field.
+# MAGIC - Retain the original raw key and selected amount text for diagnostic purposes.
+# MAGIC - Identify and reject records where the `trip_id` is NULL.
+# MAGIC - Trim and convert `payment_method` to lowercase; map blank values to "unknown."
+# MAGIC - Convert malformed or negative amount values to NULL, while keeping zero as a valid entry.
 
 # COMMAND ----------
 
