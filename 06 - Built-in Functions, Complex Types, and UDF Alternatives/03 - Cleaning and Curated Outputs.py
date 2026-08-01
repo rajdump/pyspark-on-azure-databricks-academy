@@ -674,12 +674,12 @@ print(f"Wrote curated payment data to {curated_payment_path}")
 
 # COMMAND ----------
 
-trip_curated = spark.read.parquet(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
-    curated_trip_path
-)
-payment_curated = spark.read.parquet(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
-    curated_payment_path
-)
+trip_curated = spark.read.format(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    "parquet"
+).load(curated_trip_path)
+payment_curated = spark.read.format(  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    "parquet"
+).load(curated_payment_path)
 
 trip_curated_count = trip_curated.count()
 payment_curated_count = payment_curated.count()
