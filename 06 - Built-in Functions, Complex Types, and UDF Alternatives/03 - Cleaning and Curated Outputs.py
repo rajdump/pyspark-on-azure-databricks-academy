@@ -3,7 +3,7 @@
 # MAGIC
 # MAGIC # 03 - Cleaning and Curated Outputs
 # MAGIC
-# MAGIC Production pipelines can fail due to inconsistent raw data. This notebook demonstrates a standard batch-cleaning pattern commonly used in real projects. It applies technical and business validation rules, rejects invalid rows, normalises business fields, maintains the necessary rows for later processing and saves curated outputs for downstream application/projects
+# MAGIC Production pipelines can fail due to inconsistent raw data. This notebook demonstrates a standard batch-cleaning pattern commonly used in real projects. It applies technical and business validation rules, rejects invalid rows, normalizes business fields, maintains the necessary rows for later processing and saves curated outputs for downstream application/projects
 # MAGIC
 # MAGIC You will:
 # MAGIC
@@ -32,7 +32,10 @@
 # MAGIC - `bad_trip_data.csv`: 100 original trip records and 8 controlled bad records
 # MAGIC - `bad_payment_data.csv`: 100 original payment records and 6 controlled bad records
 # MAGIC
-# MAGIC Each file contains one record that lacks a `trip_id`, and unfortunately, this record will not be accepted. All other valid records will stay in the dataset after their values have been properly cleaned.
+# MAGIC Each file contains one record that lacks a `trip_id`; that row is rejected.
+# MAGIC The trip source also includes a duplicate `trip_id` 101, which `dropDuplicates`
+# MAGIC removes so curated trip keeps one row per key. Remaining records stay after
+# MAGIC their values are cleaned.
 
 # COMMAND ----------
 
@@ -82,13 +85,12 @@ driver_payout_amount string
 # MAGIC ## 1. Clean and enrich trip data
 # MAGIC
 # MAGIC The trip source contains controlled examples of casing and whitespace, sentinel and
-# MAGIC blank labels, malformed numeric text, a negative distance, a blank distance, and a
-# MAGIC missing key.
+# MAGIC blank labels, malformed numeric text, a negative distance, a blank distance, a
+# MAGIC duplicate `trip_id` 101, and a missing key.
 # MAGIC
 # MAGIC The pipeline will:
 # MAGIC
 # MAGIC - Use `try_cast` to convert each typed field.
-# MAGIC - Retain the original raw key and distance text for diagnostic purposes.
 # MAGIC - Identify and reject records where the `trip_id` is NULL.
 # MAGIC - Drop duplicate `trip_id` values before label normalization.
 # MAGIC - Trim and convert `service_type` to lowercase; map blank values and "n/a" to "unknown."
@@ -155,14 +157,13 @@ print("Bad records from trip source after try_cast:")
 trip_cast.filter(
     F.col("trip_id").isin("101", "102", "103", "104", "105", "106")
     | F.col("trip_id").isNull()
-    | (F.trim(F.col("trip_id")) == "")
 ).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Compare the table above to **Bad records from trip source**. Only one value
-# MAGIC changes at this step in the output; the rest stay the same until later rules.
+# MAGIC Compare the table above to **Bad records from trip source**. Only selected
+# MAGIC values change at this step; the rest stay the same until later rules.
 # MAGIC
 # MAGIC | trip_id | Column | Source value | After `try_cast` | Why |
 # MAGIC |--------:|--------|--------------|------------------|-----|
@@ -207,7 +208,6 @@ trip_deduplicated = trip_key_filtered.dropDuplicates(["trip_id"])
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 12
 # MAGIC %md
 # MAGIC ### Normalize service labels
 # MAGIC
@@ -233,11 +233,8 @@ trip_deduplicated = trip_key_filtered.dropDuplicates(["trip_id"])
 # MAGIC > **Why two steps?** Trim and lowercase run first so that `" N/A "` becomes
 # MAGIC > `"n/a"` before the sentinel check. Reversing the order would let dirty
 # MAGIC > variants slip through uncaught.
-# MAGIC
 
 # COMMAND ----------
-
-
 
 trip_labels_normalized = trip_deduplicated.withColumn(
     "service_type",
@@ -261,7 +258,7 @@ trip_labels_normalized.filter(F.col("trip_id").between(101, 106)).orderBy(F.col(
 # MAGIC %md
 # MAGIC ### Enforce numeric business rules and NULL handling
 # MAGIC
-# MAGIC `try_cast` has already converted incorrect numeric text to NULL. Now let's handle the business validations; distance must be positive, while duration and wait values may be zero but not negative.
+# MAGIC `try_cast` has already converted incorrect numeric text to NULL. Now let's handle the business rules; distance must be positive, while duration and wait values may be zero but not negative.
 
 # COMMAND ----------
 
@@ -385,7 +382,6 @@ trip_clean.orderBy(F.col("trip_id")).show(5,truncate=False)
 # MAGIC The pipeline will:
 # MAGIC
 # MAGIC - Use `try_cast` to convert each typed field.
-# MAGIC - Retain the original raw key and selected amount text for diagnostic purposes.
 # MAGIC - Identify and reject records where the `trip_id` is NULL.
 # MAGIC - Trim and convert `payment_method` to lowercase; map blank values to "unknown."
 # MAGIC - Convert malformed or negative amount values to NULL, while keeping zero as a valid entry.
@@ -401,32 +397,28 @@ payment_source = (
     .load(payment_source_path)
 )
 
-print("Controlled payment source records:")
+print("Bad records from payment source:")
 payment_source.filter(
     F.col("trip_id").isin("101", "102", "103", "104", "105")
     | F.col("trip_id").isNull()
     | (F.trim(F.col("trip_id")) == "")
 ).show(truncate=False)
 
+payment_source.printSchema()
+
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Safely cast typed fields
-# MAGIC
-# MAGIC The raw base fare, surge, and tip values stay beside their cast results because the
-# MAGIC controlled records use those fields to demonstrate different invalid inputs.
 
 # COMMAND ----------
 
 payment_cast = (
-    payment_source.withColumn("trip_id_src", F.col("trip_id"))
-    .withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
-    .withColumn("base_fare_amount_src", F.col("base_fare_amount"))
+    payment_source.withColumn("trip_id", F.col("trip_id").try_cast("bigint"))
     .withColumn(
         "base_fare_amount",
         F.col("base_fare_amount").try_cast("decimal(10,2)"),
     )
-    .withColumn("surge_amount_src", F.col("surge_amount"))
     .withColumn(
         "surge_amount",
         F.col("surge_amount").try_cast("decimal(10,2)"),
@@ -435,7 +427,6 @@ payment_cast = (
         "tax_amount",
         F.col("tax_amount").try_cast("decimal(10,2)"),
     )
-    .withColumn("tip_amount_src", F.col("tip_amount"))
     .withColumn(
         "tip_amount",
         F.col("tip_amount").try_cast("decimal(10,2)"),
@@ -450,21 +441,34 @@ payment_cast = (
     )
 )
 
-print("Payment records where tip text was present but try_cast returned NULL:")
+print("Bad records from payment source after try_cast:")
 payment_cast.filter(
-    F.col("tip_amount_src").isNotNull()
-    & (F.trim(F.col("tip_amount_src")) != "")
-    & F.col("tip_amount").isNull(),
-).select(
-    F.col("trip_id"),
-    F.col("tip_amount_src"),
-    F.col("tip_amount"),
+    F.col("trip_id").isin("101", "102", "103", "104", "105")
+    | F.col("trip_id").isNull()
 ).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC Compare the table above to **Bad records from payment source**. Only selected
+# MAGIC values change at this step; the rest stay the same until later rules.
+# MAGIC
+# MAGIC | trip_id | Column | Source value | After `try_cast` | Why |
+# MAGIC |--------:|--------|--------------|------------------|-----|
+# MAGIC | 101 | `payment_method` | ` Card ` | Same | Cast does not normalize labels; fixed later. |
+# MAGIC | 102 | `payment_method` | ` cash ` | Same | Same. |
+# MAGIC | 102 | `surge_amount` | `-1.50` | `-1.50` | Cast succeeds; negative amount fixed later (`>= 0` rule). |
+# MAGIC | 103 | `tip_amount` | `not_a_number` | NULL | Invalid decimal text; `try_cast` returns NULL. |
+# MAGIC | 104 | `base_fare_amount` | `-5.00` | `-5.00` | Cast succeeds; negative amount fixed later (`>= 0` rule). |
+# MAGIC | 105 | `payment_method` | NULL (blank) | Same | Cast does not normalize labels; fixed later. |
+# MAGIC | NULL | `trip_id` | NULL (missing key) | NULL | No key to cast; row rejected in the next step. |
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ### Reject records without a usable key
+# MAGIC `trip_id` is necessary for joins. Remove the row with a missing trip_id. The remaining data has 105 rows.
+# MAGIC
 
 # COMMAND ----------
 
@@ -472,17 +476,40 @@ payment_rejected = payment_cast.filter(F.col("trip_id").isNull())
 
 print("Rejected payment records:")
 payment_rejected.select(
-    F.col("trip_id_src"),
+    F.col("trip_id"),
     F.col("payment_method"),
-    F.col("base_fare_amount_src"),
+    F.col("base_fare_amount"),
 ).show(truncate=False)
 
+# Remove the row with a missing trip_id.
 payment_key_filtered = payment_cast.filter(F.col("trip_id").isNotNull())
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Normalize payment labels
+# MAGIC
+# MAGIC Raw `payment_method` values arrive with inconsistent casing, extra whitespace,
+# MAGIC and blank labels. The next cell applies a two-step normalization so downstream
+# MAGIC joins and aggregations work reliably:
+# MAGIC
+# MAGIC | Step | What it does | Function used |
+# MAGIC |------|-------------|---------------|
+# MAGIC | 1. Trim & lowercase | Removes leading/trailing spaces, converts to lowercase | `F.lower(F.trim(...))` |
+# MAGIC | 2. Replace blanks | Replaces `""` and NULL with `"unknown"` | `F.coalesce(F.when(...), F.lit("unknown"))` |
+# MAGIC
+# MAGIC **Example transformations:**
+# MAGIC
+# MAGIC | Raw input | After step 1 | After step 2 (final) |
+# MAGIC |-----------|-------------|----------------------|
+# MAGIC | `"  Card "` | `"card"` | `"card"` |
+# MAGIC | `""` (empty) | `""` | `"unknown"` |
+# MAGIC | NULL | NULL | `"unknown"` |
+# MAGIC | `"cash"` | `"cash"` | `"cash"` |
+# MAGIC
+# MAGIC > **Why two steps?** Trim and lowercase run first so blank and dirty values are
+# MAGIC > normalized consistently before the blank check.
+# MAGIC
 
 # COMMAND ----------
 
@@ -501,18 +528,16 @@ payment_labels_normalized = payment_key_filtered.withColumn(
 )
 
 print("Controlled payment labels after normalization:")
-payment_labels_normalized.filter(F.col("trip_id").between(101, 105)).select(
-    F.col("trip_id"),
-    F.col("payment_method"),
-).orderBy(F.col("trip_id")).show(truncate=False)
+payment_labels_normalized.filter(F.col("trip_id").between(101, 105)).orderBy(
+    F.col("trip_id")
+).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Enforce numeric business rules and NULL handling
 # MAGIC
-# MAGIC `try_cast` has already converted incorrect numeric text to NULL. Now let's
-# MAGIC handle the business validations; payment amounts should be zero or positive.
+# MAGIC `try_cast` has already converted incorrect numeric text to NULL. Now let's handle the business rules; payment amounts may be zero but not negative.
 
 # COMMAND ----------
 
@@ -562,20 +587,16 @@ payment_values_checked = (
 )
 
 print("Controlled payment amounts after cleaning:")
-payment_values_checked.filter(F.col("trip_id").between(101, 105)).select(
-    F.col("trip_id"),
-    F.col("base_fare_amount_src"),
-    F.col("base_fare_amount"),
-    F.col("surge_amount_src"),
-    F.col("surge_amount"),
-    F.col("tip_amount_src"),
-    F.col("tip_amount"),
-).orderBy(F.col("trip_id")).show(truncate=False)
+payment_values_checked.filter(F.col("trip_id").between(101, 105)).orderBy(
+    F.col("trip_id")
+).show(truncate=False)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Add payment enrichments and select the curated contract
+# MAGIC
+# MAGIC ### Payment amount columns at a glance
 # MAGIC
 # MAGIC | Column | Business meaning | Formula / Source |
 # MAGIC |---|---|---|
@@ -632,7 +653,7 @@ payment_clean.orderBy(F.col("trip_id")).show(truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Write and verify curated outputs
+# MAGIC ## 3. Write and review curated outputs
 # MAGIC
 # MAGIC `.mode("overwrite")` makes this course workflow idempotent: rerunning the notebook
 # MAGIC replaces the previous output instead of appending duplicate records. The same
@@ -722,7 +743,7 @@ payment_exercise_source.show(truncate=False)
 # MAGIC   expose malformed values safely under ANSI mode.
 # MAGIC - Used one staged chain per dataset to cast fields, diagnose failed conversions,
 # MAGIC   reject missing keys, normalize labels, and convert invalid numeric values to
-# MAGIC   NULL.
+# MAGIC   NULL. On trip, also dropped duplicate `trip_id` values.
 # MAGIC - Added the existing Module 6 enrichments to those same cleaned DataFrames.
 # MAGIC - Wrote `trip_clean` and `payment_clean` to `curated/trip/` and
 # MAGIC   `curated/payment/`, then printed curated readback counts for trip and payment.
