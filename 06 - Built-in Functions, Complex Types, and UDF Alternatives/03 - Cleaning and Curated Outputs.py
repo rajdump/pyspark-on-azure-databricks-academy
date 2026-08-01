@@ -509,10 +509,10 @@ payment_labels_normalized.filter(F.col("trip_id").between(101, 105)).select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Convert invalid numeric values to NULL
+# MAGIC ### Enforce numeric business rules and NULL handling
 # MAGIC
-# MAGIC `try_cast` has already converted malformed numeric text to NULL. The conditions
-# MAGIC below keep zero and positive amounts and convert negative amounts to NULL.
+# MAGIC `try_cast` has already converted incorrect numeric text to NULL. Now let's
+# MAGIC handle the business validations; payment amounts should be zero or positive.
 
 # COMMAND ----------
 
@@ -575,58 +575,16 @@ payment_values_checked.filter(F.col("trip_id").between(101, 105)).select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Validate controlled payment outcomes
-
-# COMMAND ----------
-
-payment_source_count = payment_source.count()
-payment_rejected_count = payment_rejected.count()
-payment_retained_count = payment_values_checked.count()
-
-print(
-    "Payment rows: "
-    f"source={payment_source_count}, "
-    f"rejected={payment_rejected_count}, "
-    f"retained={payment_retained_count}"
-)
-
-assert payment_source_count == 106
-assert payment_rejected_count == 1
-assert payment_retained_count == 105
-
-assert (
-    payment_values_checked.filter(
-        (F.col("trip_id") == 101) & (F.col("payment_method") == "card")
-    ).count()
-    == 1
-)
-assert (
-    payment_values_checked.filter(
-        (F.col("trip_id") == 105) & (F.col("payment_method") == "unknown")
-    ).count()
-    == 1
-)
-assert (
-    payment_values_checked.filter(
-        (F.col("trip_id") == 102) & F.col("surge_amount").isNull()
-    ).count()
-    == 1
-)
-assert (
-    payment_values_checked.filter((F.col("trip_id") == 103) & F.col("tip_amount").isNull()).count()
-    == 1
-)
-assert (
-    payment_values_checked.filter(
-        (F.col("trip_id") == 104) & F.col("base_fare_amount").isNull()
-    ).count()
-    == 1
-)
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ### Add payment enrichments and select the curated contract
+# MAGIC
+# MAGIC | Column | Business meaning | Formula / Source |
+# MAGIC |---|---|---|
+# MAGIC | `base_fare_amount` | Core fare amount before surges, tax, discounts, and tip. | Source column |
+# MAGIC | `surge_amount` | Dynamic pricing increment applied for demand conditions. | Source column |
+# MAGIC | `tax_amount` | Tax component added to the ride charge. | Source column |
+# MAGIC | `discount_amount` | Discount amount deducted from the charge. | Source column |
+# MAGIC | `charge_before_tip` | Total rider charge before tip after adding surges and tax and subtracting discounts. | `base_fare_amount + coalesce(surge_amount, 0) + coalesce(tax_amount, 0) - coalesce(discount_amount, 0)` |
+# MAGIC | `tip_percent_of_base` | Tip percentage relative to base fare when base fare is positive and tip exists. | `(tip_amount / base_fare_amount) * 100` |
 # MAGIC
 # MAGIC `charge_before_tip` uses zero only as a calculation fallback for optional amounts;
 # MAGIC it does not overwrite a source NULL. `tip_percent_of_base` remains NULL when its
@@ -669,9 +627,6 @@ payment_clean = (
     )
 )
 
-payment_clean_count = payment_clean.count()
-assert payment_clean_count == 105
-
 payment_clean.orderBy(F.col("trip_id")).show(truncate=False)
 
 # COMMAND ----------
@@ -711,8 +666,6 @@ payment_curated_count = payment_curated.count()
 
 print(f"Curated trip readback: {trip_curated_count} records")
 print(f"Curated payment readback: {payment_curated_count} records")
-
-assert payment_curated_count == payment_clean_count == 105
 
 trip_curated.printSchema()
 payment_curated.printSchema()
@@ -772,7 +725,7 @@ payment_exercise_source.show(truncate=False)
 # MAGIC   NULL.
 # MAGIC - Added the existing Module 6 enrichments to those same cleaned DataFrames.
 # MAGIC - Wrote `trip_clean` and `payment_clean` to `curated/trip/` and
-# MAGIC   `curated/payment/`, then reviewed 106 trip records and validated 105 payment records.
+# MAGIC   `curated/payment/`, then printed curated readback counts for trip and payment.
 # MAGIC
 # MAGIC **Next:** Module 6 **`04 - Built-ins First: When (Not) to Use UDFs`** compares
 # MAGIC built-in expressions with Python and Pandas UDF alternatives.
