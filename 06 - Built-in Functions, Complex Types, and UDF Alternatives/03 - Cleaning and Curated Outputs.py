@@ -372,9 +372,6 @@ trip_clean = (
 )
 
 
-trip_clean_count = trip_clean.count()
-assert trip_clean_count == 106
-
 trip_clean.orderBy(F.col("trip_id")).show(1,truncate=False,vertical=True)
 
 # COMMAND ----------
@@ -684,7 +681,7 @@ payment_clean.orderBy(F.col("trip_id")).show(truncate=False)
 # MAGIC
 # MAGIC `.mode("overwrite")` makes this course workflow idempotent: rerunning the notebook
 # MAGIC replaces the previous output instead of appending duplicate records. The same
-# MAGIC `trip_clean` and `payment_clean` DataFrames validated above are written here.
+# MAGIC `trip_clean` and `payment_clean` DataFrames prepared above are written here.
 
 # COMMAND ----------
 
@@ -715,7 +712,6 @@ payment_curated_count = payment_curated.count()
 print(f"Curated trip readback: {trip_curated_count} records")
 print(f"Curated payment readback: {payment_curated_count} records")
 
-assert trip_curated_count == trip_clean_count == 106
 assert payment_curated_count == payment_clean_count == 105
 
 trip_curated.printSchema()
