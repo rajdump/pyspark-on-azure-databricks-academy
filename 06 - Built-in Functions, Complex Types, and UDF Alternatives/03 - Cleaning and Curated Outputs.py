@@ -309,13 +309,13 @@ trip_values_checked.filter(F.col("trip_id").between(101, 106)).orderBy(F.col("tr
 # MAGIC
 # MAGIC ### Trip timing columns at a glance
 # MAGIC
-# MAGIC | Column | Business meaning | Formula / Source | Example interpretation |
-# MAGIC |---|---|---|---|
-# MAGIC | `request_to_pickup_mins` | Represents the total time from the moment the rider requests the trip until the passenger boards the vehicle. | Source column | `12` means pickup was completed 12 minutes after request. |
-# MAGIC | `driver_arrival_to_pickup_mins` | Indicates the time taken for the passenger to board the vehicle after the driver arrives at the pickup point. | Source column | `3` means the passenger boarded 3 minutes after driver arrival. |
-# MAGIC | `request_to_driver_arrival_mins` | Refers to the estimated time taken for the driver to arrive at the pickup location. | `request_to_pickup_mins - driver_arrival_to_pickup_mins` | `12 - 3 = 9` minutes to reach pickup. |
-# MAGIC | `ride_duration_mins` | Refers to the actual travel time from the moment the passenger is picked up until they are dropped off. | Source column | `30` means the in-trip travel lasted 30 minutes. |
-# MAGIC | `ride_pickup_wait_gap_mins` | Refers to the difference between the travel time during the ride and the waiting time before pickup. If the value is negative, it means the ride took less time than the wait before pickup. | `ride_duration_mins - request_to_pickup_mins` | `30 - 12 = 18` minutes. |
+# MAGIC | Column | Business meaning | Formula / Source |
+# MAGIC |---|---|---|
+# MAGIC | `request_to_pickup_mins` | Represents the total time from the moment the rider requests the trip until the passenger boards the vehicle. | Source column |
+# MAGIC | `driver_arrival_to_pickup_mins` | Indicates the time taken for the passenger to board the vehicle after the driver arrives at the pickup point. | Source column |
+# MAGIC | `request_to_driver_arrival_mins` | Refers to the estimated time taken for the driver to arrive at the pickup location. | `request_to_pickup_mins - driver_arrival_to_pickup_mins` |
+# MAGIC | `ride_duration_mins` | Refers to the actual travel time from the moment the passenger is picked up until they are dropped off. | Source column |
+# MAGIC | `ride_pickup_wait_gap_mins` | Refers to the difference between the travel time during the ride and the waiting time before pickup. If the value is negative, it means the ride took less time than the wait before pickup. | `ride_duration_mins - request_to_pickup_mins` |
 # MAGIC
 # MAGIC The explicit NULL branch in `ride_duration_band` prevents a missing duration
 # MAGIC from being mislabeled as a long ride.
