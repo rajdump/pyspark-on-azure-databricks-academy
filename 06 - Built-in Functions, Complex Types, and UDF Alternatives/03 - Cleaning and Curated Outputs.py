@@ -165,7 +165,7 @@ trip_cast.filter(
 # MAGIC |--------:|--------|--------------|------------------|-----|
 # MAGIC | 101 | `service_type` | ` Premium ` | Same | Cast does not normalize labels; fixed later. |
 # MAGIC | 102 | `service_type` | ` n/a ` | Same | Same. |
-# MAGIC | 103 | `trip_distance_miles` | `-1.00` | `-1.00` | Cast succeeds; negative distance fixed later (`> 0` rule). |
+# MAGIC | 103 | `trip_distance_miles` | `-1.00` | `-1.00` | Cast succeeds; but business won't accept negative distance fixed later (`> 0` rule). |
 # MAGIC | 104 | `service_type` | NULL (blank) | Same | Cast does not normalize labels; fixed later. |
 # MAGIC | 105 | `trip_distance_miles` | `not_a_number` | NULL | Invalid decimal text; `try_cast` returns NULL. |
 # MAGIC | 106 | `trip_distance_miles` | NULL (blank) | NULL | Missing field, not a failed cast; compare to trip 105. |
