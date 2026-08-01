@@ -660,8 +660,8 @@ payment_clean.orderBy(F.col("trip_id")).show(truncate=False)
 
 # COMMAND ----------
 
-trip_clean.write.mode("overwrite").parquet(curated_trip_path)
-payment_clean.write.mode("overwrite").parquet(curated_payment_path)
+trip_clean.write.format("parquet").mode("overwrite").save(curated_trip_path)
+payment_clean.write.format("parquet").mode("overwrite").save(curated_payment_path)
 
 print(f"Wrote curated trip data to {curated_trip_path}")
 print(f"Wrote curated payment data to {curated_payment_path}")
