@@ -344,7 +344,7 @@ trip_clean = (
         F.col("request_to_pickup_mins") - F.col("driver_arrival_to_pickup_mins"),
     )
     .withColumn(
-        "ride_pickup_wait_gap_mins",
+        "diff_ride_duration_wait_mins",
         F.col("ride_duration_mins") - F.col("request_to_pickup_mins"),
     )
     .withColumn(
@@ -363,16 +363,16 @@ trip_clean = (
         F.col("trip_distance_miles"),
         F.col("trip_distance_km"),
         F.col("request_to_pickup_mins"),
-        F.col("ride_duration_mins"),
         F.col("driver_arrival_to_pickup_mins"),
         F.col("request_to_driver_arrival_mins"),
-        F.col("ride_pickup_wait_gap_mins"),
+        F.col("ride_duration_mins"),
+        F.col("diff_ride_duration_wait_mins"),
         F.col("ride_duration_band"),
     )
 )
 
 
-trip_clean.orderBy(F.col("trip_id")).show(1,truncate=False,vertical=True)
+trip_clean.orderBy(F.col("trip_id")).show(5,truncate=False)
 
 # COMMAND ----------
 
