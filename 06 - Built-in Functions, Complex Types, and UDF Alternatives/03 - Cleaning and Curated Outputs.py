@@ -29,7 +29,7 @@
 # MAGIC
 # MAGIC The source files contain:
 # MAGIC
-# MAGIC - `bad_trip_data.csv`: 100 original trip records and 7 controlled bad records
+# MAGIC - `bad_trip_data.csv`: 100 original trip records and 8 controlled bad records
 # MAGIC - `bad_payment_data.csv`: 100 original payment records and 6 controlled bad records
 # MAGIC
 # MAGIC Each file contains one record that lacks a `trip_id`, and unfortunately, this record will not be accepted. All other valid records will stay in the dataset after their values have been properly cleaned.
@@ -90,6 +90,7 @@ driver_payout_amount string
 # MAGIC - Use `try_cast` to convert each typed field.
 # MAGIC - Retain the original raw key and distance text for diagnostic purposes.
 # MAGIC - Identify and reject records where the `trip_id` is NULL.
+# MAGIC - Drop duplicate `trip_id` values before label normalization.
 # MAGIC - Trim and convert `service_type` to lowercase; map blank values and "n/a" to "unknown."
 # MAGIC - Convert malformed or non-positive distance values to NULL.
 # MAGIC - Convert negative duration and wait values to NULL, while keeping zero as a valid entry.
@@ -177,7 +178,7 @@ trip_cast.filter(
 
 # MAGIC %md
 # MAGIC ### Reject records without a usable key
-# MAGIC `trip_id` is necessary for joins. Remove the row with a missing trip_id. The remaining data consists of 100 clean rows and 5 rows that still have a trip_id but contain data-quality issues.
+# MAGIC `trip_id` is necessary for joins. Remove the row with a missing trip_id. The remaining data has 107 rows.
 # MAGIC
 
 # COMMAND ----------
@@ -191,8 +192,18 @@ trip_rejected.select(
     F.col("pickup_location_id"),
 ).show(truncate=False)
 
-##Remove the row with a missing trip_id
+# Remove the row with a missing trip_id.
 trip_key_filtered = trip_cast.filter(F.col("trip_id").isNotNull())
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Drop duplicate `trip_id` values
+# MAGIC Keep one row per `trip_id` before normalization and downstream validation.
+
+# COMMAND ----------
+
+trip_deduplicated = trip_key_filtered.dropDuplicates(["trip_id"])
 
 # COMMAND ----------
 
@@ -228,7 +239,7 @@ trip_key_filtered = trip_cast.filter(F.col("trip_id").isNotNull())
 
 
 
-trip_labels_normalized = trip_key_filtered.withColumn(
+trip_labels_normalized = trip_deduplicated.withColumn(
     "service_type",
     F.lower(F.trim(F.col("service_type"))),
 ).withColumn(
@@ -306,17 +317,23 @@ trip_values_checked.filter(F.col("trip_id").between(101, 106)).select(
 
 trip_source_count = trip_source.count()
 trip_rejected_count = trip_rejected.count()
+trip_key_filtered_count = trip_key_filtered.count()
+trip_deduplicated_count = trip_deduplicated.count()
 trip_retained_count = trip_values_checked.count()
 
 print(
     "Trip rows: "
     f"source={trip_source_count}, "
     f"rejected={trip_rejected_count}, "
+    f"key_filtered={trip_key_filtered_count}, "
+    f"deduplicated={trip_deduplicated_count}, "
     f"retained={trip_retained_count}"
 )
 
-assert trip_source_count == 107
+assert trip_source_count == 108
 assert trip_rejected_count == 1
+assert trip_key_filtered_count == 107
+assert trip_deduplicated_count == 106
 assert trip_retained_count == 106
 
 assert (
