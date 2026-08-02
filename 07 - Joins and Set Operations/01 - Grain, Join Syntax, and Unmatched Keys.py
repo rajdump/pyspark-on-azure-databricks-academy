@@ -208,8 +208,9 @@ print(
 # MAGIC %md
 # MAGIC ### Verify both sides — not just one
 # MAGIC
-# MAGIC The grain check above confirmed `trip` is unique on `trip_id`. That's half the story. If `trip_time` has
-# MAGIC duplicates, the join still multiplies rows. **Both sides must pass the grain
+# MAGIC The grain check above confirmed `trip` is unique on `trip_id`. That's half
+# MAGIC the story. If `trip_time` has duplicates, the join still multiplies rows.
+# MAGIC **Both sides must pass the grain
 # MAGIC check.** One clean table joined to one dirty table = dirty output.
 
 # COMMAND ----------
@@ -300,7 +301,7 @@ join_string.select("*").show(1, truncate=False,vertical=True)
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 13 - Mistake
+# DBTITLE 1,trip_id-only join
 trip_charges = spark.createDataFrame(  # noqa: F821
     [
         (1, "base_fare", 8.00),
@@ -431,7 +432,7 @@ join_diff_names.show()
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 19
+# DBTITLE 1,Duplicate columns after Boolean join
 join_bool_raw = trip.alias("t").join(
     trip_time.alias("tt"),
     F.col("t.trip_id") == F.col("tt.trip_id"),
