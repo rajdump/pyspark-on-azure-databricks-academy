@@ -126,9 +126,7 @@ print("trip_time rows:", trip_time.count())
 # MAGIC %md
 # MAGIC ## 1. Grain — know your data before you join it
 # MAGIC
-# MAGIC If you don't know what one row represents, you can't predict what a join will
-# MAGIC do. **Grain** answers the only question that matters before joining:
-# MAGIC *"What real-world thing does one row describe?"*
+# MAGIC If you don't understand what one row represents, you can't predict the outcome of a join. **Grain** answers the crucial question before joining: **What specific real-world entity is represented by each row in this dataset?**
 # MAGIC
 # MAGIC | Table | Grain statement | Key |
 # MAGIC |---|---|---|
@@ -182,11 +180,14 @@ print(
 # MAGIC | **M:1** | Multiple left rows match one right row | Output follows left count |
 # MAGIC | **M:M** | Duplicates on both sides | Output can multiply sharply |
 # MAGIC
-# MAGIC Landing **`trip`** ↔ **`trip_time`** on **`trip_id`** is **1:1** (confirmed by
-# MAGIC the grain check above). The 1:M pattern is demonstrated in Section 3 as
+# MAGIC Landing **`trip`** ↔ **`trip_time`** on **`trip_id`** should be **1:1** —
+# MAGIC Cell 6 confirmed `trip` has 100 rows and 100 distinct `trip_id` values (no
+# MAGIC duplicates); Cell 9 below runs the same check on `trip_time`. Once both pass,
+# MAGIC the 1:1 label is safe. 
+# MAGIC
+# MAGIC The 1:M pattern is demonstrated in Section 3 as
 # MAGIC motivation for composite keys. **M:1** is the same join with tables swapped —
-# MAGIC output row count follows the **left** side; no extra demo needed here. M:M is
-# MAGIC covered in Notebook **`02`**.
+# MAGIC no extra demo needed. M:M is covered in Notebook **`02`**.
 # MAGIC
 # MAGIC You don't need to memorize this table. The point is simple: **if you know the
 # MAGIC grain of both sides, you already know what the join will do.** No surprises.
@@ -222,14 +223,18 @@ for name, df in [("trip", trip), ("trip_time", trip_time)]:
 # MAGIC right):
 # MAGIC
 # MAGIC | # | Form | Syntax | Keys in output | Use when |
-# MAGIC |---|---|---|---|
+# MAGIC |---|---|---|---|---|
 # MAGIC | 1 | **String** | `"trip_id"` | 1 merged | Same name, single key |
 # MAGIC | 2 | **List** | `["trip_id", "charge_type"]` | 1 per key merged | Same names, multi-key |
 # MAGIC | 3 | **Boolean** | `F.col("l.key") == F.col("r.other")` | Both kept | Names differ |
 # MAGIC
-# MAGIC **The difference that bites you:** String/List automatically merge the key
-# MAGIC columns into one clean output column. Boolean keeps both copies — which gives
-# MAGIC you duplicate column names and ambiguous references that break downstream code.
+# MAGIC **The key difference:** String/List merge the key columns into one clean output
+# MAGIC column. Boolean keeps both key columns separately — since names typically
+# MAGIC differ (e.g., `trip_id` and `trip_no`), that's fine. 
+# MAGIC
+# MAGIC But if you mistakenly use
+# MAGIC Boolean when names are the same, you get two columns with the same name —
+# MAGIC Section 3.3 covers that trap.
 # MAGIC
 # MAGIC ---
 # MAGIC
@@ -252,7 +257,7 @@ for name, df in [("trip", trip), ("trip_time", trip_time)]:
 join_string = trip.join(trip_time, "trip_id", "inner")
 print("Columns after string join on trip_id:", join_string.columns)
 print("Row count:", join_string.count())
-join_string.select("trip_id", "trip_date", "hour_of_day").show(3, truncate=False)
+join_string.select("*").show(1, truncate=False,vertical=True)
 
 # COMMAND ----------
 
@@ -264,36 +269,29 @@ join_string.select("trip_id", "trip_date", "hour_of_day").show(3, truncate=False
 # MAGIC left.join(right, ["trip_id", "charge_type"], "inner")
 # MAGIC ```
 # MAGIC
-# MAGIC **What happens:**
-# MAGIC - Spark requires **ALL** columns in the list to match (like SQL `AND`)
-# MAGIC - Still merges key columns (same as string form, just multiple columns)
+# MAGIC If a single column matches too broadly, add more columns to narrow it down.
+# MAGIC Spark requires **ALL** columns in the list to match before producing a row.
 # MAGIC
-# MAGIC **Why this exists:** joining on too few columns is one of the most common
-# MAGIC join mistakes. You think you're matching precisely, but you're matching too
-# MAGIC broadly.
+# MAGIC **Scenario:** you want to compare actual charges against expected rates.
 # MAGIC
-# MAGIC **`trip_summary`** and **`trip_charges`** below replay the intro sketch — not
-# MAGIC landing **`payment`**. Notebook **`02`** joins **`trip`** to **`payment`** at
-# MAGIC **1:1** grain.
+# MAGIC - `trip_charges` — 6 rows (3 charge types × 2 trips): what was actually charged
+# MAGIC - `rate_card` — 4 rows (2 charge types × 2 trips, no tip): what should have been charged
 # MAGIC
-# MAGIC Example: `trip_summary` (2 rows) joined to `trip_charges` (6 rows) on
-# MAGIC `trip_id` alone:
-# MAGIC - Trip 1 matches **all 3** charge rows → 3 output rows for 1 input row
-# MAGIC - Trip 2 matches **all 3** charge rows → 3 output rows for 1 input row
-# MAGIC - Result: **6 rows** — you just tripled your data without realizing it
+# MAGIC Both tables have `trip_id` and `charge_type`. Watch what happens with each key:
 # MAGIC
-# MAGIC Fix: add `charge_type` to the key when joining to **`rate_card`**. Inner join
-# MAGIC keeps only rows where **both** columns match; tips have no rate row, so
-# MAGIC predict **4** rows (not 6).
+# MAGIC | Join key | Why it matches that way | Result |
+# MAGIC |---|---|---|
+# MAGIC | `"trip_id"` only | trip 1: 3 charges × 2 rates = 6; trip 2: same = 6 | **12 rows** |
+# MAGIC | `["trip_id", "charge_type"]` | Only `base_fare↔base_fare`, `surge↔surge` | **4 rows** |
 # MAGIC
-# MAGIC The next two cells demonstrate: first the mistake, then the fix.
+# MAGIC The first gives you every possible combination per trip — garbage.
+# MAGIC The second gives you actual vs expected for the same charge type — what you
+# MAGIC actually wanted.
+# MAGIC
+# MAGIC Cell 13 shows the mistake. Cell 15 shows the fix. Same tables, same output
+# MAGIC columns, different key → 12 rows vs 4 rows.
 
 # COMMAND ----------
-
-trip_summary = spark.createDataFrame(  # noqa: F821
-    [(1, "standard", 12.50), (2, "premium", 25.00)],
-    ["trip_id", "service_type", "total_fare"],
-)
 
 trip_charges = spark.createDataFrame(  # noqa: F821
     [
@@ -307,11 +305,22 @@ trip_charges = spark.createDataFrame(  # noqa: F821
     ["trip_id", "charge_type", "amount"],
 )
 
-predicted_trip_id_only = 6
-single_key = trip_summary.join(trip_charges, "trip_id", "inner")
+rate_card = spark.createDataFrame(  # noqa: F821
+    [
+        (1, "base_fare", 7.50),
+        (1, "surge", 2.50),
+        (2, "base_fare", 16.00),
+        (2, "surge", 4.50),
+    ],
+    ["trip_id", "charge_type", "expected_amount"],
+)
+
+# THE MISTAKE: join on trip_id only
+predicted_trip_id_only = 12
+single_key = trip_charges.join(rate_card, "trip_id", "inner")
 actual_trip_id_only = single_key.count()
 print(
-    f"1:M — trip_id only: predicted={predicted_trip_id_only}, "
+    f"trip_id only: predicted={predicted_trip_id_only}, "
     f"actual={actual_trip_id_only}"
 )
 single_key.show(truncate=False)
@@ -320,33 +329,25 @@ single_key.show(truncate=False)
 
 # DBTITLE 1,Composite key fix
 # MAGIC %md
-# MAGIC **Now fix it — add `charge_type` to the key.**
+# MAGIC **Now the fix — same two tables, just add `charge_type` to the key.**
 # MAGIC
-# MAGIC `rate_card` stores expected amounts for base_fare and surge only (no tip):
+# MAGIC Spark now requires BOTH `trip_id` AND `charge_type` to match. No more broad
+# MAGIC matching where every charge pairs with every rate for the same trip.
 # MAGIC
-# MAGIC - `trip_charges`: 6 rows (3 charge types × 2 trips)
-# MAGIC - `rate_card`: 4 rows (2 charge types × 2 trips — tip doesn't exist here)
-# MAGIC - Composite join: match only where BOTH columns align
-# MAGIC - Tip rows? No match in `rate_card` → inner join drops them
-# MAGIC - **Predict: 4 rows** (narrower key + inner — not the 6-row fanout)
+# MAGIC Tip rows in `trip_charges` have no matching `charge_type` in `rate_card` →
+# MAGIC inner join drops them. **Predict: 4 rows.**
+# MAGIC
+# MAGIC Compare the output below to Cell 13 — same columns, same tables, just fewer
+# MAGIC (correct) rows.
 
 # COMMAND ----------
 
-rate_card = spark.createDataFrame(  # noqa: F821
-    [
-        (1, "base_fare", 8.00),
-        (1, "surge", 3.00),
-        (2, "base_fare", 18.00),
-        (2, "surge", 5.00),
-    ],
-    ["trip_id", "charge_type", "expected_amount"],
-)
-
+# THE FIX: join on BOTH trip_id and charge_type
 predicted_composite = 4
 composite_key = trip_charges.join(rate_card, ["trip_id", "charge_type"], "inner")
 actual_composite = composite_key.count()
 print(
-    f"Composite [trip_id, charge_type]: predicted={predicted_composite}, "
+    f"[trip_id, charge_type]: predicted={predicted_composite}, "
     f"actual={actual_composite}"
 )
 composite_key.show(truncate=False)
