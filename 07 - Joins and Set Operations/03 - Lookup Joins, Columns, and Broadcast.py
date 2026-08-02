@@ -280,6 +280,13 @@ print(
 # MAGIC awareness (README) means Spark may already do this automatically at this
 # MAGIC tiny scale — the hint makes the intent explicit and guarantees the plan
 # MAGIC regardless of size.
+# MAGIC
+# MAGIC **Note on Serverless compute:** Photon (Databricks' native vectorized engine)
+# MAGIC is always on for Serverless compute and SQL warehouses — there's no toggle to
+# MAGIC disable it, unlike classic clusters. Photon renames plan operators with a
+# MAGIC `Photon` prefix, so the join below shows up as `PhotonBroadcastHashJoin`
+# MAGIC rather than plain `BroadcastHashJoin`. Same broadcast optimization — just
+# MAGIC Photon's vectorized implementation of it.
 
 # COMMAND ----------
 
@@ -297,7 +304,11 @@ print(f"Row count: {trip_broadcast_join.count()} (unchanged \u2014 broadcast onl
 # COMMAND ----------
 
 # DBTITLE 1,Inspect the plan for BroadcastHashJoin
-print("Look for 'BroadcastHashJoin' in the physical plan below:\n")
+print(
+    "Look for a broadcast hash join below \u2014 on Serverless/Photon compute it's "
+    "named PhotonBroadcastHashJoin; on classic non-Photon compute it's plain "
+    "BroadcastHashJoin:\n"
+)
 trip_broadcast_join.explain("formatted")
 
 # COMMAND ----------
