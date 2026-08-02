@@ -65,21 +65,22 @@ Module 6 — Built-in Functions, Complex Types, and UDF Alternatives (notebooks
     are each assigned to exactly one driver — zero gaps (verified from
     `drivers.xml`)
 - **Landing datasets** (no curated version exists for these):
+  - **`…/landing/source_files/trip/`** — 100 rows, CSV (`trip.csv`)
   - **`…/landing/source_files/trip_time/`** — 100 rows, Parquet
+  - **`…/landing/source_files/payment/`** — 100 rows, Avro
   - **`…/landing/source_files/zone_lookup/`** — 22 rows, JSON Lines
     (`location_id` 21–22 are not referenced by any trip — see
     [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md))
 
 The core 100-row landing tables (`trip`, `trip_time`, `payment`) are **1:1** on
-`trip_id`. Notebook **01** reads **`trip`** and **`trip_time`** only (plus
-constructed frames). Notebook **02** adds **`payment`** for join-type demos on
-real landing data.
+`trip_id`. Per-notebook reads (including constructed frames) are listed under
+**Notebook navigation**.
 
 **Data source by notebook:**
 
 | Notebook | Landing reads | Processed curated/ reads | Why |
 |---|---|---|---|
-| 1 | `trip`, `trip_time` + constructed mini-frames | — | Grain, join syntax, unmatched keys (no `payment`) |
+| 1 | `trip`, `trip_time` (+ constructed frames) | — | Grain, join syntax, unmatched-keys exercise (no `payment`) |
 | 2 | `trip`, `trip_time`, `payment` (100 rows each) + constructed frames | — | Four join types on 1:1 landing; M:M and NULL constructs |
 | 3–4 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | Rows 21–22 are unmatched dimension rows; lookup pattern split across two notebooks |
 | 5 | — | `curated/trip` (106), `curated/payment` (105) | The 106 vs 105 mismatch is the teaching point |
@@ -169,20 +170,27 @@ Eight notebooks, in this order:
 
 1. **Grain, Join Syntax, and Unmatched Keys**
 
-   *Reads:* landing `trip`, `trip_time` (100 rows each); constructed
-   `trip_charges`, `rate_card` (line-level teaching frames — not landing
-   **`payment`**, which is one row per `trip_id` and joins in **02**).
+   *Reads:* landing `trip` (CSV) and `trip_time` (Parquet), 100 rows each.
+   Constructed frames: `trip_charges`, `rate_card`, unmatched-key mini-frames.
+   Does **not** read landing **`payment`** (wide, one row per `trip_id` —
+   Notebook **02**).
 
-   - **Grain** — what one row represents; row count vs distinct join key
-   - **Cardinality** — 1:1 on `trip` ↔ `trip_time`; vocabulary table for
-     1:M, M:1, M:M (1:M in the intro sketch only; list-form §3.2 is
-     M:M fanout on `trip_id` — 12 rows; fuller **M:M** construct in **02**)
-   - **Join syntax** — string (coalesced key); list (`[trip_id, charge_type]`
-     on `trip_charges` ↔ `rate_card`, contrasted with `trip_id`-only on the
-     same pair: 12-row broad match vs 4-row precise match); Boolean when
-     names differ (`trip_id` = `trip_no`) and same-name duplicate-key gotcha
+   - **Grain** — what one row represents; `count` vs `countDistinct` on
+     `trip_id` (check both sides before joining)
+   - **Cardinality** — labels 1:1 / 1:M / M:1 / M:M; landing `trip` ↔
+     `trip_time` is **1:1**; intro sketch is **1:M**; §3.2
+     `trip_charges` ↔ `rate_card` on `trip_id` alone is **M:M** (12 rows);
+     fuller M:M construct in **02**
+   - **Join syntax**
+     - **String** — `trip` ↔ `trip_time` on `"trip_id"` (coalesced key;
+       predict **100**)
+     - **List** — `trip_charges` ↔ `rate_card`: `"trip_id"` only → **12**
+       (wrong) vs `["trip_id", "charge_type"]` → **4** (correct)
+     - **Boolean** — different names (`trip_id` = `trip_no`); same-name
+       duplicate-column gotcha
    - **Exercise — unmatched keys** — left `[1…5]`, right `[3…7]`;
-     predict/verify inner, left, right, full outer (expect 3 / 5 / 5 / 7)
+     predict/verify inner / left / right / full (expect 3 / 5 / 5 / 7);
+     applies SQL join-type knowledge to PySpark row counts
    - Skill-building only — **no write**
 
 2. **Join Types, NULL Keys, and Validation**
@@ -283,9 +291,9 @@ Eight notebooks, in this order:
 
 ## Exercises
 
-Each notebook listed in **Notebook navigation** ends with a short hands-on
-task that repeats the demonstrated pattern on slightly different keys, columns,
-or membership questions.
+Each notebook in **Notebook navigation** ends with a short hands-on task
+(predict/verify, transform, or membership check) using that notebook's
+patterns.
 
 ## Minimum privileges required
 
