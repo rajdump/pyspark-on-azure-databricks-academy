@@ -74,22 +74,31 @@ print("trip_time rows:", trip_time.count())
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 5
 # MAGIC %md
 # MAGIC ## Grain orientation
 # MAGIC
-# MAGIC **Grain** is what one row represents. For **`trip`**, the grain is **one row
-# MAGIC per `trip_id`**. When row count equals distinct **`trip_id`**, the table is unique
-# MAGIC on that key.
+# MAGIC
+# MAGIC **Grain** refers to what one row represents. For **`trip`**, each row stands for **one `trip_id`**. If the number of rows matches the number of unique **`trip_id`** entries, then the data is unique for that key.
+# MAGIC
+# MAGIC **To check this programmatically:**
+# MAGIC
+# MAGIC 1. Count the total number of rows using `F.count(F.lit(1))`.
+# MAGIC 2. Count the unique **`trip_id`** values with `F.countDistinct("trip_id")`.
+# MAGIC 3. Compare the two counts: if they are equal, the key is unique (no duplicates).
+# MAGIC
+# MAGIC The next step runs this check on **`trip`**. If the counts match, we can confidently say: **one row per trip — grain confirmed.**
 
 # COMMAND ----------
 
 trip_grain = trip.agg(
     F.count(F.lit(1)).alias("row_count"),
     F.countDistinct("trip_id").alias("distinct_trip_id"),
-).collect()[0]
+).collect()[0] ##return first element from the list 
+##Row(row_count=100, distinct_trip_id=100)]
 
 print(
-    f"trip: {trip_grain.row_count} rows, "
+    f"Total: {trip_grain.row_count} rows in Trip Dataset, "
     f"{trip_grain.distinct_trip_id} distinct trip_id values"
 )
 print(
@@ -101,8 +110,13 @@ print(
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 7
 # MAGIC %md
 # MAGIC ## Cardinality vocabulary
+# MAGIC
+# MAGIC **Cardinality** describes how many rows on the left match how many rows on the
+# MAGIC right for a given join key. Once you know the grain of each table, you can
+# MAGIC label the join relationship:
 # MAGIC
 # MAGIC | Label | Meaning | Row-count intuition (equi-join) |
 # MAGIC |---|---|---|
@@ -114,6 +128,9 @@ print(
 # MAGIC Landing **`trip`** ↔ **`trip_time`** on **`trip_id`** is **1:1** (100 rows and
 # MAGIC 100 distinct keys on each side). Notebook **`02`** applies the four join types on
 # MAGIC that landing pair.
+# MAGIC
+# MAGIC The next cell verifies **both** tables in a loop, confirming the 1:1 label
+# MAGIC is safe before any join.
 
 # COMMAND ----------
 
@@ -126,32 +143,69 @@ for name, df in [("trip", trip), ("trip_time", trip_time)]:
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 9
 # MAGIC %md
-# MAGIC ## Join-condition syntax
+# MAGIC ## Understand Join-condition syntax
 # MAGIC
-# MAGIC Three equi-join forms — Notebook **`03`** needs the **Boolean** form for zone lookup.
+# MAGIC PySpark provides three ways to express that equality condition:
+# MAGIC
+# MAGIC | Form | Syntax | When to use |
+# MAGIC |---|---|---|
+# MAGIC | **String** | `"trip_id"` | Same join column name on both sides |
+# MAGIC | **List** | `["trip_id", "leg_id"]` | Multiple join column names (composite key) |
+# MAGIC | **Boolean** | `F.col("l.key") == F.col("r.key")` | join column names differ, or you need full control |
+# MAGIC
+# MAGIC Notebook **`03`** needs the **Boolean** form because the zone lookup table uses
+# MAGIC a different column name than the trip table (`location_id` vs `zone_id`).
+# MAGIC
+# MAGIC The following subsections demonstrate each form with working examples.
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 10
 # MAGIC %md
-# MAGIC ### String: single shared column name
+# MAGIC ### Same join column name on both sides
 # MAGIC
-# MAGIC Pass the shared key name as a **string**. Spark coalesces duplicate key columns
-# MAGIC into one **`trip_id`**.
+# MAGIC
+# MAGIC
+# MAGIC ```python
+# MAGIC df_left.join(df_right, "trip_id", "inner")
+# MAGIC ```
+# MAGIC
+# MAGIC **Key behavior:** because both tables have a column named `trip_id`, Spark
+# MAGIC automatically matches them and keeps only **one** copy of the key column in
+# MAGIC the output. This is the simplest and cleanest join syntax when column names
+# MAGIC already align.
+# MAGIC
+# MAGIC The next cell joins **`trip`** ↔ **`trip_time`** this way and prints the
+# MAGIC resulting columns and row count.
 
 # COMMAND ----------
 
 join_string = trip.join(trip_time, "trip_id", "inner")
 print("Columns after string join on trip_id:", join_string.columns)
 print("Row count:", join_string.count())
-join_string.select("trip_id", "trip_date", "hour_of_day").show(3, truncate=False)
+join_string.select("*").show(1, truncate=False,vertical=True)
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 12
 # MAGIC %md
-# MAGIC ### List: composite equi-join
+# MAGIC ###  Multiple join column names (composite key)
 # MAGIC
 # MAGIC Pass a **list of column names** when the relationship requires more than one key.
+# MAGIC
+# MAGIC ```python
+# MAGIC df_left.join(df_right, ["trip_id", "leg_id"], "inner")
+# MAGIC ```
+# MAGIC
+# MAGIC **Why composite keys matter:** sometimes a single column is not enough to
+# MAGIC uniquely identify a match. For example, a trip with multiple legs needs both
+# MAGIC `trip_id` AND `leg_id` to pinpoint the exact row.
+# MAGIC
+# MAGIC The next cell demonstrates the difference:
+# MAGIC - Joining on `trip_id` alone → more rows (matches across different legs)
+# MAGIC - Joining on `[trip_id, leg_id]` → fewer, precise rows (exact leg match)
 
 # COMMAND ----------
 
@@ -175,16 +229,34 @@ print(
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 14
 # MAGIC %md
 # MAGIC ### Boolean: explicit column condition
 # MAGIC
 # MAGIC Join keys **do not** have to share a column name. The string and list forms
 # MAGIC only work when **both sides use the same name(s)**. When names differ — e.g.
 # MAGIC **`trip_id`** on the fact table and **`trip_no`** on a staging file — use a
-# MAGIC **Boolean** expression: `left.trip_id == right.trip_no`.
+# MAGIC **Boolean** expression:
+# MAGIC
+# MAGIC ```python
+# MAGIC left.alias("l").join(
+# MAGIC     right.alias("r"),
+# MAGIC     F.col("l.trip_id") == F.col("r.trip_no"),
+# MAGIC     "inner",
+# MAGIC )
+# MAGIC ```
+# MAGIC
+# MAGIC **Key differences from string/list form:**
+# MAGIC - You **must** alias both DataFrames (`alias("l")`, `alias("r")`) to
+# MAGIC   disambiguate columns
+# MAGIC - Spark keeps **both** key columns in the output (no auto-coalescing)
+# MAGIC - This is the **only** syntax that works when column names differ across tables
 # MAGIC
 # MAGIC When names **match**, Boolean joins still keep **both** key columns unless you
 # MAGIC **`select`** away one; Notebook **`04`** uses aliases for pickup/dropoff zone lookup.
+# MAGIC
+# MAGIC The next cell joins `trip_id` (left) to `trip_no` (right) — impossible with
+# MAGIC the string form.
 
 # COMMAND ----------
 
@@ -208,8 +280,16 @@ join_diff_names.show()
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 16
 # MAGIC %md
-# MAGIC Same name on both sides — Boolean still exposes **`trip_id`** from each alias:
+# MAGIC **Same name on both sides — the duplicate-column trap:**
+# MAGIC
+# MAGIC When both tables have `trip_id` and you use the Boolean form
+# MAGIC (`t.trip_id == tt.trip_id`), Spark does **not** merge the key columns. You get
+# MAGIC **two** `trip_id` columns in the result. You must use the alias prefix
+# MAGIC (`t.trip_id` or `tt.trip_id`) in any subsequent `select` to avoid ambiguity.
+# MAGIC
+# MAGIC The next cell demonstrates this behavior with **`trip`** ↔ **`trip_time`**:
 
 # COMMAND ----------
 
@@ -228,17 +308,28 @@ join_bool_raw.select(
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 18
 # MAGIC %md
 # MAGIC ## Constructed frame — unmatched keys
 # MAGIC
+# MAGIC When keys do **not** fully overlap, different join types produce different row
+# MAGIC counts. This section builds two small DataFrames with **partial key overlap**
+# MAGIC to make the effect visible.
+# MAGIC
 # MAGIC Left **`trip_id`** `[1, 2, 3, 4, 5]`, right `[3, 4, 5, 6, 7]`.
 # MAGIC
-# MAGIC | Join type | Predicted rows |
-# MAGIC |---|---:|
-# MAGIC | inner | 3 |
-# MAGIC | left | 5 |
-# MAGIC | right | 5 |
-# MAGIC | full outer | 7 |
+# MAGIC Overlap: `{3, 4, 5}` (3 keys match). Left-only: `{1, 2}`. Right-only: `{6, 7}`.
+# MAGIC
+# MAGIC | Join type | Logic | Predicted rows |
+# MAGIC |---|---|---:|
+# MAGIC | **inner** | Only matching keys | 3 |
+# MAGIC | **left** | All left rows + matches from right (NULLs for 1, 2) | 5 |
+# MAGIC | **right** | All right rows + matches from left (NULLs for 6, 7) | 5 |
+# MAGIC | **full outer** | All rows from both sides (NULLs where no match) | 7 |
+# MAGIC
+# MAGIC The next cell creates the frames, predicts the counts, runs each join, and
+# MAGIC verifies predictions match actuals. This is the **predict-then-verify** habit
+# MAGIC that prevents silent row count errors in production joins.
 
 # COMMAND ----------
 
