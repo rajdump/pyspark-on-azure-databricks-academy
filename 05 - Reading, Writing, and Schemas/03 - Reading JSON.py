@@ -159,7 +159,7 @@ print("\nSample row:")
 zone_inferred.show(1, vertical=True)
 
 row_count = zone_inferred.count()
-print(f"\nRow count: {row_count} (expect 20 for the course zone_lookup file)")
+print(f"\nRow count: {row_count} (expect 22 for the course zone_lookup file)")
 
 # COMMAND ----------
 

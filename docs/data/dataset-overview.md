@@ -8,7 +8,7 @@ Cmd+K sessions via `@docs/data/dataset-overview.md` — do not duplicate this
 content elsewhere. Module notebook sequences and privileges live in that
 module's `README.md`. Shared read list: @docs/standards/notebook-authoring-checklist.md.
 
-Intentionally small (100/100/100/20 rows) for fast iteration — not for
+Intentionally small (100/100/100/22 rows) for fast iteration — not for
 demonstrating shuffle, spill, or skew at volume (Module 16 uses it for
 plan-reading only).
 
@@ -19,7 +19,7 @@ plan-reading only).
 | `trip` | 100 | Central fact table |
 | `trip_time` | 100 | 1:1 extension of `trip` — date and time |
 | `payment` | 100 | 1:1 extension of `trip` — fare breakdown |
-| `zone_lookup` | 20 | Dimension — pickup and dropoff locations |
+| `zone_lookup` | 22 | Dimension — pickup and dropoff locations; **`location_id`** 21–22 are not referenced by any `trip` row (see below) |
 
 ### `trip`
 
@@ -70,6 +70,15 @@ plan-reading only).
 - `trip.trip_id = payment.trip_id`
 - `trip.pickup_location_id = zone_lookup.location_id`
 - `trip.dropoff_location_id = zone_lookup.location_id`
+
+**Zone lookup coverage:** `trip.pickup_location_id` and
+`trip.dropoff_location_id` use every value in **1–20** (verified across all
+100 core rows and the Module 6 extension rows 101–106) — never 21 or 22.
+`zone_lookup` rows **21** (`Newark Airport`) and **22** (`Hoboken Terminal`)
+are intentionally unreferenced by any trip. This is the only pair in the
+dataset with unmatched dimension rows on the right side — it exists so
+Module 7 can teach right/full-outer-join behavior on real data instead of a
+constructed frame.
 
 ## Supplementary: `drivers` (nested XML)
 

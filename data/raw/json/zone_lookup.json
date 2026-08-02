@@ -18,3 +18,5 @@
 {"location_id": 18, "borough_name": "Brooklyn", "zone_name": "Brooklyn Heights", "service_zone": "Boro Zone"}
 {"location_id": 19, "borough_name": "Manhattan", "zone_name": "Harlem", "service_zone": "Yellow Zone"}
 {"location_id": 20, "borough_name": "Queens", "zone_name": "Flushing", "service_zone": "Boro Zone"}
+{"location_id": 21, "borough_name": "New Jersey", "zone_name": "Newark Airport", "service_zone": "Airports"}
+{"location_id": 22, "borough_name": "New Jersey", "zone_name": "Hoboken Terminal", "service_zone": "Boro Zone"}
