@@ -44,7 +44,6 @@
 # COMMAND ----------
 
 from pyspark.sql import functions as F
-from pyspark.sql.types import LongType, StructField, StructType
 
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
 trip_csv_path = f"{landing_root}/trip/trip.csv"
@@ -219,14 +218,29 @@ print(f"payment    rows={pay_stats['rows']}, distinct={pay_stats['distinct']}, n
 # MAGIC | `groupBy("trip_id").agg(...)` | Keeps one row using YOUR rule — deterministic, same input always gives same output |
 # MAGIC
 # MAGIC `dropDuplicates` is fine when all rows for a key are truly identical. When
-# MAGIC they differ (different timestamps, amounts, statuses), use `groupBy` with an
-# MAGIC explicit rule.
+# MAGIC they differ (different timestamps, amounts, statuses), use a **window
+# MAGIC function** to rank rows and keep the one you want.
 # MAGIC
 # MAGIC Most common real-world pattern: same trip appears twice because ETL ran twice
-# MAGIC or the source sent a retry. The rows are identical except for an `updated_at`
-# MAGIC timestamp. Resolution: keep the row with the latest timestamp.
+# MAGIC or the source sent a retry. The rows differ only in `updated_at` timestamp.
+# MAGIC Resolution: rank by `updated_at` descending, keep rank 1.
+# MAGIC
+# MAGIC ```python
+# MAGIC from pyspark.sql.window import Window
+# MAGIC
+# MAGIC w = Window.partitionBy("trip_id").orderBy(F.col("updated_at").desc())
+# MAGIC resolved = (dup_trips
+# MAGIC     .withColumn("rn", F.row_number().over(w))
+# MAGIC     .filter("rn = 1")
+# MAGIC     .drop("rn"))
+# MAGIC ```
+# MAGIC
+# MAGIC This keeps the **entire row** intact — no risk of mixing columns from
+# MAGIC different records.
 
 # COMMAND ----------
+
+from pyspark.sql.window import Window
 
 # ETL ran twice — same trip, different updated_at timestamps
 dup_trips = spark.createDataFrame(  # noqa: F821
@@ -244,12 +258,14 @@ dup_trips.show(truncate=False)
 print("dropDuplicates — which row survived? Non-deterministic:")
 dup_trips.dropDuplicates(["trip_id"]).orderBy("trip_id").show(truncate=False)
 
-print("groupBy + max(updated_at) — always keeps the latest:")
-resolved = dup_trips.groupBy("trip_id").agg(
-    F.first("service_type").alias("service_type"),
-    F.first("fare").alias("fare"),
-    F.max("updated_at").alias("updated_at"),
-)
+# Window function: rank by updated_at descending, keep rank 1 (latest)
+w = Window.partitionBy("trip_id").orderBy(F.col("updated_at").desc())
+resolved = (dup_trips
+    .withColumn("rn", F.row_number().over(w))
+    .filter("rn = 1")
+    .drop("rn"))
+
+print("Window function — keeps the latest complete row:")
 resolved.orderBy("trip_id").show(truncate=False)
 
 # Verify grain after resolution
@@ -283,11 +299,7 @@ print(f"Resolved: rows={stats['rows']}, distinct={stats['distinct']} → grain i
 # MAGIC don't. `NULL = NULL` is not TRUE in Spark. Both rows silently disappear
 # MAGIC from an inner join.
 # MAGIC
-# MAGIC Predict each join type, replace `None` below, then run:
-# MAGIC * **inner:** which trip_ids can actually match? (hint: NULL can't)
-# MAGIC * **left:** all left rows stay — how many?
-# MAGIC * **right:** all right rows stay — how many?
-# MAGIC * **full:** everything from both sides — how many unique entities?
+# MAGIC Predict each join type — replace `None` below, then run.
 
 # COMMAND ----------
 
@@ -460,8 +472,6 @@ payout_stats = driver_payouts.select(
     F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
 ).collect()[0]
 print(f"Profile: rows={payout_stats['rows']}, distinct={payout_stats['distinct']}, nulls={payout_stats['nulls']}")
-print("  → rows ≠ distinct: duplicates exist!")
-print("  → nulls > 0: inner join will drop that row!")
 
 print()
 
