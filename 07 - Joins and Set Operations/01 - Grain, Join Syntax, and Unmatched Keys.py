@@ -517,6 +517,6 @@ for join_type, predicted in predictions.items():
 # MAGIC you run. If actual ≠ predicted, something is wrong with your understanding
 # MAGIC of the data — fix that before you build anything on top of it.
 # MAGIC
-# MAGIC **Next:** **`02 - Join Types, NULL Keys, and Validation`** — four join types
-# MAGIC on real landing data, NULL key behavior, and key profiling before production
-# MAGIC joins.
+# MAGIC **Next:** **`02 - Silent Join Failures and Validation`** — M:M fanout, NULL
+# MAGIC keys, accidental Cartesians, and the **profile → predict → run → verify**
+# MAGIC habit before you trust a join.

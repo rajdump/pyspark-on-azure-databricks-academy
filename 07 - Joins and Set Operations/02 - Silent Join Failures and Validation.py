@@ -17,12 +17,17 @@
 # MAGIC
 # MAGIC **Reads:** landing `trip`, `trip_time`, `payment` (100 rows each) +
 # MAGIC constructed mini-frames. **No write.**
+# MAGIC
+# MAGIC **Prerequisites.** Module 7 **`01 - Grain, Join Syntax, and Unmatched Keys`**
+# MAGIC and Module 6 (**`01`** through **`04`**). Landing Volume must contain **`trip`**,
+# MAGIC **`trip_time`**, and **`payment`** (100 rows each). Recall Module 3
+# MAGIC **`eqNullSafe`** when NULL keys must match.
 
 # COMMAND ----------
 
 # DBTITLE 1,Setup
 # MAGIC %md
-# MAGIC ## 2. Setup — load and verify the clean 1:1 baseline
+# MAGIC ## Setup — load and verify the clean 1:1 baseline
 # MAGIC
 # MAGIC | Table | Format | Grain | Key | Rows |
 # MAGIC |---|---|---|---|---|
@@ -35,7 +40,7 @@
 # MAGIC
 # MAGIC After loading, the second code cell runs all four join types on both pairs.
 # MAGIC All should return 100. This is a baseline signal — not proof of 1:1 grain
-# MAGIC (Section 4 establishes that), but a quick sanity check that nothing is
+# MAGIC (Section 2 establishes that), but a quick sanity check that nothing is
 # MAGIC obviously wrong.
 
 # COMMAND ----------
@@ -114,9 +119,9 @@ for left_name, right_name, left_df, right_df in pairs:
 
 # COMMAND ----------
 
-# DBTITLE 1,2. M:M fanout
+# DBTITLE 1,1. M:M fanout
 # MAGIC %md
-# MAGIC ## 3. M:M — when both sides have duplicates
+# MAGIC ## 1. M:M — when both sides have duplicates
 # MAGIC
 # MAGIC Notebook 01 Section 3.2 showed what happens when you join on too few columns
 # MAGIC — one side had extra rows per key. M:M is worse: BOTH sides have duplicates.
@@ -149,9 +154,9 @@ left_mm.join(right_mm, "trip_id", "inner").show()
 
 # COMMAND ----------
 
-# DBTITLE 1,3. Pre-join profiling
+# DBTITLE 1,2. Key profiling
 # MAGIC %md
-# MAGIC ## 4. Key profiling — detect duplicates before joining
+# MAGIC ## 2. Key profiling — detect duplicates before joining
 # MAGIC
 # MAGIC Before any join, profile the key on both sides:
 # MAGIC
@@ -178,9 +183,9 @@ for name, df in [("trip", trip), ("trip_time", trip_time), ("payment", payment)]
 
 # COMMAND ----------
 
-# DBTITLE 1,3b. Duplicate resolution
+# DBTITLE 1,3. Duplicate resolution
 # MAGIC %md
-# MAGIC ## 5. Duplicate resolution — don't let Spark decide
+# MAGIC ## 3. Duplicate resolution — don't let Spark decide
 # MAGIC
 # MAGIC You profiled and found duplicates. Two approaches:
 # MAGIC
@@ -219,9 +224,9 @@ print(f"Resolved: rows={stats['rows']}, distinct={stats['distinct']} → grain i
 
 # COMMAND ----------
 
-# DBTITLE 1,4. NULL-key loss
+# DBTITLE 1,4. NULL keys
 # MAGIC %md
-# MAGIC ## 6. NULL keys — silent data loss
+# MAGIC ## 4. NULL keys — silent data loss
 # MAGIC
 # MAGIC In SQL and Spark, `NULL = NULL` evaluates to `NULL` (not TRUE). Standard
 # MAGIC equality never matches NULL to NULL. Result: NULL-key rows vanish from inner
@@ -235,11 +240,9 @@ print(f"Resolved: rows={stats['rows']}, distinct={stats['distinct']} → grain i
 # MAGIC Right trip_id: [2, 3, NULL]
 # MAGIC ```
 # MAGIC
-# MAGIC Predict each join type — replace `None` in the cell below:
-# MAGIC * inner: only key 2 matches (NULL ≠ NULL)
-# MAGIC * left: all 3 left rows kept; right fills NULLs where no match
-# MAGIC * right: all 3 right rows kept; left fills NULLs where no match
-# MAGIC * full: all unique entities from both sides
+# MAGIC 1. Decide which keys can match under standard equality (remember: NULL ≠ NULL).
+# MAGIC 2. Predict **inner**, **left**, **right**, and **full** row counts.
+# MAGIC 3. Replace each `None` below with your prediction, then run and verify.
 
 # COMMAND ----------
 
@@ -265,7 +268,7 @@ for join_type, predicted in predictions.items():
 
 # DBTITLE 1,4b. eqNullSafe
 # MAGIC %md
-# MAGIC ### 6b. When you WANT NULL to match NULL
+# MAGIC ### When you WANT NULL to match NULL
 # MAGIC
 # MAGIC Sometimes NULL represents a known category ("unassigned trips") and you need
 # MAGIC them to group together. Use `.eqNullSafe()` in a Boolean join condition —
@@ -297,9 +300,9 @@ eq_safe.show()
 
 # COMMAND ----------
 
-# DBTITLE 1,5. Cartesian explosion
+# DBTITLE 1,5. Cartesian products
 # MAGIC %md
-# MAGIC ## 7. Cartesian products — intentional versus accidental
+# MAGIC ## 5. Cartesian products — intentional versus accidental
 # MAGIC
 # MAGIC | Code | Intent | Result (2 × 3) |
 # MAGIC |---|---|---|
@@ -330,9 +333,9 @@ print("→ Same result. On large tables, this is a silent disaster.")
 
 # COMMAND ----------
 
-# DBTITLE 1,6. Validation exercise and summary
+# DBTITLE 1,6. Exercise
 # MAGIC %md
-# MAGIC ## 8. Exercise — full pre-join and post-join validation
+# MAGIC ## 6. Exercise — full pre-join and post-join validation
 # MAGIC
 # MAGIC Apply the complete workflow on `trip` ↔ `payment`:
 # MAGIC
@@ -371,9 +374,9 @@ print(f"{mark_l} left  → predicted={predicted_left}, actual={actual_left}")
 
 # COMMAND ----------
 
-# DBTITLE 1,9. Summary
+# DBTITLE 1,Summary
 # MAGIC %md
-# MAGIC ## 9. Summary — `profile → predict → run → verify`
+# MAGIC ## Summary — `profile → predict → run → verify`
 # MAGIC
 # MAGIC | Failure mode | What happens | How to prevent |
 # MAGIC |---|---|---|

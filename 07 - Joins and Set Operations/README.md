@@ -81,7 +81,7 @@ The core 100-row landing tables (`trip`, `trip_time`, `payment`) are **1:1** on
 | Notebook | Landing reads | Processed curated/ reads | Why |
 |---|---|---|---|
 | 1 | `trip`, `trip_time` (+ constructed frames) | — | Grain, join syntax, unmatched-keys exercise (no `payment`) |
-| 2 | `trip`, `trip_time`, `payment` (100 rows each) + constructed frames | — | Four join types on 1:1 landing; M:M and NULL constructs |
+| 2 | `trip`, `trip_time`, `payment` (100 rows each) + constructed frames | — | Silent join failures: M:M, NULL keys, Cartesians; validation habit |
 | 3–4 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | Rows 21–22 are unmatched dimension rows; lookup pattern split across two notebooks |
 | 5 | — | `curated/trip` (106), `curated/payment` (105) | The 106 vs 105 mismatch is the teaching point |
 | 6–7 | Named filters on landing `trip` | — | Set operations split: union paths vs intersect/subtract paths |
@@ -115,7 +115,10 @@ naming; semi/anti joins; `union` / `unionByName` / `intersect` /
 awareness; capstone write to managed Delta tables.
 
 **Out of scope:**
-- `groupBy`, pivots, and window functions (Module 8)
+- `groupBy`, pivots, and window functions (Module 8) — except the narrow
+  pre-join duplicate-resolution pattern in Notebook **02** (`groupBy` +
+  `agg` to keep one deterministic row per key). Aggregation pedagogy stays
+  in Module 8
 - CTEs and parameterized SQL pipelines (Module 9)
 - Delta ACID, time travel, `MERGE` DML, and schema evolution (Module 10)
 - Unity Catalog grants (Module 11)
