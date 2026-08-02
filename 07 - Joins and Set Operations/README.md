@@ -155,7 +155,7 @@ Schemas, column names, join keys, and Volume path rules:
   1–100 with zero gaps (verified from `drivers.xml`); no unexpected key
   NULLs from driver assignment
 
-Module 7 writes managed Delta tables using `saveAsTable(..., mode="overwrite")`.
+Module 7 writes managed Delta tables using `saveAsTable` with overwrite mode.
 Unity Catalog managed tables use Delta format by default on Databricks.
 Delta Lake internals — ACID guarantees, transaction log, time travel, schema
 evolution, and `MERGE` — are taught in Module 10.
@@ -189,8 +189,10 @@ Five notebooks, in this order:
      - List of shared column names: composite equi-join, brief syntax
        example only — no course dataset requires a composite key
      - Boolean column condition: explicit `df_left.col == df_right.col`;
-       when the key columns have different names, Spark retains both in the
-       result; Notebook 2 relies on this form for the repeated zone lookup
+       unlike the string/list forms, it always retains both sides' key
+       columns, whether or not the names match; Notebook 2 relies on this
+       form for the repeated zone lookup, where duplicate names come from
+       joining the same table twice, not from the Boolean syntax alone
    - **Constructed frame 1 — unmatched keys**: left `trip_id`
      `[1, 2, 3, 4, 5]`, right `trip_id` `[3, 4, 5, 6, 7]`; predict, then
      verify inner=3, left=5, right=5, full outer=7 — this is the demo that
