@@ -39,9 +39,7 @@
 # MAGIC it adds fare columns per trip.
 # MAGIC
 # MAGIC After loading, the second code cell runs all four join types on both pairs.
-# MAGIC All should return 100. This is a baseline signal — not proof of 1:1 grain
-# MAGIC (Section 2 establishes that), but a quick sanity check that nothing is
-# MAGIC obviously wrong.
+# MAGIC All should return 100 — that's the clean baseline.
 
 # COMMAND ----------
 
@@ -106,16 +104,24 @@ print("payment rows:", payment.count())
 
 # COMMAND ----------
 
-predicted = 100
-pairs = [("trip", "trip_time", trip, trip_time), ("trip", "payment", trip, payment)]
+# trip ↔ trip_time — all four types should return 100
+print("trip ↔ trip_time:")
+print("  inner:", trip.join(trip_time, "trip_id", "inner").count())
+print("  left: ", trip.join(trip_time, "trip_id", "left").count())
+print("  right:", trip.join(trip_time, "trip_id", "right").count())
+print("  full: ", trip.join(trip_time, "trip_id", "full").count())
 
-for left_name, right_name, left_df, right_df in pairs:
-    print(f"{left_name} ↔ {right_name}:")
-    for how in ["inner", "left", "right", "full"]:
-        actual = left_df.join(right_df, "trip_id", how).count()
-        mark = "✓" if actual == predicted else "✗"
-        print(f"  {mark} {how:6} → predicted={predicted}, actual={actual}")
-    print()
+print()
+
+# trip ↔ payment — same expectation
+print("trip ↔ payment:")
+print("  inner:", trip.join(payment, "trip_id", "inner").count())
+print("  left: ", trip.join(payment, "trip_id", "left").count())
+print("  right:", trip.join(payment, "trip_id", "right").count())
+print("  full: ", trip.join(payment, "trip_id", "full").count())
+
+print("\n→ All same. No duplicates, no unmatched keys, no NULLs.")
+print("  The rest of this notebook shows what happens when that breaks.")
 
 # COMMAND ----------
 
@@ -165,21 +171,39 @@ left_mm.join(right_mm, "trip_id", "inner").show()
 # MAGIC 3. **NULL key count** — rows where the key is NULL
 # MAGIC
 # MAGIC If rows == distinct and nulls == 0 → the key is unique and complete.
-# MAGIC If not → fix before joining (next section).
+# MAGIC If not:
+# MAGIC * rows ≠ distinct, but data is correct → the table's grain is finer than
+# MAGIC   your key → find the composite key (Notebook 01 Section 3.2: `[trip_id,
+# MAGIC   charge_type]` instead of just `trip_id`)
+# MAGIC * rows ≠ distinct, data has true duplicates → resolve before joining
+# MAGIC   (Section 3 below)
+# MAGIC * nulls > 0 → inner joins will silently drop those rows (Section 4)
 
 # COMMAND ----------
 
-for name, df in [("trip", trip), ("trip_time", trip_time), ("payment", payment)]:
-    stats = df.select(
-        F.count(F.lit(1)).alias("rows"),
-        F.countDistinct("trip_id").alias("distinct_keys"),
-        F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("null_keys"),
-    ).collect()[0]
-    print(
-        f"{name:10} rows={stats['rows']}, "
-        f"distinct={stats['distinct_keys']}, "
-        f"nulls={stats['null_keys']}"
-    )
+# Profile trip
+trip_stats = trip.select(
+    F.count(F.lit(1)).alias("rows"),
+    F.countDistinct("trip_id").alias("distinct"),
+    F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
+).collect()[0]
+print(f"trip       rows={trip_stats['rows']}, distinct={trip_stats['distinct']}, nulls={trip_stats['nulls']}")
+
+# Profile trip_time
+tt_stats = trip_time.select(
+    F.count(F.lit(1)).alias("rows"),
+    F.countDistinct("trip_id").alias("distinct"),
+    F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
+).collect()[0]
+print(f"trip_time  rows={tt_stats['rows']}, distinct={tt_stats['distinct']}, nulls={tt_stats['nulls']}")
+
+# Profile payment
+pay_stats = payment.select(
+    F.count(F.lit(1)).alias("rows"),
+    F.countDistinct("trip_id").alias("distinct"),
+    F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
+).collect()[0]
+print(f"payment    rows={pay_stats['rows']}, distinct={pay_stats['distinct']}, nulls={pay_stats['nulls']}")
 
 # COMMAND ----------
 
@@ -195,25 +219,38 @@ for name, df in [("trip", trip), ("trip_time", trip_time), ("payment", payment)]
 # MAGIC | `groupBy("trip_id").agg(...)` | Keeps one row using YOUR rule — deterministic, same input always gives same output |
 # MAGIC
 # MAGIC `dropDuplicates` is fine when all rows for a key are truly identical. When
-# MAGIC they differ (different payloads, timestamps, amounts), use `groupBy` with an
-# MAGIC explicit rule: `max`, `min`, `F.first`, or whatever your business logic requires.
+# MAGIC they differ (different timestamps, amounts, statuses), use `groupBy` with an
+# MAGIC explicit rule.
+# MAGIC
+# MAGIC Most common real-world pattern: same trip appears twice because ETL ran twice
+# MAGIC or the source sent a retry. The rows are identical except for an `updated_at`
+# MAGIC timestamp. Resolution: keep the row with the latest timestamp.
 
 # COMMAND ----------
 
-dup_payload = spark.createDataFrame(  # noqa: F821
-    [(1, "version-a"), (1, "version-b"), (2, "only-one")],
-    ["trip_id", "payload"],
+# ETL ran twice — same trip, different updated_at timestamps
+dup_trips = spark.createDataFrame(  # noqa: F821
+    [
+        (1, "Premium", 25.00, "2024-01-15 10:00:00"),
+        (1, "Premium", 25.00, "2024-01-15 14:30:00"),  # later retry
+        (2, "Standard", 12.50, "2024-01-15 09:00:00"),
+    ],
+    ["trip_id", "service_type", "fare", "updated_at"],
 )
 
-print("Before — trip_id=1 has two different payloads:")
-dup_payload.show()
+print("Before — trip_id=1 appears twice (ETL retry):")
+dup_trips.show(truncate=False)
 
-print("After dropDuplicates — which survived? Non-deterministic:")
-dup_payload.dropDuplicates(["trip_id"]).orderBy("trip_id").show()
+print("dropDuplicates — which row survived? Non-deterministic:")
+dup_trips.dropDuplicates(["trip_id"]).orderBy("trip_id").show(truncate=False)
 
-print("After groupBy + max — always picks 'version-b' (alphabetical max):")
-resolved = dup_payload.groupBy("trip_id").agg(F.max("payload").alias("payload"))
-resolved.orderBy("trip_id").show()
+print("groupBy + max(updated_at) — always keeps the latest:")
+resolved = dup_trips.groupBy("trip_id").agg(
+    F.first("service_type").alias("service_type"),
+    F.first("fare").alias("fare"),
+    F.max("updated_at").alias("updated_at"),
+)
+resolved.orderBy("trip_id").show(truncate=False)
 
 # Verify grain after resolution
 stats = resolved.select(
@@ -229,27 +266,47 @@ print(f"Resolved: rows={stats['rows']}, distinct={stats['distinct']} → grain i
 # MAGIC ## 4. NULL keys — silent data loss
 # MAGIC
 # MAGIC In SQL and Spark, `NULL = NULL` evaluates to `NULL` (not TRUE). Standard
-# MAGIC equality never matches NULL to NULL. Result: NULL-key rows vanish from inner
-# MAGIC joins without warning.
+# MAGIC equality never matches NULL to NULL.
 # MAGIC
-# MAGIC When you hit this: missing `trip_id` from upstream ETL, optional foreign keys,
-# MAGIC or NULLs introduced by a prior outer join.
+# MAGIC **Scenario:** A batch of trip records arrived with a corrupt `trip_id` (NULL)
+# MAGIC — the system failed to assign an ID. Separately, a payment record came in
+# MAGIC that couldn't be linked to any trip (also NULL `trip_id`).
+# MAGIC
+# MAGIC You try to join trips with payments on `trip_id`:
 # MAGIC
 # MAGIC ```
-# MAGIC Left trip_id:  [1, 2, NULL]
-# MAGIC Right trip_id: [2, 3, NULL]
+# MAGIC trips   trip_id: [1, 2, NULL]   ← trip 3 has corrupt/missing ID
+# MAGIC payments trip_id: [2, 3, NULL]   ← payment with no linked trip
 # MAGIC ```
 # MAGIC
-# MAGIC 1. Decide which keys can match under standard equality (remember: NULL ≠ NULL).
-# MAGIC 2. Predict **inner**, **left**, **right**, and **full** row counts.
-# MAGIC 3. Replace each `None` below with your prediction, then run and verify.
+# MAGIC The NULL trip and the NULL payment look like they should match — but they
+# MAGIC don't. `NULL = NULL` is not TRUE in Spark. Both rows silently disappear
+# MAGIC from an inner join.
+# MAGIC
+# MAGIC Predict each join type, replace `None` below, then run:
+# MAGIC * **inner:** which trip_ids can actually match? (hint: NULL can't)
+# MAGIC * **left:** all left rows stay — how many?
+# MAGIC * **right:** all right rows stay — how many?
+# MAGIC * **full:** everything from both sides — how many unique entities?
 
 # COMMAND ----------
 
-nullable_schema = StructType([StructField("trip_id", LongType(), True)])
+# Trips — one record has corrupt/missing trip_id (NULL)
+trips_with_null = spark.createDataFrame(  # noqa: F821
+    [(1, "Premium"), (2, "Standard"), (None, "XL")],
+    ["trip_id", "service_type"],
+)
 
-null_left = spark.createDataFrame([(1,), (2,), (None,)], schema=nullable_schema)  # noqa: F821
-null_right = spark.createDataFrame([(2,), (3,), (None,)], schema=nullable_schema)
+# Payments — one payment couldn't be linked to a trip (NULL)
+payments_with_null = spark.createDataFrame(
+    [(2, 15.00), (3, 22.50), (None, 8.00)],
+    ["trip_id", "fare"],
+)
+
+print("Trips:")
+trips_with_null.show()
+print("Payments:")
+payments_with_null.show()
 
 # YOUR PREDICTIONS — replace None with expected row count
 predictions = {
@@ -260,7 +317,7 @@ predictions = {
 }
 
 for join_type, predicted in predictions.items():
-    actual = null_left.join(null_right, "trip_id", join_type).count()
+    actual = trips_with_null.join(payments_with_null, "trip_id", join_type).count()
     mark = "✓" if predicted == actual else "✗"
     print(f"{mark} {join_type:6} → predicted={predicted}, actual={actual}")
 
@@ -286,16 +343,21 @@ for join_type, predicted in predictions.items():
 
 # COMMAND ----------
 
-null_left_a = null_left.alias("l")
-null_right_a = null_right.alias("r")
+# Standard inner join — NULL rows lost
+standard = trips_with_null.join(payments_with_null, "trip_id", "inner")
+print(f"Standard inner: {standard.count()} row (NULL didn't match)")
+standard.show()
 
-eq_safe = null_left_a.join(
-    null_right_a,
-    F.col("l.trip_id").eqNullSafe(F.col("r.trip_id")),
+# eqNullSafe inner join — NULL rows matched
+trips_a = trips_with_null.alias("t")
+payments_a = payments_with_null.alias("p")
+
+eq_safe = trips_a.join(
+    payments_a,
+    F.col("t.trip_id").eqNullSafe(F.col("p.trip_id")),
     "inner",
 )
-
-print(f"inner (eqNullSafe): predicted=2, actual={eq_safe.count()}")
+print(f"eqNullSafe inner: {eq_safe.count()} rows (NULL matched NULL)")
 eq_safe.show()
 
 # COMMAND ----------
@@ -304,32 +366,55 @@ eq_safe.show()
 # MAGIC %md
 # MAGIC ## 5. Cartesian products — intentional versus accidental
 # MAGIC
-# MAGIC | Code | Intent | Result (2 × 3) |
-# MAGIC |---|---|---|
-# MAGIC | `a.crossJoin(b)` | Intentional — all combinations | 6 |
-# MAGIC | `a.join(b, F.lit(True), "inner")` | Anti-pattern — always-true condition | 6 |
+# MAGIC A Cartesian product is every row on the left paired with every row on the
+# MAGIC right. Think of it as M:M taken to the extreme — every key "matches" every
+# MAGIC key.
 # MAGIC
-# MAGIC `crossJoin` is legitimate when you need every combination (e.g., generating a
-# MAGIC calendar × product grid). `F.lit(True)` as a join condition is an explicit
-# MAGIC always-true anti-pattern that demonstrates Cartesian risk — not a realistic
-# MAGIC example of merely "forgetting" a key, but it shows what the failure looks like.
+# MAGIC **Why it happens:** the join condition evaluates to TRUE for every
+# MAGIC combination. No filtering, no key comparison — just "pair everything."
 # MAGIC
-# MAGIC On production tables: 100K × 100K = 10 billion rows. Your cluster crashes or
-# MAGIC runs for hours. If you see an always-true condition in a join, treat it as a
-# MAGIC bug.
+# MAGIC **Intentional use case:** You're building a pricing grid. You have 3 service
+# MAGIC types and 3 zones. You need a row for every combination so you can assign
+# MAGIC a base rate to each. That's `crossJoin` — explicit, readable, intentional.
+# MAGIC After the crossJoin, you add a rate column based on service type.
+# MAGIC
+# MAGIC **Accidental anti-pattern:** You write a Boolean join condition but use
+# MAGIC `F.lit(True)` instead of an actual column comparison. The condition is always
+# MAGIC true, so every left row matches every right row. Same 9 rows, but it's a bug.
+# MAGIC
+# MAGIC The danger isn't on small data (3 × 3 = 9). It's on production:
+# MAGIC 100K trips × 100K payments = **10 billion rows**. No error message — your
+# MAGIC cluster just runs out of memory or hangs for hours.
+# MAGIC
+# MAGIC **How to spot it:** if your join output is dramatically larger than either
+# MAGIC input and you didn't expect it, check the join condition. An always-true
+# MAGIC condition or a missing key is usually the cause.
 
 # COMMAND ----------
 
-tiny_a = spark.createDataFrame([(1,), (2,)], ["k"])  # noqa: F821
-tiny_b = spark.createDataFrame([("x",), ("y",), ("z",)], ["tag"])
+# Intentional: generate a pricing grid (all service × zone combinations)
+service_types = spark.createDataFrame(  # noqa: F821
+    [("Premium",), ("Standard",), ("XL",)], ["service_type"]
+)
+zones = spark.createDataFrame(
+    [("Manhattan",), ("Brooklyn",), ("Queens",)], ["zone"]
+)
 
-intentional = tiny_a.crossJoin(tiny_b)
-print(f"Intentional crossJoin: 2 × 3 = {intentional.count()} rows")
-intentional.show()
+pricing_grid = service_types.crossJoin(zones).withColumn(
+    "base_rate",
+    F.when(F.col("service_type") == "Premium", 25.00)
+    .when(F.col("service_type") == "XL", 20.00)
+    .otherwise(12.00),
+)
+print(f"Intentional crossJoin: 3 service types × 3 zones = {pricing_grid.count()} rows")
+print("Every combination gets a base rate:")
+pricing_grid.show()
 
-anti_pattern = tiny_a.join(tiny_b, F.lit(True), "inner")
-print(f"Anti-pattern F.lit(True): 2 × 3 = {anti_pattern.count()} rows")
-print("→ Same result. On large tables, this is a silent disaster.")
+# Accidental: forgot the join key, used always-true condition
+print("Accidental — F.lit(True) instead of 'trip_id':")
+accidental = service_types.join(zones, F.lit(True), "inner")
+print(f"Same result: {accidental.count()} rows")
+print("→ On production (100K × 100K) this would be 10 billion rows.")
 
 # COMMAND ----------
 
@@ -337,56 +422,83 @@ print("→ Same result. On large tables, this is a silent disaster.")
 # MAGIC %md
 # MAGIC ## 6. Exercise — full pre-join and post-join validation
 # MAGIC
-# MAGIC Apply the complete workflow on `trip` ↔ `payment`:
+# MAGIC **Scenario:** A `driver_payouts` table arrived from the finance system. It
+# MAGIC should have one payout per trip, but the extract has issues you need to
+# MAGIC detect.
 # MAGIC
-# MAGIC 1. Profile key uniqueness (rows vs distinct)
-# MAGIC 2. Count NULL keys
-# MAGIC 3. Predict inner and left join counts
-# MAGIC 4. Run and verify
+# MAGIC Your task:
+# MAGIC 1. Profile `driver_payouts` on `trip_id` (rows, distinct, nulls)
+# MAGIC 2. Look at the profile result — is it safe to inner join with `trip`?
+# MAGIC 3. Predict: if you inner join `trip` (100 rows, unique) with
+# MAGIC    `driver_payouts` as-is, how many rows will you get?
+# MAGIC 4. Replace `None` with your prediction, run, and verify
 # MAGIC
-# MAGIC Replace `None` below with your predictions, then run.
+# MAGIC **Think about:** Does the profile show duplicates? NULLs? What failure mode
+# MAGIC from this notebook would you hit?
 
 # COMMAND ----------
 
-# Profile
-for name, df in [("trip", trip), ("payment", payment)]:
-    stats = df.select(
-        F.count(F.lit(1)).alias("rows"),
-        F.countDistinct("trip_id").alias("distinct"),
-        F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
-    ).collect()[0]
-    print(f"{name:8} rows={stats['rows']}, distinct={stats['distinct']}, nulls={stats['nulls']}")
+# Finance extract — has issues you need to detect
+driver_payouts = spark.createDataFrame(  # noqa: F821
+    [
+        (1, 18.50),
+        (2, 10.00),
+        (2, 10.00),   # duplicate — payout processed twice
+        (3, 30.00),
+        (None, 5.00), # NULL — couldn't link to a trip
+    ],
+    ["trip_id", "payout_amount"],
+)
+
+# Step 1: Profile driver_payouts
+print("driver_payouts:")
+driver_payouts.show()
+
+payout_stats = driver_payouts.select(
+    F.count(F.lit(1)).alias("rows"),
+    F.countDistinct("trip_id").alias("distinct"),
+    F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
+).collect()[0]
+print(f"Profile: rows={payout_stats['rows']}, distinct={payout_stats['distinct']}, nulls={payout_stats['nulls']}")
+print("  → rows ≠ distinct: duplicates exist!")
+print("  → nulls > 0: inner join will drop that row!")
 
 print()
 
-# YOUR PREDICTIONS — replace None
+# Step 2: YOUR PREDICTION — inner join trip (100 unique) with driver_payouts (as-is)
+# Think: trip has keys [1..100]. driver_payouts has keys [1, 2, 2, 3, NULL].
+# Which keys overlap? What about the duplicate? What about the NULL?
 predicted_inner = None
-predicted_left = None
 
-# Verify
-actual_inner = trip.join(payment, "trip_id", "inner").count()
-actual_left = trip.join(payment, "trip_id", "left").count()
-
-mark_i = "✓" if predicted_inner == actual_inner else "✗"
-mark_l = "✓" if predicted_left == actual_left else "✗"
-print(f"{mark_i} inner → predicted={predicted_inner}, actual={actual_inner}")
-print(f"{mark_l} left  → predicted={predicted_left}, actual={actual_left}")
+# Step 3: Verify
+actual_inner = trip.join(driver_payouts, "trip_id", "inner").count()
+mark = "✓" if predicted_inner == actual_inner else "✗"
+print(f"{mark} inner → predicted={predicted_inner}, actual={actual_inner}")
 
 # COMMAND ----------
 
 # DBTITLE 1,Summary
 # MAGIC %md
-# MAGIC ## Summary — `profile → predict → run → verify`
+# MAGIC ## Summary — what to do before every join
 # MAGIC
-# MAGIC | Failure mode | What happens | How to prevent |
-# MAGIC |---|---|---|
-# MAGIC | M:M duplicates | Rows multiply per key | Profile: rows == distinct? |
-# MAGIC | NULL keys | Inner joins drop NULL-key rows | Profile NULL count; eqNullSafe if needed |
-# MAGIC | Accidental Cartesian | Every row × every row | Never join on always-true condition |
-# MAGIC | Non-deterministic dedup | Different plans may keep different rows | groupBy + explicit rule |
+# MAGIC **The workflow:**
 # MAGIC
-# MAGIC This habit catches row-count failures. It does not prove every joined value
-# MAGIC is correct — that requires checking output columns against business
+# MAGIC 1. **Profile** both sides on the join key (rows, distinct, nulls)
+# MAGIC 2. **Decide** — is it safe to join as-is?
+# MAGIC    * rows ≠ distinct → resolve duplicates (groupBy, not dropDuplicates)
+# MAGIC    * nulls > 0 → handle before inner join (or use eqNullSafe)
+# MAGIC 3. **Predict** the output row count based on what you know
+# MAGIC 4. **Run** the join
+# MAGIC 5. **Verify** — actual == predicted? If not, investigate.
+# MAGIC
+# MAGIC **What this catches:**
+# MAGIC * M:M fanout (rows multiply because duplicates exist on both sides)
+# MAGIC * NULL-key loss (rows vanish from inner joins)
+# MAGIC * Accidental Cartesian (output explodes because join condition is wrong)
+# MAGIC
+# MAGIC **What this does NOT catch:** value-level errors. Your row count can be
+# MAGIC correct but the joined values can still be wrong (e.g., matching to the
+# MAGIC wrong record). That requires checking output columns against business
 # MAGIC expectations (Notebook 08).
 # MAGIC
 # MAGIC **Next:** `03 - Lookup Joins and Unmatched Dimensions`
