@@ -3,15 +3,56 @@
 # MAGIC
 # MAGIC # 01 - Grain, Join Syntax, and Unmatched Keys
 # MAGIC
-# MAGIC Imagine joining a rideshare trip table to a billing table that stores one row
-# MAGIC per charge type — base fare, surge, and tip as three separate rows. A join on
-# MAGIC `trip_id` alone turns each trip into three output rows. No error. No warning.
-# MAGIC Just three times as many rows and every downstream aggregate quietly wrong.
+# MAGIC Join bugs often show up as **wrong row counts**, not syntax errors. That happens
+# MAGIC when you join two tables on **`trip_id`** but each side means something
+# MAGIC different by "one row."
 # MAGIC
-# MAGIC That kind of **silent row multiplication** is the most common source of join
-# MAGIC bugs in production pipelines. It does not come from syntax mistakes — it comes
-# MAGIC from not knowing the **grain** and **cardinality** of the inputs before the join
-# MAGIC runs.
+# MAGIC **In this course, landing `payment` is trip grain:** one row per **`trip_id`**
+# MAGIC with fare columns on the same row (same idea as **`trip`** ↔ **`payment`**
+# MAGIC in Notebook **`02`**). That is intentional data modeling for trip-level
+# MAGIC analytics — not bad design.
+# MAGIC
+# MAGIC Some **other** systems (or staging feeds) store **line-level** billing: one row
+# MAGIC per charge type. That grain is valid too — but joining it to a trip table on
+# MAGIC **`trip_id` only** multiplies rows. Below is a tiny sketch (not our landing
+# MAGIC **`payment`** table):
+# MAGIC
+# MAGIC **Trip summary — 1 row per trip**
+# MAGIC
+# MAGIC | trip_id | service_type |
+# MAGIC |---|---|
+# MAGIC | 1 | Standard |
+# MAGIC | 2 | Premium |
+# MAGIC
+# MAGIC **Line-level billing — 3 rows per trip (charge type on each row)**
+# MAGIC
+# MAGIC | trip_id | charge_type | amount |
+# MAGIC |---|---|---|
+# MAGIC | 1 | base_fare | 8.00 |
+# MAGIC | 1 | surge | 3.00 |
+# MAGIC | 1 | tip | 1.50 |
+# MAGIC | 2 | base_fare | 18.00 |
+# MAGIC | 2 | surge | 5.00 |
+# MAGIC | 2 | tip | 2.00 |
+# MAGIC
+# MAGIC **After `inner` join on `trip_id` only — 6 rows (1:M fanout)**
+# MAGIC
+# MAGIC | trip_id | service_type | charge_type | amount |
+# MAGIC |---|---|---|---|
+# MAGIC | 1 | Standard | base_fare | 8.00 |
+# MAGIC | 1 | Standard | surge | 3.00 |
+# MAGIC | 1 | Standard | tip | 1.50 |
+# MAGIC | 2 | Premium | base_fare | 18.00 |
+# MAGIC | 2 | Premium | surge | 5.00 |
+# MAGIC | 2 | Premium | tip | 2.00 |
+# MAGIC
+# MAGIC No error. No warning — just duplicated trip attributes and **`count(*)`** or
+# MAGIC **`sum(trip_distance_miles)`** on the join result can be wrong. Later in this
+# MAGIC notebook, **`trip_summary`** and **`trip_charges`** replay this pattern in
+# MAGIC code so you can predict and verify row counts.
+# MAGIC
+# MAGIC That kind of **silent row multiplication** is why you need **grain** and
+# MAGIC **cardinality** before every join.
 # MAGIC
 # MAGIC This notebook gives you the vocabulary and the habit to catch it early:
 # MAGIC
@@ -38,7 +79,8 @@
 # MAGIC Volume must contain **`trip`** (CSV, 100 rows) and **`trip_time`** (Parquet, 100
 # MAGIC rows) at the paths used below.
 # MAGIC
-# MAGIC **Reads:** landing **`trip`** and **`trip_time`** only. **No writes.**
+# MAGIC **Reads:** landing **`trip`** and **`trip_time`** only (not **`payment`** yet).
+# MAGIC **No writes.**
 
 # COMMAND ----------
 
@@ -208,17 +250,20 @@ join_string.select("trip_id", "trip_date", "hour_of_day").show(3, truncate=False
 # MAGIC %md
 # MAGIC ### 1:M — one key matches multiple rows on the other side
 # MAGIC
-# MAGIC Real billing systems often store charges in long format — one row per charge
-# MAGIC type (base fare, surge, tip) rather than one row per trip. **`trip_summary`**
-# MAGIC below represents the trip-level view (one row per **`trip_id`**) and
-# MAGIC **`trip_charges`** represents the charge-level view (up to three rows per
-# MAGIC **`trip_id`**). This mirrors how a production payment pipeline might separate
-# MAGIC aggregated totals from itemised charge records.
+# MAGIC The tables at the top of this notebook showed **line-level** billing joined to
+# MAGIC a **trip-level** table on **`trip_id` only**. The frames below are the same
+# MAGIC teaching pattern in code — **not** a second copy of landing **`payment`**.
 # MAGIC
-# MAGIC Joining **`trip_summary`** to **`trip_charges`** on **`trip_id` only** is a
-# MAGIC **1:M** join from the summary side. Each summary row fans out to match every
-# MAGIC charge row that shares its key. With 2 trips × 3 charges each, predict **6**
-# MAGIC output rows.
+# MAGIC | Table | Grain in this demo | Landing dataset equivalent |
+# MAGIC |---|---|---|
+# MAGIC | **`trip_summary`** | 1 row per **`trip_id`** | **`trip`** (trip-level) |
+# MAGIC | **`trip_charges`** | up to 3 rows per **`trip_id`** | *constructed only* |
+# MAGIC | **`payment`** (Modules 5–7) | 1 row per **`trip_id`** | **1:1** with **`trip`** |
+# MAGIC
+# MAGIC Join **`trip_summary`** to **`trip_charges`** on **`trip_id` only** — a **1:M**
+# MAGIC join from the summary side. Each summary row matches every charge row with the
+# MAGIC same key. With 2 trips × 3 charge lines each, predict **6** rows (same as the
+# MAGIC intro table).
 
 # COMMAND ----------
 
@@ -520,9 +565,10 @@ print(f"Actual right rows: {actual_right_exercise}")
 # MAGIC silently multiply rows without raising an error.
 # MAGIC
 # MAGIC **Cardinality** (1:1, 1:M, M:1, M:M) tells you what to expect from the output
-# MAGIC row count. Landing `trip` ↔ `trip_time` is 1:1: safe to inner-join with no
-# MAGIC fanout. The constructed `trip_summary` ↔ `trip_charges` example showed 1:M
-# MAGIC and M:1 in action. M:M — where both sides have duplicate keys — is in
+# MAGIC row count. Landing **`trip`** ↔ **`trip_time`** is **1:1**. Landing **`trip`**
+# MAGIC ↔ **`payment`** is also **1:1** (wide fare columns) — you will join those in
+# MAGIC Notebook **`02`**. The constructed **`trip_summary`** ↔ **`trip_charges`**
+# MAGIC frames showed **1:M** and **M:1** on line-level grain only. **M:M** is in
 # MAGIC Notebook **`02`**.
 # MAGIC
 # MAGIC **Join condition syntax:** use a **string** when the key column has the same
