@@ -8,12 +8,18 @@
 # MAGIC tempting to reach for one by default. In production, **use Spark built-in
 # MAGIC functions first**.
 # MAGIC
-# MAGIC PySpark code builds Spark expressions and an execution plan. Built-in
-# MAGIC expressions are executed by Spark's **JVM-based engine**. The **Catalyst**
-# MAGIC optimizer can inspect those built-in expressions and optimize them together
-# MAGIC with the surrounding query plan. A UDF wraps opaque Python logic — Catalyst
-# MAGIC cannot inspect or optimize code inside the function, so Spark can only call it
-# MAGIC as a black box.
+# MAGIC PySpark DataFrame transformations written with built-in `F.*` functions create
+# MAGIC Spark expressions and add them to the execution plan. Spark executes those
+# MAGIC expressions using its JVM-based engine.
+# MAGIC
+# MAGIC Catalyst can inspect built-in expressions and optimize them together with the
+# MAGIC surrounding query plan. A Python UDF contains regular Python logic, so Spark
+# MAGIC must run it in a separate Python worker. Catalyst can execute the UDF but cannot
+# MAGIC inspect or optimize the logic inside the function.
+# MAGIC
+# MAGIC Not all PySpark code builds Spark expressions — `print()`, assignments, and
+# MAGIC helper functions run as ordinary Python. This notebook focuses on **column
+# MAGIC transforms** built with `F.*`.
 # MAGIC
 # MAGIC This notebook implements the same small rule twice — built-in and Python UDF —
 # MAGIC so you can compare execution behavior and decide when a UDF is genuinely
@@ -120,14 +126,15 @@ payment_tip_band_builtin.orderBy(F.col("trip_id")).show(10, truncate=False)
 # MAGIC %md
 # MAGIC ## 2. The same rule as a Python UDF
 # MAGIC
-# MAGIC Built-in Spark expressions run in Spark's JVM-based engine. A regular Python
-# MAGIC UDF cannot run there — Spark must run your Python function in a separate
-# MAGIC **Python worker** on the cluster.
+# MAGIC PySpark DataFrame code is written in Python, but built-in column expressions do
+# MAGIC not process rows as ordinary Python code. Python builds Spark expressions; Spark
+# MAGIC executes them in its JVM-based engine. A Python UDF is different: its logic is
+# MAGIC regular Python, so Spark runs it in **Python worker** processes on the cluster.
 # MAGIC
-# MAGIC Spark transfers **batches** of values from the JVM executor to that worker. Your
-# MAGIC Python function still processes **one value at a time** inside the worker. That
-# MAGIC JVM–Python boundary adds serialization overhead that built-in expressions avoid.
-# MAGIC Catalyst cannot inspect or optimize the Python logic inside the UDF.
+# MAGIC Spark transfers **batches** of values between the JVM executor and the Python
+# MAGIC worker, while your function still processes **one value at a time** inside the
+# MAGIC worker. That JVM–Python boundary adds serialization overhead built-in expressions
+# MAGIC avoid. Catalyst cannot inspect or optimize the Python logic inside the UDF.
 # MAGIC
 # MAGIC The demo below produces the same `tip_band` values as the built-in version; the
 # MAGIC difference is where and how Spark executes the logic.
@@ -169,9 +176,23 @@ payment_tip_band_udf.orderBy(F.col("trip_id")).show(10, truncate=False)
 # MAGIC
 # MAGIC | Approach | Execution | Use when |
 # MAGIC |---|---|---|
-# MAGIC | Built-in `F.*` | Spark JVM engine; visible to Catalyst | Default choice |
-# MAGIC | Python UDF | Python worker; logic opaque to Catalyst | Only when Spark built-ins cannot express the rule |
-# MAGIC | Pandas/Arrow UDF | Python worker with Arrow batches | Advanced fallback when vectorized Python logic is required |
+# MAGIC | Built-in `F.*` | Spark JVM engine; Catalyst can inspect the expression | Default choice |
+# MAGIC | Python UDF | Python worker; logic is opaque to Catalyst | No suitable Spark built-in exists |
+# MAGIC | Pandas/Arrow UDF | Python worker using Arrow batches | Advanced fallback for vectorized Python logic |
+# MAGIC
+# MAGIC **Decision rule.**
+# MAGIC
+# MAGIC ```
+# MAGIC Can Spark built-in functions express the rule?
+# MAGIC         |
+# MAGIC         +-- Yes → use built-in functions
+# MAGIC         |
+# MAGIC         +-- No  → consider a UDF
+# MAGIC                     |
+# MAGIC                     +-- Vectorized Python/Pandas logic → Pandas/Arrow UDF
+# MAGIC                     |
+# MAGIC                     +-- Otherwise → regular Python UDF as a last resort
+# MAGIC ```
 # MAGIC
 # MAGIC A common mistake is reaching for a UDF out of familiarity with plain Python
 # MAGIC before checking whether `pyspark.sql.functions` already covers the rule — most
@@ -204,8 +225,9 @@ payment_tip_band_udf.orderBy(F.col("trip_id")).show(10, truncate=False)
 # MAGIC 1. Build `trip_distance_band` with built-in `F.when`.
 # MAGIC 2. In a markdown cell or short comment, explain why a Python UDF is unnecessary
 # MAGIC    for this rule.
-# MAGIC 3. Name one situation where a UDF could be justified (you do not need to
-# MAGIC    implement it).
+# MAGIC 3. Name one transformation that could justify a UDF because it requires custom
+# MAGIC    Python logic or a Python library and has no suitable Spark built-in function
+# MAGIC    (you do not need to implement it).
 # MAGIC
 # MAGIC Do not write any result — this notebook only reads `curated/trip/` and
 # MAGIC `curated/payment/`, never overwrites them.
@@ -219,11 +241,15 @@ payment_tip_band_udf.orderBy(F.col("trip_id")).show(10, truncate=False)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Built-ins are the default.
-# MAGIC - Built-ins execute through Spark's JVM-based engine.
-# MAGIC - Python UDF logic runs in Python workers.
-# MAGIC - Python UDFs add serialization and process-boundary overhead.
-# MAGIC - Catalyst cannot inspect the Python logic inside a UDF.
-# MAGIC - Pandas/Arrow UDFs are only an advanced fallback and are not covered further.
+# MAGIC - **Default to built-ins.** Transformations with `F.*` create Spark expressions
+# MAGIC   that Spark runs in its JVM-based engine; Catalyst can inspect those expressions
+# MAGIC   and optimize them with the surrounding query plan.
+# MAGIC - **Python UDFs are a boundary crossing.** Regular Python logic runs in Python
+# MAGIC   workers with batch transfer from the JVM executor and per-value processing inside
+# MAGIC   the worker; Catalyst cannot inspect or optimize code inside the UDF.
+# MAGIC - **Reach for a UDF only when built-ins cannot express the rule** — for example
+# MAGIC   when you need custom Python or a library with no Spark built-in equivalent.
+# MAGIC   Pandas/Arrow UDFs are an advanced fallback for vectorized Python logic; this
+# MAGIC   course does not cover them further.
 # MAGIC
 # MAGIC **Next:** Module 7 — Joins and Set Operations.
