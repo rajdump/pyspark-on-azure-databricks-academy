@@ -131,10 +131,11 @@ payment_tip_band_builtin.orderBy(F.col("trip_id")).show(10, truncate=False)
 # MAGIC executes them in its JVM-based engine. A Python UDF is different: its logic is
 # MAGIC regular Python, so Spark runs it in **Python worker** processes on the cluster.
 # MAGIC
-# MAGIC Spark transfers **batches** of values between the JVM executor and the Python
-# MAGIC worker, while your function still processes **one value at a time** inside the
-# MAGIC worker. That JVM–Python boundary adds serialization overhead built-in expressions
-# MAGIC avoid. Catalyst cannot inspect or optimize the Python logic inside the UDF.
+# MAGIC Spark transfers batches of values between Spark's JVM executor process and a
+# MAGIC Python worker process. Inside the Python worker, the regular UDF still processes
+# MAGIC one value at a time. That JVM–Python boundary adds serialization overhead
+# MAGIC built-in expressions avoid. Catalyst cannot inspect or optimize the Python logic
+# MAGIC inside the UDF.
 # MAGIC
 # MAGIC The demo below produces the same `tip_band` values as the built-in version; the
 # MAGIC difference is where and how Spark executes the logic.
@@ -245,8 +246,9 @@ payment_tip_band_udf.orderBy(F.col("trip_id")).show(10, truncate=False)
 # MAGIC   that Spark runs in its JVM-based engine; Catalyst can inspect those expressions
 # MAGIC   and optimize them with the surrounding query plan.
 # MAGIC - **Python UDFs are a boundary crossing.** Regular Python logic runs in Python
-# MAGIC   workers with batch transfer from the JVM executor and per-value processing inside
-# MAGIC   the worker; Catalyst cannot inspect or optimize code inside the UDF.
+# MAGIC   worker processes; Spark transfers batches of values between Spark's JVM executor
+# MAGIC   process and those workers, and the UDF still processes one value at a time inside
+# MAGIC   the worker. Catalyst cannot inspect or optimize code inside the UDF.
 # MAGIC - **Reach for a UDF only when built-ins cannot express the rule** — for example
 # MAGIC   when you need custom Python or a library with no Spark built-in equivalent.
 # MAGIC   Pandas/Arrow UDFs are an advanced fallback for vectorized Python logic; this
