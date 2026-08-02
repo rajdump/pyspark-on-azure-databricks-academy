@@ -183,7 +183,9 @@ Eight notebooks, in this order:
    - **Join-condition syntax** — three forms before production joins:
      - Single shared column name (string): one coalesced key column in the result
      - List of shared column names: composite equi-join (mini-frame demo)
-     - Boolean column condition: retains both sides' key columns when names match
+     - Boolean column condition: **required** when key names differ (e.g.
+       `trip_id` = `trip_no`); when names match, both key columns may appear until
+       you `select` or alias — pickup/dropoff zone lookup in Notebooks **03–04**
    - **Constructed frame — unmatched keys**: left `trip_id` `[1…5]`, right
      `[3…7]`; predict and verify inner=3, left=5, right=5, full outer=7
    - Skill-building only — **no write**

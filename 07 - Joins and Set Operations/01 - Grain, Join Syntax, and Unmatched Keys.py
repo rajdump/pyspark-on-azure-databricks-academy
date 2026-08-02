@@ -178,9 +178,38 @@ print(
 # MAGIC %md
 # MAGIC ### Boolean: explicit column condition
 # MAGIC
-# MAGIC Use when key **names differ** or you need an explicit expression. Spark **keeps
-# MAGIC both sides' key columns** when names match — resolve them with aliases in
-# MAGIC Notebook **`04`**.
+# MAGIC Join keys **do not** have to share a column name. The string and list forms
+# MAGIC only work when **both sides use the same name(s)**. When names differ — e.g.
+# MAGIC **`trip_id`** on the fact table and **`trip_no`** on a staging file — use a
+# MAGIC **Boolean** expression: `left.trip_id == right.trip_no`.
+# MAGIC
+# MAGIC When names **match**, Boolean joins still keep **both** key columns unless you
+# MAGIC **`select`** away one; Notebook **`04`** uses aliases for pickup/dropoff zone lookup.
+
+# COMMAND ----------
+
+left_id = spark.createDataFrame(  # noqa: F821
+    [(1, "a"), (2, "b")],
+    ["trip_id", "note"],
+)
+right_no = spark.createDataFrame(
+    [(1, 10.0), (3, 30.0)],
+    ["trip_no", "score"],
+)
+
+join_diff_names = left_id.alias("l").join(
+    right_no.alias("r"),
+    F.col("l.trip_id") == F.col("r.trip_no"),
+    "inner",
+)
+
+print("Different key names — Boolean join only (string 'trip_id' would not apply):")
+join_diff_names.show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Same name on both sides — Boolean still exposes **`trip_id`** from each alias:
 
 # COMMAND ----------
 
@@ -259,7 +288,8 @@ print(f"Actual composite inner rows: {actual_composite_inner}")
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - **Grain** and **cardinality** vocabulary predict join behavior before you run code.
-# MAGIC - **String**, **list**, and **Boolean** join forms differ in how key columns appear.
+# MAGIC - **Boolean** joins express **`trip_id` = `trip_no`** and other mismatched key names;
+# MAGIC   string/list forms require the same name on both sides.
 # MAGIC - **Unmatched keys** make inner / left / right / full outer row counts diverge.
 # MAGIC
 # MAGIC **Next:** Module 7 **`02 - Join Types, NULL Keys, and Validation`** — landing
