@@ -182,7 +182,9 @@ Eight notebooks, in this order:
      row count before running a cell
    - **Join-condition syntax** — three forms before production joins:
      - Single shared column name (string): one coalesced key column in the result
-     - List of shared column names: composite equi-join (mini-frame demo)
+     - List of shared column names: composite equi-join on constructed
+       **`trip_charges`** ↔ **`rate_card`** on **`[trip_id, charge_type]`**, contrasted
+       with **`trip_id`-only** join from **`trip_summary`** (1:M fanout)
      - Boolean column condition: **required** when key names differ (e.g.
        `trip_id` = `trip_no`); when names match, both key columns may appear until
        you `select` or alias — pickup/dropoff zone lookup in Notebooks **03–04**

@@ -4,8 +4,8 @@
 # MAGIC # 01 - Grain, Join Syntax, and Unmatched Keys
 # MAGIC
 # MAGIC Before production joins, clarify **grain**, **cardinality**, and **join-condition
-# MAGIC syntax**. A small constructed example then shows how **inner**, **left**,
-# MAGIC **right**, and **full outer** joins change row counts when keys do not align.
+# MAGIC syntax**. Constructed examples show how join types change row counts when keys
+# MAGIC do not align or when a single key matches too broadly.
 # MAGIC
 # MAGIC You will:
 # MAGIC
@@ -74,31 +74,25 @@ print("trip_time rows:", trip_time.count())
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 5
 # MAGIC %md
 # MAGIC ## Grain orientation
 # MAGIC
+# MAGIC **Grain** is what one row represents. For **`trip`**, the grain is **one row per
+# MAGIC `trip_id`**. A join may **preserve** that grain (1:1), **widen** it (1:M), or
+# MAGIC **multiply** it (M:M) depending on key uniqueness on each side.
 # MAGIC
-# MAGIC **Grain** refers to what one row represents. For **`trip`**, each row stands for **one `trip_id`**. If the number of rows matches the number of unique **`trip_id`** entries, then the data is unique for that key.
-# MAGIC
-# MAGIC **To check this programmatically:**
-# MAGIC
-# MAGIC 1. Count the total number of rows using `F.count(F.lit(1))`.
-# MAGIC 2. Count the unique **`trip_id`** values with `F.countDistinct("trip_id")`.
-# MAGIC 3. Compare the two counts: if they are equal, the key is unique (no duplicates).
-# MAGIC
-# MAGIC The next step runs this check on **`trip`**. If the counts match, we can confidently say: **one row per trip — grain confirmed.**
+# MAGIC Compare total row count to **`countDistinct("trip_id")`**. When they match, the
+# MAGIC table is unique on that key.
 
 # COMMAND ----------
 
 trip_grain = trip.agg(
     F.count(F.lit(1)).alias("row_count"),
     F.countDistinct("trip_id").alias("distinct_trip_id"),
-).collect()[0] ##return first element from the list 
-##Row(row_count=100, distinct_trip_id=100)]
+).collect()[0]
 
 print(
-    f"Total: {trip_grain.row_count} rows in Trip Dataset, "
+    f"trip: {trip_grain.row_count} rows, "
     f"{trip_grain.distinct_trip_id} distinct trip_id values"
 )
 print(
@@ -110,13 +104,8 @@ print(
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 7
 # MAGIC %md
 # MAGIC ## Cardinality vocabulary
-# MAGIC
-# MAGIC **Cardinality** describes how many rows on the left match how many rows on the
-# MAGIC right for a given join key. Once you know the grain of each table, you can
-# MAGIC label the join relationship:
 # MAGIC
 # MAGIC | Label | Meaning | Row-count intuition (equi-join) |
 # MAGIC |---|---|---|
@@ -125,12 +114,9 @@ print(
 # MAGIC | **M:1** | Many left rows match one right row | Output follows left row count |
 # MAGIC | **M:M** | Duplicates on **both** sides | Output can **multiply sharply** |
 # MAGIC
-# MAGIC Landing **`trip`** ↔ **`trip_time`** on **`trip_id`** is **1:1** (100 rows and
-# MAGIC 100 distinct keys on each side). Notebook **`02`** applies the four join types on
-# MAGIC that landing pair.
-# MAGIC
-# MAGIC The next cell verifies **both** tables in a loop, confirming the 1:1 label
-# MAGIC is safe before any join.
+# MAGIC Landing **`trip`** ↔ **`trip_time`** on **`trip_id`** is **1:1**. **1:M** and **M:1**
+# MAGIC appear below on **`trip_summary`** ↔ **`trip_charges`**. **M:M** fanout is in
+# MAGIC Notebook **`02`**.
 
 # COMMAND ----------
 
@@ -143,115 +129,51 @@ for name, df in [("trip", trip), ("trip_time", trip_time)]:
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 9
 # MAGIC %md
-# MAGIC ## Understand Join-condition syntax
-# MAGIC
-# MAGIC PySpark provides three ways to express that equality condition:
+# MAGIC ## Join-condition syntax
 # MAGIC
 # MAGIC | Form | Syntax | When to use |
 # MAGIC |---|---|---|
 # MAGIC | **String** | `"trip_id"` | Same join column name on both sides |
-# MAGIC | **List** | `["trip_id", "leg_id"]` | Multiple join column names (composite key) |
-# MAGIC | **Boolean** | `F.col("l.key") == F.col("r.key")` | join column names differ, or you need full control |
+# MAGIC | **List** | `["trip_id", "charge_type"]` | Composite key; same column names both sides |
+# MAGIC | **Boolean** | `F.col("l.key") == F.col("r.key")` | Different key names or full control |
 # MAGIC
-# MAGIC Notebook **`03`** needs the **Boolean** form because the zone lookup table uses
-# MAGIC a different column name than the trip table (`location_id` vs `zone_id`).
-# MAGIC
-# MAGIC The following subsections demonstrate each form with working examples.
+# MAGIC Notebook **`03`** uses **Boolean** for zone lookup:
+# MAGIC **`pickup_location_id`** / **`dropoff_location_id`** ↔ **`zone_lookup.location_id`**.
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 10
 # MAGIC %md
-# MAGIC ### Same join column name on both sides
+# MAGIC ### String: same join column name on both sides
 # MAGIC
-# MAGIC
-# MAGIC
-# MAGIC ```python
-# MAGIC df_left.join(df_right, "trip_id", "inner")
-# MAGIC ```
-# MAGIC
-# MAGIC **Key behavior:** because both tables have a column named `trip_id`, Spark
-# MAGIC automatically matches them and keeps only **one** copy of the key column in
-# MAGIC the output. This is the simplest and cleanest join syntax when column names
-# MAGIC already align.
-# MAGIC
-# MAGIC The next cell joins **`trip`** ↔ **`trip_time`** this way and prints the
-# MAGIC resulting columns and row count.
+# MAGIC Spark coalesces duplicate key columns into **one** **`trip_id`** in the result.
 
 # COMMAND ----------
 
 join_string = trip.join(trip_time, "trip_id", "inner")
 print("Columns after string join on trip_id:", join_string.columns)
 print("Row count:", join_string.count())
-join_string.select("*").show(1, truncate=False,vertical=True)
+join_string.select("trip_id", "trip_date", "hour_of_day").show(3, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 12
 # MAGIC %md
-# MAGIC ###  Multiple join column names (composite key)
+# MAGIC ### List: multiple join column names (composite key)
 # MAGIC
-# MAGIC Pass a **list of column names** when the relationship requires more than one key.
+# MAGIC **`trip_charges`** is one row per **`trip_id` + `charge_type`** (base fare, surge,
+# MAGIC tip — same ideas as landing **`payment`**, in long form for join practice).
 # MAGIC
-# MAGIC ```python
-# MAGIC df_left.join(df_right, ["trip_id", "leg_id"], "inner")
-# MAGIC ```
-# MAGIC
-# MAGIC **Why composite keys matter:** sometimes a single column is not enough to
-# MAGIC uniquely identify a match. For example, a trip with multiple legs needs both
-# MAGIC `trip_id` AND `leg_id` to pinpoint the exact row.
-# MAGIC
-# MAGIC The next cell demonstrates the difference:
-# MAGIC - Joining on `trip_id` alone → more rows (matches across different legs)
-# MAGIC - Joining on `[trip_id, leg_id]` → fewer, precise rows (exact leg match)
+# MAGIC - **`trip_summary`** join **`trip_charges`** on **`trip_id` only** → **1:M** (predict **6**)
+# MAGIC - **`trip_charges`** join **`rate_card`** on **`[trip_id, charge_type]`** → predict **4**
 
 # COMMAND ----------
 
-left_composite = spark.createDataFrame(  # noqa: F821
-    [(1, 10, "left-a"), (2, 20, "left-b")],
-    ["trip_id", "leg_id", "left_note"],
-)
-right_composite = spark.createDataFrame(
-    [(1, 10, "match"), (1, 11, "other-leg"), (2, 20, "match")],
-    ["trip_id", "leg_id", "right_flag"],
-)
-
-print(
-    "Join on trip_id only (ignores leg_id):",
-    left_composite.join(right_composite, "trip_id", "inner").count(),
-)
-print(
-    "Join on [trip_id, leg_id] (composite):",
-    left_composite.join(right_composite, ["trip_id", "leg_id"], "inner").count(),
-)
-
-# COMMAND ----------
-
-# DBTITLE 1,Rideshare composite key example
-# MAGIC %md
-# MAGIC    
-# MAGIC #### Rideshare scenario: why a single key can match too broadly
-# MAGIC
-# MAGIC Imagine each trip has multiple charge line items (base fare, surge, tip).
-# MAGIC The **`trip_charges`** table has a grain of **one row per `trip_id` + `charge_type`**.
-# MAGIC
-# MAGIC - Joining on `trip_id` alone → each trip matches **all** its charges → row multiplication (1:M)
-# MAGIC - Joining on `[trip_id, charge_type]` → matches only where **both** columns align → precise results
-# MAGIC
-# MAGIC The next cell builds this scenario and shows the row count difference.
-
-# COMMAND ----------
-
-# DBTITLE 1,Rideshare composite key demo
-# --- Rideshare composite key: trip_charges ---
-trip_summary = spark.createDataFrame(
+trip_summary = spark.createDataFrame(  # noqa: F821
     [(1, "standard", 12.50), (2, "premium", 25.00)],
     ["trip_id", "service_type", "total_fare"],
 )
 
-trip_charges = spark.createDataFrame(
+trip_charges = spark.createDataFrame(  # noqa: F821
     [
         (1, "base_fare", 8.00),
         (1, "surge", 3.00),
@@ -263,8 +185,7 @@ trip_charges = spark.createDataFrame(
     ["trip_id", "charge_type", "amount"],
 )
 
-# Rate card has expected amounts for base_fare and surge only (no tip)
-rate_card = spark.createDataFrame(
+rate_card = spark.createDataFrame(  # noqa: F821
     [
         (1, "base_fare", 8.00),
         (1, "surge", 3.00),
@@ -274,49 +195,49 @@ rate_card = spark.createDataFrame(
     ["trip_id", "charge_type", "expected_amount"],
 )
 
-print("=== trip_charges (grain: one row per trip_id + charge_type) ===")
-trip_charges.show()
-
-print("--- Single key: trip_id only ---")
+predicted_trip_id_only = 6
 single_key = trip_summary.join(trip_charges, "trip_id", "inner")
-print(f"Row count: {single_key.count()} (each trip matched ALL its charges)")
-single_key.show()
+actual_trip_id_only = single_key.count()
+print(
+    f"trip_id only: predicted={predicted_trip_id_only}, actual={actual_trip_id_only}"
+)
 
-print("--- Composite key: [trip_id, charge_type] ---")
+predicted_composite = 4
 composite_key = trip_charges.join(rate_card, ["trip_id", "charge_type"], "inner")
-print(f"Row count: {composite_key.count()} (only exact trip + charge_type matches)")
-composite_key.show()
+actual_composite = composite_key.count()
+print(
+    f"[trip_id, charge_type]: predicted={predicted_composite}, "
+    f"actual={actual_composite}"
+)
+composite_key.show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 14
+# MAGIC %md
+# MAGIC ### M:1 — many left rows per right key
+# MAGIC
+# MAGIC Flip the **1:M** join: put **`trip_charges`** on the left and **`trip_summary`**
+# MAGIC on the right (still **`trip_id` only**). Each charge row matches one summary row,
+# MAGIC so the output row count follows the **left** side — predict **6**, same as **1:M**
+# MAGIC fanout but with **M:1** vocabulary.
+
+# COMMAND ----------
+
+predicted_m1 = 6
+m1_join = trip_charges.join(trip_summary, "trip_id", "inner")
+actual_m1 = m1_join.count()
+print(f"M:1 (charges → summary on trip_id): predicted={predicted_m1}, actual={actual_m1}")
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Boolean: explicit column condition
 # MAGIC
-# MAGIC Join keys **do not** have to share a column name. The string and list forms
-# MAGIC only work when **both sides use the same name(s)**. When names differ — e.g.
-# MAGIC **`trip_id`** on the fact table and **`trip_no`** on a staging file — use a
-# MAGIC **Boolean** expression:
+# MAGIC String and list forms require the **same column name(s)** on both sides. When names
+# MAGIC differ — **`trip_id`** vs **`trip_no`** — use a Boolean expression. That is also
+# MAGIC how Notebook **`03`** joins trip location columns to **`location_id`**.
 # MAGIC
-# MAGIC ```python
-# MAGIC left.alias("l").join(
-# MAGIC     right.alias("r"),
-# MAGIC     F.col("l.trip_id") == F.col("r.trip_no"),
-# MAGIC     "inner",
-# MAGIC )
-# MAGIC ```
-# MAGIC
-# MAGIC **Key differences from string/list form:**
-# MAGIC - You **must** alias both DataFrames (`alias("l")`, `alias("r")`) to
-# MAGIC   disambiguate columns
-# MAGIC - Spark keeps **both** key columns in the output (no auto-coalescing)
-# MAGIC - This is the **only** syntax that works when column names differ across tables
-# MAGIC
-# MAGIC When names **match**, Boolean joins still keep **both** key columns unless you
-# MAGIC **`select`** away one; Notebook **`04`** uses aliases for pickup/dropoff zone lookup.
-# MAGIC
-# MAGIC The next cell joins `trip_id` (left) to `trip_no` (right) — impossible with
-# MAGIC the string form.
+# MAGIC Boolean joins keep **both** key columns unless you **`select`** or alias them away.
 
 # COMMAND ----------
 
@@ -324,7 +245,7 @@ left_id = spark.createDataFrame(  # noqa: F821
     [(1, "a"), (2, "b")],
     ["trip_id", "note"],
 )
-right_no = spark.createDataFrame(
+right_no = spark.createDataFrame(  # noqa: F821
     [(1, 10.0), (3, 30.0)],
     ["trip_no", "score"],
 )
@@ -334,32 +255,15 @@ join_diff_names = left_id.alias("l").join(
     F.col("l.trip_id") == F.col("r.trip_no"),
     "inner",
 )
-
-print("Different key names — Boolean join only (string 'trip_id' would not apply):")
+print("trip_id = trip_no (Boolean only):")
 join_diff_names.show()
-
-# COMMAND ----------
-
-# DBTITLE 1,Cell 16
-# MAGIC %md
-# MAGIC **Same name on both sides — the duplicate-column trap:**
-# MAGIC
-# MAGIC When both tables have `trip_id` and you use the Boolean form
-# MAGIC (`t.trip_id == tt.trip_id`), Spark does **not** merge the key columns. You get
-# MAGIC **two** `trip_id` columns in the result. You must use the alias prefix
-# MAGIC (`t.trip_id` or `tt.trip_id`) in any subsequent `select` to avoid ambiguity.
-# MAGIC
-# MAGIC The next cell demonstrates this behavior with **`trip`** ↔ **`trip_time`**:
-
-# COMMAND ----------
 
 join_bool_raw = trip.alias("t").join(
     trip_time.alias("tt"),
     F.col("t.trip_id") == F.col("tt.trip_id"),
     "inner",
 )
-
-print("Boolean join columns (both trip_id sides retained):", join_bool_raw.columns)
+print("Same name, Boolean form — columns:", join_bool_raw.columns)
 join_bool_raw.select(
     F.col("t.trip_id"),
     F.col("tt.trip_id"),
@@ -368,28 +272,17 @@ join_bool_raw.select(
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 18
 # MAGIC %md
 # MAGIC ## Constructed frame — unmatched keys
 # MAGIC
-# MAGIC When keys do **not** fully overlap, different join types produce different row
-# MAGIC counts. This section builds two small DataFrames with **partial key overlap**
-# MAGIC to make the effect visible.
+# MAGIC Left **`trip_id`** `[1…5]`, right **`[3…7]`**. Overlap **`{3, 4, 5}`**.
 # MAGIC
-# MAGIC Left **`trip_id`** `[1, 2, 3, 4, 5]`, right `[3, 4, 5, 6, 7]`.
-# MAGIC
-# MAGIC Overlap: `{3, 4, 5}` (3 keys match). Left-only: `{1, 2}`. Right-only: `{6, 7}`.
-# MAGIC
-# MAGIC | Join type | Logic | Predicted rows |
-# MAGIC |---|---|---:|
-# MAGIC | **inner** | Only matching keys | 3 |
-# MAGIC | **left** | All left rows + matches from right (NULLs for 1, 2) | 5 |
-# MAGIC | **right** | All right rows + matches from left (NULLs for 6, 7) | 5 |
-# MAGIC | **full outer** | All rows from both sides (NULLs where no match) | 7 |
-# MAGIC
-# MAGIC The next cell creates the frames, predicts the counts, runs each join, and
-# MAGIC verifies predictions match actuals. This is the **predict-then-verify** habit
-# MAGIC that prevents silent row count errors in production joins.
+# MAGIC | Join type | Predicted rows |
+# MAGIC |---|---:|
+# MAGIC | inner | 3 |
+# MAGIC | left | 5 |
+# MAGIC | right | 5 |
+# MAGIC | full outer | 7 |
 
 # COMMAND ----------
 
@@ -397,7 +290,7 @@ left_unmatched = spark.createDataFrame(  # noqa: F821
     [(1,), (2,), (3,), (4,), (5,)],
     ["trip_id"],
 )
-right_unmatched = spark.createDataFrame(
+right_unmatched = spark.createDataFrame(  # noqa: F821
     [(3,), (4,), (5,), (6,), (7,)],
     ["trip_id"],
 )
@@ -414,34 +307,50 @@ for how in ["inner", "left", "right", "full", "full_outer"]:
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Using **`left_composite`** and **`right_composite`** from above:
+# MAGIC On mini-frames with left **`trip_id`** **`[1, 2, 3, 4]`** and right **`[2, 3, 4, 5]`**
+# MAGIC (overlap **`{2, 3, 4}`** — different keys than the **`[1…5]`** / **`[3…7]`** demo):
 # MAGIC
-# MAGIC 1. Predict the **inner** join row count on **`[trip_id, leg_id]`** only.
-# MAGIC 2. Run that join and verify with **`count()`**.
+# MAGIC 1. Predict row counts for **inner** and **right** joins on **`trip_id`**.
+# MAGIC 2. Run both joins and verify with **`count()`**.
 # MAGIC
 # MAGIC Do not write any output.
 
 # COMMAND ----------
 
-predicted_composite_inner = None  # replace with your prediction
-actual_composite_inner = left_composite.join(
-    right_composite,
-    ["trip_id", "leg_id"],
-    "inner",
+left_exercise = spark.createDataFrame(  # noqa: F821
+    [(1,), (2,), (3,), (4,)],
+    ["trip_id"],
+)
+right_exercise = spark.createDataFrame(  # noqa: F821
+    [(2,), (3,), (4,), (5,)],
+    ["trip_id"],
+)
+
+predicted_inner_exercise = None  # replace with your prediction
+predicted_right_exercise = None  # replace with your prediction
+
+actual_inner_exercise = left_exercise.join(
+    right_exercise, "trip_id", "inner"
+).count()
+actual_right_exercise = left_exercise.join(
+    right_exercise, "trip_id", "right"
 ).count()
 
-print(f"Predicted composite inner rows: {predicted_composite_inner}")
-print(f"Actual composite inner rows: {actual_composite_inner}")
+print(f"Predicted inner rows: {predicted_inner_exercise}")
+print(f"Actual inner rows: {actual_inner_exercise}")
+print(f"Predicted right rows: {predicted_right_exercise}")
+print(f"Actual right rows: {actual_right_exercise}")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **Grain** and **cardinality** vocabulary predict join behavior before you run code.
-# MAGIC - **Boolean** joins express **`trip_id` = `trip_no`** and other mismatched key names;
-# MAGIC   string/list forms require the same name on both sides.
-# MAGIC - **Unmatched keys** make inner / left / right / full outer row counts diverge.
+# MAGIC - **Grain** and **cardinality** predict join row counts; joins can preserve, widen,
+# MAGIC   or multiply grain.
+# MAGIC - **String**, **list**, and **Boolean** join forms — list demo on **`trip_charges`**
+# MAGIC   / **`rate_card`**; Boolean for mismatched names and zone lookup in **`03`**.
+# MAGIC - **Unmatched keys** change inner / left / right / full outer counts — always
+# MAGIC   **predict → run → verify**.
 # MAGIC
-# MAGIC **Next:** Module 7 **`02 - Join Types, NULL Keys, and Validation`** — landing
-# MAGIC 1:1 joins, many-to-many and NULL-key frames, key profiling, and the predict habit.
+# MAGIC **Next:** Module 7 **`02 - Join Types, NULL Keys, and Validation`**.
