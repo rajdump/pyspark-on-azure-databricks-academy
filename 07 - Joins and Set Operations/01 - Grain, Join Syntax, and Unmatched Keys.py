@@ -38,9 +38,12 @@
 # MAGIC computed on trip grain without deduping can be wrong.
 # MAGIC
 # MAGIC Why? The left table has **1 row per trip**, the right has **3 rows per trip**.
-# MAGIC Spark doesn't care — it matched every left row to every right row with the same
-# MAGIC key. That's a **1:M fanout**, and it's the most expensive mistake in data
-# MAGIC engineering because it's invisible until the damage is done.
+# MAGIC Spark matched every left row to every right row with the same key. That's a
+# MAGIC **1:M fanout** — invisible until the damage is done.
+# MAGIC
+# MAGIC Section 3.2 demonstrates this with `trip_charges` ↔ `rate_card` (both have
+# MAGIC multiple rows per trip → the numbers are larger, but the lesson is the same:
+# MAGIC joining on too few columns produces wrong results).
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
@@ -291,8 +294,8 @@ join_string.select("*").show(1, truncate=False,vertical=True)
 # MAGIC | `"trip_id"` only | Every charge pairs with every rate for same trip | **12 rows** (wrong!) |
 # MAGIC | `["trip_id", "charge_type"]` | Only `base_fare↔base_fare`, `surge↔surge` | **4 rows** (correct) |
 # MAGIC
-# MAGIC Cell 13: you expect 4, you get 12 — that's your signal the key is wrong.
-# MAGIC Cell 15: same tables, add `charge_type` to key — now you get 4.
+# MAGIC The first code cell below shows the mistake (expect 4, get 12). The second
+# MAGIC shows the fix (add `charge_type` to the key → get 4).
 
 # COMMAND ----------
 
@@ -341,8 +344,8 @@ single_key.show(truncate=False)
 # MAGIC Tip rows in `trip_charges` have no matching `charge_type` in `rate_card` →
 # MAGIC inner join drops them. **Predict: 4 rows.**
 # MAGIC
-# MAGIC Compare the output below to Cell 13 — same columns, same tables, just fewer
-# MAGIC (correct) rows.
+# MAGIC Compare the output below to the previous cell — same columns, same tables,
+# MAGIC just fewer (correct) rows.
 
 # COMMAND ----------
 

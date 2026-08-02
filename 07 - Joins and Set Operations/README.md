@@ -170,16 +170,17 @@ Eight notebooks, in this order:
 1. **Grain, Join Syntax, and Unmatched Keys**
 
    *Reads:* landing `trip`, `trip_time` (100 rows each); constructed
-   `trip_summary`, `trip_charges`, `rate_card` (line-level teaching frames —
-   not landing **`payment`**, which is one row per `trip_id` and joins in **02**).
+   `trip_charges`, `rate_card` (line-level teaching frames — not landing
+   **`payment`**, which is one row per `trip_id` and joins in **02**).
 
    - **Grain** — what one row represents; row count vs distinct join key
-   - **Cardinality** — 1:1 on `trip` ↔ `trip_time`; 1:M on `trip_summary` ↔
-     `trip_charges` (`trip_id` only); **M:1** = same join, tables swapped
-     (vocabulary only in **01**); **M:M** in **02**
+   - **Cardinality** — 1:1 on `trip` ↔ `trip_time`; vocabulary table for
+     1:M, M:1, M:M (no standalone demos — 1:M shown in list-form section);
+     **M:M** in **02**
    - **Join syntax** — string (coalesced key); list (`[trip_id, charge_type]`
-     on `trip_charges` ↔ `rate_card`); Boolean when names differ (`trip_id` =
-     `trip_no`) and same-name duplicate-key gotcha
+     on `trip_charges` ↔ `rate_card`, contrasted with `trip_id`-only on the
+     same pair: 12-row broad match vs 4-row precise match); Boolean when
+     names differ (`trip_id` = `trip_no`) and same-name duplicate-key gotcha
    - **Unmatched keys** — left `[1…5]`, right `[3…7]`; predict/verify
      inner=3, left=5, right=5, full outer=7
    - Skill-building only — **no write**
