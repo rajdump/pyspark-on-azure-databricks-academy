@@ -121,8 +121,8 @@ print("  left: ", trip.join(payment, "trip_id", "left").count())
 print("  right:", trip.join(payment, "trip_id", "right").count())
 print("  full: ", trip.join(payment, "trip_id", "full").count())
 
-print("\n→ All same. No duplicates, no unmatched keys, no NULLs.")
-print("  The rest of this notebook shows what happens when that breaks.")
+print("\n→ Counts match — profile in Section 2 to confirm grain.")
+print("  The rest of this notebook shows what happens when data isn't this clean.")
 
 # COMMAND ----------
 
