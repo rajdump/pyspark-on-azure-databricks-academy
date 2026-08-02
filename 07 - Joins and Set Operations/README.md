@@ -82,10 +82,10 @@ The core 100-row landing tables (`trip`, `trip_time`, `payment`) are **1:1** on
 |---|---|---|---|
 | 1 | `trip`, `trip_time` (+ constructed frames) | — | Grain, join syntax, unmatched-keys exercise (no `payment`) |
 | 2 | `trip`, `trip_time`, `payment` (100 rows each) + constructed frames | — | Silent join failures: M:M, NULL keys, Cartesians; validation habit |
-| 3–4 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | Rows 21–22 are unmatched dimension rows; lookup pattern split across two notebooks |
-| 5 | — | `curated/trip` (106), `curated/payment` (105) | The 106 vs 105 mismatch is the teaching point |
-| 6–7 | Named filters on landing `trip` | — | Set operations split: union paths vs intersect/subtract paths |
-| 8 | `trip_time`, `zone_lookup` | `curated/trip`, `curated/payment`, `curated/drivers_flat` | Capstone enrichment and managed-table writes |
+| 3 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | Repeated lookup, column cleanup, unmatched dims 21–22, broadcast |
+| 4 | — | `curated/trip` (106), `curated/payment` (105) | The 106 vs 105 mismatch is the teaching point |
+| 5–6 | Named filters on landing `trip` | — | Set operations split: union paths vs intersect/subtract paths |
+| 7 | `trip_time`, `zone_lookup` | `curated/trip`, `curated/payment`, `curated/drivers_flat` | Capstone enrichment and managed-table writes |
 
 Recall Module 3 — Data Cleaning, NULL Semantics, and Type Handling for
 NULL-aware predicates and **`eqNullSafe`** when join keys may be NULL.
@@ -124,7 +124,7 @@ awareness; capstone write to managed Delta tables.
 - Unity Catalog grants (Module 11)
 - All join-plan tuning beyond the `F.broadcast` hint — other join hints
   (`merge`, `shuffle_hash`, `shuffle_replicate_nl`), configuring or tuning
-  AQE, and skew/salting remedies (Module 16). Notebook **08**'s high-level AQE
+  AQE, and skew/salting remedies (Module 16). Notebook **07**'s high-level AQE
   *awareness* — knowing the runtime may adapt the plan — stays in scope
 
 Schemas, column names, join keys, and Volume path rules:
@@ -169,7 +169,7 @@ those `DROP TABLE IF EXISTS` statements before using Level 2.
 
 ## Notebook navigation
 
-Eight notebooks, in this order:
+Seven notebooks, in this order:
 
 1. **Grain, Join Syntax, and Unmatched Keys**
 
@@ -219,42 +219,43 @@ Eight notebooks, in this order:
      (catches row-count failures; does not prove value correctness)
    - Skill-building only — **no write**
 
-3. **Lookup Joins and Unmatched Dimensions**
+3. **Lookup Joins, Columns, and Broadcast**
 
    *Reads:* landing `zone_lookup` (22 rows); `curated/trip` (106 rows).
+   No curated `payment`. Skill-building only — **no write**.
 
-   - **Repeated lookup join (Boolean condition)** — join `zone_lookup` twice to
-     `curated/trip`: `pickup_location_id = location_id` and
-     `dropoff_location_id = location_id` (role-playing dimension, not a self-join)
-   - **Lookup-key uniqueness check** on `zone_lookup.location_id`
-   - **Real unmatched-dimension rows** — `location_id` 21–22 never referenced by
+   Apply (do not re-teach): Boolean join form, aliases, key profiling, and
+   unmatched-key join types from Notebooks **01**–**02**.
+
+   - **Fact vs dimension** — `curated/trip` (106) joined to small reference
+     `zone_lookup` (22)
+   - **Lookup-key uniqueness** — short profile on `zone_lookup.location_id`
+     (same habit as Notebook **02**; dimensions must be unique on the lookup key)
+   - **Repeated lookup join** — join `zone_lookup` twice to `curated/trip` in
+     pickup and dropoff roles (`pickup_location_id` / `dropoff_location_id` =
+     `location_id`); Boolean condition + aliases on each role (role-playing
+     dimension, not a self-join)
+   - **Explicit `select` / rename** — resolve duplicate column names after the
+     double join (`pickup_borough`, `dropoff_zone`, etc.)
+   - **Unmatched dimension rows** — `location_id` 21–22 never referenced by
      trips; left join from trips never surfaces them; **right** or **full outer**
-     from `zone_lookup` shows NULL trip columns on 21–22
-   - Skill-building only — **no write** (Notebook **08** reuses this lookup step)
-
-4. **Aliases, Column Selection, and Broadcast**
-
-   *Reads:* same as Notebook **03** (continue the lookup join from pickup/dropoff
-   Boolean joins).
-
-   - **Aliases and qualified references** — `alias()` on each `zone_lookup`
-     instance; `F.col("alias.col")`
-   - **Explicit `select`** — rename to `pickup_borough`, `dropoff_zone`, etc.
+     from `zone_lookup` shows NULL trip columns on 21–22 (apply Notebook **01**
+     unmatched-key behavior on real data)
    - **`F.broadcast`** on `zone_lookup`; read **`BroadcastHashJoin`** in
      **`.explain("formatted")`** — inspection only
-   - Skill-building only — **no write**
+   - Notebook **07** reuses this lookup + broadcast pattern
 
-5. **Semi Joins and Anti Joins**
+4. **Semi Joins and Anti Joins**
 
    *Reads:* `curated/trip` (106), `curated/payment` (105).
 
    - **`left_semi`** and **`left_anti`** on `trip_id`; `trip_id` **106** on anti
    - **Reverse anti join** — payments without trips (expect zero rows)
    - **Why semi/anti vs inner + distinct**
-   - Bridge to Notebook **07**: anti-join vs **`subtract()`** (key-based vs whole-row)
+   - Bridge to Notebook **06**: anti-join vs **`subtract()`** (key-based vs whole-row)
    - Skill-building only — **no write**
 
-6. **Union and unionByName**
+5. **Union and unionByName**
 
    *Reads:* named filters on landing `trip`.
 
@@ -268,7 +269,7 @@ Eight notebooks, in this order:
    - **Duplicate rows after `union`** — when **`distinct()`** is justified
    - Skill-building only — **no write**
 
-7. **Intersect, subtract, and exceptAll**
+6. **Intersect, subtract, and exceptAll**
 
    *Reads:* `early_trips = trip.filter(trip_id <= 60)` (60 rows);
    `late_trips = trip.filter(trip_id >= 41)` (60 rows); overlap on 41–60.
@@ -279,16 +280,16 @@ Eight notebooks, in this order:
    - Note: SQL **`EXCEPT`** vs PySpark **`subtract()`**
    - Skill-building only — **no write**
 
-8. **Build Unified Curated Tables**
+7. **Build Unified Curated Tables**
 
    *Reads:* `curated/trip`, `curated/payment`, `curated/drivers_flat`, landing
    `trip_time`, landing `zone_lookup`.
 
    - **State input grain contracts** and key profiling before joins
    - **Stepwise enrichment** with NULL checks on business columns after each left join
-   - **Reuse Notebook 03–04** lookup, alias, `select`, broadcast for zones
-   - **Validation gate** — **`left_anti`** and **`subtract()`** from Notebooks **05**
-     and **07** before trusting expected NULLs
+   - **Reuse Notebook 03** lookup, alias, `select`, broadcast for zones
+   - **Validation gate** — **`left_anti`** and **`subtract()`** from Notebooks **04**
+     and **06** before trusting expected NULLs
    - **Explicit final column selection**; write only after validation passes
    - Write `rideshare_dev.processed.trip_enriched` and
      `rideshare_dev.processed.trip_driver_assignment` via **`saveAsTable`**
@@ -312,6 +313,6 @@ patterns.
     **`rideshare_dev.processed`**
   - **`READ VOLUME`** on **`rideshare_dev.landing.source_files`**
   - **`READ VOLUME`** on **`rideshare_dev.processed.output_files`**
-    (Module 6 curated Parquet — Notebooks **03–08**)
+    (Module 6 curated Parquet — Notebooks **03–07**)
   - **`CREATE TABLE`** on **`rideshare_dev.processed`**
-    (for `saveAsTable` in Notebook **08**)
+    (for `saveAsTable` in Notebook **07**)

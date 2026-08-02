@@ -511,6 +511,6 @@ print(f"{mark} inner → predicted={predicted_inner}, actual={actual_inner}")
 # MAGIC **What this does NOT catch:** value-level errors. Your row count can be
 # MAGIC correct but the joined values can still be wrong (e.g., matching to the
 # MAGIC wrong record). That requires checking output columns against business
-# MAGIC expectations (Notebook 08).
+# MAGIC expectations (Notebook 07).
 # MAGIC
-# MAGIC **Next:** `03 - Lookup Joins and Unmatched Dimensions`
+# MAGIC **Next:** `03 - Lookup Joins, Columns, and Broadcast`
