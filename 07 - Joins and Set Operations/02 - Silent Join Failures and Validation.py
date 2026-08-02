@@ -45,6 +45,7 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Load trip, trip_time, and payment with explicit schemas
 from pyspark.sql import functions as F
 
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
@@ -105,6 +106,7 @@ print("payment rows:", payment.count())
 
 # COMMAND ----------
 
+# DBTITLE 1,Run all four join types on both table pairs
 # trip ↔ trip_time — all four types should return 100
 print("trip ↔ trip_time:")
 print("  inner:", trip.join(trip_time, "trip_id", "inner").count())
@@ -133,8 +135,8 @@ print("  The rest of this notebook shows what happens when data isn't this clean
 # MAGIC Notebook 01 Section 3.2 showed what happens when you join on too few columns
 # MAGIC — one side had extra rows per key. M:M is worse: BOTH sides have duplicates.
 # MAGIC
-# MAGIC When you hit this: ETL ran twice, source sent retries, or two fact tables
-# MAGIC joined without aggregating first.
+# MAGIC You'll usually hit this when an ETL job ran twice, the source system sent
+# MAGIC a retry, or two fact tables were joined before either one was aggregated.
 # MAGIC
 # MAGIC ```
 # MAGIC Left trip_id:  [1, 1, 2]   — key 1 appears 2×
@@ -150,6 +152,7 @@ print("  The rest of this notebook shows what happens when data isn't this clean
 
 # COMMAND ----------
 
+# DBTITLE 1,M:M fanout — and how profiling would have caught it
 left_mm = spark.createDataFrame([(1,), (1,), (2,)], ["trip_id"])  # noqa: F821
 right_mm = spark.createDataFrame([(1,), (1,), (3,)], ["trip_id"])
 
@@ -159,13 +162,25 @@ print(f"Inner M:M: predicted={predicted_mm}, actual={actual_mm}")
 print("Each row below came from key 1 matching 2×2:")
 left_mm.join(right_mm, "trip_id", "inner").show()
 
+# This is exactly what Section 2's key-profiling habit catches BEFORE the
+# join — profile both sides on the key first.
+for name, frame in [("left_mm", left_mm), ("right_mm", right_mm)]:
+    key_stats = frame.select(
+        F.count(F.lit(1)).alias("rows"),
+        F.countDistinct("trip_id").alias("distinct"),
+    ).collect()[0]
+    flag = "duplicates!" if key_stats["rows"] != key_stats["distinct"] else "unique"
+    print(f"{name}: rows={key_stats['rows']}, distinct={key_stats['distinct']} \u2192 {flag}")
+
 # COMMAND ----------
 
 # DBTITLE 1,2. Key profiling
 # MAGIC %md
 # MAGIC ## 2. Key profiling — detect duplicates before joining
 # MAGIC
-# MAGIC Before any join, profile the key on both sides:
+# MAGIC The constructed frames in Section 1 both had duplicate keys — profiling would
+# MAGIC have caught that before the join ever ran. Before any join, profile the key
+# MAGIC on both sides:
 # MAGIC
 # MAGIC 1. **Row count** — total rows in the table
 # MAGIC 2. **Distinct non-NULL keys** — `countDistinct(key)` (this ignores NULLs)
@@ -182,6 +197,7 @@ left_mm.join(right_mm, "trip_id", "inner").show()
 
 # COMMAND ----------
 
+# DBTITLE 1,Profile trip, trip_time, and payment on trip_id
 # Profile trip
 trip_stats = trip.select(
     F.count(F.lit(1)).alias("rows"),
@@ -242,6 +258,7 @@ print(f"payment    rows={pay_stats['rows']}, distinct={pay_stats['distinct']}, n
 
 # COMMAND ----------
 
+# DBTITLE 1,dropDuplicates vs window ranking on an ETL retry
 from pyspark.sql.window import Window
 
 # ETL ran twice — same trip, different updated_at timestamps
@@ -275,7 +292,14 @@ stats = resolved.select(
     F.count(F.lit(1)).alias("rows"),
     F.countDistinct("trip_id").alias("distinct"),
 ).collect()[0]
-print(f"Resolved: rows={stats['rows']}, distinct={stats['distinct']} → grain is clean")
+print(f"Resolved: rows={stats['rows']}, distinct={stats['distinct']} \u2192 grain is clean")
+
+# Did dropDuplicates happen to agree with the deterministic window result?
+naive_survivor = dup_trips.dropDuplicates(["trip_id"]).filter("trip_id = 1").collect()[0]["updated_at"]
+correct_survivor = resolved.filter("trip_id = 1").collect()[0]["updated_at"]
+print(f"\ndropDuplicates kept updated_at={naive_survivor} for trip_id=1")
+print(f"Window ranking kept updated_at={correct_survivor} for trip_id=1 (the true latest)")
+print("\u2192 Same row this run?", naive_survivor == correct_survivor, "\u2014 don't rely on that holding next run.")
 
 # COMMAND ----------
 
@@ -305,6 +329,7 @@ print(f"Resolved: rows={stats['rows']}, distinct={stats['distinct']} → grain i
 
 # COMMAND ----------
 
+# DBTITLE 1,Predict join counts with NULL keys, then verify
 # Trips — one record has corrupt/missing trip_id (NULL)
 trips_with_null = spark.createDataFrame(  # noqa: F821
     [(1, "Premium"), (2, "Standard"), (None, "XL")],
@@ -346,7 +371,8 @@ for join_type, predicted in predictions.items():
 # MAGIC it treats NULL = NULL as TRUE.
 # MAGIC
 # MAGIC This requires Boolean form (Notebook 01 Section 3.3) and produces both key
-# MAGIC columns in the output.
+# MAGIC columns in the output — the same ambiguous-column trap Notebook 01 warned
+# MAGIC about. Select explicitly if you need a single clean `trip_id` downstream.
 # MAGIC
 # MAGIC **Warning:** `eqNullSafe` can itself fan out when both sides contain multiple
 # MAGIC NULL-key rows. Two NULLs left × three NULLs right = six rows. Profile NULL
@@ -357,6 +383,7 @@ for join_type, predicted in predictions.items():
 
 # COMMAND ----------
 
+# DBTITLE 1,Standard equality vs eqNullSafe on NULL keys
 # Standard inner join — NULL rows lost
 standard = trips_with_null.join(payments_with_null, "trip_id", "inner")
 print(f"Standard inner: {standard.count()} row (NULL didn't match)")
@@ -373,6 +400,9 @@ eq_safe = trips_a.join(
 )
 print(f"eqNullSafe inner: {eq_safe.count()} rows (NULL matched NULL)")
 eq_safe.show()
+
+print(f"eq_safe columns: {eq_safe.columns}")
+print("\u2192 Two trip_id columns \u2014 Boolean form never merges keys, same as Notebook 01.")
 
 # COMMAND ----------
 
@@ -406,6 +436,7 @@ eq_safe.show()
 
 # COMMAND ----------
 
+# DBTITLE 1,Intentional crossJoin vs accidental Cartesian
 # Intentional: generate a pricing grid (all service × zone combinations)
 service_types = spark.createDataFrame(  # noqa: F821
     [("Premium",), ("Standard",), ("XL",)], ["service_type"]
@@ -428,7 +459,8 @@ pricing_grid.show()
 print("Accidental — F.lit(True) instead of 'trip_id':")
 accidental = service_types.join(zones, F.lit(True), "inner")
 print(f"Same result: {accidental.count()} rows")
-print("→ On production (100K × 100K) this would be 10 billion rows.")
+print("\u2192 On production (100K × 100K) this would be 10 billion rows.")
+print("\u2192 Rule of thumb: if row count is close to len(left) * len(right), suspect a missing or always-true join condition.")
 
 # COMMAND ----------
 
@@ -452,6 +484,7 @@ print("→ On production (100K × 100K) this would be 10 billion rows.")
 
 # COMMAND ----------
 
+# DBTITLE 1,Exercise: profile driver_payouts, predict, then verify
 # Finance extract — has issues you need to detect
 driver_payouts = spark.createDataFrame(  # noqa: F821
     [
@@ -485,7 +518,9 @@ predicted_inner = None
 # Step 3: Verify
 actual_inner = trip.join(driver_payouts, "trip_id", "inner").count()
 mark = "✓" if predicted_inner == actual_inner else "✗"
-print(f"{mark} inner → predicted={predicted_inner}, actual={actual_inner}")
+print(f"{mark} inner \u2192 predicted={predicted_inner}, actual={actual_inner}")
+print("\nWhy 4? trip_id 1 \u2192 1 match, trip_id 2 \u2192 2 matches (the duplicate payout),")
+print("trip_id 3 \u2192 1 match, NULL \u2192 0 matches (standard equality never matches NULL).")
 
 # COMMAND ----------
 
