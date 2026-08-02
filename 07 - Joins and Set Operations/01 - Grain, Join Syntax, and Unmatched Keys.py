@@ -126,7 +126,13 @@ print("trip_time rows:", trip_time.count())
 # MAGIC %md
 # MAGIC ## 1. Grain — know your data before you join it
 # MAGIC
-# MAGIC If you don't understand what one row represents, you can't predict the outcome of a join. **Grain** answers the crucial question before joining: **What specific real-world entity is represented by each row in this dataset?**
+# MAGIC If you don't know what one row represents, you can't predict what a join will
+# MAGIC do.
+# MAGIC
+# MAGIC **Grain** = what one row represents.
+# MAGIC
+# MAGIC - `trip`: one row = one completed trip
+# MAGIC - `trip_time`: one row = one time record for one trip
 # MAGIC
 # MAGIC | Table | Grain statement | Key |
 # MAGIC |---|---|---|
@@ -198,7 +204,7 @@ print(
 # MAGIC %md
 # MAGIC ### Verify both sides — not just one
 # MAGIC
-# MAGIC Section 1 confirmed `trip` is unique. That's half the story. If `trip_time` has
+# MAGIC Cell 6 confirmed `trip` is unique on `trip_id`. That's half the story. If `trip_time` has
 # MAGIC duplicates, the join still multiplies rows. **Both sides must pass the grain
 # MAGIC check.** One clean table joined to one dirty table = dirty output.
 
@@ -277,22 +283,20 @@ join_string.select("*").show(1, truncate=False,vertical=True)
 # MAGIC - `trip_charges` — 6 rows (3 charge types × 2 trips): what was actually charged
 # MAGIC - `rate_card` — 4 rows (2 charge types × 2 trips, no tip): what should have been charged
 # MAGIC
-# MAGIC Both tables have `trip_id` and `charge_type`. Watch what happens with each key:
+# MAGIC Both tables have `trip_id` and `charge_type`. You expect **4 rows** (one
+# MAGIC comparison per charge type per trip). Watch what each key gives you:
 # MAGIC
-# MAGIC | Join key | Why it matches that way | Result |
+# MAGIC | Join key | What happens | Result |
 # MAGIC |---|---|---|
-# MAGIC | `"trip_id"` only | trip 1: 3 charges × 2 rates = 6; trip 2: same = 6 | **12 rows** |
-# MAGIC | `["trip_id", "charge_type"]` | Only `base_fare↔base_fare`, `surge↔surge` | **4 rows** |
+# MAGIC | `"trip_id"` only | Every charge pairs with every rate for same trip | **12 rows** (wrong!) |
+# MAGIC | `["trip_id", "charge_type"]` | Only `base_fare↔base_fare`, `surge↔surge` | **4 rows** (correct) |
 # MAGIC
-# MAGIC The first gives you every possible combination per trip — garbage.
-# MAGIC The second gives you actual vs expected for the same charge type — what you
-# MAGIC actually wanted.
-# MAGIC
-# MAGIC Cell 13 shows the mistake. Cell 15 shows the fix. Same tables, same output
-# MAGIC columns, different key → 12 rows vs 4 rows.
+# MAGIC Cell 13: you expect 4, you get 12 — that's your signal the key is wrong.
+# MAGIC Cell 15: same tables, add `charge_type` to key — now you get 4.
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 13 - Mistake
 trip_charges = spark.createDataFrame(  # noqa: F821
     [
         (1, "base_fare", 8.00),
@@ -316,13 +320,13 @@ rate_card = spark.createDataFrame(  # noqa: F821
 )
 
 # THE MISTAKE: join on trip_id only
-predicted_trip_id_only = 12
+# Business expectation: 4 rows (one actual vs expected per charge type)
+expected_rows = 4
 single_key = trip_charges.join(rate_card, "trip_id", "inner")
-actual_trip_id_only = single_key.count()
-print(
-    f"trip_id only: predicted={predicted_trip_id_only}, "
-    f"actual={actual_trip_id_only}"
-)
+actual_rows = single_key.count()
+print(f"Expected: {expected_rows} rows (one comparison per charge type)")
+print(f"Actual:   {actual_rows} rows — join key too broad!")
+print(f"\nSomething is wrong. We got {actual_rows - expected_rows} extra rows.")
 single_key.show(truncate=False)
 
 # COMMAND ----------
@@ -358,46 +362,47 @@ composite_key.show(truncate=False)
 # MAGIC %md
 # MAGIC ### 3.3 Boolean form — when column names differ
 # MAGIC
+# MAGIC Your trip table has `trip_id`. An external system has `trip_no`. Same data,
+# MAGIC different name. String/list forms can't handle this — use Boolean:
+# MAGIC
 # MAGIC ```python
-# MAGIC left.alias("l").join(
-# MAGIC     right.alias("r"),
-# MAGIC     F.col("l.trip_id") == F.col("r.trip_no"),
+# MAGIC trips.alias("t").join(
+# MAGIC     feedback.alias("f"),
+# MAGIC     F.col("t.trip_id") == F.col("f.trip_no"),
 # MAGIC     "inner",
 # MAGIC )
 # MAGIC ```
 # MAGIC
-# MAGIC **When you're forced to use this:** the key column has a **different name** on
-# MAGIC each side. Your fact table says `trip_id`, the staging file says `trip_no`.
-# MAGIC String/list forms won't work — they need the exact same name on both sides.
-# MAGIC Boolean is your only option.
+# MAGIC **Two things to know:**
+# MAGIC 1. You must `.alias()` both sides — otherwise Spark can't tell which table's column you mean
+# MAGIC 2. Both key columns stay in the output — use `.select()` to drop the extra one
 # MAGIC
-# MAGIC **Two critical behaviors:**
-# MAGIC
-# MAGIC | Behavior | Why | What to do |
-# MAGIC |---|---|---|
-# MAGIC | Alias both sides | `F.col("trip_id")` is ambiguous | `.alias("l")` / `.alias("r")` |
-# MAGIC | Two key columns out | Boolean never merges keys | `.select()` or `.drop()` |
-# MAGIC
-# MAGIC **Example below:** left has `trip_id` = [1, 2], right has `trip_no` = [1, 3].
-# MAGIC Only key `1` exists on both sides → **predict 1 output row**.
+# MAGIC **Below:** `trips` has trip_id [1, 2]. `feedback` has trip_no [1, 3].
+# MAGIC Only trip 1 matches → **predict 1 row.**
 
 # COMMAND ----------
 
-left_id = spark.createDataFrame(  # noqa: F821
-    [(1, "a"), (2, "b")],
-    ["trip_id", "note"],
-)
-right_no = spark.createDataFrame(  # noqa: F821
-    [(1, 10.0), (3, 30.0)],
-    ["trip_no", "score"],
+# Internal trip data — key is "trip_id"
+trips = spark.createDataFrame(  # noqa: F821
+    [(1, "standard"), (2, "premium")],
+    ["trip_id", "service_type"],
 )
 
-join_diff_names = left_id.alias("l").join(
-    right_no.alias("r"),
-    F.col("l.trip_id") == F.col("r.trip_no"),
+# External feedback system — same trips, but key is "trip_no"
+feedback = spark.createDataFrame(  # noqa: F821
+    [(1, 4.8), (3, 3.2)],
+    ["trip_no", "driver_rating"],
+)
+
+# String form would fail — names don't match. Boolean is required.
+join_diff_names = trips.alias("t").join(
+    feedback.alias("f"),
+    F.col("t.trip_id") == F.col("f.trip_no"),
     "inner",
 )
-print("Inner join on trip_id = trip_no:")
+print("Output columns:", join_diff_names.columns)
+print("  → 'trip_id' AND 'trip_no' both appear — Boolean form never merges keys")
+print(f"\nRow count: {join_diff_names.count()} (only trip 1 exists on both sides)")
 join_diff_names.show()
 
 # COMMAND ----------
@@ -422,6 +427,7 @@ join_diff_names.show()
 
 # COMMAND ----------
 
+# DBTITLE 1,Cell 19
 join_bool_raw = trip.alias("t").join(
     trip_time.alias("tt"),
     F.col("t.trip_id") == F.col("tt.trip_id"),
@@ -430,8 +436,8 @@ join_bool_raw = trip.alias("t").join(
 print("Column names after Boolean join (note two trip_id columns):")
 print(join_bool_raw.columns)
 join_bool_raw.select(
+    # F.col("trip_id"),  # This would throw ambiguous column error!
     F.col("t.trip_id"),
-    F.col("tt.trip_id"),
     F.col("tt.trip_date"),
 ).show(3, truncate=False)
 
@@ -439,44 +445,46 @@ join_bool_raw.select(
 
 # DBTITLE 1,Section 4 - Unmatched keys
 # MAGIC %md
-# MAGIC ## 4. Unmatched keys — the other join mistake
+# MAGIC ## 4. Unmatched keys — which rows survive?
 # MAGIC
-# MAGIC The first mistake is joining on the wrong grain (Section 1). The second is
-# MAGIC choosing the wrong join type when keys don't fully overlap — you either lose
-# MAGIC rows you needed or keep rows you shouldn't have.
+# MAGIC Sections 1–3 covered grain, cardinality, and syntax. But there's one more
+# MAGIC decision: **what happens when keys don't fully overlap?**
 # MAGIC
-# MAGIC Production data almost never has perfect key overlap. The **join type** is your
-# MAGIC decision about what to do with the mismatches:
+# MAGIC In production, keys rarely match perfectly. Some trips exist in one table but
+# MAGIC not the other. The **join type** decides what to do with these mismatches:
 # MAGIC
-# MAGIC - **inner** → "I only want rows that exist on BOTH sides. Drop the rest."
-# MAGIC - **left** → "I need every left row. If right has no match, fill with NULLs."
-# MAGIC - **right** → "I need every right row. If left has no match, fill with NULLs."
-# MAGIC - **full outer** → "Give me everything. NULLs wherever there's no partner."
+# MAGIC | Join type | Plain English |
+# MAGIC |---|---|
+# MAGIC | **inner** | Keep only rows that match on both sides |
+# MAGIC | **left** | Keep all left rows; NULLs where right has no match |
+# MAGIC | **right** | Keep all right rows; NULLs where left has no match |
+# MAGIC | **full outer** | Keep everything; NULLs on both sides where needed |
 # MAGIC
 # MAGIC ---
 # MAGIC
-# MAGIC **Test data:**
+# MAGIC **Example:**
 # MAGIC
 # MAGIC ```
 # MAGIC Left  trip_id: [1, 2, 3, 4, 5]
 # MAGIC Right trip_id: [3, 4, 5, 6, 7]
-# MAGIC
-# MAGIC Left-only:  {1, 2}     ← no right partner
-# MAGIC Overlap:    {3, 4, 5}  ← present on BOTH sides
-# MAGIC Right-only: {6, 7}     ← no left partner
 # MAGIC ```
 # MAGIC
-# MAGIC **Now predict — this is the habit that saves you:**
+# MAGIC Break it down:
+# MAGIC - Left-only: {1, 2} — these trips have no right partner
+# MAGIC - Overlap: {3, 4, 5} — these exist on both sides
+# MAGIC - Right-only: {6, 7} — these trips have no left partner
 # MAGIC
-# MAGIC | Join type | What survives | Count |
+# MAGIC **Predict the row count for each join type:**
+# MAGIC
+# MAGIC | Join type | Which rows survive | Count |
 # MAGIC |---|---|---:|
-# MAGIC | inner | Only the 3 overlapping keys | 3 |
-# MAGIC | left | All 5 left rows (2 get NULLs for right columns) | 5 |
-# MAGIC | right | All 5 right rows (2 get NULLs for left columns) | 5 |
-# MAGIC | full outer | Everything: 2 + 3 + 2 | 7 |
+# MAGIC | inner | Overlap only | 3 |
+# MAGIC | left | Left-only + overlap | 2 + 3 = 5 |
+# MAGIC | right | Overlap + right-only | 3 + 2 = 5 |
+# MAGIC | full outer | All three groups | 2 + 3 + 2 = 7 |
 # MAGIC
-# MAGIC If you can't predict the count before running, you don't understand the join
-# MAGIC well enough to trust its output. The next cell verifies all four.
+# MAGIC **Exercise:** replace `None` in the next cell with your predictions, then run.
+# MAGIC If actual ≠ predicted, re-read the table above.
 
 # COMMAND ----------
 
@@ -489,59 +497,19 @@ right_unmatched = spark.createDataFrame(  # noqa: F821
     ["trip_id"],
 )
 
-predictions_unmatched = {"inner": 3, "left": 5, "right": 5, "full": 7, "full_outer": 7}
+# YOUR PREDICTIONS — replace None with the row count you expect
+predictions = {
+    "inner": None,
+    "left": None,
+    "right": None,
+    "full": None,
+}
 
-for how in ["inner", "left", "right", "full", "full_outer"]:
-    predicted = predictions_unmatched[how]
-    actual = left_unmatched.join(right_unmatched, "trip_id", how).count()
-    print(f"{how:11} predicted={predicted}, actual={actual}")
-
-# COMMAND ----------
-
-# DBTITLE 1,Section 5 - Exercise
-# MAGIC %md
-# MAGIC ## 5. Exercise — prove you understand it
-# MAGIC
-# MAGIC **Your data:**
-# MAGIC
-# MAGIC ```
-# MAGIC Left  trip_id: [1, 2, 3, 4]
-# MAGIC Right trip_id: [2, 3, 4, 5]
-# MAGIC ```
-# MAGIC
-# MAGIC **Before you run:** work out the overlap yourself, then predict:
-# MAGIC
-# MAGIC 1. How many rows does an **inner** join produce?
-# MAGIC 2. How many rows does a **right** join produce?
-# MAGIC
-# MAGIC Replace `None` in the next cell with your answers, then run. If actual counts
-# MAGIC differ from your predictions, re-check overlap and Section 4 join-type rules.
-
-# COMMAND ----------
-
-left_exercise = spark.createDataFrame(  # noqa: F821
-    [(1,), (2,), (3,), (4,)],
-    ["trip_id"],
-)
-right_exercise = spark.createDataFrame(  # noqa: F821
-    [(2,), (3,), (4,), (5,)],
-    ["trip_id"],
-)
-
-predicted_inner_exercise = None  # replace with your prediction
-predicted_right_exercise = None  # replace with your prediction
-
-actual_inner_exercise = left_exercise.join(
-    right_exercise, "trip_id", "inner"
-).count()
-actual_right_exercise = left_exercise.join(
-    right_exercise, "trip_id", "right"
-).count()
-
-print(f"Predicted inner rows: {predicted_inner_exercise}")
-print(f"Actual inner rows: {actual_inner_exercise}")
-print(f"Predicted right rows: {predicted_right_exercise}")
-print(f"Actual right rows: {actual_right_exercise}")
+# Verify
+for join_type, predicted in predictions.items():
+    actual = left_unmatched.join(right_unmatched, "trip_id", join_type).count()
+    match = "✓" if predicted == actual else "✗"
+    print(f"{match} {join_type:6} → predicted={predicted}, actual={actual}")
 
 # COMMAND ----------
 
