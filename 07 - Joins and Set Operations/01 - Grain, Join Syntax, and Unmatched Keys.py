@@ -11,19 +11,31 @@
 # MAGIC without a single error. You only discover it when a report is wrong or a
 # MAGIC stakeholder notices impossible numbers.
 # MAGIC
-# MAGIC Consider two tables joined on **`trip_id`**:
+# MAGIC **Course note:** landing **`payment`** is **one row per `trip_id`** (wide fare
+# MAGIC columns). The example below uses **line-level** rows for teaching only — same
+# MAGIC pattern as constructed **`trip_charges`** in Section 3, not landing **`payment`**.
 # MAGIC
-# MAGIC | trip_id | service_type |       | trip_id | charge_type | amount |
-# MAGIC |---|---|---|---|---|---|
-# MAGIC | 1 | Standard |  | 1 | base_fare | 8.00 |
-# MAGIC | 2 | Premium |  | 1 | surge | 3.00 |
-# MAGIC |  |  |  | 1 | tip | 1.50 |
-# MAGIC |  |  |  | 2 | base_fare | 18.00 |
-# MAGIC |  |  |  | 2 | surge | 5.00 |
-# MAGIC |  |  |  | 2 | tip | 2.00 |
+# MAGIC **Trip level — 1 row per `trip_id`**
 # MAGIC
-# MAGIC Join on `trip_id` → **6 rows** (not 2). No error. No warning. Your
-# MAGIC `sum(amount)` is now **3x too high** and nothing in your pipeline will tell you.
+# MAGIC | trip_id | service_type |
+# MAGIC |---|---|
+# MAGIC | 1 | Standard |
+# MAGIC | 2 | Premium |
+# MAGIC
+# MAGIC **Line-level billing (teaching sketch) — 3 rows per `trip_id`**
+# MAGIC
+# MAGIC | trip_id | charge_type | amount |
+# MAGIC |---|---|---|
+# MAGIC | 1 | base_fare | 8.00 |
+# MAGIC | 1 | surge | 3.00 |
+# MAGIC | 1 | tip | 1.50 |
+# MAGIC | 2 | base_fare | 18.00 |
+# MAGIC | 2 | surge | 5.00 |
+# MAGIC | 2 | tip | 2.00 |
+# MAGIC
+# MAGIC Inner join on **`trip_id` only** → **6 rows** (not 2). No error. No warning.
+# MAGIC Trip columns repeat on every charge line — so **`count(*)`** and any metric
+# MAGIC computed on trip grain without deduping can be wrong.
 # MAGIC
 # MAGIC Why? The left table has **1 row per trip**, the right has **3 rows per trip**.
 # MAGIC Spark doesn't care — it matched every left row to every right row with the same
@@ -172,7 +184,9 @@ print(
 # MAGIC
 # MAGIC Landing **`trip`** ↔ **`trip_time`** on **`trip_id`** is **1:1** (confirmed by
 # MAGIC the grain check above). The 1:M pattern is demonstrated in Section 3 as
-# MAGIC motivation for composite keys. M:M is covered in Notebook **`02`**.
+# MAGIC motivation for composite keys. **M:1** is the same join with tables swapped —
+# MAGIC output row count follows the **left** side; no extra demo needed here. M:M is
+# MAGIC covered in Notebook **`02`**.
 # MAGIC
 # MAGIC You don't need to memorize this table. The point is simple: **if you know the
 # MAGIC grain of both sides, you already know what the join will do.** No surprises.
@@ -183,7 +197,7 @@ print(
 # MAGIC %md
 # MAGIC ### Verify both sides — not just one
 # MAGIC
-# MAGIC Cell 6 confirmed `trip` is unique. That's half the story. If `trip_time` has
+# MAGIC Section 1 confirmed `trip` is unique. That's half the story. If `trip_time` has
 # MAGIC duplicates, the join still multiplies rows. **Both sides must pass the grain
 # MAGIC check.** One clean table joined to one dirty table = dirty output.
 
@@ -207,11 +221,11 @@ for name, df in [("trip", trip), ("trip_time", trip_time)]:
 # MAGIC PySpark gives you three syntactic forms for equi-joins (key on left = key on
 # MAGIC right):
 # MAGIC
-# MAGIC | # | Form | Syntax | Output key columns | Use when |
-# MAGIC |---|---|---|---|---|
-# MAGIC | 1 | **String** | `"trip_id"` | **1 column** (merged) | Same name, single key |
-# MAGIC | 2 | **List** | `["trip_id", "charge_type"]` | **1 per key** (merged) | Same names, multiple keys |
-# MAGIC | 3 | **Boolean** | `F.col("l.key") == F.col("r.other")` | **2 columns** (both kept) | Names differ |
+# MAGIC | # | Form | Syntax | Keys in output | Use when |
+# MAGIC |---|---|---|---|
+# MAGIC | 1 | **String** | `"trip_id"` | 1 merged | Same name, single key |
+# MAGIC | 2 | **List** | `["trip_id", "charge_type"]` | 1 per key merged | Same names, multi-key |
+# MAGIC | 3 | **Boolean** | `F.col("l.key") == F.col("r.other")` | Both kept | Names differ |
 # MAGIC
 # MAGIC **The difference that bites you:** String/List automatically merge the key
 # MAGIC columns into one clean output column. Boolean keeps both copies — which gives
@@ -258,14 +272,19 @@ join_string.select("trip_id", "trip_date", "hour_of_day").show(3, truncate=False
 # MAGIC join mistakes. You think you're matching precisely, but you're matching too
 # MAGIC broadly.
 # MAGIC
+# MAGIC **`trip_summary`** and **`trip_charges`** below replay the intro sketch — not
+# MAGIC landing **`payment`**. Notebook **`02`** joins **`trip`** to **`payment`** at
+# MAGIC **1:1** grain.
+# MAGIC
 # MAGIC Example: `trip_summary` (2 rows) joined to `trip_charges` (6 rows) on
 # MAGIC `trip_id` alone:
 # MAGIC - Trip 1 matches **all 3** charge rows → 3 output rows for 1 input row
 # MAGIC - Trip 2 matches **all 3** charge rows → 3 output rows for 1 input row
 # MAGIC - Result: **6 rows** — you just tripled your data without realizing it
 # MAGIC
-# MAGIC Fix: add `charge_type` to the key. Now each row matches **exactly one** row
-# MAGIC on the other side. `rate_card` has no tip entries (4 rows), so predict **4**.
+# MAGIC Fix: add `charge_type` to the key when joining to **`rate_card`**. Inner join
+# MAGIC keeps only rows where **both** columns match; tips have no rate row, so
+# MAGIC predict **4** rows (not 6).
 # MAGIC
 # MAGIC The next two cells demonstrate: first the mistake, then the fix.
 
@@ -309,7 +328,7 @@ single_key.show(truncate=False)
 # MAGIC - `rate_card`: 4 rows (2 charge types × 2 trips — tip doesn't exist here)
 # MAGIC - Composite join: match only where BOTH columns align
 # MAGIC - Tip rows? No match in `rate_card` → inner join drops them
-# MAGIC - **Predict: 4 rows** (not 6 — the composite key eliminated the fanout)
+# MAGIC - **Predict: 4 rows** (narrower key + inner — not the 6-row fanout)
 
 # COMMAND ----------
 
@@ -355,8 +374,8 @@ composite_key.show(truncate=False)
 # MAGIC
 # MAGIC | Behavior | Why | What to do |
 # MAGIC |---|---|---|
-# MAGIC | Must **alias** both DataFrames | Otherwise `F.col("trip_id")` is ambiguous | Use `.alias("l")` / `.alias("r")` |
-# MAGIC | **Both** key columns appear in output | Boolean form never merges columns | Use `.select()` or `.drop()` to clean up |
+# MAGIC | Alias both sides | `F.col("trip_id")` is ambiguous | `.alias("l")` / `.alias("r")` |
+# MAGIC | Two key columns out | Boolean never merges keys | `.select()` or `.drop()` |
 # MAGIC
 # MAGIC **Example below:** left has `trip_id` = [1, 2], right has `trip_no` = [1, 3].
 # MAGIC Only key `1` exists on both sides → **predict 1 output row**.
@@ -494,8 +513,8 @@ for how in ["inner", "left", "right", "full", "full_outer"]:
 # MAGIC 1. How many rows does an **inner** join produce?
 # MAGIC 2. How many rows does a **right** join produce?
 # MAGIC
-# MAGIC Replace `None` in the next cell with your answers, then run. If you get it
-# MAGIC wrong, you didn't internalize Section 4 — go back and re-read the mental model.
+# MAGIC Replace `None` in the next cell with your answers, then run. If actual counts
+# MAGIC differ from your predictions, re-check overlap and Section 4 join-type rules.
 
 # COMMAND ----------
 
@@ -531,12 +550,12 @@ print(f"Actual right rows: {actual_right_exercise}")
 # MAGIC
 # MAGIC | Concept | Key takeaway |
 # MAGIC |---|---|
-# MAGIC | **Grain** | `count(*)` == `countDistinct(key)` → safe to join. Mismatch = silent row multiplication. |
-# MAGIC | **Cardinality** | 1:1, 1:M, M:1, M:M — grain determines cardinality, cardinality predicts row count. |
-# MAGIC | **String join** | `"trip_id"` — same name both sides, key column merged into one. |
-# MAGIC | **List join** | `["trip_id", "charge_type"]` — composite key, all columns must match. |
-# MAGIC | **Boolean join** | `F.col("l.key") == F.col("r.other")` — names differ, both key columns kept. |
-# MAGIC | **Unmatched keys** | inner = overlap only; left/right = one side fully kept; full = everything. |
+# MAGIC | **Grain** | `count` == `countDistinct(key)` → one row per key before joining |
+# MAGIC | **Cardinality** | Labels predict row count; M:1 = 1:M with tables swapped |
+# MAGIC | **String join** | `"trip_id"` — merged key column when names match |
+# MAGIC | **List join** | `["trip_id", "charge_type"]` — all listed columns must match |
+# MAGIC | **Boolean join** | Different names; both key columns kept unless you `select` |
+# MAGIC | **Unmatched keys** | inner = overlap; left/right keep one side; full = all rows |
 # MAGIC
 # MAGIC **The habit that prevents 90% of join bugs:** predict the row count BEFORE
 # MAGIC you run. If actual ≠ predicted, something is wrong with your understanding

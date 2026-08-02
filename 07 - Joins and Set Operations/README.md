@@ -70,15 +70,17 @@ Module 6 — Built-in Functions, Complex Types, and UDF Alternatives (notebooks
     (`location_id` 21–22 are not referenced by any trip — see
     [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md))
 
-The core 100-row landing tables (`trip`, `trip_time`, `payment`) are used in
-Notebooks **01–02** where a perfectly 1:1 grain is required for teaching join
-types without interference from extended IDs.
+The core 100-row landing tables (`trip`, `trip_time`, `payment`) are **1:1** on
+`trip_id`. Notebook **01** reads **`trip`** and **`trip_time`** only (plus
+constructed frames). Notebook **02** adds **`payment`** for join-type demos on
+real landing data.
 
 **Data source by notebook:**
 
 | Notebook | Landing reads | Processed curated/ reads | Why |
 |---|---|---|---|
-| 1–2 | `trip`, `trip_time`, `payment` (100 rows each) + constructed frames in **01** and **02** | — | Landing 1:1 demos plus frames for unmatched keys, M:M, and NULL keys |
+| 1 | `trip`, `trip_time` + constructed mini-frames | — | Grain, join syntax, unmatched keys (no `payment`) |
+| 2 | `trip`, `trip_time`, `payment` (100 rows each) + constructed frames | — | Four join types on 1:1 landing; M:M and NULL constructs |
 | 3–4 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | Rows 21–22 are unmatched dimension rows; lookup pattern split across two notebooks |
 | 5 | — | `curated/trip` (106), `curated/payment` (105) | The 106 vs 105 mismatch is the teaching point |
 | 6–7 | Named filters on landing `trip` | — | Set operations split: union paths vs intersect/subtract paths |
@@ -92,13 +94,8 @@ Join keys, table roles, and the `zone_lookup` unmatched-row design:
 
 This module does **not** read **`practice/`**.
 
-Rerunning from a clean state: use Module 5
-**`99 - Rideshare Project Cleanup and Reset`** Level 2, which wipes Module 6
-Parquet curated outputs and drops the two Module 7 managed tables
-(`rideshare_dev.processed.trip_enriched` and
-`rideshare_dev.processed.trip_driver_assignment`). Notebook 99 must be updated
-to include those `DROP TABLE IF EXISTS` statements before Level 2 is used to
-reset this module.
+Rerunning from a clean state: Module 5 **`99 - Rideshare Project Cleanup and Reset`**
+Level 2 — see **Cleanup** under Approach and boundaries below.
 
 ## Approach and boundaries
 
@@ -161,11 +158,10 @@ Delta Lake internals — ACID guarantees, transaction log, time travel, schema
 evolution, and `MERGE` — are taught in Module 10.
 
 **Cleanup:** Module 5 **`99 - Rideshare Project Cleanup and Reset`** Level 2
-clears Module 6 Parquet curated outputs and drops the two Module 7 managed
-tables. This module has no dedicated cleanup notebook. Notebook 99 must be
-updated to include the `DROP TABLE IF EXISTS` statements for
+clears Module 6 Parquet curated outputs and drops
 `rideshare_dev.processed.trip_enriched` and
-`rideshare_dev.processed.trip_driver_assignment` before Level 2 is used.
+`rideshare_dev.processed.trip_driver_assignment`. Ensure Notebook **99** includes
+those `DROP TABLE IF EXISTS` statements before using Level 2.
 
 ## Notebook navigation
 
@@ -173,23 +169,19 @@ Eight notebooks, in this order:
 
 1. **Grain, Join Syntax, and Unmatched Keys**
 
-   *Reads:* landing `trip`, `trip_time` (100 rows each) plus constructed
-   mini-frames. No curated tables.
+   *Reads:* landing `trip`, `trip_time` (100 rows each); constructed
+   `trip_summary`, `trip_charges`, `rate_card` (line-level teaching frames —
+   not landing **`payment`**, which is one row per `trip_id` and joins in **02**).
 
-   - **Grain orientation** — one row = one business entity at a defined level
-     of detail; joins preserve, widen, or multiply grain depending on cardinality
-   - **Cardinality vocabulary** — 1:1, 1:M, M:1, M:M; how each predicts output
-     row count before running a cell
-   - **Join-condition syntax** — three forms before production joins:
-     - Single shared column name (string): one coalesced key column in the result
-     - List of shared column names: composite equi-join on constructed
-       **`trip_charges`** ↔ **`rate_card`** on **`[trip_id, charge_type]`**, contrasted
-       with **`trip_id`-only** join from **`trip_summary`** (1:M fanout)
-     - Boolean column condition: **required** when key names differ (e.g.
-       `trip_id` = `trip_no`); when names match, both key columns may appear until
-       you `select` or alias — pickup/dropoff zone lookup in Notebooks **03–04**
-   - **Constructed frame — unmatched keys**: left `trip_id` `[1…5]`, right
-     `[3…7]`; predict and verify inner=3, left=5, right=5, full outer=7
+   - **Grain** — what one row represents; row count vs distinct join key
+   - **Cardinality** — 1:1 on `trip` ↔ `trip_time`; 1:M on `trip_summary` ↔
+     `trip_charges` (`trip_id` only); **M:1** = same join, tables swapped
+     (vocabulary only in **01**); **M:M** in **02**
+   - **Join syntax** — string (coalesced key); list (`[trip_id, charge_type]`
+     on `trip_charges` ↔ `rate_card`); Boolean when names differ (`trip_id` =
+     `trip_no`) and same-name duplicate-key gotcha
+   - **Unmatched keys** — left `[1…5]`, right `[3…7]`; predict/verify
+     inner=3, left=5, right=5, full outer=7
    - Skill-building only — **no write**
 
 2. **Join Types, NULL Keys, and Validation**
