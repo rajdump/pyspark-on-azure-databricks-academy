@@ -193,24 +193,26 @@ Eight notebooks, in this order:
      applies SQL join-type knowledge to PySpark row counts
    - Skill-building only — **no write**
 
-2. **Join Types, NULL Keys, and Validation**
+2. **Silent Join Failures and Validation**
 
    *Reads:* landing `trip`, `trip_time`, `payment` (100 rows each) plus
    constructed mini-frames. No curated tables.
 
-   - **Four join types on rideshare data** — inner, left, right, full outer on
-     `trip_id` for `trip` ↔ `trip_time` and `trip` ↔ `payment`; predict then
-     verify with `count()`; all four return **100** on 1:1 landing data
-   - **Constructed frame — many-to-many**: left `[1, 1, 2]`, right `[1, 1, 3]`;
-     predict inner=4
-   - **Key profiling** — row count vs distinct key; `dropDuplicates()` pitfall;
-     deterministic resolution (e.g. `groupBy` + `agg`); validate uniqueness on
-     landing `trip`
-   - **Constructed frame — NULL keys**: left `[1, 2, NULL]`, right `[2, 3, NULL]`;
-     predict/verify inner, left, right, full outer; Module 3 **`eqNullSafe`**
-     callback when NULL keys must match
-   - **Pre-join and post-join validation habit** — predict → run → verify
-   - Gotcha: accidental Cartesian product vs intentional **`crossJoin()`**
+   - **Clean 1:1 baseline** — all four join types return 100 on landing data;
+     baseline signal (not proof) that grain and overlap are correct
+   - **M:M fanout** — constructed frame `[1, 1, 2]` ↔ `[1, 1, 3]`; predict
+     inner=4; formula: count(left) × count(right) per key
+   - **Key profiling** — rows vs `countDistinct(key)` vs NULL-key count;
+     `countDistinct` ignores NULLs so uniqueness requires zero NULLs confirmed
+   - **Duplicate resolution** — `dropDuplicates()` survivor is non-deterministic;
+     `groupBy` + `agg` is deterministic; verify grain after resolution
+   - **NULL keys** — `[1, 2, NULL]` ↔ `[2, 3, NULL]`; predict/verify inner,
+     left, right, full outer; `eqNullSafe` when NULL must match NULL (can
+     itself fan out with multiple NULLs per side)
+   - **Cartesian products** — intentional `crossJoin()` vs always-true
+     anti-pattern (`F.lit(True)`); demonstrates row explosion risk
+   - **Validation exercise** — full workflow: profile → predict → run → verify
+     (catches row-count failures; does not prove value correctness)
    - Skill-building only — **no write**
 
 3. **Lookup Joins and Unmatched Dimensions**
