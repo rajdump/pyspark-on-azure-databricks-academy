@@ -41,9 +41,9 @@
 # MAGIC Spark matched every left row to every right row with the same key. That's a
 # MAGIC **1:M fanout** — invisible until the damage is done.
 # MAGIC
-# MAGIC Section 3.2 demonstrates this with `trip_charges` ↔ `rate_card` (both have
-# MAGIC multiple rows per trip → the numbers are larger, but the lesson is the same:
-# MAGIC joining on too few columns produces wrong results).
+# MAGIC Section 3.2 shows a related case: `trip_charges` ↔ `rate_card` — **both**
+# MAGIC sides have multiple rows per trip (**M:M** on `trip_id` → 12 rows). Same
+# MAGIC lesson: joining on too few columns produces wrong results.
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
@@ -195,9 +195,10 @@ print(
 # MAGIC `trip_time` too. Once both pass,
 # MAGIC the 1:1 label is safe. 
 # MAGIC
-# MAGIC The 1:M pattern is demonstrated in Section 3 as
-# MAGIC motivation for composite keys. **M:1** is the same join with tables swapped —
-# MAGIC no extra demo needed. M:M is covered in Notebook **`02`**.
+# MAGIC The intro sketch is **1:M** (trip grain ↔ charge lines). Section 3.2 is
+# MAGIC **M:M** on `trip_id` (`trip_charges` ↔ `rate_card` → 12 rows) — motivation
+# MAGIC for composite keys. **M:1** is the same join with tables swapped — no extra
+# MAGIC demo needed. A fuller **M:M** construct is in Notebook **`02`**.
 # MAGIC
 # MAGIC You don't need to memorize this table. The point is simple: **if you know the
 # MAGIC grain of both sides, you already know what the join will do.** No surprises.

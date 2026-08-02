@@ -175,8 +175,8 @@ Eight notebooks, in this order:
 
    - **Grain** — what one row represents; row count vs distinct join key
    - **Cardinality** — 1:1 on `trip` ↔ `trip_time`; vocabulary table for
-     1:M, M:1, M:M (no standalone demos — 1:M shown in list-form section);
-     **M:M** in **02**
+     1:M, M:1, M:M (1:M in the intro sketch only; list-form §3.2 is
+     M:M fanout on `trip_id` — 12 rows; fuller **M:M** construct in **02**)
    - **Join syntax** — string (coalesced key); list (`[trip_id, charge_type]`
      on `trip_charges` ↔ `rate_card`, contrasted with `trip_id`-only on the
      same pair: 12-row broad match vs 4-row precise match); Boolean when
