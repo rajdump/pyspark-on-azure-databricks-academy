@@ -6,8 +6,9 @@ Use PySpark built-in functions to transform landing data, work with nested
 columns and arrays, and produce curated datasets for later modules.
 
 The module establishes one production rule: **use Spark built-ins first**.
-Python UDFs and Pandas UDFs appear only in the final notebook as alternatives
-for logic that cannot be expressed with built-in functions.
+Python UDFs appear only in the final notebook as a contrast for logic that
+cannot be expressed with built-in functions. Pandas/Arrow UDFs are mentioned
+briefly as an advanced fallback; this course does not teach them further.
 
 ## Learning objectives
 
@@ -22,7 +23,8 @@ By the end of this module, you'll be able to:
 - Review Module 3 cleaning patterns (NULL-safe predicates, normalization,
   safe casts) on full-size controlled-bad CSV variants and carry those same
   cleaned DataFrames into **curated** outputs
-- Explain when to prefer built-ins over **Python UDFs** and **Pandas UDFs**
+- Explain when to prefer built-ins over **Python UDFs** (and when Pandas/Arrow
+  UDFs exist as an advanced fallback outside this course)
 
 ## Prerequisites
 
@@ -61,8 +63,8 @@ curated state.
 
 **API used:** Notebooks **01–03** use PySpark **DataFrame** methods and
 built-in **`F.*`** Column expressions. **`04 - Built-ins First: When (Not) to
-Use UDFs`** introduces Python UDFs and Pandas UDFs only as alternatives for
-logic that cannot be expressed with built-ins. `F.expr` and `selectExpr` were
+Use UDFs`** contrasts built-ins with a Python UDF and briefly notes
+Pandas/Arrow UDFs as an advanced fallback not taught here. `F.expr` and `selectExpr` were
 taught in Module 2 and are not used here. Pure SQL and dual-API patterns
 belong in Module 9.
 
@@ -135,8 +137,8 @@ Four notebooks, in this order:
      **`01 - Column Transforms with Built-in Functions`**
    - Write **`…/curated/trip/`** and **`…/curated/payment/`**
 4. **Built-ins First: When (Not) to Use UDFs**
-   - Built-ins as default; Python UDF as slower, less optimizable contrast
-   - Pandas UDF only when custom Python is unavoidable
+   - Built-ins as default; Python UDF as a contrast when custom Python might be considered
+   - Short advanced note on Pandas/Arrow UDFs (not taught further in this course)
    - Demo on a small column rule — **do not overwrite** curated outputs
 
 ## Exercises

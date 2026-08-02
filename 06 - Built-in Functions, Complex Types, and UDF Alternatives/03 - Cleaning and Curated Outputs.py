@@ -748,4 +748,4 @@ payment_exercise_source.show(truncate=False)
 # MAGIC   `curated/payment/`, then printed curated readback counts for trip and payment.
 # MAGIC
 # MAGIC **Next:** Module 6 **`04 - Built-ins First: When (Not) to Use UDFs`** compares
-# MAGIC built-in expressions with Python and Pandas UDF alternatives.
+# MAGIC built-in expressions with a Python UDF contrast and when to prefer built-ins.
