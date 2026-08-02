@@ -432,7 +432,6 @@ join_diff_names.show()
 
 # COMMAND ----------
 
-# DBTITLE 1,Duplicate columns after Boolean join
 join_bool_raw = trip.alias("t").join(
     trip_time.alias("tt"),
     F.col("t.trip_id") == F.col("tt.trip_id"),
