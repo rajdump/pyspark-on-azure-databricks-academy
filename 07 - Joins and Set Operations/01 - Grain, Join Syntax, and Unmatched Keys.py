@@ -190,8 +190,9 @@ print(
 # MAGIC | **M:M** | Duplicates on both sides | Output can multiply sharply |
 # MAGIC
 # MAGIC Landing **`trip`** ↔ **`trip_time`** on **`trip_id`** should be **1:1** —
-# MAGIC Cell 6 confirmed `trip` has 100 rows and 100 distinct `trip_id` values (no
-# MAGIC duplicates); Cell 9 below runs the same check on `trip_time`. Once both pass,
+# MAGIC The grain check above confirmed `trip` has 100 rows and 100 distinct
+# MAGIC `trip_id` values (no duplicates); the profile cell below verifies
+# MAGIC `trip_time` too. Once both pass,
 # MAGIC the 1:1 label is safe. 
 # MAGIC
 # MAGIC The 1:M pattern is demonstrated in Section 3 as
@@ -207,7 +208,7 @@ print(
 # MAGIC %md
 # MAGIC ### Verify both sides — not just one
 # MAGIC
-# MAGIC Cell 6 confirmed `trip` is unique on `trip_id`. That's half the story. If `trip_time` has
+# MAGIC The grain check above confirmed `trip` is unique on `trip_id`. That's half the story. If `trip_time` has
 # MAGIC duplicates, the join still multiplies rows. **Both sides must pass the grain
 # MAGIC check.** One clean table joined to one dirty table = dirty output.
 
@@ -291,8 +292,8 @@ join_string.select("*").show(1, truncate=False,vertical=True)
 # MAGIC
 # MAGIC | Join key | What happens | Result |
 # MAGIC |---|---|---|
-# MAGIC | `"trip_id"` only | Every charge pairs with every rate for same trip | **12 rows** (wrong!) |
-# MAGIC | `["trip_id", "charge_type"]` | Only `base_fare↔base_fare`, `surge↔surge` | **4 rows** (correct) |
+# MAGIC | `"trip_id"` only | Every charge × every rate per trip | **12** (wrong) |
+# MAGIC | `["trip_id", "charge_type"]` | Exact charge-type match only | **4** (correct) |
 # MAGIC
 # MAGIC The first code cell below shows the mistake (expect 4, get 12). The second
 # MAGIC shows the fix (add `charge_type` to the key → get 4).
