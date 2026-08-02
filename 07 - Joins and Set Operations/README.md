@@ -181,8 +181,8 @@ Eight notebooks, in this order:
      on `trip_charges` ↔ `rate_card`, contrasted with `trip_id`-only on the
      same pair: 12-row broad match vs 4-row precise match); Boolean when
      names differ (`trip_id` = `trip_no`) and same-name duplicate-key gotcha
-   - **Unmatched keys** — left `[1…5]`, right `[3…7]`; predict/verify
-     inner=3, left=5, right=5, full outer=7
+   - **Exercise — unmatched keys** — left `[1…5]`, right `[3…7]`;
+     predict/verify inner, left, right, full outer (expect 3 / 5 / 5 / 7)
    - Skill-building only — **no write**
 
 2. **Join Types, NULL Keys, and Validation**

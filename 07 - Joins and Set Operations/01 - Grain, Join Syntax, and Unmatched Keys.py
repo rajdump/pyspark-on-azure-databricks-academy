@@ -52,7 +52,7 @@
 # MAGIC | 1. Grain | What one row represents | Detect duplicates before joining |
 # MAGIC | 2. Cardinality | 1:1, 1:M, M:1, M:M labels | Predict output row count |
 # MAGIC | 3. Join syntax | String, List, Boolean forms | Write correct PySpark join conditions |
-# MAGIC | 4. Unmatched keys | inner/left/right/full behavior | Control which rows survive |
+# MAGIC | Exercise | Unmatched keys — join types | Control which rows survive |
 # MAGIC
 # MAGIC **Core habit:** predict row count → run the join → verify with `count()`.
 # MAGIC
@@ -447,15 +447,13 @@ join_bool_raw.select(
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 4 - Unmatched keys
+# DBTITLE 1,Exercise
 # MAGIC %md
-# MAGIC ## 4. Unmatched keys — which rows survive?
+# MAGIC ## Exercise — unmatched keys
 # MAGIC
-# MAGIC Sections 1–3 covered grain, cardinality, and syntax. But there's one more
-# MAGIC decision: **what happens when keys don't fully overlap?**
-# MAGIC
-# MAGIC In production, keys rarely match perfectly. Some trips exist in one table but
-# MAGIC not the other. The **join type** decides what to do with these mismatches:
+# MAGIC Sections 1–3 covered grain, cardinality, and syntax. One more decision:
+# MAGIC **what happens when keys don't fully overlap?** The join type decides which
+# MAGIC unmatched rows survive.
 # MAGIC
 # MAGIC | Join type | Plain English |
 # MAGIC |---|---|
@@ -464,31 +462,16 @@ join_bool_raw.select(
 # MAGIC | **right** | Keep all right rows; NULLs where left has no match |
 # MAGIC | **full outer** | Keep everything; NULLs on both sides where needed |
 # MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Example:**
+# MAGIC Constructed frames in the next cell:
 # MAGIC
 # MAGIC ```
 # MAGIC Left  trip_id: [1, 2, 3, 4, 5]
 # MAGIC Right trip_id: [3, 4, 5, 6, 7]
 # MAGIC ```
 # MAGIC
-# MAGIC Break it down:
-# MAGIC - Left-only: {1, 2} — these trips have no right partner
-# MAGIC - Overlap: {3, 4, 5} — these exist on both sides
-# MAGIC - Right-only: {6, 7} — these trips have no left partner
-# MAGIC
-# MAGIC **Predict the row count for each join type:**
-# MAGIC
-# MAGIC | Join type | Which rows survive | Count |
-# MAGIC |---|---|---:|
-# MAGIC | inner | Overlap only | 3 |
-# MAGIC | left | Left-only + overlap | 2 + 3 = 5 |
-# MAGIC | right | Overlap + right-only | 3 + 2 = 5 |
-# MAGIC | full outer | All three groups | 2 + 3 + 2 = 7 |
-# MAGIC
-# MAGIC **Exercise:** replace `None` in the next cell with your predictions, then run.
-# MAGIC If actual ≠ predicted, re-read the table above.
+# MAGIC 1. Split the keys into left-only, overlap, and right-only.
+# MAGIC 2. Predict **inner**, **left**, **right**, and **full** row counts.
+# MAGIC 3. Replace each `None` below with your prediction, then run and verify.
 
 # COMMAND ----------
 
@@ -509,7 +492,6 @@ predictions = {
     "full": None,
 }
 
-# Verify
 for join_type, predicted in predictions.items():
     actual = left_unmatched.join(right_unmatched, "trip_id", join_type).count()
     match = "✓" if predicted == actual else "✗"
