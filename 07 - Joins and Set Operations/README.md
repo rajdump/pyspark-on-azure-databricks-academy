@@ -70,19 +70,19 @@ Module 6 — Built-in Functions, Complex Types, and UDF Alternatives (notebooks
     (`location_id` 21–22 are not referenced by any trip — see
     [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md))
 
-The core 100-row landing tables (`trip`, `trip_time`, `payment`) are also used
-directly in Notebook 1 where a perfectly 1:1 grain is required for teaching
-join types without interference from extended IDs.
+The core 100-row landing tables (`trip`, `trip_time`, `payment`) are used in
+Notebooks **01–02** where a perfectly 1:1 grain is required for teaching join
+types without interference from extended IDs.
 
 **Data source by notebook:**
 
 | Notebook | Landing reads | Processed curated/ reads | Why |
 |---|---|---|---|
-| 1 | `trip`, `trip_time`, `payment` (100 rows each) + 3 constructed frames | — | Landing tables confirm predictions on clean 1:1 data; constructed frames teach row-count differences, NULL keys, and many-to-many — none of which the clean landing data can show |
-| 2 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | `zone_lookup` has no curated version; rows 21–22 are the only real unmatched-dimension rows in the dataset |
-| 3 | — | `curated/trip` (106), `curated/payment` (105) | The 106 vs 105 mismatch is the teaching point |
-| 4 | Named filters on landing `trip` | — | See Notebook 4 below for the exact subsets — not an unspecified sample |
-| 5 | `trip_time`, `zone_lookup` | `curated/trip`, `curated/payment`, `curated/drivers_flat` | `trip_time` and `zone_lookup` have no curated version |
+| 1–2 | `trip`, `trip_time`, `payment` (100 rows each) + constructed frames in **01** and **02** | — | Landing 1:1 demos plus frames for unmatched keys, M:M, and NULL keys |
+| 3–4 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | Rows 21–22 are unmatched dimension rows; lookup pattern split across two notebooks |
+| 5 | — | `curated/trip` (106), `curated/payment` (105) | The 106 vs 105 mismatch is the teaching point |
+| 6–7 | Named filters on landing `trip` | — | Set operations split: union paths vs intersect/subtract paths |
+| 8 | `trip_time`, `zone_lookup` | `curated/trip`, `curated/payment`, `curated/drivers_flat` | Capstone enrichment and managed-table writes |
 
 Recall Module 3 — Data Cleaning, NULL Semantics, and Type Handling for
 NULL-aware predicates and **`eqNullSafe`** when join keys may be NULL.
@@ -123,7 +123,7 @@ awareness; capstone write to managed Delta tables.
 - Unity Catalog grants (Module 11)
 - All join-plan tuning beyond the `F.broadcast` hint — other join hints
   (`merge`, `shuffle_hash`, `shuffle_replicate_nl`), configuring or tuning
-  AQE, and skew/salting remedies (Module 16). Notebook 5's high-level AQE
+  AQE, and skew/salting remedies (Module 16). Notebook **08**'s high-level AQE
   *awareness* — knowing the runtime may adapt the plan — stays in scope
 
 Schemas, column names, join keys, and Volume path rules:
@@ -169,193 +169,120 @@ updated to include the `DROP TABLE IF EXISTS` statements for
 
 ## Notebook navigation
 
-Five notebooks, in this order:
+Eight notebooks, in this order:
 
-1. **Join Types and Row-Count Correctness**
+1. **Grain, Join Syntax, and Unmatched Keys**
 
-   *Reads:* landing `trip`, `trip_time`, `payment` — 100 rows each, clean 1:1
-   grain — plus 3 constructed frames (below). No curated tables in this
-   notebook.
+   *Reads:* landing `trip`, `trip_time` (100 rows each) plus constructed
+   mini-frames. No curated tables.
 
-   - **Grain orientation** — one row represents one business entity at a
-     defined level of detail; a join may preserve, widen, or multiply the
-     grain depending on cardinality
-   - **Cardinality vocabulary** — 1:1, 1:M, M:1, M:M; how each predicts the
-     output row count before running a single cell
-   - **Join-condition syntax** — three forms, taught before the first join
-     runs:
-     - Single shared column name as a string: no duplicate column in the
-       result; both sides must have a column of that name
-     - List of shared column names: composite equi-join, brief syntax
-       example only — no course dataset requires a composite key
-     - Boolean column condition: explicit `df_left.col == df_right.col`;
-       unlike the string/list forms, it always retains both sides' key
-       columns, whether or not the names match; Notebook 2 relies on this
-       form for the repeated zone lookup, where duplicate names come from
-       joining the same table twice, not from the Boolean syntax alone
-   - **Constructed frame 1 — unmatched keys**: left `trip_id`
-     `[1, 2, 3, 4, 5]`, right `trip_id` `[3, 4, 5, 6, 7]`; predict, then
-     verify inner=3, left=5, right=5, full outer=7 — this is the demo that
-     makes the four join types' row-count differences visible
-   - **Four join types on rideshare data** — inner, left, right, full outer
-     on `trip_id` using landing `trip`, `trip_time`, and `payment`; predict
-     counts, run each join, verify with `count()`; **all four** join types
-     return 100 rows here — the landing tables are a perfect 1:1 match, so
-     this step confirms the prediction rather than revealing a difference
-   - **Constructed frame 2 — many-to-many**: left `trip_id` `[1, 1, 2]`,
-     right `trip_id` `[1, 1, 3]` (not production keys); predict, then verify
-     inner=4 — the 2×2 fanout on key 1 shows row multiplication when neither
-     side has a unique key
-   - **Key profiling before joining** — count total rows and distinct key
-     values; if they differ, investigate before joining; apply a deterministic
-     resolution rule; validate uniqueness; `dropDuplicates()` alone is not
-     sufficient when duplicate rows carry different payload values
-   - **Constructed frame 3 — NULL keys**: left `trip_id` `[1, 2, NULL]`,
-     right `trip_id` `[2, 3, NULL]`; predict, then verify inner=1 (only key 2
-     matches — standard equality never matches NULL, so inner join excludes
-     both sides' NULL-key rows; left preserves left with NULL right-side
-     columns; right preserves right; full outer preserves both); callback to
-     Module 3 for `eqNullSafe` when NULL equality is genuinely intended
-   - **Pre-join and post-join validation habit** — check grain and count
-     inputs, predict output count, verify after join; use this pattern in
-     every notebook and especially in Notebook 5
-   - Gotcha: a missing or always-true join condition produces an accidental
-     Cartesian product; use `crossJoin()` only when a full cross product is
-     intentional
+   - **Grain orientation** — one row = one business entity at a defined level
+     of detail; joins preserve, widen, or multiply grain depending on cardinality
+   - **Cardinality vocabulary** — 1:1, 1:M, M:1, M:M; how each predicts output
+     row count before running a cell
+   - **Join-condition syntax** — three forms before production joins:
+     - Single shared column name (string): one coalesced key column in the result
+     - List of shared column names: composite equi-join (mini-frame demo)
+     - Boolean column condition: retains both sides' key columns when names match
+   - **Constructed frame — unmatched keys**: left `trip_id` `[1…5]`, right
+     `[3…7]`; predict and verify inner=3, left=5, right=5, full outer=7
    - Skill-building only — **no write**
 
-2. **Lookup Joins, Aliases, and Column Selection**
+2. **Join Types, NULL Keys, and Validation**
 
-   *Reads:* landing `zone_lookup` (22 rows, dimension); `curated/trip`
-   (106 rows). `zone_lookup` has no curated version.
+   *Reads:* landing `trip`, `trip_time`, `payment` (100 rows each) plus
+   constructed mini-frames. No curated tables.
 
-   - **Repeated lookup join, and why it needs a Boolean condition** —
-     `zone_lookup` is joined twice to `curated/trip`: once on
-     `pickup_location_id = location_id` and once on
-     `dropoff_location_id = location_id` — a role-playing dimension pattern,
-     not a self-join. Pickup and dropoff use different key column names on
-     the left side, so the string-shorthand form from Notebook 1 cannot
-     express this; the Boolean form is required, and it produces duplicate
-     `location_id`, `borough_name`, `zone_name`, `service_zone` columns
-   - **Lookup-key uniqueness check** — verify `zone_lookup.location_id` is
-     unique before joining; a non-unique dimension key would silently multiply
-     trip rows
-   - **Real unmatched-dimension rows** — `zone_lookup` rows 21–22
-     (`Newark Airport`, `Hoboken Terminal`) are never referenced by any trip.
-     A **left** join from `curated/trip` never surfaces them (every trip's
-     location IDs are in 1–20, so the lookup always matches). Reverse the
-     join — `zone_lookup` **right** joined to `curated/trip`, or a **full
-     outer** — and rows 21–22 appear with NULL trip columns. This is the
-     only pair in the dataset with a real unmatched dimension row; use it
-     to confirm the Notebook 1 prediction rules on production-shaped data
+   - **Four join types on rideshare data** — inner, left, right, full outer on
+     `trip_id` for `trip` ↔ `trip_time` and `trip` ↔ `payment`; predict then
+     verify with `count()`; all four return **100** on 1:1 landing data
+   - **Constructed frame — many-to-many**: left `[1, 1, 2]`, right `[1, 1, 3]`;
+     predict inner=4
+   - **Key profiling** — row count vs distinct key; `dropDuplicates()` pitfall;
+     deterministic resolution (e.g. `groupBy` + `agg`); validate uniqueness on
+     landing `trip`
+   - **Constructed frame — NULL keys**: left `[1, 2, NULL]`, right `[2, 3, NULL]`;
+     predict/verify inner, left, right, full outer; Module 3 **`eqNullSafe`**
+     callback when NULL keys must match
+   - **Pre-join and post-join validation habit** — predict → run → verify
+   - Gotcha: accidental Cartesian product vs intentional **`crossJoin()`**
+   - Skill-building only — **no write**
+
+3. **Lookup Joins and Unmatched Dimensions**
+
+   *Reads:* landing `zone_lookup` (22 rows); `curated/trip` (106 rows).
+
+   - **Repeated lookup join (Boolean condition)** — join `zone_lookup` twice to
+     `curated/trip`: `pickup_location_id = location_id` and
+     `dropoff_location_id = location_id` (role-playing dimension, not a self-join)
+   - **Lookup-key uniqueness check** on `zone_lookup.location_id`
+   - **Real unmatched-dimension rows** — `location_id` 21–22 never referenced by
+     trips; left join from trips never surfaces them; **right** or **full outer**
+     from `zone_lookup` shows NULL trip columns on 21–22
+   - Skill-building only — **no write** (Notebook **08** reuses this lookup step)
+
+4. **Aliases, Column Selection, and Broadcast**
+
+   *Reads:* same as Notebook **03** (continue the lookup join from pickup/dropoff
+   Boolean joins).
+
    - **Aliases and qualified references** — `alias()` on each `zone_lookup`
-     instance; resolve duplicate columns with `df.alias.col` or
-     `F.col("alias.col")`
-   - **Explicit `select`** — choose and rename output columns (e.g.,
-     `pickup_borough`, `dropoff_zone`) rather than carrying all columns
-     forward
-   - **`F.broadcast`** on `zone_lookup`; read the `BroadcastHashJoin` node in
-     **`.explain("formatted")`** — inspection only, no physical-plan tuning
-   - Skill-building only — **no write** (Notebook 5 reuses this lookup,
-     alias, `select`, and broadcast pattern to produce the curated output)
-
-3. **Semi Joins and Anti Joins**
-
-   *Reads:* `curated/trip` (106 rows), `curated/payment` (105 rows). The
-   one-row difference between these tables is the teaching data.
-
-   - **`left_semi`** — returns only left-side rows that have a match; does not
-     widen the DataFrame; trips that have a payment record
-   - **`left_anti`** — returns only left-side rows without a match; trips that
-     have no payment record (`trip_id` 106 is the expected result)
-   - **Reverse anti join** — payments without a matching trip record; expected
-     result is zero rows, which confirms key integrity between the two cleaned
-     datasets — zero unmatched rows is informative, not a failure
-   - **Why `left_semi` / `left_anti` instead of inner + distinct** — inner
-     join followed by `distinct` may collapse genuine duplicate rows in the
-     payload and still widens the intermediate result before deduplication;
-     semi/anti never produce a wider DataFrame and express membership intent
-     directly
-   - Bridge to Notebook 4: `left_anti` and `subtract()` both answer "rows in
-     A not in B" — anti-join is key-based and works across schemas; `subtract()`
-     compares entire rows and requires identical schemas. Notebook 5 reuses
-     both techniques together as a validation gate before its enrichment
-     writes
+     instance; `F.col("alias.col")`
+   - **Explicit `select`** — rename to `pickup_borough`, `dropoff_zone`, etc.
+   - **`F.broadcast`** on `zone_lookup`; read **`BroadcastHashJoin`** in
+     **`.explain("formatted")`** — inspection only
    - Skill-building only — **no write**
 
-4. **Set Operations**
+5. **Semi Joins and Anti Joins**
 
-   *Reads:* named filters on landing `trip` (100 rows) — no curated tables.
+   *Reads:* `curated/trip` (106), `curated/payment` (105).
 
-   - **`union()` vs `unionByName()` — column-order bug**: `premium_trips =
-     trip.filter(service_type == "Premium").select("trip_id",
-     "service_type", "trip_distance_miles")` (15 rows) and `xl_trips =
+   - **`left_semi`** and **`left_anti`** on `trip_id`; `trip_id` **106** on anti
+   - **Reverse anti join** — payments without trips (expect zero rows)
+   - **Why semi/anti vs inner + distinct**
+   - Bridge to Notebook **07**: anti-join vs **`subtract()`** (key-based vs whole-row)
+   - Skill-building only — **no write**
+
+6. **Union and unionByName**
+
+   *Reads:* named filters on landing `trip`.
+
+   - **`union()` vs `unionByName()`** — `premium_trips =
+     trip.filter(service_type == "Premium").select("trip_id", "service_type",
+     "trip_distance_miles")` (15 rows) vs `xl_trips =
      trip.filter(service_type == "XL").select("service_type", "trip_id",
-     "trip_distance_miles")` (12 rows, same three columns in a different
-     order). `union()` matches by **position**, so `xl_trips.trip_id` values
-     land in the `service_type` column of the result — silently wrong.
-     `unionByName()` matches by name and returns the correct 27-row result
-   - **`unionByName(allowMissingColumns=True)`** — reuse `premium_trips`
-     with a fourth column, `ride_duration_mins` (15 rows, 4 columns), against
-     an `xl_trips` variant with that column dropped (12 rows, 3 columns);
-     `allowMissingColumns=True` fills NULL for the 12 XL rows; use only when
-     the schema difference is known and intentional, not as a catch-all that
-     hides unexpected schema contract changes
-   - **Duplicate rows after `union`** — `union()` preserves duplicates;
-     `distinct()` after `union` is justified only when duplicate rows are
-     genuinely equivalent and should be collapsed, not as a routine cleanup
-   - **Whole-row comparison semantics** — `intersect()`, `intersectAll()`,
-     `subtract()`, and `exceptAll()` compare **entire rows**, not just keys;
-     a learner expecting key-based matching will get unexpected results
-   - **`intersect()` vs `intersectAll()`, and `subtract()` vs
-     `exceptAll()`**: `early_trips = trip.filter(trip_id <= 60)` (60 rows)
-     and `late_trips = trip.filter(trip_id >= 41)` (60 rows) overlap on
-     `trip_id` 41–60. `intersect()` returns those 20 rows distinct;
-     `intersectAll()` would preserve duplicates if either subset had them.
-     `subtract(early_trips, late_trips)` returns the 40 rows unique to
-     `early_trips` (`trip_id` 1–40); `exceptAll()` preserves duplicates from
-     the left side instead of de-duplicating
-   - Note: `EXCEPT` is SQL clause syntax; `subtract()` is the PySpark
-     DataFrame method for distinct row difference
+     "trip_distance_miles")` (12 rows, column-order trap)
+   - **`unionByName(allowMissingColumns=True)`** — fourth column on Premium only;
+     use only for known schema differences
+   - **Duplicate rows after `union`** — when **`distinct()`** is justified
    - Skill-building only — **no write**
 
-5. **Build Unified Curated Tables**
+7. **Intersect, subtract, and exceptAll**
 
-   *Reads:* `curated/trip` (106 rows), `curated/payment` (105 rows),
-   `curated/drivers_flat`, landing `trip_time` (100 rows), landing
-   `zone_lookup` (22 rows). `trip_time` and `zone_lookup` have no curated
-   version.
+   *Reads:* `early_trips = trip.filter(trip_id <= 60)` (60 rows);
+   `late_trips = trip.filter(trip_id >= 41)` (60 rows); overlap on 41–60.
 
-   - **State input grain contracts** before any join — one row per `trip_id`
-     in `curated/trip`; one row per `trip_id` in `curated/payment`; one row
-     per (`driver_id`, `trip_id`) in `curated/drivers_flat`; one row per
-     `location_id` in `zone_lookup`
-   - **Key uniqueness profiling** on each join key before the first join
-   - **Stepwise enrichment** — add one dimension or extension at a time;
-     after each left join, count rows and count NULLs on the
-     **business-significant joined columns** (e.g., `trip_date` after the
-     `trip_time` join; `base_fare_amount` after the payment join); confirm
-     against the expected NULL documentation above
-   - **Apply lookup-join, alias, `select`, and broadcast patterns from
-     Notebook 2** for the zone-lookup step (pickup and dropoff roles);
-     `zone_lookup` stays small enough to broadcast here too
-   - **Validation gate using Notebook 3 and 4 techniques** — before trusting
-     the expected-NULL counts, confirm the exact unmatched key sets
-     directly with `subtract()` (trip vs. `trip_time` keys) and `left_anti`
-     (trip vs. `payment`) — the results must match the Expected NULLs
-     documentation above; this reuses the anti-join and `subtract()`
-     contrast from Notebook 3's bridge instead of relying on NULL counts
-     alone
-   - **Explicit final column selection** — choose the output schema
-     intentionally; do not carry forward every intermediate column
-   - **Write only after all validation steps pass** — predicted and verified
-     row counts match; expected NULLs confirmed; output schema correct
+   - **Whole-row comparison semantics** for `intersect`, `intersectAll`,
+     `subtract`, `exceptAll`
+   - **`intersect()` vs `intersectAll()`**; **`subtract()` vs `exceptAll()`**
+   - Note: SQL **`EXCEPT`** vs PySpark **`subtract()`**
+   - Skill-building only — **no write**
+
+8. **Build Unified Curated Tables**
+
+   *Reads:* `curated/trip`, `curated/payment`, `curated/drivers_flat`, landing
+   `trip_time`, landing `zone_lookup`.
+
+   - **State input grain contracts** and key profiling before joins
+   - **Stepwise enrichment** with NULL checks on business columns after each left join
+   - **Reuse Notebook 03–04** lookup, alias, `select`, broadcast for zones
+   - **Validation gate** — **`left_anti`** and **`subtract()`** from Notebooks **05**
+     and **07** before trusting expected NULLs
+   - **Explicit final column selection**; write only after validation passes
    - Write `rideshare_dev.processed.trip_enriched` and
-     `rideshare_dev.processed.trip_driver_assignment` as managed Delta tables
-     using `saveAsTable` with overwrite mode; exact write pattern is finalized
-     during notebook authoring
-   - **AQE note:** Databricks may adapt the physical join strategy at runtime.
-     AQE and advanced join tuning are covered in Module 16.
+     `rideshare_dev.processed.trip_driver_assignment` via **`saveAsTable`**
+     overwrite mode
+   - **AQE note** — high-level awareness only (Module 16 for tuning)
 
 ## Exercises
 
@@ -374,6 +301,6 @@ or membership questions.
     **`rideshare_dev.processed`**
   - **`READ VOLUME`** on **`rideshare_dev.landing.source_files`**
   - **`READ VOLUME`** on **`rideshare_dev.processed.output_files`**
-    (to read Module 6 curated Parquet outputs in Notebooks 2–5)
+    (Module 6 curated Parquet — Notebooks **03–08**)
   - **`CREATE TABLE`** on **`rideshare_dev.processed`**
-    (for `saveAsTable` in Notebook 5)
+    (for `saveAsTable` in Notebook **08**)
