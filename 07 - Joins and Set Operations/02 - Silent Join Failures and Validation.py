@@ -13,7 +13,7 @@
 # MAGIC * **Accidental Cartesian** — every row × every row
 # MAGIC
 # MAGIC Between those: how to detect duplicates before joining (key profiling) and
-# MAGIC how to resolve them deterministically (groupBy, not dropDuplicates).
+# MAGIC how to resolve them deterministically (window ranking, not dropDuplicates).
 # MAGIC
 # MAGIC **Reads:** landing `trip`, `trip_time`, `payment` (100 rows each) +
 # MAGIC constructed mini-frames. **No write.**
@@ -39,7 +39,9 @@
 # MAGIC it adds fare columns per trip.
 # MAGIC
 # MAGIC After loading, the second code cell runs all four join types on both pairs.
-# MAGIC All should return 100 — that's the clean baseline.
+# MAGIC All should return 100 — a baseline **signal**, not proof of clean grain.
+# MAGIC Matching join counts suggest no unmatched keys and no obvious fanout; Section 2
+# MAGIC profiles `rows` / `distinct` / `nulls` to confirm uniqueness.
 
 # COMMAND ----------
 
@@ -215,7 +217,7 @@ print(f"payment    rows={pay_stats['rows']}, distinct={pay_stats['distinct']}, n
 # MAGIC | Method | Behavior |
 # MAGIC |---|---|
 # MAGIC | `dropDuplicates(["trip_id"])` | Keeps one row per key — survivor is non-deterministic (different plans may keep different rows) |
-# MAGIC | `groupBy("trip_id").agg(...)` | Keeps one row using YOUR rule — deterministic, same input always gives same output |
+# MAGIC | Window + `row_number` | Ranks rows per key by your rule (e.g. latest `updated_at`), keeps rank 1 — entire row stays intact |
 # MAGIC
 # MAGIC `dropDuplicates` is fine when all rows for a key are truly identical. When
 # MAGIC they differ (different timestamps, amounts, statuses), use a **window
@@ -495,7 +497,7 @@ print(f"{mark} inner → predicted={predicted_inner}, actual={actual_inner}")
 # MAGIC
 # MAGIC 1. **Profile** both sides on the join key (rows, distinct, nulls)
 # MAGIC 2. **Decide** — is it safe to join as-is?
-# MAGIC    * rows ≠ distinct → resolve duplicates (groupBy, not dropDuplicates)
+# MAGIC    * rows ≠ distinct → resolve duplicates (window ranking, not dropDuplicates)
 # MAGIC    * nulls > 0 → handle before inner join (or use eqNullSafe)
 # MAGIC 3. **Predict** the output row count based on what you know
 # MAGIC 4. **Run** the join

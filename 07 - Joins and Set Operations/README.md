@@ -116,9 +116,9 @@ awareness; capstone write to managed Delta tables.
 
 **Out of scope:**
 - `groupBy`, pivots, and window functions (Module 8) — except the narrow
-  pre-join duplicate-resolution pattern in Notebook **02** (`groupBy` +
-  `agg` to keep one deterministic row per key). Aggregation pedagogy stays
-  in Module 8
+  pre-join duplicate-resolution pattern in Notebook **02** (`Window` +
+  `row_number` to keep one deterministic latest row per key). Aggregation
+  and window pedagogy stay in Module 8
 - CTEs and parameterized SQL pipelines (Module 9)
 - Delta ACID, time travel, `MERGE` DML, and schema evolution (Module 10)
 - Unity Catalog grants (Module 11)
@@ -208,7 +208,8 @@ Eight notebooks, in this order:
    - **Key profiling** — rows vs `countDistinct(key)` vs NULL-key count;
      `countDistinct` ignores NULLs so uniqueness requires zero NULLs confirmed
    - **Duplicate resolution** — `dropDuplicates()` survivor is non-deterministic;
-     `groupBy` + `agg` is deterministic; verify grain after resolution
+     `Window` + `row_number` keeps the latest complete row; verify grain after
+     resolution
    - **NULL keys** — `[1, 2, NULL]` ↔ `[2, 3, NULL]`; predict/verify inner,
      left, right, full outer; `eqNullSafe` when NULL must match NULL (can
      itself fan out with multiple NULLs per side)
