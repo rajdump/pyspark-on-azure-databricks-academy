@@ -229,6 +229,66 @@ print(
 
 # COMMAND ----------
 
+# DBTITLE 1,Rideshare composite key example
+# MAGIC %md
+# MAGIC    
+# MAGIC #### Rideshare scenario: why a single key can match too broadly
+# MAGIC
+# MAGIC Imagine each trip has multiple charge line items (base fare, surge, tip).
+# MAGIC The **`trip_charges`** table has a grain of **one row per `trip_id` + `charge_type`**.
+# MAGIC
+# MAGIC - Joining on `trip_id` alone → each trip matches **all** its charges → row multiplication (1:M)
+# MAGIC - Joining on `[trip_id, charge_type]` → matches only where **both** columns align → precise results
+# MAGIC
+# MAGIC The next cell builds this scenario and shows the row count difference.
+
+# COMMAND ----------
+
+# DBTITLE 1,Rideshare composite key demo
+# --- Rideshare composite key: trip_charges ---
+trip_summary = spark.createDataFrame(
+    [(1, "standard", 12.50), (2, "premium", 25.00)],
+    ["trip_id", "service_type", "total_fare"],
+)
+
+trip_charges = spark.createDataFrame(
+    [
+        (1, "base_fare", 8.00),
+        (1, "surge", 3.00),
+        (1, "tip", 1.50),
+        (2, "base_fare", 18.00),
+        (2, "surge", 5.00),
+        (2, "tip", 2.00),
+    ],
+    ["trip_id", "charge_type", "amount"],
+)
+
+# Rate card has expected amounts for base_fare and surge only (no tip)
+rate_card = spark.createDataFrame(
+    [
+        (1, "base_fare", 8.00),
+        (1, "surge", 3.00),
+        (2, "base_fare", 18.00),
+        (2, "surge", 5.00),
+    ],
+    ["trip_id", "charge_type", "expected_amount"],
+)
+
+print("=== trip_charges (grain: one row per trip_id + charge_type) ===")
+trip_charges.show()
+
+print("--- Single key: trip_id only ---")
+single_key = trip_summary.join(trip_charges, "trip_id", "inner")
+print(f"Row count: {single_key.count()} (each trip matched ALL its charges)")
+single_key.show()
+
+print("--- Composite key: [trip_id, charge_type] ---")
+composite_key = trip_charges.join(rate_card, ["trip_id", "charge_type"], "inner")
+print(f"Row count: {composite_key.count()} (only exact trip + charge_type matches)")
+composite_key.show()
+
+# COMMAND ----------
+
 # DBTITLE 1,Cell 14
 # MAGIC %md
 # MAGIC ### Boolean: explicit column condition
