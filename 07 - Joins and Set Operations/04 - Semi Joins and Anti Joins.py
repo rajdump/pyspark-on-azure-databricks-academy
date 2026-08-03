@@ -1,8 +1,4 @@
 # Databricks notebook source
-# /// script
-# [tool.databricks.environment]
-# environment_version = "5"
-# ///
 # DBTITLE 1,Introduction
 # MAGIC %md
 # MAGIC
@@ -47,22 +43,21 @@
 # MAGIC | `curated/payment` | Parquet | one fare record per trip | `trip_id` | 105 | Sections 1–2 |
 # MAGIC | Landing `trip_time` | Parquet | one time record per trip | `trip_id` | 100 | Practice (Section 3 only) |
 # MAGIC
-# MAGIC The dataset `curated/payment` contains 105 rows, which is one less than the `curated/trip` dataset. This means that Trip 106 exists in the `trip` dataset but does not have a corresponding payment record. This intentional discrepancy is used to demonstrate an anti-join in Section 2.
+# MAGIC `curated/payment` has 105 rows — one fewer than `curated/trip`. Trip 106
+# MAGIC exists in trip but has no payment record. That gap drives the anti-join
+# MAGIC demo in Section 2.
 # MAGIC
-# MAGIC Additionally, Trips 101 to 106 do not have any entries in the `trip_time` dataset, which only includes the original 100 trips. This 6-row gap is leveraged in the practice exercises in Section 3.
+# MAGIC Trips 101–106 have no record in `trip_time` (which covers only the original
+# MAGIC 100 trips). That 6-row gap drives the Section 3 practice.
 
 # COMMAND ----------
 
 # DBTITLE 1,Load curated trip, payment, and landing trip_time
-from pyspark.sql import functions as F
-
 curated_root = "/Volumes/rideshare_dev/processed/output_files/curated"
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
 
 trip = spark.read.format("parquet").load(f"{curated_root}/trip")  # noqa: F821
-
 payment = spark.read.format("parquet").load(f"{curated_root}/payment")  # noqa: F821
-
 trip_time = spark.read.format("parquet").load(  # noqa: F821
     f"{landing_root}/trip_time/trip_time.parquet"
 )
@@ -127,7 +122,7 @@ print("left_anti row count:", trips_without_payment.count())
 # Verify: semi + anti must account for every row in the driving table
 semi_count = trips_with_payment.count()
 
-print("\n Payment missingm for this trip:")
+print("\nPayment missing for this trip:")
 trips_without_payment.show(2, truncate=False, vertical=True)
 
 anti_count = trips_without_payment.count()
@@ -208,10 +203,12 @@ print("Payments without a matching trip:", payments_without_trip.count(), "rows"
 # MAGIC ## 4. Bridge to `subtract()`
 # MAGIC
 # MAGIC `subtract()` returns rows from the first DataFrame that do not appear in the
-# MAGIC second DataFrame. It compares all columns in the DataFrames passed to it. 
+# MAGIC second. It compares **entire rows** — every column present in both sides —
+# MAGIC not a named join key.
 # MAGIC
-# MAGIC Therefore, use
-# MAGIC `select()` on both sides when you want to compare only specific columns.
+# MAGIC Select the same column(s) on both sides when you want a key-only comparison.
+# MAGIC Selecting just `trip_id` makes the result equivalent to the anti-join above
+# MAGIC for that key:
 # MAGIC
 # MAGIC ```python
 # MAGIC trip.select("trip_id").subtract(
@@ -219,13 +216,9 @@ print("Payments without a matching trip:", payments_without_trip.count(), "rows"
 # MAGIC )
 # MAGIC ```
 # MAGIC
-# MAGIC Here, Spark compares only `trip_id` because that is the only column present
-# MAGIC after the projection.
-# MAGIC
-# MAGIC Unlike `left_anti`, `subtract()` removes duplicate results.
-# MAGIC
-# MAGIC Full set-operation coverage → Notebook 06.
-# MAGIC
+# MAGIC Full set-operation coverage (including how `subtract()` differs from
+# MAGIC `left_anti` on duplicates) → Notebook 06.
+
 
 # COMMAND ----------
 
@@ -258,12 +251,8 @@ subtract_result.show()
 # MAGIC
 # MAGIC    Every left row appears in exactly one of the two results.
 # MAGIC
-# MAGIC 5. **Anti join and `subtract()` overlap but differ:**
-# MAGIC
-# MAGIC    * `left_anti` evaluates a join key and preserves duplicate left rows.
-# MAGIC    * `subtract()` compares all selected columns and returns only distinct
-# MAGIC      rows.
-# MAGIC
-# MAGIC    Full set-operation coverage → Notebook 06.
+# MAGIC 5. **Anti on a key ≈ `subtract()` on that key column** — but `subtract()`
+# MAGIC    compares whole rows on the selected columns, not a join key. Full
+# MAGIC    set-operation coverage in Notebook 06.
 # MAGIC
 # MAGIC **Next:** **`05 - Union and unionByName`**
