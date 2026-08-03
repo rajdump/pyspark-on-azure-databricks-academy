@@ -28,12 +28,12 @@ By the end of this module, you'll be able to:
 - Understand NULL join-key behaviour by join type: standard equality never
   matches NULL, so inner joins exclude NULL-key rows; left, right, and full
   outer joins preserve unmatched rows with NULL on the non-driving side
-- Profile join keys before joining — count total rows and distinct key values
-  — and apply a deterministic resolution rule when duplicates are found
-- Join `trip` to `zone_lookup` twice in pickup and dropoff roles using table
-  aliases — a **repeated lookup join** (role-playing dimension pattern)
-- Resolve duplicate column names after joins using **`alias`**, qualified
-  column references, and explicit **`select`**
+- Profile join keys before joining — count total rows, distinct key values, and
+  NULL-key counts — and resolve duplicates with **`Window` + `row_number`**
+  (not `dropDuplicates`) when payloads differ
+- Frame fact vs dimension joins; join `zone_lookup` twice in pickup and
+  dropoff roles (**repeated lookup join**) with aliases and explicit **`select`**
+  / rename after the double join
 - Use **`left_semi`** and **`left_anti`** joins to answer set-membership
   questions without widening row count
 - Contrast **`left_anti`** with **`subtract()`**: anti-join is key-based
@@ -44,7 +44,7 @@ By the end of this module, you'll be able to:
   that `union()` matches columns by **position** and `subtract()`/`intersect()`
   compare **whole rows**
 - Apply **`F.broadcast`** on a small dimension table and read the broadcast
-  node in **`.explain("formatted")`**
+  node in **`.explain()`**
 - Validate grain and row counts at each join step, confirm expected NULLs,
   and write two managed Delta tables only after validation passes
 
@@ -82,7 +82,7 @@ The core 100-row landing tables (`trip`, `trip_time`, `payment`) are **1:1** on
 |---|---|---|---|
 | 1 | `trip`, `trip_time` (+ constructed frames) | — | Grain, join syntax, unmatched-keys exercise (no `payment`) |
 | 2 | `trip`, `trip_time`, `payment` (100 rows each) + constructed frames | — | Silent join failures: M:M, NULL keys, Cartesians; validation habit |
-| 3 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | Repeated lookup, column cleanup, unmatched dims 21–22, broadcast |
+| 3 | `zone_lookup` (22 rows) | `curated/trip` (106 rows) | Repeated lookup, column cleanup, unmatched-dims practice, broadcast |
 | 4 | — | `curated/trip` (106), `curated/payment` (105) | The 106 vs 105 mismatch is the teaching point |
 | 5–6 | Named filters on landing `trip` | — | Set operations split: union paths vs intersect/subtract paths |
 | 7 | `trip_time`, `zone_lookup` | `curated/trip`, `curated/payment`, `curated/drivers_flat` | Capstone enrichment and managed-table writes |
@@ -105,8 +105,8 @@ Join APIs and set-operation methods below match the Spark 4.0.0 documentation.
 
 **API used:** PySpark **DataFrame** `join`, set-operation methods, and
 `F.broadcast`. This module uses the DataFrame API only. Use
-`DataFrame.explain("formatted")` for plan inspection — `spark.sql` and
-dual-API patterns belong in Module 9.
+`DataFrame.explain()` for plan inspection — `spark.sql` and dual-API
+patterns belong in Module 9.
 
 **In scope:** DataFrame grain and cardinality; join types and row-count
 correctness; key profiling and pre-join validation; lookup joins and column
@@ -223,27 +223,22 @@ Seven notebooks, in this order:
 
    *Reads:* landing `zone_lookup` (22 rows); `curated/trip` (106 rows).
    No curated `payment`. Skill-building only — **no write**.
+   Notebook **07** reuses this lookup + broadcast pattern.
 
    Apply (do not re-teach): Boolean join form, aliases, key profiling, and
    unmatched-key join types from Notebooks **01**–**02**.
 
-   - **Fact vs dimension** — `curated/trip` (106) joined to small reference
-     `zone_lookup` (22)
-   - **Lookup-key uniqueness** — short profile on `zone_lookup.location_id`
-     (same habit as Notebook **02**; dimensions must be unique on the lookup key)
-   - **Repeated lookup join** — join `zone_lookup` twice to `curated/trip` in
-     pickup and dropoff roles (`pickup_location_id` / `dropoff_location_id` =
-     `location_id`); Boolean condition + aliases on each role (role-playing
-     dimension, not a self-join)
-   - **Explicit `select` / rename** — resolve duplicate column names after the
-     double join (`pickup_borough`, `dropoff_zone`, etc.)
-   - **Unmatched dimension rows** — `location_id` 21–22 never referenced by
-     trips; left join from trips never surfaces them; **right** or **full outer**
-     from `zone_lookup` shows NULL trip columns on 21–22 (apply Notebook **01**
-     unmatched-key behavior on real data)
-   - **`F.broadcast`** on `zone_lookup`; read **`BroadcastHashJoin`** in
-     **`.explain("formatted")`** — inspection only
-   - Notebook **07** reuses this lookup + broadcast pattern
+   - **Fact vs dimension** — `curated/trip` (106) vs small reference
+     `zone_lookup` (22); short uniqueness profile on `location_id` in Setup
+   - **Repeated lookup join** — join `zone_lookup` twice (pickup / dropoff
+     roles) with Boolean condition + aliases; show duplicate column names
+   - **Explicit `select` / rename** — `pickup_borough`, `pickup_zone`,
+     `dropoff_borough`, `dropoff_zone`, etc.
+   - **Unmatched dimension rows (practice)** — predict then write left vs
+     right/full for `location_id` 21–22 (no worked solution cell)
+   - **Broadcast** — disable auto-broadcast (`threshold = -1`), compare
+     shuffle plan vs `F.broadcast` plan in **`.explain()`**, then restore
+     default; expect `BroadcastHashJoin` or `PhotonBroadcastHashJoin`
 
 4. **Semi Joins and Anti Joins**
 
@@ -298,9 +293,10 @@ Seven notebooks, in this order:
 
 ## Exercises
 
-Each notebook in **Notebook navigation** ends with a short hands-on task
-(predict/verify, transform, or membership check) using that notebook's
-patterns.
+Each notebook in **Notebook navigation** includes a short hands-on task
+(predict/verify, transform, membership check, or practice join) using that
+notebook's patterns — sometimes as a final exercise cell, sometimes integrated
+into a section (e.g. Notebook **03** unmatched-dimension practice).
 
 ## Minimum privileges required
 
@@ -313,6 +309,6 @@ patterns.
     **`rideshare_dev.processed`**
   - **`READ VOLUME`** on **`rideshare_dev.landing.source_files`**
   - **`READ VOLUME`** on **`rideshare_dev.processed.output_files`**
-    (Module 6 curated Parquet — Notebooks **03–07**)
+    (Module 6 curated Parquet — Notebooks **03**, **04**, and **07**)
   - **`CREATE TABLE`** on **`rideshare_dev.processed`**
     (for `saveAsTable` in Notebook **07**)

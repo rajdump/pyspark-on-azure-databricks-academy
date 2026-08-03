@@ -78,8 +78,7 @@
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 3
-# Load trip and zone_lookup
+# DBTITLE 1,Setup - load trip and zone_lookup
 from pyspark.sql import functions as F
 
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
@@ -108,8 +107,7 @@ print("zone_lookup rows:", zone_lookup.count())
 
 # COMMAND ----------
 
-# DBTITLE 1,Cell 4
-# Profile the zone_lookup lookup key
+# DBTITLE 1,Setup - profile zone_lookup key
 zone_stats = zone_lookup.select(
     F.count(F.lit(1)).alias("rows"),
     F.countDistinct("location_id").alias("distinct"),
@@ -144,13 +142,19 @@ print("\u2192 unique, no NULLs \u2014 safe lookup key")
 # MAGIC
 # MAGIC To fix this, use a broadcast join instead of a plain join — Section 4
 # MAGIC covers it in detail.
+# MAGIC
+# MAGIC First, disable automatic broadcast so the plan below shows a shuffle join.
+# MAGIC Section 4 forces broadcast with `F.broadcast()` while this setting stays
+# MAGIC at `-1` (a hint still works when auto-broadcast is off).
 
 # COMMAND ----------
 
-spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1) 
+# DBTITLE 1,1. Disable auto-broadcast for the shuffle demo
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1)  # noqa: F821
 
 # COMMAND ----------
 
+# DBTITLE 1,1. Double lookup join without broadcast
 t = trip.alias("t")
 pz = zone_lookup.alias("pz")
 dz = zone_lookup.alias("dz")
@@ -172,11 +176,12 @@ trip_with_zones.explain()
 
 # COMMAND ----------
 
-trip_with_zones.show(1, truncate=False,vertical=True)
+# DBTITLE 1,1. Show messy duplicate columns
+trip_with_zones.show(1, truncate=False, vertical=True)
 
 # COMMAND ----------
 
-# DBTITLE 1,Duplicate columns after the double join
+# DBTITLE 1,1b. Duplicate columns after the double join
 # MAGIC %md
 # MAGIC ## Duplicate columns after the double join
 # MAGIC
@@ -202,6 +207,7 @@ trip_with_zones.show(1, truncate=False,vertical=True)
 
 # COMMAND ----------
 
+# DBTITLE 1,2. Select and rename
 trip_with_zones.select(
     F.col("t.trip_id"),
     F.col("t.service_type"),
@@ -211,8 +217,8 @@ trip_with_zones.select(
     F.col("t.dropoff_location_id"),
     F.col("dz.borough_name").alias("dropoff_borough"),
     F.col("dz.zone_name").alias("dropoff_zone"),
-    F.col("t.trip_distance_miles")
-).show(1, truncate=False,vertical=True)
+    F.col("t.trip_distance_miles"),
+).show(1, truncate=False, vertical=True)
 
 # COMMAND ----------
 
@@ -257,6 +263,7 @@ trip_with_zones.select(
 
 # COMMAND ----------
 
+# DBTITLE 1,3. Practice - left join
 # TODO (practice): write a trip-driven LEFT JOIN from `trip` to
 # `zone_lookup`, matching `dropoff_location_id` to `location_id`.
 # Use .alias() on both sides (Notebook 01 Section 3.3).
@@ -267,7 +274,7 @@ trip_with_zones.select(
 
 # COMMAND ----------
 
-# DBTITLE 1,Right/full surfaces unused zones
+# DBTITLE 1,3b. Flip the driving side
 # MAGIC %md
 # MAGIC ### Now flip the driving side
 # MAGIC
@@ -276,12 +283,13 @@ trip_with_zones.select(
 
 # COMMAND ----------
 
+# DBTITLE 1,3. Practice - right or full join
 # TODO (practice): write a RIGHT (or FULL) outer join from `zone_lookup`'s
 # side to `trip`, matching `dropoff_location_id` to `location_id`.
 #
 # Then check: filter the result down to location_id 21 and 22 — what do
 # the trip columns (e.g. trip_id) look like for those rows? Compare the
-# total row count to the left join from the previous cell.
+# total row count to the left join from the cell above.
 
 # COMMAND ----------
 
@@ -289,22 +297,23 @@ trip_with_zones.select(
 # MAGIC %md
 # MAGIC ## 4. Broadcast — avoid shuffling the fact table for a 22-row dimension
 # MAGIC
-# MAGIC **Without a hint:** Spark's optimizer automatically broadcasts any table it estimates to be smaller than the `spark.sql.autoBroadcastJoinThreshold`, which defaults to 10 MB. Since `zone_lookup` only has 22 rows, it falls well under this threshold. Therefore, Spark would broadcast it automatically at the default setting. This is precisely the threshold that Cell 6 disabled to force the shuffle demonstration in Section 1, and Cell 17 restores it below.
+# MAGIC **Without a hint (Section 1):** With `autoBroadcastJoinThreshold = -1`,
+# MAGIC Spark does not auto-broadcast. The double join used a shuffle strategy
+# MAGIC (`SortMergeJoin` / `Exchange`s).
 # MAGIC
-# MAGIC **With a hint:** Using `F.broadcast()` makes the broadcast decision explicit and guaranteed, regardless of the size threshold. This distinction is important because Spark's automatic estimate depends on file size statistics, which can sometimes be inaccurate. A compressed file may be significantly smaller on disk than the actual in-memory size Spark needs to broadcast. By providing an explicit hint, you eliminate that uncertainty and document the intent directly in the code, rather than relying on Spark's estimation.
+# MAGIC **With a hint (below):** `F.broadcast()` forces a broadcast join even while
+# MAGIC the threshold is still `-1`. Auto-broadcast stays off so the difference you
+# MAGIC see in `.explain()` comes from the hint, not from the 10 MB default.
 # MAGIC
-# MAGIC **Note on Serverless compute:** Photon, which is Databricks' native vectorized engine, is always enabled for Serverless compute and SQL warehouses. Unlike classic clusters, there is no option to turn it off. Photon renames plan operators with a `Photon` prefix, so the join below appears as `PhotonBroadcastHashJoin` instead of the standard `BroadcastHashJoin`. This represents the same broadcast optimization, but it is Photon's vectorized implementation of it.
+# MAGIC **Note on Serverless compute:** Photon renames plan operators with a
+# MAGIC `Photon` prefix, so you may see `PhotonBroadcastHashJoin` instead of
+# MAGIC `BroadcastHashJoin`. Same optimization — Photon's vectorized form.
 
 # COMMAND ----------
 
-# Re-enable automatic broadcast (default is usually 10 MB)
-spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "10485760")  # noqa: F821
-
-# COMMAND ----------
-
-# Same double join as Cell 7, but both zone_lookup references are wrapped
-# in F.broadcast() this time — the join structure doesn't change, only
-# how Spark plans it.
+# DBTITLE 1,4. Double lookup join with F.broadcast
+# Same double join as Section 1, but both zone_lookup sides use F.broadcast().
+# Threshold is still -1 — the hint alone forces the broadcast plan.
 t = trip.alias("t")
 pz = F.broadcast(zone_lookup.alias("pz"))
 dz = F.broadcast(zone_lookup.alias("dz"))
@@ -320,6 +329,12 @@ trip_broadcast_join = t.join(
 )
 
 trip_broadcast_join.explain()
+
+# COMMAND ----------
+
+# DBTITLE 1,4. Restore auto-broadcast default
+# Lesson complete — restore the usual 10 MB auto-broadcast threshold.
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "10485760")  # noqa: F821
 
 # COMMAND ----------
 
