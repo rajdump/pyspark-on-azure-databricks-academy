@@ -3,8 +3,14 @@
 # MAGIC %md
 # MAGIC # 05 - Union and unionByName
 # MAGIC
-# MAGIC Joins add columns — they combine fields from two DataFrames side by side.
-# MAGIC Union operations add rows — they stack DataFrames vertically into one.
+# MAGIC Notebooks **01**–**04** used **joins**: put two tables next to each other and
+# MAGIC match rows on a key. The result is usually wider (more columns).
+# MAGIC
+# MAGIC This notebook is about **union**: put two tables on top of each other. The
+# MAGIC result is taller (more rows), with the same columns.
+# MAGIC
+# MAGIC Example: `morning` has 2 trip rows and `afternoon` has 2 trip rows. A union
+# MAGIC gives 4 trip rows in one DataFrame.
 # MAGIC
 # MAGIC Spark provides two union methods:
 # MAGIC
