@@ -13,7 +13,7 @@ Two habits run through every notebook and the capstone write:
 
 **Reads:** Module 6 curated Parquet plus landing tables that have no curated
 version. **Writes (Notebook 07 only):** two Unity Catalog managed Delta tables
-for Module 8–9.
+for Modules 8–9.
 
 Schemas, join keys, and the `zone_lookup` 21–22 design:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
@@ -86,13 +86,21 @@ statements.
 - **API:** DataFrame `join`, set ops, `F.broadcast`, `.explain()` — no Spark SQL
   dual-API (Module 9)
 
-**In scope:** grain/cardinality; join types and row-count correctness; key
-profiling; lookup joins and column naming; semi/anti; set ops; broadcast hint;
-high-level AQE awareness in the capstone; managed-table writes after validation.
+**In scope:**
+
+- Grain / cardinality
+- Join types and row-count correctness
+- Key profiling
+- Lookup joins and column naming
+- Semi / anti joins
+- Set ops
+- Broadcast hint
+- High-level AQE awareness in the capstone
+- Managed-table writes after validation
 
 **Out of scope:**
 
-- Aggregations / windows pedagogy (Module 8) — except Notebook **02**’s narrow
+- Aggregations / windows pedagogy (Module 8) — except Notebook **02**'s narrow
   pre-join dedup (`Window` + `row_number`)
 - CTEs / parameterized SQL (Module 9)
 - Delta ACID / `MERGE` / time travel (Module 10)
@@ -122,7 +130,7 @@ integrated practice). Notebooks **01–06** build skills only (**no write**);
   `["trip_id", "charge_type"]` → 4 (correct)
 - Boolean: different names (`trip_id` = `trip_no`); same-name duplicate-column trap
 
-**Notebook 3 — apply, don’t re-teach:** Boolean form, aliases, profiling, and
+**Notebook 3 — apply, don't re-teach:** Boolean form, aliases, profiling, and
 left/right/full from **01–02**. New: fact/dim framing, double role-play lookup,
 column cleanup, broadcast with/without auto-threshold.
 
