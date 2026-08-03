@@ -4,24 +4,21 @@
 # MAGIC
 # MAGIC # 04 - Semi Joins and Anti Joins
 # MAGIC
-# MAGIC ### The problem: you need to filter rows by whether a match exists — without adding columns
+# MAGIC The four common join types — inner, left, right, and full — combine columns
+# MAGIC from two DataFrames. What differs between them is which matched and unmatched
+# MAGIC rows survive.
 # MAGIC
-# MAGIC Inner and left joins answer "what does the combined record look like?" They
-# MAGIC append columns from both sides. But sometimes the question is simpler:
+# MAGIC Semi and anti joins work differently: they do not combine columns from both
+# MAGIC DataFrames. The right DataFrame is used only to check whether a matching row
+# MAGIC exists. Spark then keeps or removes rows from the left DataFrame based on
+# MAGIC that check.
 # MAGIC
-# MAGIC - **Which trips already have a payment?** (keep those rows, nothing else)
-# MAGIC - **Which trips are missing a payment?** (find the gaps)
+# MAGIC Columns from the right DataFrame never appear in the result.
 # MAGIC
-# MAGIC A regular join would add all payment columns just to answer a yes/no
-# MAGIC question. Semi and anti joins answer it directly — returning **only left-side
-# MAGIC columns**, with zero schema expansion.
-# MAGIC
-# MAGIC PySpark exposes these as join-type strings:
-# MAGIC
-# MAGIC | Join type | Question answered | Result schema |
-# MAGIC |---|---|---|
-# MAGIC | `"left_semi"` | Left rows where a match **exists** in the right | Left columns only |
-# MAGIC | `"left_anti"` | Left rows where **no match** exists in the right | Left columns only |
+# MAGIC - **`left_semi`** — keeps left rows that have a match on the right. It is
+# MAGIC   similar to SQL `WHERE EXISTS`.
+# MAGIC - **`left_anti`** — keeps left rows that do not have a match on the right.
+# MAGIC   It is similar to SQL `WHERE NOT EXISTS`.
 # MAGIC
 # MAGIC | Section | Focus |
 # MAGIC |---|---|
