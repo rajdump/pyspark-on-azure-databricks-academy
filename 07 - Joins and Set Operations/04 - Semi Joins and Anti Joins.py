@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # DBTITLE 1,Introduction
 # MAGIC %md
 # MAGIC
@@ -202,13 +206,9 @@ print("Payments without a matching trip:", payments_without_trip.count(), "rows"
 # MAGIC %md
 # MAGIC ## 4. Bridge to `subtract()`
 # MAGIC
-# MAGIC `subtract()` returns rows from the first DataFrame that do not appear in the
-# MAGIC second. It compares **entire rows** — every column present in both sides —
-# MAGIC not a named join key.
+# MAGIC `subtract()` returns rows from the first DataFrame that do not appear in the second DataFrame. It compares all columns in the DataFrames passed to it.
 # MAGIC
-# MAGIC Select the same column(s) on both sides when you want a key-only comparison.
-# MAGIC Selecting just `trip_id` makes the result equivalent to the anti-join above
-# MAGIC for that key:
+# MAGIC Therefore, use `select()` on both sides when you want to compare only specific columns.
 # MAGIC
 # MAGIC ```python
 # MAGIC trip.select("trip_id").subtract(
@@ -216,9 +216,11 @@ print("Payments without a matching trip:", payments_without_trip.count(), "rows"
 # MAGIC )
 # MAGIC ```
 # MAGIC
-# MAGIC Full set-operation coverage (including how `subtract()` differs from
-# MAGIC `left_anti` on duplicates) → Notebook 06.
-
+# MAGIC Here, Spark compares only `trip_id` because that is the only column present after the projection.
+# MAGIC
+# MAGIC Unlike `left_anti`, `subtract()` removes duplicate results.
+# MAGIC
+# MAGIC
 
 # COMMAND ----------
 
