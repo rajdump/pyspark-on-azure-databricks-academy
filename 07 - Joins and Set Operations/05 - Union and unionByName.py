@@ -45,7 +45,7 @@ from pyspark.sql import functions as F
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
 
 trip = (
-    spark.read.format("csv")
+    spark.read.format("csv")  # noqa: F821
     .option("header", True)
     .schema(
         "trip_id bigint, service_type string, pickup_location_id int, "
@@ -77,7 +77,8 @@ print(f"premium: {premium.count()} rows")
 # MAGIC the left, regardless of name.
 # MAGIC
 # MAGIC When both sides share the same schema and column order, this works
-# MAGIC correctly.
+# MAGIC correctly. `union()` also requires compatible types by position; incompatible
+# MAGIC types raise an error rather than producing silent corruption.
 
 # COMMAND ----------
 
@@ -100,23 +101,23 @@ print("Columns:", reconstructed.columns)
 # COMMAND ----------
 
 # DBTITLE 1,1b. Column-order trap demo
-# Swap pickup and dropoff positions on the right side
-gt_50_swapped = gt_50.select(
-    "trip_id", "pickup_location_id", "dropoff_location_id"
-)
+# Normal column order on both sides
 le_50_normal = le_50.select(
     "trip_id", "pickup_location_id", "dropoff_location_id"
 )
+gt_50_normal = gt_50.select(
+    "trip_id", "pickup_location_id", "dropoff_location_id"
+)
 
-# Swap column order on one side
-gt_50_bad = gt_50.select(
+# Swap column order on the right side
+gt_50_swapped = gt_50.select(
     "trip_id", "dropoff_location_id", "pickup_location_id"
 )
 
-bad_union = le_50_normal.union(gt_50_bad)
+bad_union = le_50_normal.union(gt_50_swapped)
 
 print("Original gt_50 row (trip_id 51):")
-gt_50_swapped.filter(F.col("trip_id") == 51).show()
+gt_50_normal.filter(F.col("trip_id") == 51).show()
 
 print("Same row after union — pickup and dropoff are SWAPPED:")
 bad_union.filter(F.col("trip_id") == 51).show()
@@ -134,7 +135,7 @@ bad_union.filter(F.col("trip_id") == 51).show()
 
 # DBTITLE 1,2. unionByName fixes the swap
 # Same frames that broke with union — unionByName handles them correctly
-good_union = le_50_normal.unionByName(gt_50_bad)
+good_union = le_50_normal.unionByName(gt_50_swapped)
 
 print("unionByName on the same swapped frames — trip_id 51:")
 good_union.filter(F.col("trip_id") == 51).show()
@@ -232,6 +233,14 @@ print("\n→ distinct() removed the extra copies")
 # MAGIC | XL | 12 |
 # MAGIC
 # MAGIC Create two overlapping groups and predict the counts before running.
+# MAGIC
+# MAGIC | Step | Your prediction |
+# MAGIC |---|---:|
+# MAGIC | group_a count | ? |
+# MAGIC | group_b count | ? |
+# MAGIC | unionByName count | ? |
+# MAGIC | distinct count | ? |
+# MAGIC | extra copies removed | ? |
 
 # COMMAND ----------
 
