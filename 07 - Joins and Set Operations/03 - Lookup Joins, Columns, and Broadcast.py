@@ -4,31 +4,25 @@
 # MAGIC
 # MAGIC # 03 - Lookup Joins, Columns, and Broadcast
 # MAGIC
-# MAGIC ## The problem: location IDs aren't names — and a tiny lookup table shouldn't cost a big shuffle
+# MAGIC ### The problem: location IDs aren't names — and a tiny lookup table shouldn't cost a big shuffle
 # MAGIC
-# MAGIC Every trip in `curated/trip` includes a `pickup_location_id` and a
-# MAGIC `dropoff_location_id`, both of which are numeric codes rather than easily
-# MAGIC recognizable place names. To present the trip information in a more
-# MAGIC understandable format, you need to join the `zone_lookup` table on
-# MAGIC `location_id`. This requires using the same 22-row lookup table twice: once
-# MAGIC for the pickup location and once for the dropoff location.
+# MAGIC Every trip in `curated/trip` includes a `pickup_location_id` and a `dropoff_location_id`, represented by numeric codes. To make this information clearer, you can join the `zone_lookup` table on `location_id` twice: once for pickup and once for dropoff.
 # MAGIC
-# MAGIC The size difference between tables is important. In our small example, the `zone_lookup` table has 22 rows, while the `trip` table contains 106 rows. However, in a production environment, the fact table may have millions of rows compared to a dimension table with only a few hundred. Joining these tables using the standard method could lead Spark to shuffle the larger `trip` table across the cluster to connect it with the smaller table that can fit in memory on each executor.
+# MAGIC The sizes of the tables matter; the `zone_lookup` has 22 rows while the `trip` table has 106 rows. However, in a production environment, larger datasets like a fact table may contain millions of rows compared to a smaller dimension table, which could lead to inefficient shuffling of the larger table.
 # MAGIC
-# MAGIC A **broadcast join** addresses this issue by sending the entire smaller table to every executor, keeping only the large table in its original location. This notebook is designed to develop toward implementing a broadcast join once the repeated lookup pattern is firmly established.
+# MAGIC A **broadcast join** solves this issue by sending the smaller table to every executor while keeping the larger table in its original location. This notebook focuses on implementing a broadcast join after establishing a repeated lookup pattern.
 # MAGIC
-# MAGIC This notebook covers the following topics:
+# MAGIC Key topics covered include:
 # MAGIC
-# MAGIC 1. **Repeated Lookup Join** - This refers to joining the same dimension table twice using different aliases for distinct roles, such as pickup role and drop-off role.
+# MAGIC 1. **Repeated Lookup Join** - Joining the same dimension table twice with different aliases for pickup and dropoff.
 # MAGIC    
-# MAGIC 2. **Column Cleanup** - This involves resolving issues related to duplicate or ambiguous names that arise from the repeated lookup.
+# MAGIC 2. **Column Cleanup** - Handling duplicate or ambiguous names from the repeated lookup.
 # MAGIC
-# MAGIC 3. **Unmatched Dimension Rows** - In the `zone_lookup`, there are two zones (location_id 21–22) that no trip references. The behavior of left joins versus right or full outer joins reveals these discrepancies differently.
+# MAGIC 3. **Unmatched Dimension Rows** - Identifying zones in `zone_lookup` that have no trip references and discussing join behaviours.
 # MAGIC
-# MAGIC 4. **Broadcasting** - This is about providing a hint to Spark to bypass the shuffle operation and verifying this decision in the physical plan.
+# MAGIC 4. **Broadcasting** - Hinting to Spark to avoid shuffle operations and verifying this in the physical plan.
 # MAGIC
-# MAGIC **Reads:** landing `zone_lookup` (JSON Lines, 22 rows); processed
-# MAGIC `curated/trip` (Parquet, 106 rows). **No write.**
+# MAGIC **Reads:** `zone_lookup` (JSON Lines, 22 rows); processed `curated/trip` (Parquet, 106 rows). **No write. ****
 # MAGIC
 # MAGIC **Prerequisites.** Module 7 **`01 - Grain, Join Syntax, and Unmatched Keys`**
 # MAGIC and **`02 - Silent Join Failures and Validation`**; Module 6 (**`01`** through
@@ -47,35 +41,17 @@
 # MAGIC | `curated/trip` | Parquet | one completed trip | `trip_id` | 106 |
 # MAGIC | `zone_lookup` | JSON Lines | one taxi zone | `location_id` | 22 |
 # MAGIC
-# MAGIC Three signals decide which table plays which role:
+# MAGIC Three signals determine the roles of tables:
 # MAGIC
-# MAGIC 1. **Grain and content** - This refers to what one row represents.
-# MAGIC    `curated/trip`'s grain is one completed trip, a business event carrying
-# MAGIC    measures you aggregate, such as `trip_distance_miles` and the duration
-# MAGIC    columns. `zone_lookup`'s grain is one taxi zone, a descriptive entity
-# MAGIC    with attributes you filter or group by, such as `borough_name` and
-# MAGIC    `zone_name`, and it has no measures at all.
-# MAGIC 2. **Foreign key direction** - This is about which table points at the
-# MAGIC    other. `curated/trip` holds `pickup_location_id` and
-# MAGIC    `dropoff_location_id`, both of which point at `zone_lookup.location_id`.
-# MAGIC    Fact tables hold foreign keys into dimension tables, never the reverse.
-# MAGIC 3. **Growth pattern** - This is about how each table changes over time.
-# MAGIC    `curated/trip` grows with every new trip, while `zone_lookup` is static
-# MAGIC    reference data, since the set of taxi zones doesn't change trip by trip.
+# MAGIC 1. **Grain and Content**: This indicates what each row represents. The `curated/trip` table's grain is a completed trip, containing measures like `trip_distance_miles`. In contrast, `zone_lookup` represents taxi zones with attributes like `borough_name` and has no measures.
 # MAGIC
-# MAGIC Based on these signals, `curated/trip` is the **fact** table because it
-# MAGIC references zones by ID, and `zone_lookup` is the **dimension** because it
-# MAGIC holds one row per zone, the thing being looked up.
+# MAGIC 2. **Foreign Key Direction**: This describes which table references the other. `curated/trip` contains `pickup_location_id` and `dropoff_location_id`, which point to `zone_lookup.location_id`. In a structure, fact tables reference dimension tables, not the other way around.
 # MAGIC
-# MAGIC This follows the same habit as Notebook 02: profile the lookup key before
-# MAGIC joining. If `rows == distinct` and `nulls == 0`, `location_id` is a safe
-# MAGIC join key, with no fanout risk from the dimension side. 
+# MAGIC 3. **Growth Pattern**: This refers to how data changes over time. `curated/trip` updates with each new trip, while `zone_lookup` remains static as it holds reference data.
 # MAGIC
-# MAGIC Only the dimension
-# MAGIC key needs this check. Duplicates in `trip`'s foreign key columns
-# MAGIC (`pickup_location_id`, `dropoff_location_id`) are normal, since many trips
-# MAGIC share the same pickup or dropoff zone, so profiling the fact side would
-# MAGIC flag expected behavior as if it were a problem.
+# MAGIC Based on these signals, `curated/trip` is the **fact** table as it references zones by ID, and `zone_lookup` is the **dimension** table with one row per zone.
+# MAGIC
+# MAGIC Before joining, check the lookup key: if `rows == distinct` and `nulls == 0`, `location_id` is a reliable join key. Only the dimension key requires this check, as duplicates in the `trip` foreign keys are common.
 
 # COMMAND ----------
 
@@ -126,27 +102,15 @@ print("\u2192 unique, no NULLs \u2014 safe lookup key")
 # MAGIC %md
 # MAGIC ## 1. Repeating a lookup join results in multiple shuffles
 # MAGIC
-# MAGIC `zone_lookup` joins to `trip` twice: once for `pickup_location_id`, once
-# MAGIC for `dropoff_location_id`. Each join is a separate operation in the plan,
-# MAGIC and by default each one triggers its own shuffle: Spark redistributes
-# MAGIC rows across partitions so that matching keys land in the same partition
-# MAGIC before it can align them.
+# MAGIC `zone_lookup` joins to `trip` twice: once for `pickup_location_id` and once for `dropoff_location_id`. Each join triggers a shuffle, which is costly as it involves redistributing rows across partitions based on join keys. 
 # MAGIC
-# MAGIC Shuffles are the most costly operations in Spark. During a shuffle, records are physically moved from their original partition to a new one based on the join key. This process requires writing intermediate data to disk and reading it back, resulting in significant disk I/O and serialization costs that occur regardless of the cluster size. Additionally, when executors span multiple nodes, there is a network transfer cost, but this is not the primary expense associated with a shuffle itself.
+# MAGIC This process incurs significant disk I/O and serialization costs, regardless of cluster size. Additionally, network transfer costs arise when executors span multiple nodes, but these are secondary to the shuffle cost itself.
 # MAGIC
-# MAGIC Check the physical plan in the `explain()` output below. Spark will
-# MAGIC default to a `SortMergeJoin` for each join, since that's the default
-# MAGIC equi-join strategy when neither side qualifies for a broadcast — and
-# MAGIC `SortMergeJoin` shuffles **both sides** of a join to co-partition matching
-# MAGIC keys. With two joins, that's `Exchange` appearing four times, not two: one
-# MAGIC for each side of each join.
+# MAGIC In the physical plan, Spark defaults to a `SortMergeJoin` for each join, which involves shuffling both sides. With two joins, this results in four `Exchange` operations. 
 # MAGIC
-# MAGIC To fix this, use a broadcast join instead of a plain join — Section 4
-# MAGIC covers it in detail.
+# MAGIC To optimize, use a broadcast join instead, section-4 covers this topic.
 # MAGIC
-# MAGIC First, disable automatic broadcast so the plan below shows a shuffle join.
-# MAGIC Section 4 forces broadcast with `F.broadcast()` while this setting stays
-# MAGIC at `-1` (a hint still works when auto-broadcast is off).
+# MAGIC First, disable automatic broadcasting , so the plan below shows a sert-merge-join, then you can force broadcasting with `F.broadcast()` while keeping the setting at `-1`.
 
 # COMMAND ----------
 
@@ -186,9 +150,11 @@ trip_with_zones.show(1, truncate=False, vertical=True)
 # MAGIC %md
 # MAGIC ## Duplicate columns after the double join
 # MAGIC
-# MAGIC Take a look at the row printed above: `location_id`, `borough_name`, `zone_name`, and `service_zone` each appear twice—once from the pickup join and once from the dropoff join. As a result, joining `zone_lookup` twice causes every column to appear twice in the output, which means we need to explicitly differentiate the pickup value from the dropoff value.
+# MAGIC Take a look at the row printed above: `location_id`, `borough_name`, `zone_name`, and `service_zone` each appear twice—once from the pickup join and once from the dropoff join. 
 # MAGIC
-# MAGIC This is expected behavior and not an error, but the data is not yet usable. The columns need to be selected and renamed to accurately reflect their business meaning. 
+# MAGIC As a result, joining `zone_lookup` twice causes every column to appear twice in the output, which means we need to differentiate the pickup value from the dropoff value explicitly.
+# MAGIC
+# MAGIC This is expected behaviour and not an error, but the data is not yet usable. The columns need to be selected and renamed to reflect their business meaning accurately. 
 # MAGIC
 # MAGIC For example, we should rename the columns to `pickup_borough` and `dropoff_borough` instead of having two identically named `borough_name` columns. Section 2 below will address this cleanup.
 
