@@ -11,6 +11,9 @@ Each student uses **their own** Azure storage account and Databricks
 workspace. **`01 - Unity Catalog Volumes and Data Landing`** creates the
 course catalog, external location, schemas, and volumes in that account.
 
+Schemas, column names, Volume path rules, and the repo → Volume upload map:
+[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
+
 ## Learning objectives
 
 By the end of this module, you'll be able to:
@@ -29,51 +32,36 @@ By the end of this module, you'll be able to:
 - Use save modes and a brief partitioned write; preview Delta as a **file**
   format under `practice/` and create managed table
   **`rideshare_dev.processed.trip_time_preview`** with **`saveAsTable`**
-  (files vs managed tables contrast; Module 6 reuses this table for
-  path-vs-table API parity; deep Delta → Module 10; UC grants → Module 11)
+  (files vs managed tables; Module 6 reuses this table for path-vs-table API
+  parity; deep Delta → Module 10; UC grants → Module 11)
 
 ## Prerequisites
 
-Module 4 — Transformations, Actions, and Lazy Evaluation. You should understand
+Module 4 — Transformations, Actions, and Lazy Evaluation. Understand
 transformations vs actions, lazy evaluation, and that **`DataFrame.write`**
-returns a writer interface; execution occurs when you call terminal write
-methods such as **`.save()`**, **`.parquet()`**, or **`.saveAsTable()`**.
+returns a writer; execution happens on terminal methods such as **`.save()`**,
+**`.parquet()`**, or **`.saveAsTable()`**.
 
 ### Before Notebook 01
 
-Complete these requirements before running
-**`01 - Unity Catalog Volumes and Data Landing`**:
+Complete these before running **`01 - Unity Catalog Volumes and Data Landing`**:
 
 1. Own Azure Databricks workspace with Unity Catalog (Premium-capable)
 2. Ability to **`CREATE CATALOG`** and **`CREATE EXTERNAL LOCATION`** on the
-   Unity Catalog metastore, plus **`CREATE EXTERNAL LOCATION`** on the storage
-   credential named in the config cell
+   metastore, plus **`CREATE EXTERNAL LOCATION`** on the storage credential
+   named in the config cell
 3. Azure Data Lake Storage Gen2 account + container, and a Unity Catalog
    **storage credential** that already exists and can access that storage
-   (how to create the Access Connector and credential is covered in the
-   course PDF materials — not in this repository)
-4. This course repo available as a Databricks **Git folder** (open
-   **`01 - Unity Catalog Volumes and Data Landing`** from that folder so the
-   copy cell can find `data/raw`)
+   (Access Connector / credential setup is in the course PDF — not this repo)
+4. This course repo as a Databricks **Git folder** (open Notebook **01** from
+   that folder so the copy cell can find `data/raw`)
 5. Notebook attached to compute
 6. In **`01 - Unity Catalog Volumes and Data Landing`** and
    **`99 - Rideshare Project Cleanup and Reset`**, overwrite the config cell
    with **your** storage account, container, storage credential, and ADLS
    folder
 
-## Approach and boundaries
-
-**In scope:** Volume setup, format reads, explicit schemas, minimal reshape,
-write patterns, Delta file write + managed `saveAsTable` preview.
-
-**Out of scope:** Deep transforms, **`explode()`**, UC grants, medallion
-layering, Delta ACID/`MERGE` (Modules 6 and 10+). Creating storage
-credentials (course PDF).
-
-Schemas, column names, Volume path rules, and the repo → Volume upload map:
-[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
-
-**Paths (do not use shorthand `processed/` alone):**
+## Paths and outputs
 
 | Role | Path |
 |---|---|
@@ -81,70 +69,50 @@ Schemas, column names, Volume path rules, and the repo → Volume upload map:
 | Module 5 writes | `/Volumes/rideshare_dev/processed/output_files/practice/{output_name}/` |
 | Module 6+ writes | `/Volumes/rideshare_dev/processed/output_files/curated/{output_name}/` |
 
-`practice/` and `curated/` are created on first write —
-**`01 - Unity Catalog Volumes and Data Landing`** does not pre-create them.
-Schema names `landing` / `processed` are not medallion
-layers (Module 12).
+Do **not** use shorthand `processed/` alone. `practice/` and `curated/` are
+created on first write — Notebook **01** does not pre-create them. Schema
+names `landing` / `processed` are not medallion layers (Module 12).
 
-**`01 - Unity Catalog Volumes and Data Landing`** creates platform objects;
-**Module 11** explains governance
+Notebook **01** creates platform objects; **Module 11** explains governance
 (grants, ownership, credentials, least privilege) on those existing objects.
 
-## Notebook navigation
+## Runtime and scope
 
-Seven content notebooks plus cleanup, in this order. All notebooks
-**01–07** and **99** are on disk and runtime-validated (see
+All notebooks **01–07** and **99** are on disk and runtime-validated (see
 `docs/validation/05 - Reading, Writing, and Schemas.md`).
 
-1. **Unity Catalog Volumes and Data Landing**
-   - Config cell (your Azure values); create ADLS project folder in Portal
-   - Create external location `el_rideshare_dev`, catalog `rideshare_dev`,
-     schemas, and volumes
-   - `mkdirs` for dataset folders; copy canonical and controlled-bad source
-     files into landing; verify
-2. **Reading CSV**
-   - Read **`trip`** from landing; explicit schema vs **`inferSchema`**;
-     light reshape; practice write
-3. **Reading JSON**
-   - Read **`zone_lookup`** (JSON Lines) from landing
-4. **Reading Parquet**
-   - Read **`trip_time`** from landing
-5. **Reading XML**
-   - Read **`drivers`** with **`rowTag`** only — no **`explode`** (Module 6)
-6. **Reading Avro**
-   - Read **`payment`** from landing (Avro copied in
-     **`01 - Unity Catalog Volumes and Data Landing`**)
-7. **Write Patterns and Table Preview**
-   - Save modes; brief partitioned write
-   - Delta **file** write under `practice/` and managed **`saveAsTable`**
-     to **`rideshare_dev.processed.trip_time_preview`** (managed location ≠
-     external volume)
-   - Files vs tables; Module 6 **`01 - Column Transforms with Built-in
-     Functions`** reads this table alongside landing **`trip_time`**
-     Parquet; deep Delta → Module 10
-99. **Rideshare Project Cleanup and Reset**
-   - Level 1 clear `practice/`; Level 2 clear `curated/` (blast radius);
-     Level 3 clear landing; Level 4 full teardown
+**In scope:** Volume setup, format reads, explicit schemas, minimal reshape,
+write patterns, Delta file write + managed `saveAsTable` preview.
 
-## Exercises
+**Out of scope:** Deep transforms, **`explode()`**, UC grants, medallion
+layering, Delta ACID / `MERGE` (Modules 6 and 10+). Creating storage
+credentials (course PDF).
 
-Each content notebook in **Notebook navigation** (01–07) ends with a short
-hands-on task — for example, verifying a Volume path, reading with an
-explicit schema, or writing with a chosen save mode.
-**`99 - Rideshare Project Cleanup and Reset`** is a utility cleanup notebook
-and has no exercise.
+## Notebooks
+
+Seven content notebooks plus cleanup, in order. Each content notebook
+(**01–07**) ends with a short hands-on task. **`99`** is a utility notebook
+with no exercise.
+
+| # | Notebook | Focus |
+|---|---|---|
+| 1 | Unity Catalog Volumes and Data Landing | Config cell (your Azure values); ADLS project folder; external location `el_rideshare_dev`, catalog `rideshare_dev`, schemas, volumes; `mkdirs`; copy canonical + controlled-bad sources into landing; verify |
+| 2 | Reading CSV | Read **`trip`** from landing; explicit schema vs **`inferSchema`**; light reshape; practice write |
+| 3 | Reading JSON | Read **`zone_lookup`** (JSON Lines) from landing |
+| 4 | Reading Parquet | Read **`trip_time`** from landing |
+| 5 | Reading XML | Read **`drivers`** with **`rowTag`** only — no **`explode`** (Module 6) |
+| 6 | Reading Avro | Read **`payment`** from landing (Avro copied in Notebook **01**) |
+| 7 | Write Patterns and Table Preview | Save modes; brief partitioned write; Delta **file** under `practice/` + managed **`saveAsTable`** to **`rideshare_dev.processed.trip_time_preview`** (managed location ≠ external volume); files vs tables; Module 6 **`01`** reads this table alongside landing **`trip_time`** Parquet; deep Delta → Module 10 |
+| 99 | Rideshare Project Cleanup and Reset | Level 1 clear `practice/`; Level 2 clear `curated/` (blast radius); Level 3 clear landing; Level 4 full teardown |
 
 ## Minimum privileges required
 
-- Databricks workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the
-  compute used in this module
-- Unity Catalog: ability to **`CREATE CATALOG`** and **`CREATE EXTERNAL
-  LOCATION`** on the metastore, **`CREATE EXTERNAL LOCATION`** on the storage
-  credential named in the config cell, **`CREATE SCHEMA`**, **`CREATE
-  VOLUME`**, and read/write the course volumes under `rideshare_dev` after
-  creation
-- Azure RBAC: roles on **your** storage account for the access connector
-  behind your storage credential (including File Events–related roles when
-  testing the external location — see **`01 - Unity Catalog Volumes and Data
-  Landing`** troubleshooting)
+- Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
+- Unity Catalog: **`CREATE CATALOG`** and **`CREATE EXTERNAL LOCATION`** on the
+  metastore; **`CREATE EXTERNAL LOCATION`** on the storage credential in the
+  config cell; **`CREATE SCHEMA`**, **`CREATE VOLUME`**, and read/write course
+  volumes under `rideshare_dev` after creation
+- Azure RBAC: roles on **your** storage account for the access connector behind
+  your storage credential (including File Events–related roles when testing
+  the external location — see Notebook **01** troubleshooting)
 - Storage credential: must already exist; this module does not create it

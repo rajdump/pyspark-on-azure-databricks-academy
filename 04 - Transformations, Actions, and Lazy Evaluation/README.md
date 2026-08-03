@@ -2,92 +2,56 @@
 
 ## Purpose
 
-Understand Spark's lazy execution model: how DataFrames build logical plans
-that execute only when an action is called, how the Spark optimizer can rewrite
-the logical plan — for example, by applying a filter earlier — and how different
-transformations may or may not require shuffling data between worker nodes.
+Understand Spark's lazy execution model: DataFrames build logical plans that
+run only when an action is called; the optimizer can rewrite that plan (for
+example, applying a filter earlier); and some transformations shuffle data
+between worker nodes while others do not.
 
 ## Learning objectives
 
 By the end of this module, you'll be able to:
 
-- Distinguish between **transformations** (which return a new DataFrame and
-  build a logical plan) and **actions** (which execute that plan and return a
-  result or trigger terminal writes such as **`.save()`** /
-  **`.saveAsTable()`** via `DataFrameWriter`)
-- Explain **lazy evaluation**: why Spark waits for an action before executing
-  a DataFrame's logical plan
-- Inspect a DataFrame's logical and physical plans with **`.explain()`** and
-  identify optimizer changes
-- Differentiate **narrow transformations** (no data movement between
-  partitions) from **wide transformations** (which require a **shuffle**)
+- Distinguish **transformations** (new DataFrame, build logical plan) from
+  **actions** (execute the plan; return a result or trigger terminal writes
+  such as **`.save()`** / **`.saveAsTable()`** via `DataFrameWriter`)
+- Explain **lazy evaluation**: why Spark waits for an action
+- Inspect logical and physical plans with **`.explain()`** and spot optimizer
+  changes
+- Differentiate **narrow** (no cross-partition move) from **wide**
+  (requires a **shuffle**) transformations
 - Identify **`Exchange`** in the physical plan as a shuffle / stage boundary
 - Recognize common **shuffle triggers** such as `groupBy` and `orderBy`
-- Choose common DataFrame **actions** (`first`, `head`, `take`, `tail`,
-  `isEmpty`, `toPandas`) and be aware of their driver-side memory risks
+- Choose common actions (`first`, `head`, `take`, `tail`, `isEmpty`,
+  `toPandas`) and know their driver-side memory risks
 
 ## Prerequisites
 
 Module 2 — DataFrame Fundamentals and Module 3 — Data Cleaning, NULL Semantics,
-and Type Handling. You should already be comfortable creating, inspecting,
-reshaping, expressing, and filtering DataFrames using various methods (e.g.,
-`select`, `withColumn`, `filter`/`where`, `F.col`, `F.when`, `F.expr`).
+and Type Handling. Comfortable creating, inspecting, reshaping, expressing,
+and filtering DataFrames (`select`, `withColumn`, `filter` / `where`, `F.col`,
+`F.when`, `F.expr`, etc.).
 
-## Notebook navigation
+## Dataset
 
-Four notebooks, in this order:
+Small **ad-hoc** rideshare-flavored DataFrames built in code, aligned with
+[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md). Volume
+file reading starts in Module 5.
 
-1. **Transformations vs Actions**
-   - Distinguish transformations (new DataFrame, logical plan) from actions
-     (executes plan, returns result)
-   - Chain transformations before a single action — example 1
-     (`filter`, `withColumn`, `select`)
-   - Chain transformations before a single action — example 2
-     (`filter`, `orderBy`, `limit`, `select`)
-2. **Lazy Evaluation and the Query Plan**
-   - Why Spark waits for an action before processing rows
-   - Inspect the plan with `.explain(mode="extended")`
-   - See how the optimizer can apply a late filter earlier on one narrow chain
-3. **Narrow vs Wide Transformations**
-   - Prefer classic all-purpose compute (**Dedicated** access mode) for the
-     best partition / shuffle teaching experience — Standard and serverless
-     run the notebook, but may collapse this hand-built sample into one
-     partition
-   - Inspect how rows are distributed across partitions
-   - Run a narrow transformation (`filter`) and confirm it does not shuffle
-     (no `Exchange`, one stage; rows stay in place)
-   - Run a wide transformation (`groupBy`) and identify `Exchange` as the
-     shuffle / stage boundary; confirm in Spark UI
-   - Review common shuffle triggers (deep tuning deferred to Module 16)
-4. **Common DataFrame Actions**
-   - Review return types and driver-side size risk for common actions
-     (`show` / `count` / `collect` already known; deepen the rest here)
-   - Sort for predictable order, then compare `first()`, `head()`, `head(n)`,
-     and `take(n)`
-   - Retrieve the last rows with `tail(n)` (order is not guaranteed unless
-     you sort)
-   - Check emptiness with `isEmpty()` (prefer over `count() == 0` for a
-     yes/no check)
-   - Convert a small result with `toPandas()` and note the same driver-memory
-     risk as `collect()`; writing with `DataFrame.write` waits for Module 5
+## Notebooks
 
-## Dataset used
+Four notebooks, in order. Each ends with a short hands-on task (explain a
+chain, inspect an optimized plan, predict shuffle, practice pull/check
+actions).
 
-Small, **ad-hoc** rideshare-flavored DataFrames built in code, aligned with
-column names and types from
-[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
-Volume-based file reading begins in Module 5.
-
-## Exercises
-
-Each notebook ends with a short hands-on task to reinforce the concepts —
-for example, building and explaining a transformation chain, inspecting an
-optimized plan, predicting shuffle behavior, or practicing pull/check
-actions on a small sorted DataFrame.
+| # | Notebook | Focus |
+|---|---|---|
+| 1 | Transformations vs Actions | Transformations vs actions; chain before one action — example 1 (`filter`, `withColumn`, `select`); example 2 (`filter`, `orderBy`, `limit`, `select`) |
+| 2 | Lazy Evaluation and the Query Plan | Why Spark waits for an action; `.explain(mode="extended")`; optimizer can push a late filter earlier on one narrow chain |
+| 3 | Narrow vs Wide Transformations | Prefer classic all-purpose (**Dedicated**) for partition/shuffle teaching — Standard/serverless may collapse this sample to one partition; inspect partition distribution; narrow `filter` (no `Exchange`, one stage); wide `groupBy` + `Exchange` + Spark UI; common shuffle triggers (deep tuning → Module 16) |
+| 4 | Common DataFrame Actions | Return types and driver size risk (`show` / `count` / `collect` already known); sort then compare `first` / `head` / `head(n)` / `take(n)`; `tail(n)` (order not guaranteed unless sorted); `isEmpty()` vs `count() == 0`; `toPandas()` same driver risk as `collect()`; `DataFrame.write` → Module 5 |
 
 ## Minimum privileges required
 
-- Databricks workspace: ability to attach to or start compute
-  (`CAN ATTACH TO` or `CAN RESTART` on the cluster/policy your workspace
-  provides for this course)
-- Unity Catalog: none — this module uses hand-built DataFrames only
+- Workspace: **`CAN ATTACH TO`** or **`CAN RESTART`** on the compute/policy for
+  this course
+- Unity Catalog: none — hand-built DataFrames only
