@@ -102,7 +102,7 @@ high-level AQE awareness in the capstone; managed-table writes after validation.
 ## Notebooks
 
 Seven notebooks, in order. Each includes a short hands-on task (final cell or
-integrated practice). Notebooks **01–06** are skill-building only (**no write**);
+integrated practice). Notebooks **01–06** build skills only (**no write**);
 **07** writes the managed tables.
 
 | # | Notebook | Reads | Focus |
@@ -118,7 +118,7 @@ integrated practice). Notebooks **01–06** are skill-building only (**no write*
 **Notebook 1 detail — join syntax demos:**
 
 - String: `trip` ↔ `trip_time` on `"trip_id"` → 100
-- List: `trip_charges` ↔ `rate_card` — `"trip_id"` alone → 12 (wrong);  
+- List: `trip_charges` ↔ `rate_card` — `"trip_id"` alone → 12 (wrong);
   `["trip_id", "charge_type"]` → 4 (correct)
 - Boolean: different names (`trip_id` = `trip_no`); same-name duplicate-column trap
 

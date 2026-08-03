@@ -38,7 +38,7 @@ Complete Module 5 content notebooks **`01`–`07`**. You need:
 | Landing volume | `/Volumes/rideshare_dev/landing/source_files/{dataset}/` populated |
 | Controlled-bad CSVs | Full-size `trip/bad_trip_data.csv` and `payment/bad_payment_data.csv` from Module 5 **`01`** |
 | Managed table | **`rideshare_dev.processed.trip_time_preview`** from Module 5 **`07`** |
-| Write model | Comfort with transformations vs actions; **`DataFrame.write`** executes on terminal methods (Module 4) |
+| Write model | Comfort with transformations vs actions; **`DataFrame.write`** executes on **`.save()`** / **`.parquet()`** / **`.saveAsTable()`** (Module 4) |
 
 Recall Module 3 (**`01`–`03`**): NULL-aware filters, normalize-before-drop,
 `F.coalesce`, `try_cast`.
@@ -94,16 +94,16 @@ demonstrated pattern on slightly different columns or values.
 
 | # | Notebook | Focus |
 |---|---|---|
-| 1 | Column Transforms with Built-in Functions | Volume vs managed table on **`trip_time`**: landing Parquet vs **`rideshare_dev.processed.trip_time_preview`** — same transforms after load; built-ins by dataset (**`trip`**: string, numeric/decimal, conditional — no date cols; **`trip_time`**: **`trip_date`**, **`hour_of_day`**; optional light **`payment`** decimals); skill-building only — **no curated write**; **`03`** re-reads landing |
-| 2 | Complex Types: Structs, Arrays, and explode | Landing **`drivers`** XML with **`rowTag`** (same as Module 5 **`05`** — do not read `practice/`); struct fields (**`vehicle.*`**); arrays; **`explode`** / **`explode_outer`** on **`trips_assigned`**; write **`…/curated/drivers_flat/`** |
+| 1 | Column Transforms with Built-in Functions | Volume vs managed table on **`trip_time`**: landing **`…/trip_time/trip_time.parquet`** vs **`rideshare_dev.processed.trip_time_preview`** — same transforms after load; built-ins by dataset (**`trip`**: string, numeric/decimal, conditional — no date cols; **`trip_time`**: **`trip_date`**, **`hour_of_day`**; optional light **`payment`** decimals); no curated write — **`03`** re-reads landing |
+| 2 | Complex Types, Structs, Arrays, and explode | Landing **`drivers`** XML with **`rowTag`** (same as Module 5 **`05`** — do not read `practice/`); struct fields (**`vehicle.*`**); arrays; **`explode`** / **`explode_outer`** on **`trips_assigned`**; write **`…/curated/drivers_flat/`** |
 | 3 | Cleaning and Curated Outputs | Full-size **`bad_trip_data.csv`** (108 source rows) and **`bad_payment_data.csv`** (106 source rows); one forward chain per file (missing-key rejection, **`dropDuplicates`** on trip **`trip_id`**, normalization, failed-conversion handling, invalid-value rules); persist enrichment/cleaning columns only here; write **`…/curated/trip/`** and **`…/curated/payment/`** |
-| 4 | Built-ins First: When (Not) to Use UDFs | Built-ins as default; Python UDF contrast; short Pandas/Arrow note (not taught further); demo on a small column rule — **do not overwrite** curated outputs |
+| 4 | Built-ins First, When (Not) to Use UDFs | Built-ins as default; Python UDF contrast; short Pandas/Arrow note (not taught further); demo on a small column rule — **do not overwrite** curated outputs |
 
 ## Minimum privileges required
 
 - Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
-- Unity Catalog (objects from Module 5 — no catalog/external-location/volume
-  DDL here):
+- Unity Catalog (objects from Module 5 — no **`CREATE CATALOG`**, external
+  location, or volume DDL here):
   - **`USE CATALOG`** on **`rideshare_dev`**
   - **`USE SCHEMA`** on **`rideshare_dev.landing`** and
     **`rideshare_dev.processed`**

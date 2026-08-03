@@ -96,7 +96,7 @@ with no exercise.
 
 | # | Notebook | Focus |
 |---|---|---|
-| 1 | Unity Catalog Volumes and Data Landing | Config cell (your Azure values); ADLS project folder; external location `el_rideshare_dev`, catalog `rideshare_dev`, schemas, volumes; `mkdirs`; copy canonical + controlled-bad sources into landing; verify |
+| 1 | Unity Catalog Volumes and Data Landing | Config cell (your Azure values); create ADLS project folder in Azure Portal; external location `el_rideshare_dev`, catalog `rideshare_dev`, schemas, volumes; `mkdirs`; copy canonical + controlled-bad sources into landing; verify |
 | 2 | Reading CSV | Read **`trip`** from landing; explicit schema vs **`inferSchema`**; light reshape; practice write |
 | 3 | Reading JSON | Read **`zone_lookup`** (JSON Lines) from landing |
 | 4 | Reading Parquet | Read **`trip_time`** from landing |

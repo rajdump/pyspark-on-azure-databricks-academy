@@ -48,10 +48,9 @@ actions).
 | 1 | Transformations vs Actions | Transformations vs actions; chain before one action — example 1 (`filter`, `withColumn`, `select`); example 2 (`filter`, `orderBy`, `limit`, `select`) |
 | 2 | Lazy Evaluation and the Query Plan | Why Spark waits for an action; `.explain(mode="extended")`; optimizer can push a late filter earlier on one narrow chain |
 | 3 | Narrow vs Wide Transformations | Prefer classic all-purpose (**Dedicated**) for partition/shuffle teaching — Standard/serverless may collapse this sample to one partition; inspect partition distribution; narrow `filter` (no `Exchange`, one stage); wide `groupBy` + `Exchange` + Spark UI; common shuffle triggers (deep tuning → Module 16) |
-| 4 | Common DataFrame Actions | Return types and driver size risk (`show` / `count` / `collect` already known); sort then compare `first` / `head` / `head(n)` / `take(n)`; `tail(n)` (order not guaranteed unless sorted); `isEmpty()` vs `count() == 0`; `toPandas()` same driver risk as `collect()`; `DataFrame.write` → Module 5 |
+| 4 | Common DataFrame Actions | Return types and driver size risk (`show` / `count` / `collect` already known); sort then compare `first()` / `head()` / `head(n)` / `take(n)`; `tail(n)` (order not guaranteed unless sorted); `isEmpty()` vs `count() == 0`; `toPandas()` same driver risk as `collect()`; `DataFrame.write` → Module 5 |
 
 ## Minimum privileges required
 
-- Workspace: **`CAN ATTACH TO`** or **`CAN RESTART`** on the compute/policy for
-  this course
+- Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
 - Unity Catalog: none — hand-built DataFrames only
