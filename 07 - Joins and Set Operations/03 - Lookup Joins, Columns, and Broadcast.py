@@ -31,9 +31,10 @@
 # MAGIC `curated/trip` (Parquet, 106 rows). **No write.**
 # MAGIC
 # MAGIC **Prerequisites.** Module 7 **`01 - Grain, Join Syntax, and Unmatched Keys`**
-# MAGIC and **`02 - Silent Join Failures and Validation`** — Boolean join syntax,
-# MAGIC `.alias`, key profiling, and left/right/full unmatched-key behavior are
-# MAGIC applied here, not re-taught.
+# MAGIC and **`02 - Silent Join Failures and Validation`**; Module 6 (**`01`** through
+# MAGIC **`04`**) so **`curated/trip`** exists. Boolean join syntax, `.alias`, key
+# MAGIC profiling, and left/right/full unmatched-key behavior are applied here, not
+# MAGIC re-taught. Landing Volume must contain **`zone_lookup`**.
 
 # COMMAND ----------
 
