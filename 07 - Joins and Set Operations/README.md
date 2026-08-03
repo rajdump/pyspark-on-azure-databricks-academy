@@ -119,7 +119,7 @@ integrated practice). Notebooks **01–06** build skills only (**no write**);
 | 2 | Silent Join Failures and Validation | Landing `trip`, `trip_time`, `payment` (+ frames) | M:M fanout; key profiling; `dropDuplicates` vs window dedup; NULL keys + `eqNullSafe`; accidental Cartesian; profile → predict → run → verify |
 | 3 | Lookup Joins, Columns, and Broadcast | `zone_lookup` (22); `curated/trip` (106) | Fact vs dim; repeated pickup/dropoff lookup; `select`/rename; unmatched 21–22 **practice**; `-1` threshold then `F.broadcast` + `.explain()` (reused in **07**) |
 | 4 | Semi Joins and Anti Joins | `curated/trip` (106), `curated/payment` (105) | `left_semi` / `left_anti` (trip 106 on anti); reverse anti; bridge to **`subtract()`** in **06** |
-| 5 | Union and unionByName | Named filters on landing `trip` | `union` vs `unionByName`; column-order trap; `allowMissingColumns`; when `distinct()` after union |
+| 5 | Union and unionByName | Constructed frames (no landing read) | `union` vs `unionByName`; column-order trap; `allowMissingColumns`; when `distinct()` after union |
 | 6 | Intersect, subtract, and exceptAll | `trip_id <= 60` vs `>= 41` filters | Whole-row set ops; `intersect` vs `intersectAll`; `subtract` vs `exceptAll`; SQL `EXCEPT` naming |
 | 7 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Grain contracts; stepwise left joins + NULL checks; reuse **03** lookup/broadcast; validate with **04**/**06** patterns; write both managed tables; AQE note only |
 
