@@ -251,8 +251,12 @@ subtract_result.show()
 # MAGIC
 # MAGIC    Every left row appears in exactly one of the two results.
 # MAGIC
-# MAGIC 5. **Anti on a key ≈ `subtract()` on that key column** — but `subtract()`
-# MAGIC    compares whole rows on the selected columns, not a join key. Full
-# MAGIC    set-operation coverage in Notebook 06.
+# MAGIC 5. **Anti join and `subtract()` overlap but differ:**
+# MAGIC
+# MAGIC    * `left_anti` evaluates a join key and preserves duplicate left rows.
+# MAGIC    * `subtract()` compares all selected columns and returns only distinct
+# MAGIC      rows.
+# MAGIC
+# MAGIC    Full set-operation coverage → Notebook 06.
 # MAGIC
 # MAGIC **Next:** **`05 - Union and unionByName`**
