@@ -22,7 +22,7 @@
 # MAGIC
 # MAGIC 4. **Broadcasting** - Hinting to Spark to avoid shuffle operations and verifying this in the physical plan.
 # MAGIC
-# MAGIC **Reads:** `zone_lookup` (JSON Lines, 22 rows); processed `curated/trip` (Parquet, 106 rows). **No write. ****
+# MAGIC **Reads:** `zone_lookup` (JSON Lines, 22 rows); processed `curated/trip` (Parquet, 106 rows). **No write.**
 # MAGIC
 # MAGIC **Prerequisites.** Module 7 **`01 - Grain, Join Syntax, and Unmatched Keys`**
 # MAGIC and **`02 - Silent Join Failures and Validation`**; Module 6 (**`01`** through
@@ -108,9 +108,11 @@ print("\u2192 unique, no NULLs \u2014 safe lookup key")
 # MAGIC
 # MAGIC In the physical plan, Spark defaults to a `SortMergeJoin` for each join, which involves shuffling both sides. With two joins, this results in four `Exchange` operations. 
 # MAGIC
-# MAGIC To optimize, use a broadcast join instead, section-4 covers this topic.
+# MAGIC To optimize, use a broadcast join instead — Section 4 covers this topic.
 # MAGIC
-# MAGIC First, disable automatic broadcasting , so the plan below shows a sert-merge-join, then you can force broadcasting with `F.broadcast()` while keeping the setting at `-1`.
+# MAGIC First, disable automatic broadcasting, so the plan below shows a
+# MAGIC `SortMergeJoin`. Then you can force broadcasting with `F.broadcast()` while
+# MAGIC keeping the setting at `-1`.
 
 # COMMAND ----------
 
