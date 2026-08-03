@@ -2,13 +2,12 @@
 
 ## Purpose
 
-Use PySpark built-in functions to transform landing data, work with nested
-columns and arrays, and produce curated datasets for later modules.
+Transform landing data with Spark built-ins, work with nested types, and write
+curated outputs — prefer built-ins over UDFs.
 
-One production rule: **use Spark built-ins first**. Python UDFs appear only in
-the final notebook as a contrast for logic that cannot be expressed with
-built-ins. Pandas/Arrow UDFs are mentioned briefly as an advanced fallback;
-this course does not teach them further.
+Python UDFs appear only in the final notebook as a contrast for logic that
+cannot be expressed with built-ins. Pandas/Arrow UDFs are mentioned briefly as
+an advanced fallback; this course does not teach them further.
 
 Schemas, column names, join keys, and Volume path rules:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).

@@ -2,10 +2,10 @@
 
 ## Purpose
 
-Land the shared rideshare dataset on Unity Catalog Volumes and read/write
-production file formats with explicit schemas. This module is **hybrid I/O**:
-schemas, readers/writers, and minimal reshape (rename, select, basic cast).
-Systematic transforms and `explode()` belong in Module 6.
+Land the shared rideshare dataset on UC Volumes and read/write production
+formats with explicit schemas. This module is **hybrid I/O**: schemas,
+readers/writers, and minimal reshape (rename, select, basic cast). Systematic
+transforms and `explode()` belong in Module 6.
 
 Each student uses **their own** Azure storage account and Databricks
 workspace. **`01 - Unity Catalog Volumes and Data Landing`** creates the

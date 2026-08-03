@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Orient in the Azure Databricks workspace and build a mental model of how
-Apache Spark runs code — before real data-engineering logic.
+Orient in the Azure Databricks workspace and build a mental model of how Spark
+executes code — before real data-engineering logic.
 
 ## Learning objectives
 

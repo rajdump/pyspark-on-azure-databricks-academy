@@ -3,8 +3,8 @@
 ## Purpose
 
 Join and combine rideshare tables with predictable row counts and clear keys —
-no silent M:M fanout, no lost rows from the wrong outer join, no ambiguous
-columns after a dimension lookup.
+no silent cardinality or key traps (M:M fanout, wrong outer join, ambiguous
+columns after a dimension lookup).
 
 Two habits run through every notebook and the capstone write:
 

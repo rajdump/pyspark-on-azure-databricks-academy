@@ -2,10 +2,10 @@
 
 ## Purpose
 
-Build core DataFrame fluency: create and inspect frames, reshape columns with
-the DataFrame API and SQL expression strings, filter rows (including intro NULL
-and blank traps), and query the same data through temporary views and Spark
-SQL. This is the API layer every later notebook reuses.
+Build core DataFrame fluency: create, inspect, reshape, express, filter, and
+query through temp views and Spark SQL. Reshape uses the DataFrame API and SQL
+expression strings; filtering includes intro NULL and blank traps. This is the
+API layer every later notebook reuses.
 
 ## Learning objectives
 

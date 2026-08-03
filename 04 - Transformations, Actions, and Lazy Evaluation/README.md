@@ -2,10 +2,10 @@
 
 ## Purpose
 
-Understand Spark's lazy execution model: DataFrames build logical plans that
-run only when an action is called; the optimizer can rewrite that plan (for
-example, applying a filter earlier); and some transformations shuffle data
-between worker nodes while others do not.
+Understand Spark's lazy execution model on chains learners already write:
+DataFrames build logical plans that run only when an action is called; the
+optimizer can rewrite that plan (for example, applying a filter earlier); and
+some transformations shuffle data between worker nodes while others do not.
 
 ## Learning objectives
 
