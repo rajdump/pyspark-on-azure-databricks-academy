@@ -4,24 +4,28 @@
 # MAGIC
 # MAGIC # 03 - Lookup Joins, Columns, and Broadcast
 # MAGIC
-# MAGIC ## The problem: location IDs aren't names
+# MAGIC ## The problem: location IDs aren't names — and a tiny lookup table shouldn't cost a big shuffle
 # MAGIC
-# MAGIC Every trip in `curated/trip` carries `pickup_location_id` and
-# MAGIC `dropoff_location_id` — numeric codes, not human-readable places. To report
-# MAGIC "trips from Manhattan to Brooklyn" you need to attach `zone_lookup`
-# MAGIC attributes (`borough_name`, `zone_name`, `service_zone`) to **both** roles,
-# MAGIC without duplicating the 22-row dimension table for each side.
+# MAGIC Every trip in `curated/trip` includes a `pickup_location_id` and a
+# MAGIC `dropoff_location_id`, both of which are numeric codes rather than easily
+# MAGIC recognizable place names. To present the trip information in a more
+# MAGIC understandable format, you need to join the `zone_lookup` table on
+# MAGIC `location_id`. This requires using the same 22-row lookup table twice: once
+# MAGIC for the pickup location and once for the dropoff location.
 # MAGIC
-# MAGIC This notebook covers:
+# MAGIC The size difference between tables is important. In our small example, the `zone_lookup` table has 22 rows, while the `trip` table contains 106 rows. However, in a production environment, the fact table may have millions of rows compared to a dimension table with only a few hundred. Joining these tables using the standard method could lead Spark to shuffle the larger `trip` table across the cluster to connect it with the smaller table that can fit in memory on each executor.
 # MAGIC
-# MAGIC * **Repeated lookup join** — joining the same dimension table twice with
-# MAGIC   different aliases (pickup role, dropoff role)
-# MAGIC * **Column cleanup** — resolving the duplicate/ambiguous names a repeated
-# MAGIC   lookup produces
-# MAGIC * **Unmatched dimension rows** — `zone_lookup` has two zones
-# MAGIC   (`location_id` 21–22) no trip ever references; left vs right/full outer
-# MAGIC   joins surface this differently
-# MAGIC * **Broadcast** — hinting Spark to skip shuffling the large fact table
+# MAGIC A **broadcast join** addresses this issue by sending the entire smaller table to every executor, keeping only the large table in its original location. This notebook is designed to develop toward implementing a broadcast join once the repeated lookup pattern is firmly established.
+# MAGIC
+# MAGIC This notebook covers the following topics:
+# MAGIC
+# MAGIC 1. **Repeated Lookup Join** - This refers to joining the same dimension table twice using different aliases for distinct roles, such as pickup role and drop-off role.
+# MAGIC    
+# MAGIC 2. **Column Cleanup** - This involves resolving issues related to duplicate or ambiguous names that arise from the repeated lookup.
+# MAGIC
+# MAGIC 3. **Unmatched Dimension Rows** - In the `zone_lookup`, there are two zones (location_id 21–22) that no trip references. The behavior of left joins versus right or full outer joins reveals these discrepancies differently.
+# MAGIC
+# MAGIC 4. **Broadcasting** - This is about providing a hint to Spark to bypass the shuffle operation and verifying this decision in the physical plan.
 # MAGIC
 # MAGIC **Reads:** landing `zone_lookup` (JSON Lines, 22 rows); processed
 # MAGIC `curated/trip` (Parquet, 106 rows). **No write.**
@@ -42,17 +46,40 @@
 # MAGIC | `curated/trip` | Parquet | one completed trip | `trip_id` | 106 |
 # MAGIC | `zone_lookup` | JSON Lines | one taxi zone | `location_id` | 22 |
 # MAGIC
-# MAGIC `curated/trip` is the **fact** table — it references zones by ID.
-# MAGIC `zone_lookup` is the **dimension** — one row per zone, the thing being
-# MAGIC looked up.
+# MAGIC Three signals decide which table plays which role:
 # MAGIC
-# MAGIC Same habit as Notebook 02: profile the lookup key before joining. If
-# MAGIC `rows == distinct` and `nulls == 0`, `location_id` is a safe join key — no
-# MAGIC fanout risk from the dimension side.
+# MAGIC 1. **Grain and content** - This refers to what one row represents.
+# MAGIC    `curated/trip`'s grain is one completed trip, a business event carrying
+# MAGIC    measures you aggregate, such as `trip_distance_miles` and the duration
+# MAGIC    columns. `zone_lookup`'s grain is one taxi zone, a descriptive entity
+# MAGIC    with attributes you filter or group by, such as `borough_name` and
+# MAGIC    `zone_name`, and it has no measures at all.
+# MAGIC 2. **Foreign key direction** - This is about which table points at the
+# MAGIC    other. `curated/trip` holds `pickup_location_id` and
+# MAGIC    `dropoff_location_id`, both of which point at `zone_lookup.location_id`.
+# MAGIC    Fact tables hold foreign keys into dimension tables, never the reverse.
+# MAGIC 3. **Growth pattern** - This is about how each table changes over time.
+# MAGIC    `curated/trip` grows with every new trip, while `zone_lookup` is static
+# MAGIC    reference data, since the set of taxi zones doesn't change trip by trip.
+# MAGIC
+# MAGIC Based on these signals, `curated/trip` is the **fact** table because it
+# MAGIC references zones by ID, and `zone_lookup` is the **dimension** because it
+# MAGIC holds one row per zone, the thing being looked up.
+# MAGIC
+# MAGIC This follows the same habit as Notebook 02: profile the lookup key before
+# MAGIC joining. If `rows == distinct` and `nulls == 0`, `location_id` is a safe
+# MAGIC join key, with no fanout risk from the dimension side. 
+# MAGIC
+# MAGIC Only the dimension
+# MAGIC key needs this check. Duplicates in `trip`'s foreign key columns
+# MAGIC (`pickup_location_id`, `dropoff_location_id`) are normal, since many trips
+# MAGIC share the same pickup or dropoff zone, so profiling the fact side would
+# MAGIC flag expected behavior as if it were a problem.
 
 # COMMAND ----------
 
-# DBTITLE 1,Load trip and zone_lookup, profile the lookup key
+# DBTITLE 1,Cell 3
+# Load trip and zone_lookup
 from pyspark.sql import functions as F
 
 landing_root = "/Volumes/rideshare_dev/landing/source_files"
@@ -79,6 +106,10 @@ trip = spark.read.format("parquet").load(curated_trip_path)  # noqa: F821
 print("trip rows:", trip.count())
 print("zone_lookup rows:", zone_lookup.count())
 
+# COMMAND ----------
+
+# DBTITLE 1,Cell 4
+# Profile the zone_lookup lookup key
 zone_stats = zone_lookup.select(
     F.count(F.lit(1)).alias("rows"),
     F.countDistinct("location_id").alias("distinct"),
@@ -90,63 +121,70 @@ print(
 )
 print("\u2192 unique, no NULLs \u2014 safe lookup key")
 
-# docs/data/dataset-overview.md documents 22 zone_lookup rows (location_id
-# 21-22 intentionally unreferenced by any trip). If the landed file has
-# fewer rows, Section 3's unmatched-dimension-row demo has nothing to find.
-expected_zone_rows = 22
-if zone_stats["rows"] != expected_zone_rows:
-    print(
-        f"\n\u26a0 Expected {expected_zone_rows} zone_lookup rows per "
-        f"docs/data/dataset-overview.md, found {zone_stats['rows']}. "
-        "Section 3 below reports what the landed file actually contains."
-    )
-
 # COMMAND ----------
 
 # DBTITLE 1,1. Repeated lookup join
 # MAGIC %md
-# MAGIC ## 1. Repeated lookup join — same table, two roles
+# MAGIC ## 1. Repeating a lookup join results in multiple shuffles
 # MAGIC
-# MAGIC `zone_lookup` needs to join to `trip` **twice**: once to resolve
-# MAGIC `pickup_location_id`, once for `dropoff_location_id`. Same table, same key
-# MAGIC column (`location_id`), two different roles in the output.
+# MAGIC `zone_lookup` joins to `trip` twice: once for `pickup_location_id`, once
+# MAGIC for `dropoff_location_id`. Each join is a separate operation in the plan,
+# MAGIC and by default each one triggers its own shuffle: Spark redistributes
+# MAGIC rows across partitions so that matching keys land in the same partition
+# MAGIC before it can align them.
 # MAGIC
-# MAGIC Both sides need `.alias()` (Notebook 01 Section 3.3) — Spark can't tell which
-# MAGIC `zone_lookup` instance a column belongs to otherwise. Since `location_id`
-# MAGIC (`zone_lookup`) and `pickup_location_id` / `dropoff_location_id` (`trip`)
-# MAGIC have different names, this is a Boolean-form join.
+# MAGIC Shuffles are the most costly operations in Spark. During a shuffle, records are physically moved from their original partition to a new one based on the join key. This process requires writing intermediate data to disk and reading it back, resulting in significant disk I/O and serialization costs that occur regardless of the cluster size. Additionally, when executors span multiple nodes, there is a network transfer cost, but this is not the primary expense associated with a shuffle itself.
 # MAGIC
-# MAGIC Predict: joining twice doesn't change the row count (still 106 — every trip
-# MAGIC has exactly one pickup and one dropoff zone), but it does produce duplicate
-# MAGIC column names (`borough_name`, `zone_name`, `service_zone` — twice each).
+# MAGIC Check the physical plan in the `explain()` output below. Spark will
+# MAGIC default to a `SortMergeJoin` for each join, since that's the default
+# MAGIC equi-join strategy when neither side qualifies for a broadcast — and
+# MAGIC `SortMergeJoin` shuffles **both sides** of a join to co-partition matching
+# MAGIC keys. With two joins, that's `Exchange` appearing four times, not two: one
+# MAGIC for each side of each join.
+# MAGIC
+# MAGIC To fix this, use a broadcast join instead of a plain join — Section 4
+# MAGIC covers it in detail.
 
 # COMMAND ----------
 
-# DBTITLE 1,Join zone_lookup twice for pickup and dropoff
-trip_a = trip.alias("t")
-pickup_zone = zone_lookup.alias("pz")
-dropoff_zone = zone_lookup.alias("dz")
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1) 
 
-trip_with_zones_raw = trip_a.join(
-    pickup_zone,
-    F.col("t.pickup_location_id") == F.col("pz.location_id"),
-    "left",
-).join(
-    dropoff_zone,
-    F.col("t.dropoff_location_id") == F.col("dz.location_id"),
-    "left",
+# COMMAND ----------
+
+t = trip.alias("t")
+pz = zone_lookup.alias("pz")
+dz = zone_lookup.alias("dz")
+
+trip_with_zones = (
+    t.join(
+        pz,
+        F.col("t.pickup_location_id") == F.col("pz.location_id"),
+        "left",
+    )
+    .join(
+        dz,
+        F.col("t.dropoff_location_id") == F.col("dz.location_id"),
+        "left",
+    )
 )
 
-print(f"Row count: {trip_with_zones_raw.count()} (predicted 106 \u2014 unchanged)")
-print("\nColumns after double join \u2014 duplicate names from both zone_lookup instances:")
-print(trip_with_zones_raw.columns)
+trip_with_zones.explain()
 
-print("\nSame borough_name column, two different values per row (pickup vs dropoff):")
-trip_with_zones_raw.select(
-    F.col("t.trip_id"),
-    F.col("pz.borough_name"),
-    F.col("dz.borough_name"),
-).show(5, truncate=False)
+# COMMAND ----------
+
+trip_with_zones.show(1, truncate=False,vertical=True)
+
+# COMMAND ----------
+
+# DBTITLE 1,Duplicate columns after the double join
+# MAGIC %md
+# MAGIC ## Duplicate columns after the double join
+# MAGIC
+# MAGIC Take a look at the row printed above: `location_id`, `borough_name`, `zone_name`, and `service_zone` each appear twice—once from the pickup join and once from the dropoff join. As a result, joining `zone_lookup` twice causes every column to appear twice in the output, which means we need to explicitly differentiate the pickup value from the dropoff value.
+# MAGIC
+# MAGIC This is expected behavior and not an error, but the data is not yet usable. The columns need to be selected and renamed to accurately reflect their business meaning. 
+# MAGIC
+# MAGIC For example, we should rename the columns to `pickup_borough` and `dropoff_borough` instead of having two identically named `borough_name` columns. Section 2 below will address this cleanup.
 
 # COMMAND ----------
 
@@ -154,19 +192,17 @@ trip_with_zones_raw.select(
 # MAGIC %md
 # MAGIC ## 2. Explicit select and rename — clean up before downstream use
 # MAGIC
-# MAGIC The double join works, but the column names are unusable: two
-# MAGIC `borough_name` columns, two `zone_name` columns, two `service_zone` columns.
-# MAGIC Any downstream `.select("borough_name")` throws an ambiguous column error.
+# MAGIC Any downstream `.select("borough_name")` throws an
+# MAGIC ambiguous column error, because Spark cannot tell which one you mean.
 # MAGIC
-# MAGIC Fix: `.select()` with alias-qualified references, renaming each attribute to
-# MAGIC its role — `pickup_borough`, `pickup_zone`, `dropoff_borough`,
-# MAGIC `dropoff_zone`. This produces one clean, unambiguous schema ready for
-# MAGIC aggregation or export.
+# MAGIC The fix is to use `.select()` with alias-qualified references, renaming
+# MAGIC each attribute to reflect its role: `pickup_borough`, `pickup_zone`,
+# MAGIC `dropoff_borough`, and `dropoff_zone`. This produces one clean, unambiguous
+# MAGIC schema that is ready for aggregation or export.
 
 # COMMAND ----------
 
-# DBTITLE 1,Select and rename pickup/dropoff zone attributes
-trip_with_zones = trip_with_zones_raw.select(
+trip_with_zones.select(
     F.col("t.trip_id"),
     F.col("t.service_type"),
     F.col("t.pickup_location_id"),
@@ -175,94 +211,77 @@ trip_with_zones = trip_with_zones_raw.select(
     F.col("t.dropoff_location_id"),
     F.col("dz.borough_name").alias("dropoff_borough"),
     F.col("dz.zone_name").alias("dropoff_zone"),
-    F.col("t.trip_distance_miles"),
-)
-
-print("Clean schema \u2014 one column per attribute, no ambiguity:")
-print(trip_with_zones.columns)
-print(f"\nRow count: {trip_with_zones.count()}")
-trip_with_zones.show(5, truncate=False)
+    F.col("t.trip_distance_miles")
+).show(1, truncate=False,vertical=True)
 
 # COMMAND ----------
 
 # DBTITLE 1,3. Unmatched dimension rows
 # MAGIC %md
-# MAGIC ## 3. Unmatched dimension rows — 21–22 never appear... unless you look from the other side
+# MAGIC ## 3. Unmatched dimension rows — practice
 # MAGIC
-# MAGIC By design, `zone_lookup` has 22 rows but `trip.pickup_location_id` and
-# MAGIC `trip.dropoff_location_id` only ever use values **1–20** across all 106
-# MAGIC curated rows — `location_id` 21 (`Newark Airport`) and 22
-# MAGIC (`Hoboken Terminal`) are intentionally unreferenced (see
-# MAGIC [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)).
-# MAGIC The code below computes the unreferenced set directly from the data
-# MAGIC rather than hardcoding it, so it self-corrects if the landed file differs.
+# MAGIC Work through a small concrete example before writing any code.
 # MAGIC
-# MAGIC Recall Notebook 01: the join type decides which unmatched rows survive.
+# MAGIC **A few `trip` rows:**
 # MAGIC
-# MAGIC * **Left from `trip`** — `trip` drives, `zone_lookup` is looked up. Zones
-# MAGIC   21–22 have no trip to attach to, so they simply never appear. No NULLs,
-# MAGIC   no error — just absence.
-# MAGIC * **Right or full from `zone_lookup`'s side** — zones 21–22 now survive
-# MAGIC   with NULL trip columns, because the dimension rows are preserved even
-# MAGIC   without a match.
+# MAGIC | trip_id | pickup_location_id | dropoff_location_id |
+# MAGIC |---|---|---|
+# MAGIC | 1 | 1 | 9 |
+# MAGIC | 2 | 18 | 14 |
+# MAGIC | 3 | 12 | 20 |
 # MAGIC
-# MAGIC **Predict:** does a `trip`-driven left join ever produce a row for
-# MAGIC `location_id` 21 or 22? Confirm, then flip the join to see them surface.
+# MAGIC **A few `zone_lookup` rows:**
+# MAGIC
+# MAGIC | location_id | borough_name | zone_name |
+# MAGIC |---|---|---|
+# MAGIC | 1 | Manhattan | Midtown East |
+# MAGIC | 9 | Brooklyn | Downtown Brooklyn |
+# MAGIC | 21 | New Jersey | Newark Airport |
+# MAGIC | 22 | New Jersey | Hoboken Terminal |
+# MAGIC
+# MAGIC Notice `location_id` 21 and 22 never show up as anyone's
+# MAGIC `pickup_location_id` or `dropoff_location_id` above. This holds across the
+# MAGIC full dataset too: `zone_lookup` has 22 rows, but no trip among all 106
+# MAGIC curated rows ever references `location_id` 21 (`Newark Airport`) or 22
+# MAGIC (`Hoboken Terminal`) — see
+# MAGIC [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
+# MAGIC
+# MAGIC **Practice, using Notebook 01's left/right/full join behavior:**
+# MAGIC
+# MAGIC 1. Write a `trip`-driven **left join** to `zone_lookup` on `location_id`.
+# MAGIC    Predict first: will `location_id` 21 or 22 ever appear in the result?
+# MAGIC    Then run it and check.
+# MAGIC 2. Flip it to a **right or full outer join** from `zone_lookup`'s side.
+# MAGIC    Predict first: what changes? Then run it and inspect what the trip
+# MAGIC    columns look like for `location_id` 21 and 22.
 
 # COMMAND ----------
 
-# DBTITLE 1,Confirm left join never surfaces unused zones
-# Left join from trip's perspective — zones 21-22 should never appear
-dropoff_left = trip.alias("t").join(
-    zone_lookup.alias("dz"),
-    F.col("t.dropoff_location_id") == F.col("dz.location_id"),
-    "left",
-)
-
-referenced_dropoff_ids = [r[0] for r in trip.select("dropoff_location_id").distinct().collect()]
-unreferenced_zones = zone_lookup.filter(~F.col("location_id").isin(referenced_dropoff_ids))
-unreferenced_ids = [r[0] for r in unreferenced_zones.select("location_id").collect()]
-print(f"zone_lookup location_id values no trip's dropoff ever uses: {unreferenced_ids}")
-
-unused_zones_in_left = dropoff_left.filter(F.col("dz.location_id").isin(unreferenced_ids))
-print(f"Rows matching those unreferenced zones in the left join: {unused_zones_in_left.count()}")
-print("\u2192 Confirms: a trip-driven left join can never surface a zone no trip references.")
+# TODO (practice): write a trip-driven LEFT JOIN from `trip` to
+# `zone_lookup`, matching `dropoff_location_id` to `location_id`.
+# Use .alias() on both sides (Notebook 01 Section 3.3).
+#
+# Then check: does location_id 21 or 22 ever appear in the result?
+# Filter your joined DataFrame down to just those two location_id values
+# and count the rows — does the count match your prediction?
 
 # COMMAND ----------
 
 # DBTITLE 1,Right/full surfaces unused zones
 # MAGIC %md
-# MAGIC ### Right or full from the dimension side surfaces unused zones
+# MAGIC ### Now flip the driving side
 # MAGIC
-# MAGIC Flip the driving side (apply Notebook 01's left/right/full behavior): a
-# MAGIC right or full outer join from `zone_lookup` keeps every dimension row,
-# MAGIC matched or not. Any unreferenced zone now appears — with NULL for every
-# MAGIC trip column, because no trip references it.
+# MAGIC Before writing the next join, predict: which side needs to drive for an
+# MAGIC unreferenced zone to have any chance of showing up at all?
 
 # COMMAND ----------
 
-# DBTITLE 1,Right join surfaces zones 21 and 22 with NULL trip columns
-# Right join from zone_lookup's side — unused zones survive with NULL trip columns
-dropoff_right = trip.alias("t").join(
-    zone_lookup.alias("dz"),
-    F.col("t.dropoff_location_id") == F.col("dz.location_id"),
-    "right",
-)
-
-print(f"Rows for unreferenced zones {unreferenced_ids} \u2014 trip columns are NULL:")
-unmatched_zone_rows = dropoff_right.filter(F.col("dz.location_id").isin(unreferenced_ids))
-unmatched_zone_rows.select(
-    F.col("t.trip_id"),
-    F.col("dz.location_id"),
-    F.col("dz.zone_name"),
-).show(truncate=False)
-
-right_total = dropoff_right.count()
-print(
-    f"Right join total rows: {right_total} "
-    f"({right_total - unmatched_zone_rows.count()} matched + "
-    f"{unmatched_zone_rows.count()} unmatched zones)"
-)
+# TODO (practice): write a RIGHT (or FULL) outer join from `zone_lookup`'s
+# side to `trip`, matching `dropoff_location_id` to `location_id`.
+#
+# Then check: filter the result down to location_id 21 and 22 — what do
+# the trip columns (e.g. trip_id) look like for those rows? Compare the
+# total row count to the left join from the previous cell.
 
 # COMMAND ----------
 
@@ -270,46 +289,37 @@ print(
 # MAGIC %md
 # MAGIC ## 4. Broadcast — avoid shuffling the fact table for a 22-row dimension
 # MAGIC
-# MAGIC `zone_lookup` is tiny (22 rows). `trip` is comparatively large. Without a
-# MAGIC hint, Spark may still shuffle both sides across the cluster to align
-# MAGIC partitions for the join — wasted work when one side already fits entirely in
-# MAGIC each executor's memory.
+# MAGIC **Without a hint:** Spark's optimizer automatically broadcasts any table it estimates to be smaller than the `spark.sql.autoBroadcastJoinThreshold`, which defaults to 10 MB. Since `zone_lookup` only has 22 rows, it falls well under this threshold. Therefore, Spark would broadcast it automatically at the default setting. This is precisely the threshold that Cell 6 disabled to force the shuffle demonstration in Section 1, and Cell 17 restores it below.
 # MAGIC
-# MAGIC `F.broadcast()` tells Spark to send the whole small table to every executor
-# MAGIC instead, skipping the shuffle on the large side. This module's high-level AQE
-# MAGIC awareness (README) means Spark may already do this automatically at this
-# MAGIC tiny scale — the hint makes the intent explicit and guarantees the plan
-# MAGIC regardless of size.
+# MAGIC **With a hint:** Using `F.broadcast()` makes the broadcast decision explicit and guaranteed, regardless of the size threshold. This distinction is important because Spark's automatic estimate depends on file size statistics, which can sometimes be inaccurate. A compressed file may be significantly smaller on disk than the actual in-memory size Spark needs to broadcast. By providing an explicit hint, you eliminate that uncertainty and document the intent directly in the code, rather than relying on Spark's estimation.
 # MAGIC
-# MAGIC **Note on Serverless compute:** Photon (Databricks' native vectorized engine)
-# MAGIC is always on for Serverless compute and SQL warehouses — there's no toggle to
-# MAGIC disable it, unlike classic clusters. Photon renames plan operators with a
-# MAGIC `Photon` prefix, so the join below shows up as `PhotonBroadcastHashJoin`
-# MAGIC rather than plain `BroadcastHashJoin`. Same broadcast optimization — just
-# MAGIC Photon's vectorized implementation of it.
+# MAGIC **Note on Serverless compute:** Photon, which is Databricks' native vectorized engine, is always enabled for Serverless compute and SQL warehouses. Unlike classic clusters, there is no option to turn it off. Photon renames plan operators with a `Photon` prefix, so the join below appears as `PhotonBroadcastHashJoin` instead of the standard `BroadcastHashJoin`. This represents the same broadcast optimization, but it is Photon's vectorized implementation of it.
 
 # COMMAND ----------
 
-# DBTITLE 1,Join with a broadcast hint on zone_lookup
-pickup_zone_broadcast = F.broadcast(zone_lookup.alias("pz"))
+# Re-enable automatic broadcast (default is usually 10 MB)
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "10485760")  # noqa: F821
 
-trip_broadcast_join = trip.alias("t").join(
-    pickup_zone_broadcast,
+# COMMAND ----------
+
+# Same double join as Cell 7, but both zone_lookup references are wrapped
+# in F.broadcast() this time — the join structure doesn't change, only
+# how Spark plans it.
+t = trip.alias("t")
+pz = F.broadcast(zone_lookup.alias("pz"))
+dz = F.broadcast(zone_lookup.alias("dz"))
+
+trip_broadcast_join = t.join(
+    pz,
     F.col("t.pickup_location_id") == F.col("pz.location_id"),
+    "left",
+).join(
+    dz,
+    F.col("t.dropoff_location_id") == F.col("dz.location_id"),
     "left",
 )
 
-print(f"Row count: {trip_broadcast_join.count()} (unchanged \u2014 broadcast only affects the plan)")
-
-# COMMAND ----------
-
-# DBTITLE 1,Inspect the plan for BroadcastHashJoin
-print(
-    "Look for a broadcast hash join below \u2014 on Serverless/Photon compute it's "
-    "named PhotonBroadcastHashJoin; on classic non-Photon compute it's plain "
-    "BroadcastHashJoin:\n"
-)
-trip_broadcast_join.explain("formatted")
+trip_broadcast_join.explain()
 
 # COMMAND ----------
 
@@ -317,17 +327,16 @@ trip_broadcast_join.explain("formatted")
 # MAGIC %md
 # MAGIC ## Summary — lookup joins, in one workflow
 # MAGIC
-# MAGIC 1. **Profile** the dimension key (`location_id`) — unique, no NULLs → safe
-# MAGIC 2. **Join twice** with aliases when the same dimension plays two roles
-# MAGIC    (pickup / dropoff) — Boolean form, since names differ
-# MAGIC 3. **Select and rename** immediately after — don't leave ambiguous duplicate
-# MAGIC    column names for downstream code to trip over
-# MAGIC 4. **Choose the join direction deliberately** — left from the fact hides
-# MAGIC    unreferenced dimension rows; right/full from the dimension surfaces them
-# MAGIC 5. **Broadcast** small dimension tables explicitly with `F.broadcast()` and
-# MAGIC    confirm `BroadcastHashJoin` in `.explain("formatted")`
+# MAGIC 1. **Profile the Dimension Key** - Ensure that `location_id` is unique and has no NULL values before performing the join. This confirms that it is safe to use.
 # MAGIC
-# MAGIC This repeated-lookup + explicit-select pattern is exactly what Notebook 07's
-# MAGIC capstone reuses to build `trip_enriched` from multiple joins.
+# MAGIC 2. **Join Twice with Aliases** - When the same dimension serves two purposes, such as pickup and dropoff, use aliases to differentiate between them. The Boolean form is useful here since the column names will be different.
+# MAGIC
+# MAGIC 3. **Select and Rename Immediately** - This practice helps avoid ambiguous duplicate column names that might cause issues in downstream code.
+# MAGIC
+# MAGIC 4. **Choose Join Direction Deliberately** - A left join from the fact table will hide any unreferenced dimension rows, while a right or full join from the dimension will reveal them.
+# MAGIC
+# MAGIC 5. **Broadcast Small Dimension Tables Explicitly** - Use `F.broadcast()` to optimize performance with smaller dimension tables, and confirm this by checking for `BroadcastHashJoin` in `.explain()`.
+# MAGIC
+# MAGIC This pattern of repeated lookups and explicit selections is what Notebook 07's capstone uses to build `trip_enriched` through multiple joins.
 # MAGIC
 # MAGIC **Next:** **`04 - Semi Joins and Anti Joins`**
