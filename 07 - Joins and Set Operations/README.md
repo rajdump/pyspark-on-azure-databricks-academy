@@ -41,13 +41,13 @@ By the end of this module, you'll be able to:
 
 Complete Module 6 notebooks **`01`–`04`**. You need:
 
-| Asset | Rows / notes |
-|---|---|
-| `curated/trip/` | 106 — one per `trip_id`; has pickup/dropoff location IDs |
-| `curated/payment/` | 105 — one per `trip_id` (no row for trip 106) |
-| `curated/drivers_flat/` | one row per (`driver_id`, `trip_id`); trips 1–100 covered |
-| Landing `trip`, `trip_time`, `payment` | 100 each; **1:1** on `trip_id` |
-| Landing `zone_lookup` | 22; location_id **21–22** never used by any trip |
+| Asset | Rows / notes | Source |
+|---|---|---|
+| `curated/trip/` | 106 — one per `trip_id`; has pickup/dropoff location IDs | Module 6 **`03`** |
+| `curated/payment/` | 105 — one per `trip_id` (no row for trip 106) | Module 6 **`03`** |
+| `curated/drivers_flat/` | one row per (`driver_id`, `trip_id`); trips 1–100 covered | Module 6 **`02`** |
+| Landing `trip`, `trip_time`, `payment` | 100 each; **1:1** on `trip_id` | Module 5 landing |
+| Landing `zone_lookup` | 22; location_id **21–22** never used by any trip | Module 5 landing |
 
 Also recall Module 3 **`eqNullSafe`** for NULL-aware join keys.
 
@@ -64,8 +64,8 @@ Does **not** read **`practice/`**. Clean rerun: Module 5 Notebook **99**, Level 
 
 | Output table | Contract |
 |---|---|
-| `rideshare_dev.processed.trip_enriched` | One row per `curated/trip` `trip_id` (106), left-joined to `trip_time`, `curated/payment`, pickup/dropoff zones |
-| `rideshare_dev.processed.trip_driver_assignment` | One row per (`driver_id`, `trip_id`) from `curated/drivers_flat` plus trip attributes |
+| `rideshare_dev.processed.trip_enriched` | One row per `curated/trip` `trip_id` (106), left-joined to `trip_time`, `curated/payment`, pickup/dropoff zones. Column set: trip attributes + time + core payment facts — full payment breakdown stays in `curated/payment/`. |
+| `rideshare_dev.processed.trip_driver_assignment` | One row per (`driver_id`, `trip_id`) from `curated/drivers_flat` plus trip attributes only — not the full enriched view. |
 
 **Expected NULLs after left joins (intentional):**
 
@@ -75,9 +75,12 @@ Does **not** read **`practice/`**. Clean rerun: Module 5 Notebook **99**, Level 
 
 Writes use `saveAsTable` overwrite (Delta by default). Delta internals → Module 10.
 
-**Cleanup:** Module 5 **`99`** Level 2 drops the two Module 7 tables and clears
-Module 6 curated Parquet. Confirm **99** has the matching `DROP TABLE IF EXISTS`
-statements.
+**Cleanup:** Module 5 **`99`** Level 2 clears Module 6 curated Parquet only —
+by design, Levels 1–2 never touch managed tables. To reset the two Module 7
+managed tables (**`trip_enriched`**, **`trip_driver_assignment`**), use **99**
+Level 4 (full project teardown): its `DROP CATALOG rideshare_dev CASCADE`
+step drops every managed table in the catalog, current and future, with no
+per-table statement required.
 
 ## Runtime and scope
 

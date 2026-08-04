@@ -26,6 +26,7 @@ Authoring design / cell map. Status: LOCKED — pending `/new-lesson`.
 | 6 | "Why join `curated/trip`, not `trip_enriched`, for the practice" lacked a learner-observable reason | Add sentence: joining `trip_enriched` would drag `trip_date`, `hour_of_day`, `payment_method`, zone columns — and their NULLs — into a table where those columns have no business meaning (a different grain) |
 | — | Cell 17's assignment-side anti was labeled "optional," ambiguous for a TODO | Remove "optional." Make it a required step: it validates the learner's **output** (no orphan `trip_id`), distinct from the reveal check which validates the **input** gap (trips 101–106) |
 | — | README doesn't yet state the lean-subset philosophy | Add one sentence on **both** output rows (`trip_enriched` and `trip_driver_assignment`) in the Module 7 README output-contract table |
+| — | Does resetting these two tables need a Module 5 **`99`** code change? | No — read the full file. Levels 1–2 are volume-files-only **by design** (stated in the notebook's own intro). Level 4's `DROP CATALOG ... CASCADE` already drops every managed table, and its Step 1 already clears both `practice/` and `curated/` volume files first. README Cleanup note points to Level 4 instead. |
 
 **Data verdict (confirmed):** no new data needed.
 
@@ -47,7 +48,7 @@ Authoring design / cell map. Status: LOCKED — pending `/new-lesson`.
 - **AQE:** One markdown sentence only.
 - **Writes:** `DROP TABLE IF EXISTS` then `saveAsTable(..., mode="overwrite")` into `rideshare_dev.processed.*`.
 - **No Volume Parquet writes.** No Spark SQL dual-API beyond `DROP` / optional read-back.
-- **Out of this notebook:** Module 5 **99** Level 2 `DROP` for these two tables — separate follow-up.
+- **Reset path for these two tables:** Module 5 **99** Level 4 (full teardown) — its `DROP CATALOG ... CASCADE` already covers them; no `99` code change needed.
 
 ## End-to-end flow
 
@@ -76,7 +77,7 @@ flowchart TD
 | `rideshare_dev.processed.trip_enriched` | one row per `curated/trip.trip_id` | **106** | trips **101–106**: NULL `trip_date` / `hour_of_day`; trip **106**: NULL payment cols |
 | `rideshare_dev.processed.trip_driver_assignment` | one row per (`driver_id`, `trip_id`) from `drivers_flat` | **100** | trips **101–106** have no driver (surfaced via practice reveal check) |
 
-**README addition (do at authoring time):** one sentence on each row above stating the lean-subset philosophy, e.g. for `trip_enriched`: "Column set: trip attributes + time + core payment facts. Full payment breakdown remains in `curated/payment/`." — and the equivalent for `trip_driver_assignment` ("driver + trip attributes only, not the full enriched view").
+**README addition — applied.** Both rows now carry the lean-subset philosophy sentence, and the README's Cleanup note points to Notebook **99** Level 4 (not Level 2) for resetting these two tables.
 
 ## Final column sets
 
@@ -127,9 +128,9 @@ flowchart TD
 | 4 | py | Setup — profile trip, payment, trip_time | rows / `countDistinct(trip_id)` / nulls on key. Confirm trip and payment unique on `trip_id`; trip_time 100 unique. |
 | 5 | py | Setup — profile drivers_flat + type check | Print rows = **100**, `countDistinct("trip_id")` = 100. **Conceptual note:** grain is (`driver_id`, `trip_id`); on this dataset each trip has exactly one driver, so distinct trip_id equals row count — in production the same grain can be M:1. **Type check (new):** print `drivers_flat.schema["trip_id"].dataType` alongside `curated_trip.schema["trip_id"].dataType` — confirm they match before the practice join relies on it (drivers_flat's type comes from XML inference, not an explicit cast, so this is a real check, not decoration). |
 | 6 | md | 1. Stepwise left joins | Predict: trip ⟕ trip_time → **106** rows, **6** NULL `trip_date`. Then ⟕ payment → **106**, **1** NULL `payment_method`. Why left (preserve curated trip grain). |
-| 7 | py | 1a. trip ⟕ trip_time | Join on `trip_id`; drop duplicate key col. Count 106; NULL `trip_date` = 6; sample trips 101–106. |
-| 8 | py | 1b. + payment | Left join payment; count 106; NULL `payment_method` = 1; show trip 106. Result name `trip_with_time_pay`. |
-| 9 | md | 2. Zone lookup + broadcast | Apply **03**: aliases `t`/`pz`/`dz`; Boolean keys; `F.broadcast` both zone sides; immediate `select`/`alias` to `pickup_*`/`dropoff_*`. No threshold reconfiguration. Note `service_zone` is deliberately excluded — not needed downstream. |
+| 7 | py | 1a. trip ⟕ trip_time | **Boolean join** on `trip_id` (`t.trip_id == tt.trip_id`); drop duplicate key col. Count 106; NULL `trip_date` = 6; sample trips 101–106. |
+| 8 | py | 1b. + payment | **Boolean join** to payment on `trip_id`; count 106; NULL `payment_method` = 1; show trip 106. Result name `trip_with_time_pay`. |
+| 9 | md | 2. Zone lookup + broadcast | Apply **03**: aliases `t`/`pz`/`dz`; Boolean keys; `F.broadcast` both zone sides; immediate `select`/`alias` to `pickup_*`/`dropoff_*`. No threshold reconfiguration. **Predict zone coverage:** trip `pickup_location_id`/`dropoff_location_id` use only **1–20**; `zone_lookup` covers **1–22** — predict **zero** NULL `pickup_borough`/`dropoff_borough` after the lookup (this is what cell 12 asserts). Note `service_zone` is deliberately excluded — not needed downstream. |
 | 10 | py | 2. Build trip_enriched | Double left lookup + final `select`. Payment select carries a one-rule comment: **"Core payment facts only (`payment_method`, `base_fare_amount`, `tip_amount`, `driver_payout_amount`). Full breakdown and Module 6 derived metrics remain in `curated/payment/`."** Count 106; show 5 rows or schema. |
 | 11 | md | 3. Validate before write | Apply **04**: predict `left_anti` between the **original curated `trip` and `payment` frames** (not `trip_enriched`) on `trip_id` → trip **106**. Frame this explicitly as a **write gate** — re-confirming a known gap — not a new discovery. Keep time NULL = 6 and zone borough NULL = 0 asserts **on `trip_enriched`** — those are what actually validate the output shape. One sentence: key-only `subtract` is an equivalent alternative (shown in **06**) — do not run it here. |
 | 12 | py | 3. Validation checks | `left_anti` between original curated `trip`/`payment` (payment gap, write gate); assert time NULLs = 6 and pickup/dropoff borough NULLs = 0 on `trip_enriched`. Print pass/fail. Write only after green. |
@@ -153,13 +154,14 @@ flowchart TD
 - Cell 5's type check must actually run and print — not be skipped as "obviously fine."
 - Do not update `COURSE_MODULES.md` or `docs/validation/` from authoring commands.
 
-## Edits to apply at authoring time
+## Edits already applied outside this notebook
 
-1. Module 7 `README.md` — add the lean-subset one-liner to both output-contract rows (`trip_enriched`, `trip_driver_assignment`).
-2. Module 5 **99** Level 2 `DROP TABLE IF EXISTS` for both Module 7 tables — separate follow-up.
+1. Module 7 `README.md` — lean-subset one-liner on both output-contract rows; Prerequisites asset table now cites Module 6 **`02`**/**`03`** per row; Cleanup note points to Notebook **99** Level 4.
+2. Module 5 **99** — **no change made or needed** (see round-2 table above).
 
 ## Suggested authoring sequence
 
+0. Before writing cell 3: re-read Notebook **03**'s Setup cell for the exact `zone_lookup` schema DDL (column order and types, e.g. `location_id int`) — reuse verbatim, don't reinfer.
 1. `/new-lesson` → `07 - Build Unified Curated Tables.py`
 2. `/write-lesson` fill per 20-cell map
 3. `/validate-notebook`
