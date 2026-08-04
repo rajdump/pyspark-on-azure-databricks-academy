@@ -9,7 +9,8 @@ columns after a dimension lookup).
 Two habits run through every notebook and the capstone write:
 
 1. Know the **grain** of each input before you join
-2. **Profile → predict → run → verify** on every join
+2. **Predict → run → verify** on every join (Notebooks **01–06** also
+   **profile** keys first; **07** uses the grain contracts already stated)
 
 Notebooks **01–06** build skills only (**no write**). Notebook **07** writes
 two Unity Catalog managed Delta tables for Modules 8–9.
@@ -113,7 +114,7 @@ the managed tables.
 | 4 | Semi Joins and Anti Joins | `curated/trip` (106), `curated/payment` (105) | `left_semi` / `left_anti` (trip 106 on anti); reverse anti; bridge to **`subtract()`** in **06** |
 | 5 | Union and unionByName | Constructed frames (no landing read) | `union` vs `unionByName`; column-order trap; `allowMissingColumns`; when `distinct()` after union |
 | 6 | Intersect, subtract, and exceptAll | Constructed frames (no landing read) | Whole-row set ops; `intersect` vs `intersectAll`; `subtract` vs `exceptAll`; SQL `EXCEPT` naming |
-| 7 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Grain contracts; stepwise left joins + NULL checks; reuse **03** lookup/broadcast; validate with **04**/**06** patterns; write both managed tables; AQE note only |
+| 7 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Grain contracts + load counts / `trip_id` type check; stepwise left joins + NULL checks; reuse **03** lookup/broadcast; validate with **04**/**06** patterns; write both managed tables; AQE note only |
 
 ## Minimum privileges required
 
