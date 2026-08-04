@@ -177,28 +177,30 @@ result.show()
 # MAGIC `union()` keeps every row from both DataFrames, including duplicate rows. It
 # MAGIC does not perform deduplication.
 # MAGIC
-# MAGIC Use `distinct()` when the union creates **exact** duplicate rows — for
-# MAGIC example, the same source file or batch processed more than once.
-# MAGIC `distinct()` removes a row only when every column value is identical.
+# MAGIC Use `distinct()` when the union creates **`exact` duplicate rows**, such as when
+# MAGIC the same source file or batch is processed more than once. `distinct()` removes
+# MAGIC a row only when every column value is identical.
 # MAGIC
-# MAGIC Do not apply `distinct()` by default. Two real trips can share the same
-# MAGIC pickup and dropoff and still be different events because `trip_id` differs:
+# MAGIC Do not apply `distinct()` by default because identical rows may represent
+# MAGIC separate valid business events.
 # MAGIC
-# MAGIC | trip_id | pickup_location_id | dropoff_location_id |
-# MAGIC |---|---:|---:|
-# MAGIC | 1 | 10 | 20 |
-# MAGIC | 2 | 10 | 20 |
+# MAGIC For example, the same passenger may take multiple trips with the same driver,
+# MAGIC from the same pickup location, for the same fare on the same day. If the
+# MAGIC dataset does not contain a unique `trip_id` or exact pickup timestamp, those
+# MAGIC trips may appear identical.
 # MAGIC
-# MAGIC `distinct()` keeps **both** rows. It would remove a row only if every column
-# MAGIC matched — including the same `trip_id` twice (an unintended extra copy after
-# MAGIC a bad union or reprocessing).
+# MAGIC | passenger_id | driver_id | pickup_location_id | trip_date  | fare |
+# MAGIC |---|---|---|---|---|
+# MAGIC | P101 | D205 | L010 | 2026-08-04 | 250 |
+# MAGIC | P101 | D205 | L010 | 2026-08-04 | 250 |
 # MAGIC
 # MAGIC `distinct()` has the same effect as `dropDuplicates()` without specifying
 # MAGIC columns. For business-level duplicates, use `dropDuplicates()` with the
 # MAGIC appropriate key columns.
 # MAGIC
-# MAGIC Notebook 02 used `dropDuplicates()` on selected key columns before joins.
-# MAGIC That is key-level deduplication and serves a different purpose.
+# MAGIC Notebook 02 used `dropDuplicates()` on selected key columns before joins. That
+# MAGIC is key-level deduplication and serves a different purpose.
+# MAGIC
 
 # COMMAND ----------
 
