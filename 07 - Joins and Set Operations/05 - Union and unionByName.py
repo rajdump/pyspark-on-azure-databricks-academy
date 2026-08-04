@@ -3,31 +3,41 @@
 # MAGIC %md
 # MAGIC # 05 - Union and unionByName
 # MAGIC
-# MAGIC Notebooks **01**–**04** used **joins**: put two tables next to each other and
-# MAGIC match rows on a key. The result is usually wider (more columns).
+# MAGIC Notebooks **01**–**04** used **joins**: joins match rows based on a join
+# MAGIC condition. The join type determines which matched and unmatched rows remain,
+# MAGIC and most joins produce a wider result by adding columns from the other
+# MAGIC DataFrame.
 # MAGIC
-# MAGIC This notebook is about **union**: put two tables on top of each other. The
-# MAGIC result is taller (more rows), with the same columns.
-# MAGIC
-# MAGIC Example: `morning` has 2 trip rows and `afternoon` has 2 trip rows. A union
-# MAGIC gives 4 trip rows in one DataFrame.
+# MAGIC This notebook is about **union**: Unions combine DataFrames by stacking rows. They require compatible columns,not a join condition, and the result usually becomes taller by adding rows from the other DataFrame.
 # MAGIC
 # MAGIC Spark provides two union methods:
 # MAGIC
-# MAGIC - **`union()`** — matches columns by position. Fast, but silently produces
-# MAGIC   wrong results if column order differs between the two sides.
-# MAGIC - **`unionByName()`** — matches columns by name. Safer when column order may
-# MAGIC   vary, and supports an `allowMissingColumns` flag for schema differences.
+# MAGIC * **`union()`** matches columns by position. It can silently place values under the wrong columns when column order differs.
+# MAGIC * **`unionByName()`** matches columns by name. It is safer when column order may differ and can handle missing columns with `allowMissingColumns=True`.
 # MAGIC
-# MAGIC | Section | Focus |
-# MAGIC |---|---|
-# MAGIC | 1 | `union` — stack by position and the column-order trap |
-# MAGIC | 2 | `unionByName` — match by name, not position |
-# MAGIC | 3 | `allowMissingColumns` — handle different schemas |
-# MAGIC | 4 | `distinct()` after union — removing extra copies |
-# MAGIC | Practice | Predict and verify counts on overlapping frames |
+# MAGIC | Section  | Focus                                                                      |
+# MAGIC | -------- | -------------------------------------------------------------------------- |
+# MAGIC | 1        | `union()` — stack rows by column position and expose the column-order risk |
+# MAGIC | 2        | `unionByName()` — align columns by name instead of position                |
+# MAGIC | 3        | `allowMissingColumns=True` — combine DataFrames with missing columns       |
+# MAGIC | 4        | `distinct()` after union — remove duplicate rows when required             |
+# MAGIC | Practice | Predict and verify schema, row counts, and duplicate behavior              |
 # MAGIC
 # MAGIC **Prerequisites.** Module 7 **`01`–`04`**. **No write.**
+
+# COMMAND ----------
+
+# DBTITLE 1,Union rules
+# MAGIC %md
+# MAGIC ## Union rules
+# MAGIC
+# MAGIC 1. `union()` matches columns by **position**.
+# MAGIC 2. `unionByName()` matches columns by **name**.
+# MAGIC 3. `union()` requires the same **number** of columns; `unionByName()` requires the same column **names** (unless `allowMissingColumns=True`).
+# MAGIC 4. Corresponding columns must have **compatible data types**.
+# MAGIC 5. `union()` keeps the **left DataFrame's column names** in the result — this is why mismatched column order produces silent corruption.
+# MAGIC 6. `unionByName(..., allowMissingColumns=True)` fills missing columns with NULL.
+# MAGIC 7. Union keeps duplicate rows. Use `distinct()` only when duplicates are unintended.
 
 # COMMAND ----------
 
@@ -67,18 +77,14 @@ afternoon.show()
 
 # DBTITLE 1,1. union
 # MAGIC %md
-# MAGIC ## 1. `union` — stack by position
+# MAGIC ## 1. `union` — Combining DataFrames by Position
 # MAGIC
-# MAGIC `union()` appends rows from the second DataFrame below the first. Columns are
-# MAGIC matched by **position** — column 1 of the right aligns with column 1 of the
-# MAGIC left, regardless of name. The result keeps the left DataFrame's column names.
 # MAGIC
-# MAGIC `union()` does **not** remove duplicates. Compatible types by position are
-# MAGIC required; incompatible types raise an error.
+# MAGIC The `union()` function appends the rows of a second DataFrame below those of the first. It matches columns based on their position rather than their names; therefore, the first column in the second DataFrame aligns with the first column in the first DataFrame, and the resulting DataFrame retains the column names from the first DataFrame.
 # MAGIC
-# MAGIC **The column-order trap.** If one side has columns in a different order,
-# MAGIC `union()` silently puts values into the wrong columns. No error, no warning —
-# MAGIC just corrupted data.
+# MAGIC Both DataFrames must contain the same number of columns, and the data types in matching positions must be compatible. While Spark may convert compatible types, mismatched types will cause the union to fail.
+# MAGIC
+# MAGIC The `union()` function keeps duplicate rows. It’s important to be aware of the column-order issue. If the two DataFrames have the same columns in a different order, the `union()` function can assign values to the wrong column names without raising any errors. Always verify the column order or consider using `unionByName()`.
 
 # COMMAND ----------
 
@@ -96,7 +102,7 @@ afternoon_reordered = afternoon.select(
     "trip_id", "dropoff_location_id", "pickup_location_id"
 )
 
-print("afternoon_reordered (names still correct; column order differs):")
+print("afternoon_reordered column names still correct; but order differs:")
 afternoon_reordered.show()
 
 bad_union = morning.union(afternoon_reordered)
@@ -107,13 +113,15 @@ bad_union.show()
 
 # DBTITLE 1,2. unionByName
 # MAGIC %md
-# MAGIC ## 2. `unionByName` — match by name, not position
+# MAGIC ## 2. `unionByName()` — match by name
 # MAGIC
-# MAGIC `unionByName()` aligns columns by **name**. Column order no longer matters.
-# MAGIC This is the safer choice whenever order might differ between sides.
+# MAGIC `unionByName()` aligns columns by **name**, so column order does not matter.
+# MAGIC This is safer when the same columns may appear in a different order.
 # MAGIC
-# MAGIC By default both sides must share the same column names. Missing names raise
-# MAGIC an error — Section 3 shows how to handle that.
+# MAGIC By default, both DataFrames must contain the same column names, and matching
+# MAGIC columns must have compatible data types. Missing columns raise an error.
+# MAGIC Section 3 shows how to handle them with `allowMissingColumns=True`.
+# MAGIC
 
 # COMMAND ----------
 
@@ -162,18 +170,35 @@ result.show()
 
 # DBTITLE 1,4. distinct after union
 # MAGIC %md
-# MAGIC ## 4. `distinct()` after union — removing extra copies
+# MAGIC ## 4. Remove duplicate rows after a union
 # MAGIC
-# MAGIC `union()` keeps every row from both sides, including exact duplicates. It does
-# MAGIC not deduplicate.
+# MAGIC `union()` keeps every row from both DataFrames, including duplicate rows. It
+# MAGIC does not perform deduplication.
 # MAGIC
-# MAGIC Apply `distinct()` only when extra copies are **unintended** — for example,
-# MAGIC overlapping source files or retry reprocessing. Do not apply it by default;
-# MAGIC some workflows produce legitimate repeated rows.
+# MAGIC Use `distinct()` when the union creates **`exact` duplicate rows**, such as when
+# MAGIC the same source file or batch is processed more than once. `distinct()` removes
+# MAGIC a row only when every column value is identical.
 # MAGIC
-# MAGIC `distinct()` removes whole-row duplicates — same effect as `dropDuplicates()`
-# MAGIC without arguments. Notebook 02 used `dropDuplicates` for **key-level** dedup
-# MAGIC before joins — different context.
+# MAGIC Do not apply `distinct()` by default because identical rows may represent
+# MAGIC separate valid business events.
+# MAGIC
+# MAGIC For example, the same passenger may take multiple trips with the same driver,
+# MAGIC from the same pickup location, for the same fare on the same day. If the
+# MAGIC dataset does not contain a unique `trip_id` or exact pickup timestamp, those
+# MAGIC trips may appear identical.
+# MAGIC
+# MAGIC | passenger_id | driver_id | pickup_location_id | trip_date  | fare |
+# MAGIC |---|---|---|---|---|
+# MAGIC | P101 | D205 | L010 | 2026-08-04 | 250 |
+# MAGIC | P101 | D205 | L010 | 2026-08-04 | 250 |
+# MAGIC
+# MAGIC `distinct()` has the same effect as `dropDuplicates()` without specifying
+# MAGIC columns. For business-level duplicates, use `dropDuplicates()` with the
+# MAGIC appropriate key columns.
+# MAGIC
+# MAGIC Notebook 02 used `dropDuplicates()` on selected key columns before joins. That
+# MAGIC is key-level deduplication and serves a different purpose.
+# MAGIC
 
 # COMMAND ----------
 
