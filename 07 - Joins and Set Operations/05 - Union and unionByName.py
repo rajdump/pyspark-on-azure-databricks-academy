@@ -8,7 +8,9 @@
 # MAGIC and most joins produce a wider result by adding columns from the other
 # MAGIC DataFrame.
 # MAGIC
-# MAGIC This notebook is about **union**: Unions combine DataFrames by stacking rows. They require compatible columns,not a join condition, and the result usually becomes taller by adding rows from the other DataFrame.
+# MAGIC This notebook is about **union**: Unions stack one DataFrame under another.
+# MAGIC They need compatible columns, not a join condition. The result is taller —
+# MAGIC more rows from both sides, same column shape.
 # MAGIC
 # MAGIC Spark provides two union methods:
 # MAGIC
@@ -21,7 +23,7 @@
 # MAGIC | 2        | `unionByName()` — align columns by name instead of position                |
 # MAGIC | 3        | `allowMissingColumns=True` — combine DataFrames with missing columns       |
 # MAGIC | 4        | `distinct()` after union — remove duplicate rows when required             |
-# MAGIC | Practice | Predict and verify schema, row counts, and duplicate behavior              |
+# MAGIC | Practice | Predict and verify union and distinct row counts           |
 # MAGIC
 # MAGIC **Prerequisites.** Module 7 **`01`–`04`**. **No write.**
 
