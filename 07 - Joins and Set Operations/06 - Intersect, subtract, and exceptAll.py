@@ -4,19 +4,14 @@
 # MAGIC # 06 - Intersect, subtract, and exceptAll
 # MAGIC
 # MAGIC Notebook **05** stacked DataFrames with `union` / `unionByName`. This
-# MAGIC notebook covers the other whole-row set operations: keep rows on **both**
-# MAGIC sides, or keep rows on **one** side only.
-# MAGIC
-# MAGIC These APIs compare **entire rows**, not a join key. Notebook **04**
-# MAGIC previewed `subtract()` next to `left_anti` — here you get the full family,
-# MAGIC including `*All` variants that preserve duplicate counts.
+# MAGIC notebook covers the remaining set operations: keep rows on **both** sides,
+# MAGIC or keep rows on **one** side only.
 # MAGIC
 # MAGIC | Section | Focus |
 # MAGIC |---|---|
 # MAGIC | 1 | `intersect` vs `intersectAll` |
 # MAGIC | 2 | `subtract` vs `exceptAll` |
-# MAGIC | 3 | SQL `EXCEPT` naming vs DataFrame API |
-# MAGIC | Practice | Predict multiset set-op counts |
+# MAGIC | Practice | Predict multiset counts on a new pair |
 # MAGIC
 # MAGIC **Prerequisites.** Module 7 **`01`–`05`**. **No write.**
 
@@ -27,11 +22,20 @@
 # MAGIC ## Set-op rules
 # MAGIC
 # MAGIC 1. Set ops compare **whole rows** (every selected column), not a join key.
-# MAGIC 2. `intersect` / `subtract` return **distinct** results.
-# MAGIC 3. `intersectAll` / `exceptAll` preserve duplicate **counts**.
-# MAGIC 4. Columns align by **position** (same idea as `union`), not by name.
-# MAGIC 5. SQL `EXCEPT` / `EXCEPT DISTINCT` ↔ DataFrame `subtract()` — there is no
-# MAGIC    method named `except()`.
+# MAGIC 2. `intersect` / `subtract` remove duplicates from the result (distinct semantics).
+# MAGIC 3. `intersectAll` / `exceptAll` preserve duplicate **counts** (multiset semantics).
+# MAGIC 4. Columns align by **position** (same as `union`), not by name.
+# MAGIC
+# MAGIC **SQL name mapping:**
+# MAGIC
+# MAGIC | SQL | DataFrame API |
+# MAGIC |---|---|
+# MAGIC | `INTERSECT` | `intersect()` |
+# MAGIC | `INTERSECT ALL` | `intersectAll()` |
+# MAGIC | `EXCEPT` / `EXCEPT DISTINCT` | `subtract()` |
+# MAGIC | `EXCEPT ALL` | `exceptAll()` |
+# MAGIC
+# MAGIC There is no DataFrame method named `except`. Use `subtract()`.
 
 # COMMAND ----------
 
@@ -99,7 +103,7 @@ right_dup = spark.createDataFrame(  # noqa: F821
     ["trip_id"],
 )
 
-print("intersect (deduped):")
+print("intersect (distinct):")
 left_dup.intersect(right_dup).orderBy("trip_id").show()
 
 print("intersectAll (keeps overlapping copies):")
@@ -112,15 +116,11 @@ print("→ trip_id 1 appears twice on both sides → intersectAll keeps 2 copies
 # MAGIC %md
 # MAGIC ## 2. `subtract` vs `exceptAll`
 # MAGIC
-# MAGIC `subtract()` returns rows in the **left** DataFrame that do not appear on the
-# MAGIC right, and removes duplicates. It matches SQL `EXCEPT` / `EXCEPT DISTINCT`.
+# MAGIC `subtract()` returns rows in the **left** DataFrame that do not appear in
+# MAGIC the right. Duplicates are removed from the result.
 # MAGIC
-# MAGIC `exceptAll()` is the same idea but preserves leftover duplicate counts on the
-# MAGIC left. It matches SQL `EXCEPT ALL`.
-# MAGIC
-# MAGIC Notebook **04** contrasted `left_anti` (join key; keeps left duplicates) with
-# MAGIC `subtract()` (whole selected row; distinct result). This section is the full
-# MAGIC treatment.
+# MAGIC `exceptAll()` is the multiset version — it subtracts matching copies from
+# MAGIC the right, one for one, and keeps any remaining left-side copies.
 
 # COMMAND ----------
 
@@ -152,31 +152,6 @@ batch_a.subtract(batch_b).orderBy("trip_id").show()
 print("exceptAll (multiset difference):")
 batch_a.exceptAll(batch_b).orderBy("trip_id").show()
 print("→ three copies of trip_id 1 minus one copy → two remain under exceptAll")
-
-# COMMAND ----------
-
-# DBTITLE 1,3. SQL EXCEPT naming
-# MAGIC %md
-# MAGIC ## 3. SQL `EXCEPT` naming vs DataFrame API
-# MAGIC
-# MAGIC Module 7 stays on the DataFrame API (Module **09** covers SQL side by side).
-# MAGIC Learn the name mapping so SQL docs and teammates make sense:
-# MAGIC
-# MAGIC | SQL | DataFrame API | Duplicate behavior |
-# MAGIC |---|---|---|
-# MAGIC | `INTERSECT` | `intersect()` | Distinct |
-# MAGIC | `INTERSECT ALL` | `intersectAll()` | Preserve counts |
-# MAGIC | `EXCEPT` / `EXCEPT DISTINCT` | `subtract()` | Distinct |
-# MAGIC | `EXCEPT ALL` | `exceptAll()` | Preserve counts |
-# MAGIC
-# MAGIC There is **no** DataFrame method named `except`. Use `subtract()` for SQL
-# MAGIC `EXCEPT`.
-
-# COMMAND ----------
-
-# DBTITLE 1,3. Naming check — subtract is EXCEPT DISTINCT
-print("left_ids.subtract(right_ids) count:", left_ids.subtract(right_ids).count())
-print("→ In SQL docs this is EXCEPT / EXCEPT DISTINCT, not except()")
 
 # COMMAND ----------
 
@@ -219,17 +194,15 @@ print("→ In SQL docs this is EXCEPT / EXCEPT DISTINCT, not except()")
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC 1. **`intersect`** — rows on both sides; distinct result (`INTERSECT`).
+# MAGIC 1. **`intersect`** — rows in both sides; distinct result.
 # MAGIC
-# MAGIC 2. **`intersectAll`** — rows on both sides; keeps overlapping duplicate
-# MAGIC    counts (`INTERSECT ALL`).
+# MAGIC 2. **`intersectAll`** — rows in both sides; preserves duplicate counts.
 # MAGIC
-# MAGIC 3. **`subtract`** — left-only rows; distinct result (`EXCEPT` /
-# MAGIC    `EXCEPT DISTINCT`). No DataFrame method named `except`.
+# MAGIC 3. **`subtract`** — left-only rows; distinct result.
 # MAGIC
-# MAGIC 4. **`exceptAll`** — left-only rows; multiset difference (`EXCEPT ALL`).
+# MAGIC 4. **`exceptAll`** — left-only rows; preserves duplicate counts.
 # MAGIC
-# MAGIC 5. Set ops compare **whole rows**. For key-only gaps, prefer semi/anti joins
-# MAGIC    (Notebook **04**) or `select` the comparison columns first.
+# MAGIC Set ops compare **whole rows**. For key-only gaps, `select` the key column
+# MAGIC before calling `subtract`, or use semi/anti joins (Notebook **04**).
 # MAGIC
 # MAGIC **Next:** **`07 - Build Unified Curated Tables`**
