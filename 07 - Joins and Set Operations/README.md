@@ -11,9 +11,8 @@ Two habits run through every notebook and the capstone write:
 1. Know the **grain** of each input before you join
 2. **Profile → predict → run → verify** on every join
 
-**Reads:** Module 6 curated Parquet plus landing tables that have no curated
-version. **Writes (Notebook 07 only):** two Unity Catalog managed Delta tables
-for Modules 8–9.
+Notebooks **01–06** build skills only (**no write**). Notebook **07** writes
+two Unity Catalog managed Delta tables for Modules 8–9.
 
 Schemas, join keys, and the `zone_lookup` 21–22 design:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
@@ -82,57 +81,36 @@ statements.
 
 ## Runtime and scope
 
-- **Runtime:** Spark **4.0.0** / DBR **17.3 LTS**
-- **API:** DataFrame `join`, set ops, `F.broadcast`, `.explain()` — no Spark SQL
-  dual-API (Module 9)
+**Runtime:** Spark **4.0.0** / DBR **17.3 LTS**.
 
-**In scope:**
+**API:** DataFrame `join`, set ops, `F.broadcast`, `.explain()` — no Spark SQL
+dual-API (Module 9).
 
-- Grain / cardinality
-- Join types and row-count correctness
-- Key profiling
-- Lookup joins and column naming
-- Semi / anti joins
-- Set ops
-- Broadcast hint
-- High-level AQE awareness in the capstone
-- Managed-table writes after validation
+**In scope:** grain / cardinality; join types and row-count correctness; key
+profiling; lookup joins and column naming; semi / anti joins; set ops;
+broadcast hint; high-level AQE awareness in the capstone; managed-table writes
+after validation.
 
-**Out of scope:**
-
-- Aggregations / windows pedagogy (Module 8) — except Notebook **02**'s narrow
-  pre-join dedup (`Window` + `row_number`)
-- CTEs / parameterized SQL (Module 9)
-- Delta ACID / `MERGE` / time travel (Module 10)
-- UC grants (Module 11)
-- Join-plan tuning beyond `F.broadcast` (Module 16)
+**Out of scope:** aggregations / windows pedagogy (Module 8) — except Notebook
+**02**'s narrow pre-join dedup (`Window` + `row_number`); CTEs / parameterized
+SQL (Module 9); Delta ACID / `MERGE` / time travel (Module 10); UC grants
+(Module 11); join-plan tuning beyond `F.broadcast` (Module 16).
 
 ## Notebooks
 
 Seven notebooks, in order. Each includes a short hands-on task (final cell or
-integrated practice). Notebooks **01–06** build skills only (**no write**);
-**07** writes the managed tables.
+integrated practice). Notebooks **01–06** are skill-building only; **07** writes
+the managed tables.
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
-| 1 | Grain, Join Syntax, and Unmatched Keys | Landing `trip`, `trip_time` (+ constructed frames). No `payment`. | Grain; 1:1 / 1:M / M:M; string / list / Boolean join; unmatched-keys exercise (expect 3 / 5 / 5 / 7) |
+| 1 | Grain, Join Syntax, and Unmatched Keys | Landing `trip`, `trip_time` (+ constructed frames). No `payment`. | Grain; 1:1 / 1:M / M:M; string join `trip`↔`trip_time` → 100; list join `trip_charges`↔`rate_card` (`trip_id` alone → 12 wrong; `["trip_id", "charge_type"]` → 4); Boolean rename + duplicate-column trap; unmatched-keys exercise (expect 3 / 5 / 5 / 7) |
 | 2 | Silent Join Failures and Validation | Landing `trip`, `trip_time`, `payment` (+ frames) | M:M fanout; key profiling; `dropDuplicates` vs window dedup; NULL keys + `eqNullSafe`; accidental Cartesian; profile → predict → run → verify |
-| 3 | Lookup Joins, Columns, and Broadcast | `zone_lookup` (22); `curated/trip` (106) | Fact vs dim; repeated pickup/dropoff lookup; `select`/rename; unmatched 21–22 **practice**; `-1` threshold then `F.broadcast` + `.explain()` (reused in **07**) |
+| 3 | Lookup Joins, Columns, and Broadcast | `zone_lookup` (22); `curated/trip` (106) | Apply **01–02** join/alias/profile patterns (no re-teach); fact vs dim; repeated pickup/dropoff lookup; `select`/rename; unmatched 21–22 **practice**; `-1` threshold then `F.broadcast` + `.explain()` (reused in **07**) |
 | 4 | Semi Joins and Anti Joins | `curated/trip` (106), `curated/payment` (105) | `left_semi` / `left_anti` (trip 106 on anti); reverse anti; bridge to **`subtract()`** in **06** |
 | 5 | Union and unionByName | Constructed frames (no landing read) | `union` vs `unionByName`; column-order trap; `allowMissingColumns`; when `distinct()` after union |
 | 6 | Intersect, subtract, and exceptAll | Constructed frames (no landing read) | Whole-row set ops; `intersect` vs `intersectAll`; `subtract` vs `exceptAll`; SQL `EXCEPT` naming |
 | 7 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Grain contracts; stepwise left joins + NULL checks; reuse **03** lookup/broadcast; validate with **04**/**06** patterns; write both managed tables; AQE note only |
-
-**Notebook 1 detail — join syntax demos:**
-
-- String: `trip` ↔ `trip_time` on `"trip_id"` → 100
-- List: `trip_charges` ↔ `rate_card` — `"trip_id"` alone → 12 (wrong);
-  `["trip_id", "charge_type"]` → 4 (correct)
-- Boolean: different names (`trip_id` = `trip_no`); same-name duplicate-column trap
-
-**Notebook 3 — apply, don't re-teach:** Boolean form, aliases, profiling, and
-left/right/full from **01–02**. New: fact/dim framing, double role-play lookup,
-column cleanup, broadcast with/without auto-threshold.
 
 ## Minimum privileges required
 
