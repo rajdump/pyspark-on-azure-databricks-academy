@@ -32,6 +32,8 @@
 # MAGIC 2. `intersect` / `subtract` return distinct results.
 # MAGIC 3. `intersectAll` / `exceptAll` preserve duplicate **counts** (one-to-one pairing).
 # MAGIC 4. Columns align by **position** (same as `union`), not by name.
+# MAGIC 5. Use `select()` to narrow columns before a set op when you want key-only
+# MAGIC    comparison instead of whole-row.
 # MAGIC
 # MAGIC **SQL name mapping:**
 # MAGIC
