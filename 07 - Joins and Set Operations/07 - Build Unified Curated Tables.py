@@ -3,9 +3,7 @@
 # MAGIC %md
 # MAGIC # 07 - Build Unified Curated Tables
 # MAGIC
-# MAGIC Notebooks **01–06** built join and set-operation skills without writing
-# MAGIC anything. This notebook is the capstone: combine those skills to build and
-# MAGIC write the two managed tables Modules 8–9 need.
+# MAGIC Notebooks 01–06 developed skills in joining and set operations without storing data. This notebook serves as the capstone: it combines those skills to build and write the two managed tables required for Modules 8 and 9.
 # MAGIC
 # MAGIC | Section | Focus |
 # MAGIC |---|---|
@@ -16,12 +14,26 @@
 # MAGIC | 4 | Write `trip_enriched` |
 # MAGIC | Practice | Build, validate, and write `trip_driver_assignment` |
 # MAGIC
-# MAGIC **Reads:** curated `trip` / `payment` / `drivers_flat`; landing `trip_time`,
-# MAGIC `zone_lookup`. **Prerequisites:** Module 7 **`01`–`06`**; complete Module 6,
-# MAGIC with curated inputs specifically from Module 6 **`02`** (`drivers_flat`) and
-# MAGIC **`03`** (`trip` / `payment`). **Writes:** two Unity Catalog managed Delta
-# MAGIC tables — `rideshare_dev.processed.trip_enriched` and
-# MAGIC `rideshare_dev.processed.trip_driver_assignment`.
+# MAGIC **Reads:**
+# MAGIC
+# MAGIC | Input | Source | Format |
+# MAGIC |---|---|---|
+# MAGIC | `trip` | curated (Module 6 **03**) | Parquet |
+# MAGIC | `payment` | curated (Module 6 **03**) | Parquet |
+# MAGIC | `drivers_flat` | curated (Module 6 **02**) | Parquet |
+# MAGIC | `trip_time` | landing | Parquet |
+# MAGIC | `zone_lookup` | landing | JSON |
+# MAGIC
+# MAGIC **Writes:**
+# MAGIC
+# MAGIC | Output table | Grain |
+# MAGIC |---|---|
+# MAGIC | `rideshare_dev.processed.trip_enriched` | one row per `trip_id` (106) |
+# MAGIC | `rideshare_dev.processed.trip_driver_assignment` | one row per (`driver_id`, `trip_id`) (100) |
+# MAGIC
+# MAGIC **Prerequisites:** Module 7 **`01`–`06`**; complete Module 6, with curated
+# MAGIC inputs specifically from Module 6 **`02`** (`drivers_flat`) and **`03`**
+# MAGIC (`trip` / `payment`).
 
 # COMMAND ----------
 
@@ -29,12 +41,12 @@
 # MAGIC %md
 # MAGIC ## Setup — grain contracts
 # MAGIC
-# MAGIC | Table | Format | Grain | Key | Rows |
+# MAGIC | Table | Format | Grain (one row =) | Key | Rows |
 # MAGIC |---|---|---|---|---|
-# MAGIC | `curated/trip` | Parquet | one completed trip | `trip_id` | 106 |
-# MAGIC | `curated/payment` | Parquet | one fare record per trip | `trip_id` | 105 |
-# MAGIC | `curated/drivers_flat` | Parquet | one driver-trip row | `driver_id`+`trip_id` | 100 |
-# MAGIC | Landing `trip_time` | Parquet | one time record per trip | `trip_id` | 100 |
+# MAGIC | `curated/trip` | Parquet | one trip | `trip_id` | 106 |
+# MAGIC | `curated/payment` | Parquet | one trip's payment | `trip_id` | 105 |
+# MAGIC | `curated/drivers_flat` | Parquet | one driver–trip assignment | (`driver_id`, `trip_id`) | 100 |
+# MAGIC | Landing `trip_time` | Parquet | one trip's date/hour | `trip_id` | 100 |
 # MAGIC | Landing `zone_lookup` | JSON Lines | one taxi zone | `location_id` | 22 |
 # MAGIC
 # MAGIC **Target grains for this notebook's two writes:**
@@ -42,22 +54,19 @@
 # MAGIC - `trip_driver_assignment` — one row per (`driver_id`, `trip_id`) from
 # MAGIC   `drivers_flat` → **100**
 # MAGIC
-# MAGIC **Expected NULLs after the left joins below (intentional, not a bug):**
-# MAGIC - Trips **101–106**: NULL `trip_date` / `hour_of_day` — `trip_time` has
-# MAGIC   only 100 rows
-# MAGIC - Trip **106**: NULL payment columns — `curated/payment` has only 105 rows
+# MAGIC **Expected NULLs after left joins (intentional — predict before Section 1):**
 # MAGIC
-# MAGIC **Why 106 vs 105 produce two different-shaped gaps:** Module 6 **`03`**
-# MAGIC extended trip and payment through the controlled-bad CSV files
-# MAGIC (`bad_trip_data.csv`, `bad_payment_data.csv`) — that's why curated trip has
-# MAGIC 106 rows and curated payment has 105. Landing `trip_time`, however, was
-# MAGIC never extended; it's still the original 100-row Parquet file from Module 5.
-# MAGIC So left-joining curated trip (106) to landing `trip_time` (100) produces
-# MAGIC **6** NULL dates (trips 101–106) — a bigger gap than payment's single
-# MAGIC missing row (trip 106 only).
+# MAGIC | Join | Left rows | Right rows | Unmatched rows | Columns that become NULL |
+# MAGIC |---|---:|---:|---:|---|
+# MAGIC | `trip` ⟕ `trip_time` | 106 | 100 | 6 | `trip_date`, `hour_of_day` |
+# MAGIC | result ⟕ `payment` | 106 | 105 | 1 | all payment columns |
 # MAGIC
-# MAGIC Same habit as Notebooks 01–06: **profile → predict → run → verify** — one
-# MAGIC join at a time.
+# MAGIC Trips **101–106** have no time record; trip **106** also has no payment
+# MAGIC record. Both gaps trace back to Module 6's cleaning outputs — the numbers
+# MAGIC are already visible in the grain table above.
+# MAGIC
+# MAGIC Same habit as Notebooks 01–06: **predict → run → verify** — one join at a
+# MAGIC time.
 
 # COMMAND ----------
 
@@ -70,6 +79,7 @@ curated_root = "/Volumes/rideshare_dev/processed/output_files/curated"
 curated_trip_path = f"{curated_root}/trip"
 curated_payment_path = f"{curated_root}/payment"
 curated_drivers_path = f"{curated_root}/drivers_flat"
+
 trip_time_path = f"{landing_root}/trip_time/trip_time.parquet"
 zone_json_path = f"{landing_root}/zone_lookup/zone_lookup.json"
 
@@ -82,9 +92,13 @@ service_zone string
 """
 
 curated_trip = spark.read.format("parquet").load(curated_trip_path)  # noqa: F821
+
 curated_payment = spark.read.format("parquet").load(curated_payment_path)  # noqa: F821
+
 drivers_flat = spark.read.format("parquet").load(curated_drivers_path)  # noqa: F821
+
 trip_time = spark.read.format("parquet").load(trip_time_path)  # noqa: F821
+
 zone_lookup = (
     spark.read.format("json")  # noqa: F821
     .schema(zone_lookup_schema_ddl)
@@ -97,43 +111,9 @@ print("drivers_flat rows:    ", drivers_flat.count())
 print("trip_time rows:       ", trip_time.count())
 print("zone_lookup rows:     ", zone_lookup.count())
 
-# COMMAND ----------
-
-# DBTITLE 1,Setup — profile trip, payment, trip_time
-for name, frame in [
-    ("curated_trip", curated_trip),
-    ("curated_payment", curated_payment),
-    ("trip_time", trip_time),
-]:
-    stats = frame.select(
-        F.count(F.lit(1)).alias("rows"),
-        F.countDistinct("trip_id").alias("distinct"),
-        F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
-    ).collect()[0]
-    print(f"{name:16} rows={stats['rows']}, distinct={stats['distinct']}, nulls={stats['nulls']}")
-
-print("\u2192 All three unique on trip_id, no NULL keys \u2014 safe to join.")
-
-# COMMAND ----------
-
-# DBTITLE 1,Setup — profile drivers_flat + type check
-drivers_stats = drivers_flat.select(
-    F.count(F.lit(1)).alias("rows"),
-    F.countDistinct("trip_id").alias("distinct_trip_id"),
-).collect()[0]
-print(
-    f"drivers_flat rows={drivers_stats['rows']}, "
-    f"distinct_trip_id={drivers_stats['distinct_trip_id']}"
-)
-print("\u2192 On this dataset, distinct trip_id equals row count \u2014 one driver per trip.")
-print(
-    "  The true grain is (driver_id, trip_id); in production the same grain "
-    "can be M:1 (a trip reassigned across its lifecycle)."
-)
-
-print("\ndrivers_flat.trip_id type: ", drivers_flat.schema["trip_id"].dataType)
-print("curated_trip.trip_id type: ", curated_trip.schema["trip_id"].dataType)
-print("\u2192 Types match \u2014 confirmed before the practice join relies on it.")
+# Type check — confirm trip_id aligns before the practice join relies on it.
+print("\ndrivers_flat.trip_id type:", drivers_flat.schema["trip_id"].dataType)
+print("curated_trip.trip_id type:", curated_trip.schema["trip_id"].dataType)
 
 # COMMAND ----------
 
