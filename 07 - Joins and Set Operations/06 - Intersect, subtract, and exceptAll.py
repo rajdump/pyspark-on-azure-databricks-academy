@@ -76,12 +76,11 @@ right_ids.show()
 # MAGIC %md
 # MAGIC ## 1. `intersect` vs `intersectAll`
 # MAGIC
-# MAGIC `intersect()` returns rows that appear in **both** DataFrames and removes
-# MAGIC duplicates. It matches SQL `INTERSECT`.
+# MAGIC `intersect()` returns rows present in **both** DataFrames. Duplicates are
+# MAGIC removed from the result.
 # MAGIC
-# MAGIC `intersectAll()` also keeps only shared rows, but preserves how many times a
-# MAGIC row can appear — limited by the **smaller** count on either side. It matches
-# MAGIC SQL `INTERSECT ALL`.
+# MAGIC `intersectAll()` also returns shared rows, but preserves the **smaller**
+# MAGIC duplicate count from either side.
 
 # COMMAND ----------
 
