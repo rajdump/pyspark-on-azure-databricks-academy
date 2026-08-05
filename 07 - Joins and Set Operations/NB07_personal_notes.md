@@ -366,4 +366,136 @@ writes cleaned Silver. Module 12 will add the Bronze table layer.
 
 ---
 
+
+## Silver vs Gold: Where Do Joins Belong?
+
+### The rule of thumb
+
+| Join Type | Where it belongs | Why |
+|-----------|-----------------|-----|
+| Reuniting fragments of the SAME entity | Silver | "Cleaning up a source system quirk" |
+| Combining MULTIPLE business entities | Gold | "Purpose-built for a specific consumer" |
+
+### Example with our data
+
+```
+  trip + trip_time  →  Could be Silver
+                       (both keyed on trip_id, 1:1, same entity split by source design)
+
+  trip + payment + zone + drivers  →  Definitely Gold
+                       (multiple entities, shaped for trip analytics use case)
+```
+
+### Why NOT join everything in Silver?
+
+Different teams need different combinations:
+
+```
+  Team A (Operations):  trip + time + zone          (no payment needed)
+  Team B (Finance):     trip + payment              (no zone, no driver)
+  Team C (Fleet):       trip + driver + payment     (no zone)
+```
+
+If you pre-join in Silver → one massive wide table that:
+  * Has columns some teams don't need
+  * Forces everyone to read data they don't care about
+  * Breaks for ALL teams if any one source schema changes
+
+### The architecture purist approach
+
+```
+  SILVER (one clean entity per table — reusable building blocks):
+  ┌─────────────────────────────────────────────────────────┐
+  │  silver.trip      ← trip + trip_time merged (same entity)│
+  │  silver.payment   ← cleaned payment                      │
+  │  silver.driver    ← cleaned, flattened driver             │
+  │  silver.zone      ← clean dimension                      │
+  └─────────────────────────────────────────────────────────┘
+           │                │               │
+           │    Different Gold tables pick what THEY need
+           ▼                ▼               ▼
+  GOLD (purpose-built for specific consumers):
+  ┌─────────────────────────────────────────────────────────┐
+  │  gold.trip_enriched            ← trip + payment + zone   │
+  │  gold.trip_driver_assignment   ← driver + trip + payment │
+  │  gold.finance_summary          ← trip + payment only     │
+  │  gold.fleet_dashboard          ← driver + trip only      │
+  └─────────────────────────────────────────────────────────┘
+```
+
+### Key properties comparison
+
+| Property | Silver | Gold |
+|----------|--------|------|
+| Scope | One entity per table | Multiple entities combined |
+| Purpose | "Clean source of truth" | "Ready for THIS use case" |
+| Reusability | High — many Gold tables read from it | Lower — built for specific consumers |
+| Coupling | Independent — changing one doesn't break others | Coupled — source changes may break the join |
+| Who uses it | Data engineers (to build Gold) | Analysts, BI tools, ML models |
+| Row count changes? | Only from cleaning (rejects) | Can change from joins (fan-out or NULLs) |
+
+### Summary
+
+> Silver = WHAT the data IS (clean, single-subject, trustworthy)
+> Gold = HOW the data is USED (joined, aggregated, purpose-built)
+
+
+## Design Decision: Lean Now, Full Pipeline in Module 12
+
+### The three options considered
+
+| Option | Approach | Verdict |
+|--------|----------|---------|
+| 1 | Fat table now — pull ALL columns, calculate metrics in Module 8 | Rejected |
+| 2 | Lean table now — only core columns, ignore extras | Accepted (Module 7-8) |
+| 3 | Full end-to-end pipeline with all columns + all metrics | Accepted (Module 12) |
+
+### Final strategy: Option 2 (now) + Option 3 (later)
+
+### Why lean tables in Module 7-8
+
+* Module 7's job = teach JOIN mechanics, not column management
+* 38 columns in one table drowns students while learning join types
+* Focus stays on "how does LEFT JOIN work?" not "which columns to select?"
+* Teaches design discipline: not every column belongs in every table
+* Keeps Module 8 aggregation queries simple and readable
+
+### Why full pipeline in Module 12
+
+* Shows contrast between "learning exercise" and "production pipeline"
+* Students see same data processed two ways — reinforces understanding
+* Delivers the "surprise — you already know 50% of medallion" moment
+* Full pipeline includes:
+  - Bronze: ALL files → Delta (1:1, all columns, warts included)
+  - Silver: Clean all columns (nothing dropped except bad rows)
+  - Gold: Multiple purpose-built tables with ALL possible metrics
+    - trip_enriched_full (all trip + payment + time + zone columns)
+    - driver_performance (all driver + wait-time + SLA metrics)
+    - kpi_hourly_zone (all aggregations Module 8 style)
+
+### The teaching arc
+
+```
+  Module 7 (lean):   "Here's HOW to join — we pick only what we need"
+                      → Focus: join types, grain, NULLs, left-join preservation
+
+  Module 8 (lean):   "Here's HOW to aggregate — GROUP BY, windows, KPIs"
+                      → Focus: aggregation mechanics on focused columns
+
+  Module 12 (full):  "Now build the REAL production pipeline end-to-end"
+                      → Focus: architecture, Delta, all columns, all metrics
+                      → Reveals: "You already learned Silver + Gold — now
+                        we add Bronze and do it all properly with Delta"
+```
+
+### The "aha" moment planned for Module 12
+
+> "In Module 7, we deliberately excluded request_to_pickup_mins and
+> driver_arrival_to_pickup_mins. That was a DESIGN CHOICE, not a
+> limitation. In production, your Gold layer serves multiple consumers —
+> so you build multiple Gold tables, each with the columns ITS consumer
+> needs. Here's the full pipeline that includes everything."
+
+---
+
 *Notes created from BRD discussion — NB07 Build Unified Curated Tables*

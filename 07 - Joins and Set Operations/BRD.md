@@ -151,8 +151,10 @@ the latest complete output.
 
 ## 8. Status
 
-* **Status:** Draft — not yet approved. Pending business sign-off.
+* **Status:** Validated — data-verified against curated and landing sources. Ready for business sign-off.
 * **Module:** Module 07, Notebook 07 — Build Unified Curated Tables
 * **Basis:** verified runtime cross-check results against the current curated and landing sources (Aug 2026)
-* **Open decisions:** None identified. All column-selection and grain decisions
-  currently in scope have been agreed (see Business rules).
+* **Open decisions:** Operational timing columns (`request_to_pickup_mins`,
+  `driver_arrival_to_pickup_mins`) are intentionally excluded from both targets
+  per the lean-table design. A full-column pipeline including all metrics will be
+  delivered separately as part of Module 12's medallion architecture exercise.
