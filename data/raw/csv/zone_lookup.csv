@@ -19,3 +19,5 @@ location_id,borough_name,zone_name,service_zone
 18,Brooklyn,Brooklyn Heights,Boro Zone
 19,Manhattan,Harlem,Yellow Zone
 20,Queens,Flushing,Boro Zone
+21,New Jersey,Newark Airport,Airports
+22,New Jersey,Hoboken Terminal,Boro Zone
