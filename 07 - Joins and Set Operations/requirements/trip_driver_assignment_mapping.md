@@ -28,5 +28,5 @@ No open mapping decisions remain.
 |---|---|
 | Target table | `rideshare_dev.processed.trip_driver_assignment` |
 | Business grain | One row per (`driver_id`, `trip_id`) |
-| Status | Draft |
+| Status | Approved |
 | Related BRD | `BRD.md` |

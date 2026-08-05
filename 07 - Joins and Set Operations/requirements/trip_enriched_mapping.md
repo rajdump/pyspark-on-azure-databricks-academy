@@ -31,5 +31,5 @@ No open mapping decisions remain.
 |---|---|
 | Target table | `rideshare_dev.processed.trip_enriched` |
 | Business grain | One row per `trip_id` |
-| Status | Draft |
+| Status | Approved |
 | Related BRD | `BRD.md` |
