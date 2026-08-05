@@ -11,10 +11,9 @@ so anyone analyzing trips or driver assignments has to work across multiple sour
 and reconcile them manually — with known gaps (missing time and payment records for
 some trips) not visible in any single place today.
 
-The objective is to produce two Unity Catalog managed Delta tables that combine the
-curated and landing sources into two clear, consistent grains — preserving every
-driving record and keeping known data gaps visible as `NULL` rather than hidden or
-dropped.
+The objective is to produce two Unity Catalog managed Delta tables at clearly
+defined business grains, preserving every record from each target's primary source
+and keeping known data gaps visible as `NULL` rather than hiding or dropping them.
 
 ---
 
