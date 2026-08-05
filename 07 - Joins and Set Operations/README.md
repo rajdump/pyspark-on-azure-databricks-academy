@@ -18,6 +18,11 @@ two Unity Catalog managed Delta tables for Modules 8–9.
 Schemas, join keys, and the `zone_lookup` 21–22 design:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
 
+Business requirements, target-column scope, and source-to-target mappings:
+[`requirements/BRD.md`](requirements/BRD.md) |
+[`requirements/trip_enriched_mapping.md`](requirements/trip_enriched_mapping.md) |
+[`requirements/trip_driver_assignment_mapping.md`](requirements/trip_driver_assignment_mapping.md).
+
 ## Learning objectives
 
 By the end of this module, you'll be able to:
@@ -65,8 +70,8 @@ Does **not** read **`practice/`**. Clean rerun: Module 5 Notebook **99**, Level 
 
 | Output table | Contract |
 |---|---|
-| `rideshare_dev.processed.trip_enriched` | One row per `curated/trip` `trip_id` (106), left-joined to `trip_time`, `curated/payment`, pickup/dropoff zones. Column set: trip attributes + time + core payment facts — full payment breakdown stays in `curated/payment/`. |
-| `rideshare_dev.processed.trip_driver_assignment` | One row per (`driver_id`, `trip_id`) from `curated/drivers_flat` plus trip attributes only — not the full enriched view. |
+| `rideshare_dev.processed.trip_enriched` | One row per `curated/trip` `trip_id` (106), left-joined to `trip_time`, `curated/payment`, pickup/dropoff zones. 16 columns: selected trip attributes (excludes operational timing columns per BRD §8) + time + core payment facts (payment method, base fare, tip, driver payout) + borough and zone name for pickup and drop-off. Full payment breakdown stays in `curated/payment/`. |
+| `rideshare_dev.processed.trip_driver_assignment` | One row per (`driver_id`, `trip_id`) from `curated/drivers_flat` plus agreed trip descriptors (service type, distance, duration, and pickup/drop-off location IDs) — 13 columns total. Time, payment, and zone-name attributes remain available through `trip_enriched`. |
 
 **Expected NULLs after left joins (intentional):**
 
