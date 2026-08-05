@@ -1,5 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC # 07 - Build Unified Curated Tables
+# MAGIC
+# MAGIC Join curated and landing sources into `trip_enriched` and
+# MAGIC `trip_driver_assignment`, the two managed tables Modules 8–9 read.
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC #####LOAD:`curated_trip, curated_payment, drivers, trip_time & zone_lookup`
 
 # COMMAND ----------
