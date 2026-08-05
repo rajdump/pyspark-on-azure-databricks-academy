@@ -236,4 +236,134 @@ rows — only acquires NULLs where the right side has no match.
 
 ---
 
+## Data Layers: Landing vs Bronze vs Silver vs Gold
+
+### Landing Zone ≠ Bronze (common confusion)
+
+| Aspect | Landing Zone | Bronze Layer |
+|--------|-------------|-------------|
+| What it is | Files on disk (CSV, JSON, Parquet, XML) | Managed Delta **table** |
+| Format | Native source format | Unified (Delta) |
+| Queryable via SQL? | No — need Spark reader | Yes — `SELECT * FROM bronze.trip` |
+| ACID guarantees? | No — just files | Yes — transactions, time travel |
+| Schema enforced? | No — discover at read time | Yes — defined at creation |
+| Data changed? | No | No (still raw, no cleaning) |
+| Lifespan | Often ephemeral | Permanent — system of record |
+
+> **Key insight:** Same raw data — difference is Bronze **registers** it as a
+> proper table with schema, versioning, and SQL access.
+
+### Where our data sits today
+
+```
+ Landing (raw files)              Silver (cleaned)              Gold (query-ready)
+ ———————————————————              ————————————————              ——————————————————
+ bad_trip_data.csv (108 rows)     curated/trip (106 rows)       trip_enriched (106)
+ bad_payment_data.csv (106 rows)  curated/payment (105 rows)    trip_driver_assignment (100)
+ trip_time.parquet (100 rows)     drivers_flat (100 rows)
+ zone_lookup.json (22 rows)       trip_time (100 rows)
+ drivers.xml (12 records)         zone_lookup (22 rows)
+```
+
+**This course skips formal Bronze** — Module 6 reads directly from landing and
+writes cleaned Silver. Module 12 will add the Bronze table layer.
+
+### Medallion layer test
+
+> "Can this data have bad rows, duplicates, or wrong types?"
+> * Yes → Bronze
+> * No, it's cleaned → Silver
+> * No, and it's joined/aggregated for a specific use case → Gold
+
+---
+
+## Why Medallion + Delta Later? (Course Progression)
+
+### Problems we CAN'T solve today (no Delta yet)
+
+| Pain Point | What happens today | Delta + Medallion solves it |
+|-----------|-------------------|----------------------------|
+| Overwrote curated/trip | Old version is gone forever | Time travel: `VERSION AS OF` |
+| Cleaning job failed halfway | Data is half-written, corrupt state | ACID: all-or-nothing transactions |
+| New records arrived | Must reprocess everything | `MERGE` / incremental upserts |
+| Landing files deleted | No raw backup exists | Bronze table: permanent raw record |
+| Schema changed upstream | Pipeline breaks silently | Schema enforcement + evolution |
+| "Who wrote what and when?" | No audit trail | Audit columns: `ingested_at`, `source_file` |
+
+### Module progression (building blocks)
+
+```
+  Module 5-6  →  Module 7 (HERE)  →  Module 8-9  →  Module 10  →  Module 12  →  Module 13
+  ——————————     ——————————————       ——————————     ——————————     ——————————     ——————————
+  Files:         Files → Unified:     Managed tbls:  Delta Lake:    Medallion:     Incremental:
+  read/write/    joins, left joins,   aggregation,   ACID, time     formalize      MERGE upserts,
+  clean          zone lookups,        window fns,    travel,        Bronze/Silver/ idempotency,
+                 gap visibility       pivot, KPIs    MERGE, schema  Gold w/ Delta  late-arriving
+                                                     evolution                     data
+```
+
+### What each module adds to the architecture
+
+| Module | You learn | Architecture contribution |
+|--------|----------|---------------------------|
+| 5 | Read/write files on Volumes | Establishes landing zone |
+| 6 | Clean, type, deduplicate | Builds Silver (curated) outputs |
+| **7** | **Join + unify** | **Builds Gold (consumption) tables** |
+| 8 | Aggregate + window | Produces KPI/metric tables from Gold |
+| 9 | SQL + DataFrame interop | Validates pipeline in both APIs |
+| 10 | Delta Lake | Adds ACID, versioning, MERGE to all layers |
+| 12 | Medallion architecture | Formalizes Bronze/Silver/Gold with Delta |
+| 13 | Incremental processing | Makes pipeline idempotent + resilient |
+
+> **You are here (Module 7):** Learning the "what and why" of unified tables.
+> Module 12 adds the "how to make it production-grade" with Delta.
+
+---
+
+## Column Selection Rationale
+
+### Why trip_enriched drops some columns from curated_trip
+
+| Column | Included? | Reason |
+|--------|-----------|--------|
+| trip_id | Yes | Primary key |
+| service_type | Yes | Core business dimension |
+| service_label | No | Redundant — derived from service_type |
+| pickup_location_id | Yes | FK retained (zone names added alongside) |
+| dropoff_location_id | Yes | FK retained (zone names added alongside) |
+| trip_distance_miles | Yes | Core metric |
+| trip_distance_km | No | Redundant — miles x 1.609 |
+| request_to_pickup_mins | No | Operational detail |
+| driver_arrival_to_pickup_mins | No | Operational detail |
+| request_to_driver_arrival_mins | No | Operational detail |
+| ride_duration_mins | Yes | Core metric |
+| diff_ride_duration_wait_mins | No | Derived (duration - wait) |
+| ride_duration_band | No | Derived bucket |
+
+### Metrics LOST by dropping those columns
+
+| Lost Metric | Column Needed | Use Case |
+|------------|--------------|----------|
+| Wait time by zone/hour | request_to_pickup_mins | "Bronx has worst wait times" |
+| Driver response ranking | driver_arrival_to_pickup_mins | "Amit Patel is fastest (2.0 min avg)" |
+| SLA violation detection | wait / ride ratio | "Trip 46: 200% wait-to-ride ratio" |
+| Journey time breakdown | All timing columns | "Delay is in dispatch, not pickup" |
+| Revenue by duration band | ride_duration_band | "Long trips = 60% of revenue" |
+
+### Design tradeoff
+
+```
+  LEAN TABLE (current)                    FAT TABLE (alternative)
+  ---------------------                   ------------------------
+  * Focused on its purpose                * Self-contained for ALL metrics
+  * Fewer columns = easier to read        * More columns = wider schema
+  * Module 8 may need re-joins            * Module 8 never needs re-joins
+  * Teaches: "pick what you need"         * Teaches: "include everything"
+```
+
+> **The data is NOT lost** — source files remain at curated/trip.
+> Module 8 can always join back by trip_id if it needs wait-time metrics.
+
+---
+
 *Notes created from BRD discussion — NB07 Build Unified Curated Tables*
