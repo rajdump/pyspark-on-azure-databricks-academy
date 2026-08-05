@@ -86,9 +86,8 @@ the latest complete output.
   service type, distance, duration, and pickup and drop-off location IDs. Time,
   payment, and zone-name attributes are outside this target's scope and remain
   available through `trip_enriched`.
-* `trip_driver_assignment` must be built from the driver-assignment source as the
-  driving record set, not from the trip source, so that trips without a driver
-  assignment do not appear as assignment records.
+* `trip_driver_assignment` must contain only available driver–trip assignments.
+  Trips without an assignment must not appear in the table.
 * `service_type` is carried through from `curated_trip` without transformation.
 
 ---
