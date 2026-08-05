@@ -97,8 +97,7 @@ dual-API (Module 9).
 
 **In scope:** grain / cardinality; join types and row-count correctness; key
 profiling; lookup joins and column naming; semi / anti joins; set ops;
-broadcast hint; high-level AQE awareness in the capstone; managed-table writes
-after validation.
+broadcast hint; high-level AQE awareness in the capstone; managed-table writes.
 
 **Out of scope:** aggregations / windows pedagogy (Module 8) — except Notebook
 **02**'s narrow pre-join dedup (`Window` + `row_number`); CTEs / parameterized
@@ -119,7 +118,7 @@ the managed tables.
 | 4 | Semi Joins and Anti Joins | `curated/trip` (106), `curated/payment` (105) | `left_semi` / `left_anti` (trip 106 on anti); reverse anti; bridge to **`subtract()`** in **06** |
 | 5 | Union and unionByName | Constructed frames (no landing read) | `union` vs `unionByName`; column-order trap; `allowMissingColumns`; when `distinct()` after union |
 | 6 | Intersect, subtract, and exceptAll | Constructed frames (no landing read) | Whole-row set ops; `intersect` vs `intersectAll`; `subtract` vs `exceptAll`; SQL `EXCEPT` naming |
-| 7 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Grain contracts + load counts / `trip_id` type check; stepwise left joins + NULL checks; reuse **03** lookup/broadcast; validate with **04**/**06** patterns; write both managed tables; AQE note only |
+| 7 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Grain contracts + load counts / `trip_id` type check; stepwise left joins; reuse **03** lookup/broadcast; write both managed tables; AQE note only |
 
 ## Minimum privileges required
 
