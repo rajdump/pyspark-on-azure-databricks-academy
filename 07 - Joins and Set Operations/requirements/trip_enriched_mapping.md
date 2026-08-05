@@ -32,4 +32,6 @@ No open mapping decisions remain.
 | Target table | `rideshare_dev.processed.trip_enriched` |
 | Business grain | One row per `trip_id` |
 | Status | Approved |
+| Reviewer | Rajasekhar |
+| Review date | 2026-08-05 |
 | Related BRD | `BRD.md` |
