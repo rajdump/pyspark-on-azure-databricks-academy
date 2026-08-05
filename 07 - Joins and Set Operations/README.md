@@ -6,14 +6,15 @@ Join and combine rideshare tables with predictable row counts and clear keys —
 no silent cardinality or key traps (M:M fanout, wrong outer join, ambiguous
 columns after a dimension lookup).
 
-Two habits run through every notebook and the capstone write:
+Two habits run through Notebooks **01–06**:
 
 1. Know the **grain** of each input before you join
-2. **Predict → run → verify** on every join (Notebooks **01–06** also
-   **profile** keys first; **07** uses the grain contracts already stated)
+2. **Predict → run → verify** on every join (also **profile** keys first)
 
-Notebooks **01–06** build skills only (**no write**). Notebook **07** writes
-two Unity Catalog managed Delta tables for Modules 8–9.
+Notebooks **01–06** build skills only (**no write**). Notebook **07** is a
+**write-only business notebook** — join the curated/landing sources into the
+two managed tables for Modules 8–9, with BRD acceptance checks and almost no
+teaching prose.
 
 Schemas, join keys, and the `zone_lookup` 21–22 design:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
@@ -40,8 +41,8 @@ By the end of this module, you'll be able to:
 - Use **`left_semi` / `left_anti`**, and contrast anti-join with **`subtract()`**
 - Combine frames with **`union` / `unionByName` / `intersect` /
   `intersectAll` / `subtract` / `exceptAll`**
-- Validate stepwise, then write **`trip_enriched`** and
-  **`trip_driver_assignment`**
+- Apply those patterns in Notebook **07** to write **`trip_enriched`** and
+  **`trip_driver_assignment`** (BRD acceptance checks before each write)
 
 ## Prerequisites
 
@@ -97,7 +98,8 @@ dual-API (Module 9).
 
 **In scope:** grain / cardinality; join types and row-count correctness; key
 profiling; lookup joins and column naming; semi / anti joins; set ops;
-broadcast hint; high-level AQE awareness in the capstone; managed-table writes.
+broadcast hint; managed-table writes in **07** with lean BRD checks and a
+short AQE note (no pedagogy re-teach in **07**).
 
 **Out of scope:** aggregations / windows pedagogy (Module 8) — except Notebook
 **02**'s narrow pre-join dedup (`Window` + `row_number`); CTEs / parameterized
@@ -106,9 +108,9 @@ SQL (Module 9); Delta ACID / `MERGE` / time travel (Module 10); UC grants
 
 ## Notebooks
 
-Seven notebooks, in order. Each includes a short hands-on task (final cell or
-integrated practice). Notebooks **01–06** are skill-building only; **07** writes
-the managed tables.
+Seven notebooks, in order. Notebooks **01–06** are skill-building only and each
+includes a short hands-on task. Notebook **07** is write-only (no practice
+cell): business joins, BRD checks, managed-table writes, short AQE note.
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
@@ -118,7 +120,7 @@ the managed tables.
 | 4 | Semi Joins and Anti Joins | `curated/trip` (106), `curated/payment` (105) | `left_semi` / `left_anti` (trip 106 on anti); reverse anti; bridge to **`subtract()`** in **06** |
 | 5 | Union and unionByName | Constructed frames (no landing read) | `union` vs `unionByName`; column-order trap; `allowMissingColumns`; when `distinct()` after union |
 | 6 | Intersect, subtract, and exceptAll | Constructed frames (no landing read) | Whole-row set ops; `intersect` vs `intersectAll`; `subtract` vs `exceptAll`; SQL `EXCEPT` naming |
-| 7 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Grain contracts + load counts / `trip_id` type check; stepwise left joins; reuse **03** lookup/broadcast; write both managed tables; AQE note only |
+| 7 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Write-only: load + grain/type check; build both tables per mapping docs; BRD asserts; `saveAsTable` overwrite; short AQE note — no practice |
 
 ## Minimum privileges required
 
