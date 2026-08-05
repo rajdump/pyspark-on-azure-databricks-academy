@@ -39,14 +39,14 @@ details with the agreed trip descriptors.
 
 ### BR-01 — Create both target tables
 
-The solution must produce `trip_enriched` and `trip_driver_assignment` as new,
-refreshable outputs built from the current curated and landing sources.
+The solution must produce `trip_enriched` and `trip_driver_assignment` from the
+approved curated and landing sources.
 
 ### BR-02 — Preserve curated trips
 
-`trip_enriched` must contain one row for every curated trip. Missing supporting
-records (time, payment, zone) must remain visible as `NULL` rather than removing the
-trip. For the fixed course dataset, the expected output is 106 rows.
+`trip_enriched` must contain one row for every curated trip. Missing time or
+payment records must remain visible as `NULL` rather than removing the trip. For
+the fixed course dataset, the expected output is 106 rows.
 
 ### BR-03 — Preserve available driver assignments
 
@@ -74,9 +74,10 @@ the latest complete output.
 
 ## 4. Business rules
 
-* `trip_enriched` carries source-level trip attributes and what the joins add.
-  Previously derived enrichment columns are not promoted into `trip_enriched`; they
-  remain available in their curated source.
+* `trip_enriched` carries selected trip attributes together with supporting time,
+  payment, and pickup/drop-off zone information. Previously derived enrichment
+  columns are not promoted into `trip_enriched`; they remain available in their
+  curated source.
 * `trip_enriched` carries core payment facts only (payment method, base fare, tip,
   driver payout). The full payment breakdown remains available at its source.
 * `trip_enriched` includes borough and zone name for both pickup and drop-off
