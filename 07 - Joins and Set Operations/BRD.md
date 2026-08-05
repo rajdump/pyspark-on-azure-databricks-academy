@@ -13,8 +13,8 @@
 
 Curated trip, payment, and driver data currently live in separate curated outputs
 (`curated_trip`, `curated_payment`, `drivers_flat`) and landing sources (`trip_time`,
-`zone_lookup`). There is no single, query-ready view that combines trip, time,
-payment, zone, and driver information at a consistent grain.
+`zone_lookup`). There are no query-ready tables that consolidate trip-level
+information and driver-assignment information at their appropriate business grains.
 
 ---
 
@@ -124,16 +124,17 @@ read surfaces.
 
 ### BR-09 — Deliver as managed Delta tables
 
-Both outputs must be delivered as Unity Catalog managed Delta tables, fully
-refreshed on each run so downstream modules always read current output.
+Both outputs must be delivered as Unity Catalog managed Delta tables. Each
+successful run must replace the previous contents so downstream modules read only
+the latest complete output.
 
 ---
 
 ## 8. Business rules
 
-* `trip_enriched` carries source-level trip attributes and what the joins add — not
-  enrichment values already computed upstream. Those enrichment values remain
-  available at their source so Module 8 can re-derive some of them as an exercise.
+* `trip_enriched` carries source-level trip attributes and what the joins add.
+  Previously derived enrichment columns are not promoted into `trip_enriched`; they
+  remain available in their curated source.
 * `trip_enriched` carries core payment facts only (payment method, base fare, tip,
   driver payout). The full payment breakdown remains available at its source.
 * `trip_enriched` includes borough and zone name for both pickup and drop-off
@@ -145,6 +146,9 @@ refreshed on each run so downstream modules always read current output.
 * `trip_driver_assignment` must be built from the driver-assignment source as the
   driving record set, not from the trip source, so that trips without a driver
   assignment do not appear as assignment records.
+* `service_type` values are carried through unchanged from `curated_trip` and are
+  uppercase (for example, STANDARD, PREMIUM, SHARED, UNKNOWN) in both output
+  tables; any downstream filtering or comparison must use uppercase values.
 * Final business scope: `trip_enriched` carries 17 columns; `trip_driver_assignment`
   carries 13 columns.
 
@@ -158,9 +162,9 @@ refreshed on each run so downstream modules always read current output.
   shows `NULL` for payment-related columns on that trip.
 * **Zone data:** every trip's pickup and drop-off location is covered by the
   geographic reference data, so no unresolved zone lookups are expected.
-* **Driver-assignment data:** unavailable for 6 trips in the course dataset. Those
-  trips simply do not appear in `trip_driver_assignment`, since its grain is the
-  assignment, not the trip.
+* **Driver assignments:** no assignment records exist for 6 trips in the course
+  dataset. These trips are excluded from `trip_driver_assignment` because its grain
+  is one row per available driver–trip assignment, not one row per trip.
 
 ---
 
