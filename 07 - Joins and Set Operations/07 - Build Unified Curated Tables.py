@@ -35,27 +35,6 @@ zone_lookup = (
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #####`Verify row counts and trip_id type consistency`
-
-# COMMAND ----------
-
-# Row counts — must match grain contracts
-print("curated_trip:", curated_trip.count())   
-print("curated_payment:", curated_payment.count())  
-print("drivers_flat:", drivers_flat.count())   
-print("trip_time:", trip_time.count())         
-print("zone_lookup:", zone_lookup.count())     
-
-# Type consistency — trip_id must be the same type across all sources.
-# A type mismatch would silently return 0 join matches (NB 01 lesson).
-for name, df in [("curated_trip", curated_trip), ("curated_payment", curated_payment),
-                 ("drivers_flat", drivers_flat), ("trip_time", trip_time)]:
-    tid_type = dict(df.dtypes)["trip_id"]
-    print(f"  {name}.trip_id → {tid_type}")
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ### trip_enriched implementation
 
 # COMMAND ----------
@@ -201,32 +180,6 @@ trip_driver_assignment.write.mode("overwrite").saveAsTable(
 # MAGIC You did not tune anything in this notebook, yet Spark silently optimized the
 # MAGIC joins at runtime. That’s **Adaptive Query Execution (AQE)** — enabled by
 # MAGIC default since Spark 3.2.
-# MAGIC
-# MAGIC AQE re-optimizes the physical plan *during* execution based on actual
-# MAGIC statistics collected after each shuffle stage:
-# MAGIC
-# MAGIC | AQE capability | What it does | Relevance here |
-# MAGIC |---|---|---|
-# MAGIC | **Auto-broadcast** | Converts a shuffle join to a broadcast join when the materialized side turns out to be small | `trip_time` (100 rows) and `curated_payment` (105 rows) are candidates even without `F.broadcast()` |
-# MAGIC | **Partition coalescing** | Merges small post-shuffle partitions into fewer, larger ones | Reduces task overhead on our 100–106 row tables |
-# MAGIC | **Skew join handling** | Splits a skewed partition into smaller sub-partitions | Not triggered here (data is uniform), but matters on production fact tables |
-# MAGIC
-# MAGIC **Why we still used `F.broadcast()` explicitly for `zone_lookup`:**
-# MAGIC
-# MAGIC - `F.broadcast()` is a *hint* — Spark honors it unconditionally, even before
-# MAGIC   AQE collects statistics. This guarantees no shuffle on the zone lookup
-# MAGIC   regardless of the planner’s cost model.
-# MAGIC - AQE’s auto-broadcast kicks in *after* a shuffle exchange has already been
-# MAGIC   planned and data has been partially materialized. The explicit hint avoids
-# MAGIC   that wasted work.
-# MAGIC
-# MAGIC **Key takeaway:** AQE is not a replacement for understanding join mechanics
-# MAGIC — it’s a safety net. It cannot fix a wrong join type (inner vs left), a
-# MAGIC missing key column, or an M:M fanout. Those problems still require the grain
-# MAGIC and cardinality thinking from Notebooks 01–02.
-# MAGIC
-# MAGIC Module 16 dives deeper into physical plans, AQE configuration, and
-# MAGIC join-strategy control.
 
 # COMMAND ----------
 
