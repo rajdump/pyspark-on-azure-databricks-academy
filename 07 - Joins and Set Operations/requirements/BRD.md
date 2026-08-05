@@ -151,9 +151,11 @@ the latest complete output.
 
 ## 8. Status
 
-* **Status:** Validated — data-verified against curated and landing sources. Ready for business sign-off.
+* **Status:** Signed off — data-verified against curated and landing sources.
 * **Module:** Module 07, Notebook 07 — Build Unified Curated Tables
 * **Basis:** verified runtime cross-check results against the current curated and landing sources (Aug 2026)
+* **Signed off by:** Rajasekhar
+* **Sign-off date:** 2026-08-05
 * **Open decisions:** Operational timing columns (`request_to_pickup_mins`,
   `driver_arrival_to_pickup_mins`) are intentionally excluded from both targets
   per the lean-table design. A full-column pipeline including all metrics will be
