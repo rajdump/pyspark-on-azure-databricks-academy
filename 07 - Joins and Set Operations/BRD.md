@@ -1,128 +1,70 @@
 # Business Requirements Document
 ## Build Unified Curated Tables
 
-## 1. Document status
-
-* **Status:** Draft
-* **Module:** Module 07, Notebook 07 — Build Unified Curated Tables
-* **Basis:** verified runtime cross-check results against the current curated and landing sources (Aug 2026)
-
----
-
-## 2. Background
+## 1. Background and objective
 
 Curated trip, payment, and driver data currently live in separate curated outputs
 (`curated_trip`, `curated_payment`, `drivers_flat`) and landing sources (`trip_time`,
 `zone_lookup`). There are no query-ready tables that consolidate trip-level
-information and driver-assignment information at their appropriate business grains.
+information and driver-assignment information at their appropriate business grains,
+so anyone analyzing trips or driver assignments has to work across multiple sources
+and reconcile them manually — with known gaps (missing time and payment records for
+some trips) not visible in any single place today.
+
+The objective is to produce two Unity Catalog managed Delta tables that combine the
+curated and landing sources into two clear, consistent grains — preserving every
+driving record and keeping known data gaps visible as `NULL` rather than hidden or
+dropped.
 
 ---
 
-## 3. Business problem
-
-Without a unified view, anyone analyzing trips or driver assignments has to work
-across multiple curated and landing sources and reconcile them manually. Known gaps
-in the supporting sources (missing time and payment records for some trips) are not
-visible in any single place today.
-
----
-
-## 4. Objective
-
-Produce two Unity Catalog managed Delta tables that combine the curated and landing
-sources into two clear, consistent grains — preserving every driving record and
-keeping known data gaps visible as `NULL` rather than hidden or dropped.
-
----
-
-## 5. Business deliverables
+## 2. Business deliverables
 
 ### `rideshare_dev.processed.trip_enriched`
 
-* One row per `trip_id`
-* Preserve every curated trip
-* Expected result: target count equals the driving `curated_trip` count
-* For the fixed course dataset: 106 rows
-* Missing time or payment data must remain visible as `NULL`
-* Geographic lookup details must resolve for all valid trip location IDs
+One row per `trip_id`, driven by `curated_trip`. Combines trip attributes with time,
+core payment facts, and pickup/drop-off zone details.
 
 ### `rideshare_dev.processed.trip_driver_assignment`
 
-* One row per (`driver_id`, `trip_id`)
-* Preserve every available driver assignment
-* Expected result: target count equals the driving `drivers_flat` count
-* For the fixed course dataset: 100 rows
-* All assignment trip IDs must resolve to an existing curated trip
+One row per (`driver_id`, `trip_id`), driven by `drivers_flat`. Combines driver
+details with the agreed trip descriptors.
+
+**Downstream consumers:** Module 8 (aggregations and window functions) and Module 9
+(Spark SQL) read both tables as their primary analytical source.
 
 ---
 
-## 6. Downstream consumers
-
-* **Module 8** (aggregations and window functions) — reads both tables as its
-  primary analytical source.
-* **Module 9** (Spark SQL) — reads both tables as its primary analytical source.
-
-Both tables are the primary read surfaces for these two modules.
-
----
-
-## 7. Business requirements
+## 3. Business requirements
 
 ### BR-01 — Create both target tables
 
 The solution must produce `trip_enriched` and `trip_driver_assignment` as new,
 refreshable outputs built from the current curated and landing sources.
 
-### BR-02 — Define target grain
+### BR-02 — Preserve curated trips
 
-`trip_enriched` must contain one row per `trip_id`. `trip_driver_assignment` must
-contain one row per (`driver_id`, `trip_id`).
+`trip_enriched` must contain one row for every curated trip. Missing supporting
+records (time, payment, zone) must remain visible as `NULL` rather than removing the
+trip. For the fixed course dataset, the expected output is 106 rows.
 
-### BR-03 — Preserve every curated trip
+### BR-03 — Preserve available driver assignments
 
-The solution must produce one `trip_enriched` row for every row in `curated_trip`.
-Missing records from supporting sources (time, payment, zone) must not remove the
-trip from the output.
+`trip_driver_assignment` must contain one row for every available driver assignment.
+Trips without a driver assignment must not appear in this table. For the fixed
+course dataset, the expected output is 100 rows.
 
-**Expected for the course dataset:** 106 rows.
+### BR-04 — Resolve zone details for every trip
 
-### BR-04 — Preserve every available driver assignment
+Every trip's pickup and drop-off location in `trip_enriched` must resolve to a
+borough and zone name; zero unresolved zones are expected for the course dataset.
 
-The solution must produce one `trip_driver_assignment` row for every row in
-`drivers_flat`. Trips without a driver assignment must not appear in this table.
-
-**Expected for the course dataset:** 100 rows.
-
-### BR-05 — Keep known gaps visible as NULL
-
-Where a trip has no matching time record or no matching payment record, the
-corresponding `trip_enriched` columns must be `NULL` rather than dropping the trip
-or substituting a default value.
-
-**Expected for the course dataset:** 6 trips with missing time information; 1 trip
-with missing payment information.
-
-### BR-06 — Resolve zone details for every trip
-
-Every trip's pickup and drop-off location must resolve to a borough and zone name in
-`trip_enriched`.
-
-**Expected for the course dataset:** zero trips with unresolved pickup or drop-off
-zone details.
-
-### BR-07 — Guarantee driver-assignment integrity
+### BR-05 — Guarantee driver-assignment integrity
 
 Every `trip_id` present in `trip_driver_assignment` must correspond to an existing
-row in `curated_trip`. No assignment may reference a trip that does not exist.
+row in `curated_trip`; zero orphaned assignments are expected for the course dataset.
 
-**Expected for the course dataset:** zero assignments referencing a missing trip.
-
-### BR-08 — Make outputs available to downstream modules
-
-Both tables must be available for Module 8 and Module 9 to use as their primary
-read surfaces.
-
-### BR-09 — Deliver as managed Delta tables
+### BR-06 — Deliver as managed Delta tables
 
 Both outputs must be delivered as Unity Catalog managed Delta tables. Each
 successful run must replace the previous contents so downstream modules read only
@@ -130,7 +72,7 @@ the latest complete output.
 
 ---
 
-## 8. Business rules
+## 4. Business rules
 
 * `trip_enriched` carries source-level trip attributes and what the joins add.
   Previously derived enrichment columns are not promoted into `trip_enriched`; they
@@ -139,22 +81,18 @@ the latest complete output.
   driver payout). The full payment breakdown remains available at its source.
 * `trip_enriched` includes borough and zone name for both pickup and drop-off
   locations.
-* `trip_driver_assignment` is scoped to the assignment: it carries driver details
-  plus a small set of trip descriptors (service type, distance, duration, pickup and
-  drop-off location IDs). Time, payment, and zone-name attributes are not included,
-  as they do not belong to the assignment grain.
+* `trip_driver_assignment` contains driver details and the agreed trip descriptors:
+  service type, distance, duration, and pickup and drop-off location IDs. Time,
+  payment, and zone-name attributes are outside this target's scope and remain
+  available through `trip_enriched`.
 * `trip_driver_assignment` must be built from the driver-assignment source as the
   driving record set, not from the trip source, so that trips without a driver
   assignment do not appear as assignment records.
-* `service_type` values are carried through unchanged from `curated_trip` and are
-  uppercase (for example, STANDARD, PREMIUM, SHARED, UNKNOWN) in both output
-  tables; any downstream filtering or comparison must use uppercase values.
-* Final business scope: `trip_enriched` carries 17 columns; `trip_driver_assignment`
-  carries 13 columns.
+* `service_type` is carried through from `curated_trip` without transformation.
 
 ---
 
-## 9. Data availability and known gaps
+## 5. Known data gaps
 
 * **Time data:** unavailable for 6 trips in the course dataset. `trip_enriched`
   shows `NULL` for time-related columns on those trips.
@@ -168,40 +106,28 @@ the latest complete output.
 
 ---
 
-## 10. Acceptance criteria
+## 6. Acceptance criteria
 
 ### `trip_enriched`
 
-* Has one row per `trip_id`.
-* Row count equals the `curated_trip` count; expected 106.
-* Six trips have missing time information.
-* One trip has missing payment information.
-* No trip has unresolved pickup or drop-off zone details.
+* Meets BR-02 (grain, row count, and NULL visibility for missing time or payment
+  data).
+* Meets BR-04 (no unresolved pickup or drop-off zone details).
 
 ### `trip_driver_assignment`
 
-* Has one row per (`driver_id`, `trip_id`).
-* Row count equals the `drivers_flat` count; expected 100.
-* No driver assignment references a missing curated trip.
+* Meets BR-03 (grain and row count).
+* Meets BR-05 (no assignment references a missing curated trip).
 
 ### Both outputs
 
-* Available as Unity Catalog managed Delta tables.
+* Meet BR-06 (delivered as managed Delta tables).
 
 ---
 
-## 11. In scope
+## 7. Scope and dependencies
 
-* Building `trip_enriched` by combining curated trip data with time, payment, and
-  zone information.
-* Building `trip_driver_assignment` by combining driver-assignment data with a
-  small set of trip descriptors.
-* Delivering both as Unity Catalog managed Delta tables for consumption by Module 8
-  and Module 9.
-
----
-
-## 12. Out of scope
+**Out of scope:**
 
 * Enrichment values already computed upstream of the curated trip and payment data
   (for example, derived duration categories, dual-unit distance, and derived payment
@@ -212,14 +138,11 @@ the latest complete output.
 * Aggregation, window-function, and SQL-based analysis of the output tables — that
   work belongs to Module 8 and Module 9, not to this deliverable.
 
----
-
-## 13. Assumptions and dependencies
+**Assumptions and dependencies:**
 
 * Assumes the curated sources (`curated_trip`, `curated_payment`, `drivers_flat`)
   and landing sources (`trip_time`, `zone_lookup`) are already produced and stable
-  for the course dataset (106 trips, 105 payment records, 100 driver assignments,
-  100 time records, 22 zones).
+  for the fixed course dataset described in the Business requirements section.
 * Depends on `curated_trip` as the single source of truth for trip identity and
   grain.
 * Depends on the geographic reference data continuing to cover every pickup and
@@ -227,13 +150,10 @@ the latest complete output.
 
 ---
 
-## 14. Open decisions
+## 8. Status
 
-None identified. All column-selection and grain decisions currently in scope have
-been agreed (see Section 8, Business rules).
-
----
-
-## 15. Approval status
-
-**Draft — not yet approved.** Pending business sign-off.
+* **Status:** Draft — not yet approved. Pending business sign-off.
+* **Module:** Module 07, Notebook 07 — Build Unified Curated Tables
+* **Basis:** verified runtime cross-check results against the current curated and landing sources (Aug 2026)
+* **Open decisions:** None identified. All column-selection and grain decisions
+  currently in scope have been agreed (see Business rules).
