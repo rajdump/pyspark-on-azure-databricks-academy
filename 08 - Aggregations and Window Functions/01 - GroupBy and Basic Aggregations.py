@@ -261,9 +261,8 @@ service_summary.orderBy(F.col("trip_count").desc()).show()
 # MAGIC **Gotcha — say what you mean.** `F.count("*")`, `F.count(F.lit(1))`, and
 # MAGIC `F.count(F.col("*"))` all count rows. They are equivalent, but a reader
 # MAGIC cannot tell whether you *meant* "all rows" or fat-fingered a column name.
-# MAGIC Prefer `F.count("*")` with an alias that states the intent. (Module 7
-# MAGIC used `F.count(F.lit(1))` for the same purpose — either form is fine, but
-# MAGIC pick one and stay consistent within a notebook.)
+# MAGIC Prefer `F.count("*")` with an alias that states the intent. This module
+# MAGIC and Module 7 now use the same form for consistency.
 # MAGIC
 # MAGIC **Cost warning.** `F.countDistinct` must deduplicate across the whole
 # MAGIC cluster, which is far more expensive than counting. On 106 rows you will
