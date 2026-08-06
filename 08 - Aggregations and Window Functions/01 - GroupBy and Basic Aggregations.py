@@ -16,26 +16,22 @@
 # MAGIC - **Spark calculates:** `2.955673` ($307.39 total ÷ **104** known tips)
 # MAGIC - **Business asks for:** `2.899906` ($307.39 total ÷ **106** total trips)
 # MAGIC
-# MAGIC Because 2 trips have `NULL` tips, `F.avg` skips them. Spark gives no error,
-# MAGIC but calculated *"average tip on tipped rides"* instead of *"average tip per trip"*.
-# MAGIC A wrong aggregate still returns a plausible number.
+# MAGIC Since two trips have `NULL` tips, `F.avg` ignores them. Spark does not produce an error, but it calculates the "average tip on tipped rides" instead of the "average tip per trip." A misleading aggregate can still return a convincing number.
 # MAGIC
 # MAGIC ---
 # MAGIC
-# MAGIC ### Trap 2: `groupBy` collapses your data grain
-# MAGIC Module 7 taught you to preserve data grain during joins (1 row per trip).
-# MAGIC A `groupBy` deliberately **collapses** that grain:
+# MAGIC ### Trap 2: `groupBy` Reduces Your Data Grain
 # MAGIC
-# MAGIC - **Input grain:** 106 rows (1 row per trip)
-# MAGIC - **Output grain:** 5 rows (1 row per `service_type`)
+# MAGIC In Module 7, you learned the importance of preserving data grain during joins, ensuring that there is one row per trip. However, using `groupBy` intentionally **reduces** that grain:
 # MAGIC
-# MAGIC > **Why 5 rows?** `service_type` has 5 distinct values (`STANDARD`, `SHARED`,
-# MAGIC > `PREMIUM`, `XL`, `UNKNOWN`). Module 6 normalized blanks into `"UNKNOWN"`.
-# MAGIC > *(By contrast, grouping by `payment_method` gives 6 rows because Spark keeps
-# MAGIC > `NULL` as a 6th group).*
+# MAGIC For Example: 
+# MAGIC When you write ' groupBy("service_type"), the `service_type` field contains 5 distinct values: `STANDARD`, `SHARED`, `PREMIUM`, `XL`, and `UNKNOWN`. In Module 6, we normalized blanks into the value `"UNKNOWN"`.
+# MAGIC "I expect 5 rows — because service_type has 5 distinct values."
 # MAGIC
-# MAGIC **Core rule:** Always name the output grain and predict the row count *before*
-# MAGIC running the aggregate.
+# MAGIC - **Input grain:** 106 rows (1 row for each trip)
+# MAGIC - **Output grain:** 5 rows (1 row for each `service_type`)
+# MAGIC
+# MAGIC **Core rule:** Always identify the output grain and predict the row count *before* executing the aggregate operation.
 # MAGIC
 # MAGIC ---
 # MAGIC
