@@ -126,9 +126,10 @@ trip_enriched.select(
 # MAGIC %md
 # MAGIC ## 1. Output grain — one row per group
 # MAGIC
-# MAGIC **Output grain** refers to what each row of your *result* represents. 
+# MAGIC **Output grain** refers to what each row of your *result* represents.
 # MAGIC
-# MAGIC Module 7 processed *input* grain with one row per `trip_id`. A `groupBy` operation replaces it with a new structure:
+# MAGIC Module 7 processed *input* grain with one row per `trip_id`. A `groupBy`
+# MAGIC operation replaces it with a new structure:
 # MAGIC
 # MAGIC | | Grain | Rows |
 # MAGIC |---|---|---|
@@ -142,13 +143,19 @@ trip_enriched.select(
 # MAGIC output rows == countDistinct(group key)
 # MAGIC ```
 # MAGIC
-# MAGIC The prediction step is straightforward and only requires a single inexpensive query. If the actual result returns a different row count, then your mental model of the data is incorrect, and any calculations derived from it will also be flawed.
+# MAGIC The prediction step is straightforward and only requires a single inexpensive
+# MAGIC query. If the actual result returns a different row count, then your mental
+# MAGIC model of the data is incorrect, and any calculations derived from it will
+# MAGIC also be flawed.
 # MAGIC
 # MAGIC Notebook `02` covers this caveat: `countDistinct` **excludes NULLs**, while
 # MAGIC `groupBy` **includes them as a separate group**. `service_type` has no NULLs,
 # MAGIC so both methods agree here.
 # MAGIC
-# MAGIC **Performance Note:** The `groupBy` operation is considered a **wide** transformation, which involves an `Exchange` (shuffle) as outlined in Module 4. This means that rows with the same key need to be processed by the same executor. Tuning the shuffle process will be covered in Module 16.
+# MAGIC **Performance Note:** The `groupBy` operation is considered a **wide**
+# MAGIC transformation, which involves an `Exchange` (shuffle) as outlined in
+# MAGIC Module 4. This means that rows with the same key need to be processed by the
+# MAGIC same executor. Tuning the shuffle process will be covered in Module 16.
 
 # COMMAND ----------
 
@@ -174,30 +181,26 @@ trip_enriched.groupBy("service_type").count().orderBy(F.col("count").desc()).sho
 
 # COMMAND ----------
 
-try:
-    trip_enriched.groupBy("service_type").agg(
-        F.count("*").alias("trip_count"),
-        F.col("trip_id"),  # I want to see the actual trip IDs
-    ).show()
-except Exception as e:
-    print("Error:", str(e).split("\n")[0])
-    print()
-    print("groupBy collapsed 2 trips into 1 row — there's no single trip_id to show.")
-    print("To keep individual rows AND add group-level info, use a window function (Notebook 05).")
-
-# COMMAND ----------
-
 # DBTITLE 1,Section 2 - groupBy and agg
 # MAGIC %md
 # MAGIC ## 2. `groupBy().agg()` — multiple aggregates in one pass
 # MAGIC Two rules:
 # MAGIC
 # MAGIC
-# MAGIC **1. Multiple Aggregates, One Scan:** You can include as many aggregate expressions as needed inside the `.agg(...)` function. Spark processes all of these expressions in a single pass, eliminating the need for separate queries for operations like count, sum, and average.
+# MAGIC **1. Multiple Aggregates, One Scan:** You can include as many aggregate
+# MAGIC expressions as needed inside the `.agg(...)` function. Spark processes all
+# MAGIC of these expressions in a single pass, eliminating the need for separate
+# MAGIC queries for operations like count, sum, and average.
 # MAGIC
-# MAGIC **2. Always Use Aliases:** If you don't use `.alias(...)`, Spark will automatically generate column names such as `count(1)`, `sum(tip_amount)`, and `avg(CAST(...))`. These generated names can be difficult to read and cumbersome to use later on, often requiring backtick escaping like ``F.col("`sum(tip_amount)`")``. To avoid confusion, always assign each aggregate a clear, descriptive name.
+# MAGIC **2. Always Use Aliases:** If you don't use `.alias(...)`, Spark will
+# MAGIC automatically generate column names such as `count(1)`, `sum(tip_amount)`,
+# MAGIC and `avg(CAST(...))`. These generated names can be difficult to read and
+# MAGIC cumbersome to use later on, often requiring backtick escaping like
+# MAGIC ``F.col("`sum(tip_amount)`")``. To avoid confusion, always assign each
+# MAGIC aggregate a clear, descriptive name.
 # MAGIC
-# MAGIC The first cell below illustrates the default names that can be hard to interpret, while the second cell shows a more readable version with aliases.
+# MAGIC The first cell below illustrates the default names that can be hard to
+# MAGIC interpret, while the second cell shows a more readable version with aliases.
 
 # COMMAND ----------
 
@@ -430,15 +433,10 @@ trip_enriched.select(
 # MAGIC %md
 # MAGIC ## Exercise — a per-`payment_method` summary
 # MAGIC
-# MAGIC Sections 1–4 grouped mostly on `service_type`. Now apply the same four
-# MAGIC habits on **`payment_method`** — a column that has a NULL group.
+# MAGIC Sections 1–4 grouped mostly on `service_type`. Apply the same habits on
+# MAGIC **`payment_method`**.
 # MAGIC
-# MAGIC **1. Predict.** Set `predicted_method_groups` to the number of output rows
-# MAGIC you expect. Hint: `payment_method` has 5 distinct string values *plus*
-# MAGIC 1 NULL group (trip 106 has no payment row). `countDistinct` reports 5
-# MAGIC but `groupBy` will produce **6** — that is the distinction from Section 4.
-# MAGIC
-# MAGIC **2. Aggregate.** One row per `payment_method`, with these aliased columns:
+# MAGIC **1. Aggregate.** One row per `payment_method`, with these aliased columns:
 # MAGIC
 # MAGIC | Alias | Aggregate |
 # MAGIC |---|---|
@@ -448,8 +446,14 @@ trip_enriched.select(
 # MAGIC | `avg_fare_skips_null` | `F.avg("base_fare_amount")`, rounded to 2 |
 # MAGIC | `avg_fare_per_trip` | `F.sum / F.count("*")`, rounded to 2 |
 # MAGIC
-# MAGIC **3. Explain.** For the NULL group, why are `total_base_fare` and
-# MAGIC `avg_fare_skips_null` both NULL, while `trip_count` is 1?
+# MAGIC **2. Check the row count.** After you run, set `predicted_method_groups` to
+# MAGIC the number of rows you got and confirm it matches `method_summary.count()`.
+# MAGIC (You may see more groups than `countDistinct("payment_method")` — Notebook
+# MAGIC `02` explains why.)
+# MAGIC
+# MAGIC **3. Explain (Section 4).** For the row where `payment_method` is NULL, why
+# MAGIC are `total_base_fare` and `avg_fare_skips_null` both NULL, while
+# MAGIC `trip_count` is 1?
 # MAGIC
 # MAGIC Expected results:
 # MAGIC
@@ -471,19 +475,19 @@ trip_enriched.select(
 # MAGIC | unknown | null | null |
 # MAGIC | null | null | null |
 # MAGIC
-# MAGIC Notice `unknown` and `null` are two different rows — different data
-# MAGIC problems that a careless summary would merge. Notebook `02` explains why.
+# MAGIC Notice `unknown` and `null` both appear — Notebook `02` explains that
+# MAGIC difference.
 
 # COMMAND ----------
 
-# 1. YOUR PREDICTION — replace None with the expected row count
-predicted_method_groups = None
-
-# 2. YOUR CODE — build the per-payment_method summary described above
+# 1. YOUR CODE — build the per-payment_method summary described above
 method_summary = trip_enriched.groupBy("payment_method").agg(
     F.count("*").alias("trip_count"),
     # TODO: trips_with_fare, total_base_fare, avg_fare_skips_null, avg_fare_per_trip
 )
+
+# 2. YOUR CHECK — set this to the row count you observed
+predicted_method_groups = None
 
 actual = method_summary.count()
 match = "✓" if predicted_method_groups == actual else "✗"
