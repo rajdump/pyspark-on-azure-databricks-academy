@@ -166,7 +166,7 @@ left_mm.join(right_mm, "trip_id", "inner").show()
 # join — profile both sides on the key first.
 for name, frame in [("left_mm", left_mm), ("right_mm", right_mm)]:
     key_stats = frame.select(
-        F.count(F.lit(1)).alias("rows"),
+        F.count("*").alias("rows"),
         F.countDistinct("trip_id").alias("distinct"),
     ).collect()[0]
     flag = "duplicates!" if key_stats["rows"] != key_stats["distinct"] else "unique"
@@ -200,7 +200,7 @@ for name, frame in [("left_mm", left_mm), ("right_mm", right_mm)]:
 # DBTITLE 1,Profile trip, trip_time, and payment on trip_id
 # Profile trip
 trip_stats = trip.select(
-    F.count(F.lit(1)).alias("rows"),
+    F.count("*").alias("rows"),
     F.countDistinct("trip_id").alias("distinct"),
     F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
 ).collect()[0]
@@ -208,7 +208,7 @@ print(f"trip       rows={trip_stats['rows']}, distinct={trip_stats['distinct']},
 
 # Profile trip_time
 tt_stats = trip_time.select(
-    F.count(F.lit(1)).alias("rows"),
+    F.count("*").alias("rows"),
     F.countDistinct("trip_id").alias("distinct"),
     F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
 ).collect()[0]
@@ -216,7 +216,7 @@ print(f"trip_time  rows={tt_stats['rows']}, distinct={tt_stats['distinct']}, nul
 
 # Profile payment
 pay_stats = payment.select(
-    F.count(F.lit(1)).alias("rows"),
+    F.count("*").alias("rows"),
     F.countDistinct("trip_id").alias("distinct"),
     F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
 ).collect()[0]
@@ -289,7 +289,7 @@ resolved.orderBy("trip_id").show(truncate=False)
 
 # Verify grain after resolution
 stats = resolved.select(
-    F.count(F.lit(1)).alias("rows"),
+    F.count("*").alias("rows"),
     F.countDistinct("trip_id").alias("distinct"),
 ).collect()[0]
 print(f"Resolved: rows={stats['rows']}, distinct={stats['distinct']} \u2192 grain is clean")
@@ -502,7 +502,7 @@ print("driver_payouts:")
 driver_payouts.show()
 
 payout_stats = driver_payouts.select(
-    F.count(F.lit(1)).alias("rows"),
+    F.count("*").alias("rows"),
     F.countDistinct("trip_id").alias("distinct"),
     F.sum(F.when(F.col("trip_id").isNull(), 1).otherwise(0)).alias("nulls"),
 ).collect()[0]

@@ -17,8 +17,11 @@ Steps:
    first.
 3. Read the module's `README.md` — **Notebook navigation** entry for that
    notebook is the topic source of truth.
-4. Read one completed sibling notebook in the same module for voice and
-   cell structure (e.g. the prior numbered notebook).
+4. Read one completed sibling notebook for voice and cell structure
+   (e.g. the prior numbered notebook in the same module). If the target is
+   Notebook `01` and no prior sibling exists yet, read the **last numbered
+   notebook of the previous module** instead — this catches idiom drift
+   across modules (e.g. `F.count` form, aliasing style, comment patterns).
 5. Replace skeleton/`TODO` content with a **full lesson**:
    - Runnable PySpark for every README bullet (including gotchas and API
      comparisons — not prose-only).

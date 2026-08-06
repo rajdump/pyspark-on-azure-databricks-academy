@@ -158,7 +158,7 @@ print("trip_time rows:", trip_time.count())
 # COMMAND ----------
 
 trip_grain = trip.agg(
-    F.count(F.lit(1)).alias("row_count"),
+    F.count("*").alias("row_count"),
     F.countDistinct("trip_id").alias("distinct_trip_id"),
 ).collect()[0]
 
@@ -218,7 +218,7 @@ print(
 
 for name, df in [("trip", trip), ("trip_time", trip_time)]:
     stats = df.agg(
-        F.count(F.lit(1)).alias("rows"),
+        F.count("*").alias("rows"),
         F.countDistinct("trip_id").alias("distinct_trip_id"),
     ).collect()[0]
     print(f"{name}: rows={stats.rows}, distinct trip_id={stats.distinct_trip_id}")

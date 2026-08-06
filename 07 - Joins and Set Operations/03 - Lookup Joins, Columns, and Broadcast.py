@@ -86,7 +86,7 @@ print("zone_lookup rows:", zone_lookup.count())
 
 # DBTITLE 1,Setup - profile zone_lookup key
 zone_stats = zone_lookup.select(
-    F.count(F.lit(1)).alias("rows"),
+    F.count("*").alias("rows"),
     F.countDistinct("location_id").alias("distinct"),
     F.sum(F.when(F.col("location_id").isNull(), 1).otherwise(0)).alias("nulls"),
 ).collect()[0]
