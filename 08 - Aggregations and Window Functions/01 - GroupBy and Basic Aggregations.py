@@ -92,8 +92,8 @@ trip_enriched.printSchema()
 # MAGIC %md
 # MAGIC ### The NULLs you inherited — read this before Section 3
 # MAGIC
-# MAGIC Every number in this notebook depends on knowing where the NULLs are. They
-# MAGIC come from two places, both deliberate:
+# MAGIC In `trip_enriched`, these columns are NULL on these `trip_id` values.
+# MAGIC Both causes are deliberate (Module 7 left joins + Module 6 value rejection):
 # MAGIC
 # MAGIC | Column(s) | NULL on `trip_id` | Rows | Cause |
 # MAGIC |---|---|---|---|
@@ -103,11 +103,7 @@ trip_enriched.printSchema()
 # MAGIC | `tip_amount` | 103, 106 | 2 | Left join; Module 6 rejected trip 103's `not_a_number` tip |
 # MAGIC | `trip_distance_miles` | 103, 105, 106 | 3 | Module 6: `-1.00`, `not_a_number`, blank |
 # MAGIC
-# MAGIC `ride_duration_mins`, `service_type`, and the four zone columns have **no**
-# MAGIC NULLs. So there is no single "non-NULL row count" for this table — **each
-# MAGIC column has its own**, which is exactly why Section 3 exists.
-# MAGIC
-# MAGIC The next cell proves the table above rather than asking you to trust it.
+# MAGIC The next cell proves the counts — not the individual `trip_id`s.
 
 # COMMAND ----------
 
