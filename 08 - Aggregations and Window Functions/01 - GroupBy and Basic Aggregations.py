@@ -242,7 +242,8 @@ try:
 
     service_summary.show()
 except Exception as e:
-    print(f"Error: {str(e)[:150]}")
+    print("groupBy collapsed multiple rows into one row per group — there is no single trip_id to display.")
+    print("To keep individual rows with group-level summaries, use a window function (Notebook 05).")
 
 
 # COMMAND ----------
@@ -251,32 +252,21 @@ except Exception as e:
 # MAGIC %md
 # MAGIC ## 3. Counting correctly — three counts, three answers
 # MAGIC
-# MAGIC "How many?" is the most common question asked of a dataset and the easiest
-# MAGIC one to answer wrongly. Three expressions look interchangeable and are not:
-# MAGIC
 # MAGIC | Expression | Question it answers | On `trip_date` |
 # MAGIC |---|---|---|
 # MAGIC | `F.count("*")` | How many **rows**? | **106** |
 # MAGIC | `F.count("trip_date")` | How many rows **have a value**? | **100** |
 # MAGIC | `F.countDistinct("trip_date")` | How many **different values**? | **14** |
 # MAGIC
-# MAGIC Read those as three different business questions: *how many trips did we
-# MAGIC run*, *how many trips do we know the date of*, and *how many days does this
-# MAGIC data cover*. All three are reasonable; only one is what you were asked.
+# MAGIC These are three different business questions:
 # MAGIC
-# MAGIC - `106 - 100 = 6` **is** the six undated trips (101–106) from the setup table.
-# MAGIC - **14** is small because 100 trips are spread over just 14 calendar dates.
+# MAGIC - **How many trips did we operate?** — count all trips.
+# MAGIC - **How many trips have a valid trip date?** — count only trips where the date is available.
+# MAGIC - **How many days does the dataset cover?** — count the distinct trip dates.
 # MAGIC
-# MAGIC **Gotcha — say what you mean.** `F.count("*")`, `F.count(F.lit(1))`, and
-# MAGIC `F.count(F.col("*"))` all count rows. They are equivalent, but a reader
-# MAGIC cannot tell whether you *meant* "all rows" or fat-fingered a column name.
-# MAGIC Prefer `F.count("*")` with an alias that states the intent. This module
-# MAGIC and Module 7 now use the same form for consistency.
+# MAGIC All three questions are valid, but the appropriate question depends on the **business metric you are trying to measure**
 # MAGIC
-# MAGIC **Cost warning.** `F.countDistinct` must deduplicate across the whole
-# MAGIC cluster, which is far more expensive than counting. On 106 rows you will
-# MAGIC never notice; on a billion you will. Notebook `03` covers
-# MAGIC `F.approx_count_distinct` for when an estimate is good enough.
+# MAGIC **Cost note:** `countDistinct` is expensive at scale — Notebook `03` covers a faster approximate alternative.
 
 # COMMAND ----------
 
@@ -284,34 +274,14 @@ trip_enriched.select(
     F.count("*").alias("all_trips"),
     F.count("trip_date").alias("trips_with_a_date"),
     F.countDistinct("trip_date").alias("distinct_dates"),
-    # Same 106 as all_trips — proof that these row-counting forms are equivalent
-    F.count(F.lit(1)).alias("count_lit_1"),
-    F.count(F.col("*")).alias("count_col_star"),
 ).show()
+
+# Expected: all_trips=106, trips_with_a_date=100 (6 NULLs), distinct_dates=14
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Now the same three counts **per group**, which is where this gets practical.
-# MAGIC The six undated trips do not sit in one tidy place — they scatter across
-# MAGIC three service types:
-# MAGIC
-# MAGIC | `service_type` | `trip_count` | `dated_trip_count` | Gap | `distinct_dates` |
-# MAGIC |---|---|---|---|---|
-# MAGIC | STANDARD | 55 | 52 | 3 | 14 |
-# MAGIC | SHARED | 21 | 21 | 0 | 13 |
-# MAGIC | PREMIUM | 16 | 15 | 1 | 9 |
-# MAGIC | XL | 12 | 12 | 0 | 8 |
-# MAGIC | UNKNOWN | 2 | **0** | 2 | **0** |
-# MAGIC
-# MAGIC This is how a NULL problem hides in a summary. `SHARED` and `XL` are
-# MAGIC perfectly clean, `STANDARD` is short by 3, and every row still *looks*
-# MAGIC plausible. Only by putting `count("*")` and `count(col)` side by side does
-# MAGIC the gap become visible at all — a report showing just one of them would
-# MAGIC never reveal it.
-# MAGIC
-# MAGIC `UNKNOWN` is the extreme case: 2 trips, **0** of them dated. Both a count of
-# MAGIC non-NULL values and a distinct count of an all-NULL group are `0`.
+# MAGIC Now apply the same three counts **per service type** — this is where the difference becomes visible.
 
 # COMMAND ----------
 
@@ -320,6 +290,21 @@ trip_enriched.groupBy("service_type").agg(
     F.count("trip_date").alias("dated_trip_count"),
     F.countDistinct("trip_date").alias("distinct_dates"),
 ).orderBy(F.col("trip_count").desc()).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC | `service_type` | `trip_count` | `dated_trip_count` | Gap | `distinct_dates` |
+# MAGIC |---|---|---|---|---|
+# MAGIC | STANDARD | 55 | 52 | 3 | 14 |
+# MAGIC | SHARED | 21 | 21 | 0 | 13 |
+# MAGIC | PREMIUM | 16 | 15 | 1 | 9 |
+# MAGIC | XL | 12 | 12 | 0 | 8 |
+# MAGIC | UNKNOWN | 2 | **0** | 2 | **0** |
+# MAGIC
+# MAGIC Observe the difference between `trip_count` and `dated_trip_count` — this is where the NULL values are hidden. The STANDARD category is short by 3 trips, yet every row still appears convincing. By displaying both counts side by side, the gap becomes noticeable.
+# MAGIC
+# MAGIC In the case of UNKNOWN, the situation is even more noticeable: there are 2 trips, but **0** are dated — indicating that this entire group lacks any date information.
 
 # COMMAND ----------
 
