@@ -4,52 +4,59 @@
 # MAGIC
 # MAGIC # 01 - GroupBy and Basic Aggregations
 # MAGIC
-# MAGIC ## The problem: an aggregate answers a question you didn't ask
+# MAGIC ## Two traps every data engineer faces in aggregations
 # MAGIC
-# MAGIC Your manager asks for the **average tip per trip**. You write one line:
+# MAGIC ### Trap 1: Spark skips NULLs silently
+# MAGIC Your stakeholder asks for the **average tip per trip** across 106 trips:
 # MAGIC
 # MAGIC ```python
 # MAGIC trip_enriched.agg(F.avg("tip_amount")).show()
 # MAGIC ```
 # MAGIC
-# MAGIC It prints **2.955673**. The table has **106** trips and the tips total
-# MAGIC **307.39**, so anyone checking your work by hand gets
-# MAGIC `307.39 / 106` = **2.8999**. Two different "average tips", neither flagged
-# MAGIC by an error.
+# MAGIC - **Spark calculates:** `2.955673` ($307.39 total ÷ **104** known tips)
+# MAGIC - **Business asks for:** `2.899906` ($307.39 total ÷ **106** total trips)
 # MAGIC
-# MAGIC Spark divided by **104**, not 106, because two trips have a NULL
-# MAGIC `tip_amount` and `F.avg` **skips** them. Spark answered "average of the tips
-# MAGIC we know about" while you asked "average tip per trip". Both are defensible
-# MAGIC numbers — but only one is the one you were asked for, and nothing in the
-# MAGIC code says which you meant.
+# MAGIC Because 2 trips have `NULL` tips, `F.avg` skips them. Spark gives no error,
+# MAGIC but calculated *"average tip on tipped rides"* instead of *"average tip per trip"*.
+# MAGIC A wrong aggregate still returns a plausible number.
 # MAGIC
-# MAGIC That is the theme of this notebook. Aggregating is easy to write and easy to
-# MAGIC get subtly wrong, because a wrong aggregate is still a number.
+# MAGIC ---
 # MAGIC
-# MAGIC **The second idea:** `groupBy` **changes the grain**. Module 7 taught you to
-# MAGIC protect the grain through a join; this is the first time you deliberately
-# MAGIC collapse it. One row per trip goes in, one row per *group* comes out — so
-# MAGIC say what a group is before you write the aggregate.
+# MAGIC ### Trap 2: `groupBy` collapses your data grain
+# MAGIC Module 7 taught you to preserve data grain during joins (1 row per trip).
+# MAGIC A `groupBy` deliberately **collapses** that grain:
+# MAGIC
+# MAGIC - **Input grain:** 106 rows (1 row per trip)
+# MAGIC - **Output grain:** 5 rows (1 row per `service_type`)
+# MAGIC
+# MAGIC > **Why 5 rows?** `service_type` has 5 distinct values (`STANDARD`, `SHARED`,
+# MAGIC > `PREMIUM`, `XL`, `UNKNOWN`). Module 6 normalized blanks into `"UNKNOWN"`.
+# MAGIC > *(By contrast, grouping by `payment_method` gives 6 rows because Spark keeps
+# MAGIC > `NULL` as a 6th group).*
+# MAGIC
+# MAGIC **Core rule:** Always name the output grain and predict the row count *before*
+# MAGIC running the aggregate.
+# MAGIC
+# MAGIC ---
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
 # MAGIC | Section | Concept | Why it matters |
 # MAGIC |---|---|---|
-# MAGIC | 1. Output grain | One row per group | Predict a summary's row count |
-# MAGIC | 2. `groupBy().agg()` | Syntax and aliasing | Named, usable summary columns |
-# MAGIC | 3. Counting | 3 counts, 3 answers | Know which question you asked |
-# MAGIC | 4. NULL skipping | `sum` / `avg` ignore NULLs | Control your denominator |
-# MAGIC | 5. Multi-column keys | Composite grain; NULL groups | Grain is the whole key list |
-# MAGIC | 6. Filter placement | `WHERE` vs `HAVING` | One line moved, different numbers |
-# MAGIC | Exercise | Per-borough summary | Repeat it on a new key |
+# MAGIC | 1. Output grain | One row per group | Predict summary row count before running |
+# MAGIC | 2. `groupBy().agg()` | Syntax and aliasing | Name aggregate columns explicitly |
+# MAGIC | 3. Counting | 3 counts, 3 answers | Match count function to business question |
+# MAGIC | 4. NULL skipping | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |
+# MAGIC | 5. Multi-column keys | Composite grain & NULLs | Grain is defined by full key list |
+# MAGIC | 6. Filter placement | `WHERE` vs `HAVING` | Filter early without breaking group logic |
+# MAGIC | Exercise | Per-borough summary | Apply grain prediction on a new key |
 # MAGIC
-# MAGIC **Core habit:** name the output grain → predict the row count → run →
-# MAGIC verify with `count()`.
+# MAGIC **Core habit:** Name output grain → predict row count → run → verify with `count()`.
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
 # MAGIC
-# MAGIC **Prerequisites:** Module 7 notebooks 01–07, so `trip_enriched` exists;
-# MAGIC Module 3 NULL semantics and `F.coalesce`; Module 4 wide/shuffle stages.
+# MAGIC **Prerequisites:** Module 7 notebooks 01–07 (`trip_enriched`);
+# MAGIC Module 3 NULLs & `F.coalesce`; Module 4 wide/shuffle stages.
 
 # COMMAND ----------
 
