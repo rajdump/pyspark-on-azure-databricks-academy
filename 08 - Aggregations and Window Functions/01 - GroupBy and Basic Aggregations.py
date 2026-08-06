@@ -18,14 +18,16 @@
 # MAGIC
 # MAGIC Because 2 trips have `NULL` tips, `F.avg` skips them. Spark gives no error,
 # MAGIC but calculated *"average tip on tipped rides"* instead of *"average tip per
-# MAGIC trip"*. A wrong aggregate still returns a plausible number.
+# MAGIC trip"*. A wrong aggregate still returns a reasonable number.
 # MAGIC
 # MAGIC ---
 # MAGIC
 # MAGIC ### Trap 2: `groupBy` reduces your data grain
 # MAGIC
 # MAGIC Module 7 taught you to preserve data grain during joins (1 row per trip).
-# MAGIC A `groupBy` deliberately **reduces** that grain. Example:
+# MAGIC A `groupBy` deliberately **reduces** that grain. 
+# MAGIC
+# MAGIC Example:
 # MAGIC `groupBy("service_type")` — `service_type` has 5 distinct values
 # MAGIC (`STANDARD`, `SHARED`, `PREMIUM`, `XL`, `UNKNOWN`). Module 6 normalized
 # MAGIC blanks into `"UNKNOWN"`.
