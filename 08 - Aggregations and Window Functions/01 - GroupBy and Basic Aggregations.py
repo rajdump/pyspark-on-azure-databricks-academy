@@ -330,10 +330,18 @@ trip_enriched.select(
 
 # COMMAND ----------
 
-# F.avg divided by 104 (non-NULL tips), not 106 (all trips).
-# Two valid interpretations:
-#   NULL means "unknown"  → F.avg is correct
-#   NULL means "zero tip" → replace NULLs first with F.coalesce
+# MAGIC %md
+# MAGIC `F.avg` divided by **104** (non-NULL tips), not **106** (all trips).
+# MAGIC Two valid interpretations — choose deliberately:
+# MAGIC
+# MAGIC | If NULL means… | Use… |
+# MAGIC |---|---|
+# MAGIC | *"we don't know"* | `F.avg` — correct denominator is non-NULL count |
+# MAGIC | *"no tip was given"* (worth 0.00) | `F.coalesce(col, F.lit(0))` before aggregating |
+# MAGIC
+# MAGIC The same skip rule applies to `F.sum`, `F.min`, and `F.max`.
+
+# COMMAND ----------
 
 # Edge case: when ALL values in a group are NULL, F.sum returns NULL — not 0
 trip_enriched.filter(F.col("trip_id").isin(103, 105, 106)).groupBy("trip_id").agg(

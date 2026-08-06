@@ -215,6 +215,21 @@ on `trip_id` when needed.
 | `pickup_location_id` | int |
 | `dropoff_location_id` | int |
 
+## KPI outputs (Module 8)
+
+Parquet written by Module 8 Notebook **08** with `.mode("overwrite")`.
+Module 9 reads all three as its primary sources. All paths live under
+`/Volumes/rideshare_dev/processed/output_files/curated/`.
+
+| Output folder | Grain / rows | Source table |
+|---|---|---|
+| `curated/kpi_daily_trip_summary/` | One row per **`trip_date`** — **100** rows (NULL-`trip_date` trips 101–106 are explicitly excluded) | `trip_enriched` |
+| `curated/kpi_zone_performance/` | One row per (**`pickup_borough`**, **`pickup_zone`**) | `trip_enriched` |
+| `curated/kpi_driver_productivity/` | One row per **`driver_id`** — **12** rows | `trip_driver_assignment` |
+
+Column schemas are owned by Module 8 Notebook **08** (not yet written at time of authoring).
+Cleared by Module 5 **`99`** Level 2 cleanup (same pass that clears all Module 6–9 `curated/` outputs).
+
 ## Physical layout
 
 **Modules 1–4:** hand-built DataFrames in code (core column names/types
