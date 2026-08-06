@@ -17,26 +17,22 @@
 # MAGIC - **Business asks for:** `2.899906` ($307.39 total ÷ **106** total trips)
 # MAGIC
 # MAGIC Because 2 trips have `NULL` tips, `F.avg` skips them. Spark gives no error,
-# MAGIC but calculated *"average tip on tipped rides"* instead of *"average tip per
-# MAGIC trip"*. A wrong aggregate still returns a reasonable number.
+# MAGIC but calculated the **average of the known tip values** instead of the **average
+# MAGIC tip across all trips**. A wrong aggregate still returns a reasonable number.
 # MAGIC
 # MAGIC ---
 # MAGIC
-# MAGIC ### Trap 2: `groupBy` reduces your data grain
+# MAGIC ### Trap 2: `groupBy` changes what one row represents
 # MAGIC
 # MAGIC Module 7 taught you to preserve data grain during joins (1 row per trip).
-# MAGIC A `groupBy` deliberately **reduces** that grain. 
+# MAGIC A `groupBy` deliberately **reduces** that grain.
 # MAGIC
-# MAGIC Example:
-# MAGIC `groupBy("service_type")` — `service_type` has 5 distinct values
-# MAGIC (`STANDARD`, `SHARED`, `PREMIUM`, `XL`, `UNKNOWN`). Module 6 normalized
-# MAGIC blanks into `"UNKNOWN"`.
+# MAGIC `groupBy("service_type")` changes the data from one row per trip to one row
+# MAGIC per service type.
 # MAGIC
-# MAGIC - **Input grain:** 106 rows (1 row per trip)
-# MAGIC - **Output grain:** 5 rows (1 row per `service_type`)
-# MAGIC
-# MAGIC **Core habit:** State the output grain before you write the aggregate.
-# MAGIC Verify with `count()` after — especially on a new dataset or a new key.
+# MAGIC **Core habit:** Before writing a `groupBy`, decide what **one row in the result
+# MAGIC should represent**. Then run the aggregation and verify that the number of
+# MAGIC output rows matches what you expected.
 # MAGIC
 # MAGIC ---
 # MAGIC
@@ -49,8 +45,6 @@
 # MAGIC | 3. Counting | 3 counts, 3 answers | Match count function to business question |
 # MAGIC | 4. Aggregates skip NULLs | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |
 # MAGIC | Exercise | Per-`payment_method` summary | Apply all four habits on a new key |
-# MAGIC
-# MAGIC **Core habit:** Name output grain → run → verify with `count()`.
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
 # MAGIC
@@ -110,8 +104,8 @@ trip_enriched.printSchema()
 # COMMAND ----------
 
 trip_enriched.select(
-    F.count("*").alias("rows"), ## Counts all rows (NULLs don’t matter)
-    F.count("trip_date").alias("trip_date"), ## Exclude NULL rows
+    F.count("*").alias("rows"), # Counts all rows (NULLs don’t matter)
+    F.count("trip_date").alias("trip_date"), # Exclude NULL rows
     F.count("payment_method").alias("payment_method"),
     F.count("base_fare_amount").alias("base_fare"),
     F.count("tip_amount").alias("tip"),
@@ -244,8 +238,14 @@ try:
 
     service_summary.show()
 except Exception as e:
-    print("groupBy collapsed multiple rows into one row per group — there is no single trip_id to display.")
-    print("To keep individual rows with group-level summaries, use a window function (Notebook 05).")
+    print(
+        "groupBy collapsed multiple rows into one row per group"
+        " — there is no single trip_id to display."
+    )
+    print(
+        "To keep individual rows with group-level summaries,"
+        " use a window function (Notebook 05)."
+    )
 
 
 # COMMAND ----------
