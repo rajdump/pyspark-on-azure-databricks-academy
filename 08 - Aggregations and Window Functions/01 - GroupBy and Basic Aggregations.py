@@ -174,36 +174,30 @@ trip_enriched.groupBy("service_type").count().orderBy(F.col("count").desc()).sho
 
 # COMMAND ----------
 
+try:
+    trip_enriched.groupBy("service_type").agg(
+        F.count("*").alias("trip_count"),
+        F.col("trip_id"),  # I want to see the actual trip IDs
+    ).show()
+except Exception as e:
+    print("Error:", str(e).split("\n")[0])
+    print()
+    print("groupBy collapsed 2 trips into 1 row — there's no single trip_id to show.")
+    print("To keep individual rows AND add group-level info, use a window function (Notebook 05).")
+
+# COMMAND ----------
+
 # DBTITLE 1,Section 2 - groupBy and agg
 # MAGIC %md
-# MAGIC ## 2. `groupBy().agg()` and why aliasing is not optional
+# MAGIC ## 2. `groupBy().agg()` — multiple aggregates in one pass
+# MAGIC Two rules:
 # MAGIC
-# MAGIC `.count()` is a shorthand for one specific aggregate. The general form takes
-# MAGIC any number of aggregates in a single pass:
 # MAGIC
-# MAGIC ```python
-# MAGIC trip_enriched.groupBy("service_type").agg(
-# MAGIC     F.count("*").alias("trip_count"),
-# MAGIC     F.sum("tip_amount").alias("total_tip"),
-# MAGIC )
-# MAGIC ```
+# MAGIC **1. Multiple Aggregates, One Scan:** You can include as many aggregate expressions as needed inside the `.agg(...)` function. Spark processes all of these expressions in a single pass, eliminating the need for separate queries for operations like count, sum, and average.
 # MAGIC
-# MAGIC Two rules worth internalizing now:
+# MAGIC **2. Always Use Aliases:** If you don't use `.alias(...)`, Spark will automatically generate column names such as `count(1)`, `sum(tip_amount)`, and `avg(CAST(...))`. These generated names can be difficult to read and cumbersome to use later on, often requiring backtick escaping like ``F.col("`sum(tip_amount)`")``. To avoid confusion, always assign each aggregate a clear, descriptive name.
 # MAGIC
-# MAGIC **1. Alias every aggregate.** Without `.alias(...)`, Spark names the column
-# MAGIC after the expression — `count(1)`, `sum(tip_amount)`, `avg(CAST(...))`. Those
-# MAGIC are legal but painful to reference: the parentheses have to be escaped with
-# MAGIC backticks, as in ``F.col("`sum(tip_amount)`")``, or Spark reads the name as a
-# MAGIC function call. Notebook `02` filters on an aggregate by name (`HAVING`), so
-# MAGIC an alias is not cosmetic.
-# MAGIC
-# MAGIC **2. Output columns are group keys and aggregates — nothing else.** Referring
-# MAGIC to a bare `trip_id` in the result is an error, because 55 `STANDARD` trips
-# MAGIC have 55 different `trip_id` values and Spark will not pick one for you. If
-# MAGIC you genuinely want a per-row column *and* a group summary side by side, you
-# MAGIC want a **window function** — Notebook `05`.
-# MAGIC
-# MAGIC The first cell shows the unaliased mess, the second the readable version.
+# MAGIC The first cell below illustrates the default names that can be hard to interpret, while the second cell shows a more readable version with aliases.
 
 # COMMAND ----------
 
@@ -225,6 +219,28 @@ service_summary = trip_enriched.groupBy("service_type").agg(
 )
 
 service_summary.orderBy(F.col("trip_count").desc()).show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## UNKNOWN has 2 trips — which ones? Let's try adding trip_id to the result.
+
+# COMMAND ----------
+
+try:
+    service_summary = trip_enriched.groupBy("service_type").agg(
+    F.count("*").alias("trip_count"),
+    F.sum("tip_amount").alias("total_tip"),
+    F.round(F.avg("trip_distance_miles"), 2).alias("avg_distance_miles"),
+    F.min("ride_duration_mins").alias("shortest_ride_mins"),
+    F.max("ride_duration_mins").alias("longest_ride_mins"),
+    F.col("trip_id"),  # This is not allowed
+).filter(F.col("service_type") == "UNKNOWN")
+
+    service_summary.show()
+except Exception as e:
+    print(f"Error: {str(e)[:150]}")
+
 
 # COMMAND ----------
 
