@@ -16,22 +16,25 @@
 # MAGIC - **Spark calculates:** `2.955673` ($307.39 total ÷ **104** known tips)
 # MAGIC - **Business asks for:** `2.899906` ($307.39 total ÷ **106** total trips)
 # MAGIC
-# MAGIC Since two trips have `NULL` tips, `F.avg` ignores them. Spark does not produce an error, but it calculates the "average tip on tipped rides" instead of the "average tip per trip." A misleading aggregate can still return a convincing number.
+# MAGIC Because 2 trips have `NULL` tips, `F.avg` skips them. Spark gives no error,
+# MAGIC but calculated *"average tip on tipped rides"* instead of *"average tip per
+# MAGIC trip"*. A wrong aggregate still returns a plausible number.
 # MAGIC
 # MAGIC ---
 # MAGIC
-# MAGIC ### Trap 2: `groupBy` Reduces Your Data Grain
+# MAGIC ### Trap 2: `groupBy` reduces your data grain
 # MAGIC
-# MAGIC In Module 7, you learned the importance of preserving data grain during joins, ensuring that there is one row per trip. However, using `groupBy` intentionally **reduces** that grain:
+# MAGIC Module 7 taught you to preserve data grain during joins (1 row per trip).
+# MAGIC A `groupBy` deliberately **reduces** that grain. Example:
+# MAGIC `groupBy("service_type")` — `service_type` has 5 distinct values
+# MAGIC (`STANDARD`, `SHARED`, `PREMIUM`, `XL`, `UNKNOWN`). Module 6 normalized
+# MAGIC blanks into `"UNKNOWN"`.
 # MAGIC
-# MAGIC For Example: 
-# MAGIC When you write ' groupBy("service_type"), the `service_type` field contains 5 distinct values: `STANDARD`, `SHARED`, `PREMIUM`, `XL`, and `UNKNOWN`. In Module 6, we normalized blanks into the value `"UNKNOWN"`.
-# MAGIC "I expect 5 rows — because service_type has 5 distinct values."
+# MAGIC - **Input grain:** 106 rows (1 row per trip)
+# MAGIC - **Output grain:** 5 rows (1 row per `service_type`)
 # MAGIC
-# MAGIC - **Input grain:** 106 rows (1 row for each trip)
-# MAGIC - **Output grain:** 5 rows (1 row for each `service_type`)
-# MAGIC
-# MAGIC **Core rule:** Always identify the output grain and predict the row count *before* executing the aggregate operation.
+# MAGIC **Core habit:** State the output grain before you write the aggregate.
+# MAGIC Verify with `count()` after — especially on a new dataset or a new key.
 # MAGIC
 # MAGIC ---
 # MAGIC
@@ -45,7 +48,7 @@
 # MAGIC | 4. NULL skipping | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |
 # MAGIC | Exercise | Per-`payment_method` summary | Apply all four habits on a new key |
 # MAGIC
-# MAGIC **Core habit:** Name output grain → predict row count → run → verify with `count()`.
+# MAGIC **Core habit:** Name output grain → run → verify with `count()`.
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
 # MAGIC
@@ -502,8 +505,8 @@ method_summary.orderBy(F.col("trip_count").desc()).show()
 # MAGIC | **`F.coalesce` first** | Use it when missing means 0, not *unknown* |
 # MAGIC
 # MAGIC **The habit that prevents most aggregation bugs:** name the output grain,
-# MAGIC predict the row count, then verify. A wrong aggregate just gives you a
-# MAGIC plausible number — no error to notice.
+# MAGIC then verify with `count()` after — especially on a new key. A wrong
+# MAGIC aggregate just gives you a plausible number — no error to notice.
 # MAGIC
 # MAGIC **Next:** **`02 - Multi-column Keys, NULL Groups, and Filter Placement`** —
 # MAGIC grouping on composite keys, why NULL becomes its own group, and how
