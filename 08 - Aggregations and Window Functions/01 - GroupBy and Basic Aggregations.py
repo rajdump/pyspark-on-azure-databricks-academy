@@ -108,8 +108,8 @@ trip_enriched.printSchema()
 # COMMAND ----------
 
 trip_enriched.select(
-    F.count("*").alias("rows"),
-    F.count("trip_date").alias("trip_date"),
+    F.count("*").alias("rows"), ## Counts all rows (NULLs don’t matter)
+    F.count("trip_date").alias("trip_date"), ## Exclude NULL rows
     F.count("payment_method").alias("payment_method"),
     F.count("base_fare_amount").alias("base_fare"),
     F.count("tip_amount").alias("tip"),
