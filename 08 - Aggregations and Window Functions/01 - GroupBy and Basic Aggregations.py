@@ -144,7 +144,9 @@ trip_enriched.select(
 # MAGIC
 # MAGIC The prediction step is straightforward and only requires a single inexpensive query. If the actual result returns a different row count, then your mental model of the data is incorrect, and any calculations derived from it will also be flawed.
 # MAGIC
-# MAGIC It’s important to note, as discussed in Section 5, that `countDistinct` **excludes NULLs**, while `groupBy` **includes them as a separate group**. In the case of `service_type`, there are no NULL values, so both methods yield consistent results.
+# MAGIC Notebook `02` covers this caveat: `countDistinct` **excludes NULLs**, while
+# MAGIC `groupBy` **includes them as a separate group**. `service_type` has no NULLs,
+# MAGIC so both methods agree here.
 # MAGIC
 # MAGIC **Performance Note:** The `groupBy` operation is considered a **wide** transformation, which involves an `Exchange` (shuffle) as outlined in Module 4. This means that rows with the same key need to be processed by the same executor. Tuning the shuffle process will be covered in Module 16.
 
@@ -197,8 +199,8 @@ trip_enriched.groupBy("service_type").count().orderBy(F.col("count").desc()).sho
 # MAGIC after the expression — `count(1)`, `sum(tip_amount)`, `avg(CAST(...))`. Those
 # MAGIC are legal but painful to reference: the parentheses have to be escaped with
 # MAGIC backticks, as in ``F.col("`sum(tip_amount)`")``, or Spark reads the name as a
-# MAGIC function call. Section 6 has to *filter* on an aggregate by name, so an alias
-# MAGIC is not cosmetic.
+# MAGIC function call. Notebook `02` filters on an aggregate by name (`HAVING`), so
+# MAGIC an alias is not cosmetic.
 # MAGIC
 # MAGIC **2. Output columns are group keys and aggregates — nothing else.** Referring
 # MAGIC to a bare `trip_id` in the result is an error, because 55 `STANDARD` trips
