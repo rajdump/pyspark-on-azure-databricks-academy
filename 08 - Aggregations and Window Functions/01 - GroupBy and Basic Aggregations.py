@@ -45,7 +45,7 @@
 # MAGIC | 1. Output grain | One row per group | Predict summary row count before running |
 # MAGIC | 2. `groupBy().agg()` | Syntax and aliasing | Name aggregate columns explicitly |
 # MAGIC | 3. Counting | 3 counts, 3 answers | Match count function to business question |
-# MAGIC | 4. NULL skipping | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |
+# MAGIC | 4. Aggregates skip NULLs | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |
 # MAGIC | Exercise | Per-`payment_method` summary | Apply all four habits on a new key |
 # MAGIC
 # MAGIC **Core habit:** Name output grain → run → verify with `count()`.
