@@ -152,22 +152,17 @@ trip_enriched.select(
 
 # COMMAND ----------
 
-predicted_groups = trip_enriched.select(
-    F.countDistinct("service_type").alias("distinct_service_type"),
-).collect()[0]["distinct_service_type"]
+# How many groups will groupBy("service_type") produce?
+trip_enriched.select("service_type").distinct().count()  # 5 groups expected
 
-actual_groups = trip_enriched.groupBy("service_type").count().count()
+# COMMAND ----------
 
-print(f"predicted output rows = {predicted_groups}")
-print(f"actual output rows    = {actual_groups}")
-print("match:", predicted_groups == actual_groups)
+trip_enriched.select("service_type").distinct().show() 
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Five groups, and the per-group counts sum back to 106 — a `groupBy` on a
-# MAGIC column with no NULLs never loses or invents rows, it only redistributes
-# MAGIC them. `UNKNOWN` is Module 6's normalized sentinel for a blank or `n/a`
+# MAGIC `UNKNOWN` is Module 6's normalized sentinel for a blank or `n/a`
 # MAGIC service type; it is a real string, **not** a NULL.
 
 # COMMAND ----------
