@@ -126,10 +126,9 @@ trip_enriched.select(
 # MAGIC %md
 # MAGIC ## 1. Output grain — one row per group
 # MAGIC
-# MAGIC **Output grain** = what one row of your *result* represents.
+# MAGIC **Output grain** refers to what each row of your *result* represents. 
 # MAGIC
-# MAGIC Module 7 drilled *input* grain: one row per `trip_id`. A `groupBy` replaces
-# MAGIC it with a new one:
+# MAGIC Module 7 processed *input* grain with one row per `trip_id`. A `groupBy` operation replaces it with a new structure:
 # MAGIC
 # MAGIC | | Grain | Rows |
 # MAGIC |---|---|---|
@@ -143,17 +142,11 @@ trip_enriched.select(
 # MAGIC output rows == countDistinct(group key)
 # MAGIC ```
 # MAGIC
-# MAGIC That is your prediction step, and it costs one cheap query. If the real
-# MAGIC result has a different row count, stop — your mental model of the data is
-# MAGIC wrong, and every number built on top of it will be too.
+# MAGIC The prediction step is straightforward and only requires a single inexpensive query. If the actual result returns a different row count, then your mental model of the data is incorrect, and any calculations derived from it will also be flawed.
 # MAGIC
-# MAGIC One caveat that Section 5 returns to: `countDistinct` **ignores NULLs** but
-# MAGIC `groupBy` **keeps them as a group**. `service_type` has no NULLs, so the two
-# MAGIC agree here.
+# MAGIC It’s important to note, as discussed in Section 5, that `countDistinct` **excludes NULLs**, while `groupBy` **includes them as a separate group**. In the case of `service_type`, there are no NULL values, so both methods yield consistent results.
 # MAGIC
-# MAGIC **Performance note:** `groupBy` is a **wide** transformation — the `Exchange`
-# MAGIC (shuffle) from Module 4. Rows for the same key must meet on one executor.
-# MAGIC Tuning that shuffle is Module 16.
+# MAGIC **Performance Note:** The `groupBy` operation is considered a **wide** transformation, which involves an `Exchange` (shuffle) as outlined in Module 4. This means that rows with the same key need to be processed by the same executor. Tuning the shuffle process will be covered in Module 16.
 
 # COMMAND ----------
 
