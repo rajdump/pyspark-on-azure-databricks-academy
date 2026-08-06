@@ -302,54 +302,19 @@ trip_enriched.groupBy("service_type").agg(
 # MAGIC | XL | 12 | 12 | 0 | 8 |
 # MAGIC | UNKNOWN | 2 | **0** | 2 | **0** |
 # MAGIC
-# MAGIC Observe the difference between `trip_count` and `dated_trip_count` — this is where the NULL values are hidden. The STANDARD category is short by 3 trips, yet every row still appears convincing. By displaying both counts side by side, the gap becomes noticeable.
+# MAGIC Notice the gap between `trip_count` and `dated_trip_count` — that's where NULLs hide.
+# MAGIC STANDARD is short by 3, but every row still looks plausible. Only by showing both counts side by side does the gap become obvious.
 # MAGIC
-# MAGIC In the case of UNKNOWN, the situation is even more noticeable: there are 2 trips, but **0** are dated — indicating that this entire group lacks any date information.
+# MAGIC UNKNOWN is the extreme: 2 trips, **0** dated — the entire group has no date information.
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 4 - NULL skipping
+# DBTITLE 1,Section 4 - Aggregates skip NULLs
 # MAGIC %md
-# MAGIC ## 4. `sum` / `avg` / `min` / `max` skip NULLs
+# MAGIC ## 4. Aggregates skip NULLs
 # MAGIC
-# MAGIC Module 3 taught that NULL **propagates** through arithmetic: if `tip_amount`
-# MAGIC is NULL then `base_fare_amount + tip_amount` is NULL. Aggregates do the
-# MAGIC **opposite** — they quietly **skip** NULL inputs:
-# MAGIC
-# MAGIC | Context | NULL behavior |
-# MAGIC |---|---|
-# MAGIC | Row arithmetic (`a + b`) | NULL **propagates** — result is NULL |
-# MAGIC | Aggregate (`F.sum`, `F.avg`) | NULL is **skipped** — result ignores it |
-# MAGIC
-# MAGIC This is the notebook's opening puzzle. `tip_amount` is NULL on 2 of 106
-# MAGIC trips, so:
-# MAGIC
-# MAGIC | Expression | Divides by | Result | Means |
-# MAGIC |---|---|---|---|
-# MAGIC | `F.avg("tip_amount")` | 104 | ≈ **2.955673** | Average of *known* tips |
-# MAGIC | `F.sum(...) / F.count("*")` | 106 | ≈ **2.899906** | Average tip *per trip* |
-# MAGIC
-# MAGIC Neither is a bug. `F.avg` is `sum / count(col)`, never `sum / count(all rows)`.
-# MAGIC The question is which denominator your stakeholder meant, and the code
-# MAGIC should make that obvious.
-# MAGIC
-# MAGIC **Deciding:** if a missing tip means *we don't know*, `F.avg` is right. If it
-# MAGIC means *no tip was given* — worth 0.00 — then `F.coalesce(col, F.lit(0))`
-# MAGIC before aggregating is right (Module 3). Choose deliberately; don't inherit
-# MAGIC the default.
-# MAGIC
-# MAGIC `F.min` / `F.max` skip NULLs too, so a max is the largest *known* value.
-# MAGIC
-# MAGIC And one edge worth seeing directly: when **every** value in a group is NULL,
-# MAGIC `F.sum` and `F.max` return **NULL**, not `0`. A "total" column that is NULL
-# MAGIC rather than zero breaks downstream arithmetic in exactly the way Module 3
-# MAGIC warned about.
-# MAGIC
-# MAGIC Two real examples follow. First at `trip_id` grain, where trips **103** and
-# MAGIC **106** each form a single-row group with no known tip, and trip **105** is
-# MAGIC the control with a real tip of `2.50`. Then a genuine multi-row case: both
-# MAGIC `UNKNOWN` service-type trips are undated, so that group's
-# MAGIC `latest_trip_date` is NULL even though the group has 2 rows.
+# MAGIC In row arithmetic, `NULL` propagates: `a + NULL = NULL`.
+# MAGIC Aggregates do the opposite — they **skip** NULLs silently.
 
 # COMMAND ----------
 
@@ -365,13 +330,17 @@ trip_enriched.select(
 
 # COMMAND ----------
 
-# Trips 103 and 106 have no known tip, so their totals are NULL — not 0
+# F.avg divided by 104 (non-NULL tips), not 106 (all trips).
+# Two valid interpretations:
+#   NULL means "unknown"  → F.avg is correct
+#   NULL means "zero tip" → replace NULLs first with F.coalesce
+
+# Edge case: when ALL values in a group are NULL, F.sum returns NULL — not 0
 trip_enriched.filter(F.col("trip_id").isin(103, 105, 106)).groupBy("trip_id").agg(
     F.count("*").alias("rows"),
     F.count("tip_amount").alias("known_tips"),
     F.sum("tip_amount").alias("total_tip"),
     F.max("tip_amount").alias("max_tip"),
-    F.coalesce(F.sum("tip_amount"), F.lit(0)).alias("total_or_zero"),
 ).orderBy("trip_id").show()
 
 # COMMAND ----------
@@ -386,10 +355,7 @@ trip_enriched.groupBy("service_type").agg(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Same question, treating a missing tip as 0.00. `F.coalesce` runs **before**
-# MAGIC the aggregate, so the NULLs become real zeros and are no longer skipped —
-# MAGIC `avg_with_zeros` now matches `avg_per_trip` above. Note that the **total is
-# MAGIC unchanged**: adding zeros cannot move a sum, only the count it is divided by.
+# MAGIC **The fix:** `F.coalesce` replaces NULLs with 0 *before* aggregating — now the denominator is 106.
 
 # COMMAND ----------
 
@@ -400,17 +366,6 @@ trip_enriched.select(
     F.count(tip_or_zero).alias("now_counts_all_106"),
     F.avg(tip_or_zero).alias("avg_with_zeros"),
 ).show(truncate=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **A note on types, since the output looks odd.** `tip_amount` is
-# MAGIC `decimal(10,2)`. Spark widens decimal types when aggregating:
-# MAGIC `F.avg` → `decimal(14,6)` (six decimals); `F.sum` → `decimal(20,2)` (keeps
-# MAGIC two); raw division (`sum / count`) → `decimal(38,20)` (twenty decimals —
-# MAGIC that is why `avg_per_trip` is wrapped in `F.round(..., 6)` above).
-# MAGIC Wrap any aggregate in `F.round(..., 2)` when the output is going into a
-# MAGIC report. Notebook `03` looks at decimal growth properly.
 
 # COMMAND ----------
 
@@ -442,23 +397,14 @@ trip_enriched.select(
 # MAGIC
 # MAGIC Expected results:
 # MAGIC
-# MAGIC | payment_method | trip_count | trips_with_fare | total_base_fare |
-# MAGIC |---|---|---|---|
-# MAGIC | card | 59 | 59 | 1785.85 |
-# MAGIC | wallet | 20 | 20 | 661.33 |
-# MAGIC | cash | 17 | 17 | 536.17 |
-# MAGIC | corporate | 8 | 8 | 269.75 |
-# MAGIC | unknown | 1 | 0 | null |
-# MAGIC | null | 1 | 0 | null |
-# MAGIC
-# MAGIC | payment_method | avg_fare_skips_null | avg_fare_per_trip |
-# MAGIC |---|---|---|
-# MAGIC | card | 30.27 | 30.27 |
-# MAGIC | wallet | 33.07 | 33.07 |
-# MAGIC | cash | 31.54 | 31.54 |
-# MAGIC | corporate | 33.72 | 33.72 |
-# MAGIC | unknown | null | null |
-# MAGIC | null | null | null |
+# MAGIC | payment_method | trip_count | trips_with_fare | total_base_fare | avg_fare_skips_null | avg_fare_per_trip |
+# MAGIC |---|---|---|---|---|---|
+# MAGIC | card | 59 | 58 | 1874.24 | 32.31 | 31.77 |
+# MAGIC | wallet | 20 | 20 | 701.55 | 35.08 | 35.08 |
+# MAGIC | cash | 17 | 17 | 462.86 | 27.23 | 27.23 |
+# MAGIC | corporate | 8 | 8 | 257.18 | 32.15 | 32.15 |
+# MAGIC | unknown | 1 | 1 | 12.00 | 12.00 | 12.00 |
+# MAGIC | null | 1 | 0 | null | null | null |
 # MAGIC
 # MAGIC Notice `unknown` and `null` both appear — Notebook `02` explains that
 # MAGIC difference.
@@ -488,16 +434,12 @@ method_summary.orderBy(F.col("trip_count").desc()).show()
 # MAGIC
 # MAGIC | Concept | Key takeaway |
 # MAGIC |---|---|
-# MAGIC | **Output grain** | One row per group; predict with `countDistinct` when no NULLs |
-# MAGIC | **Aliasing** | Alias every aggregate — names are needed to chain `.filter()` |
-# MAGIC | **Only keys and aggregates** | Want a per-row column too? That's a window (`05`) |
+# MAGIC | **Output grain** | One row per group; predict with `.distinct().count()` |
+# MAGIC | **Aliasing** | Always alias — ugly default names break downstream code |
+# MAGIC | **Only keys and aggregates** | Want a per-row column too? That's a window (Notebook `05`) |
 # MAGIC | **Three counts** | `count("*")`=106, `count("trip_date")`=100, `countDistinct`=14 |
-# MAGIC | **NULL skipping** | `avg` divides by non-NULL count (104), not by rows (106) |
-# MAGIC | **`F.coalesce` first** | Use it when missing means 0, not *unknown* |
-# MAGIC
-# MAGIC **The habit that prevents most aggregation bugs:** name the output grain,
-# MAGIC then verify with `count()` after — especially on a new key. A wrong
-# MAGIC aggregate just gives you a plausible number — no error to notice.
+# MAGIC | **NULL skipping** | `avg` divides by 104 (non-NULL), not 106 (all rows) |
+# MAGIC | **`F.coalesce` first** | Use it when NULL means 0, not *unknown* |
 # MAGIC
 # MAGIC **Next:** **`02 - Multi-column Keys, NULL Groups, and Filter Placement`** —
 # MAGIC grouping on composite keys, why NULL becomes its own group, and how
