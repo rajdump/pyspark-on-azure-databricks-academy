@@ -29,8 +29,7 @@
 # MAGIC | Section | Concept | Why it matters |
 # MAGIC |---|---|---|
 # MAGIC | 1 | `countDistinct` vs `groupBy` | Predict the group count before running |
-# MAGIC | 1a | NULL key vs value vs sentinel | Separate key NULL, value NULL, and `"unknown"` |
-# MAGIC | 1b | Composite key | Output grain is the full key list |
+# MAGIC | 1a | Composite key | Output grain is the full key list |
 # MAGIC | 2 | `.filter()` before `groupBy` | Removes input trips, so values change |
 # MAGIC | 2a | `.filter()` after `.agg()` | Removes groups once values are calculated |
 # MAGIC | Exercise | Per-borough summary, then a second key | Apply both ideas to a new key |
@@ -72,7 +71,8 @@ print("trip_enriched rows:", trip_enriched.count())
 # MAGIC
 # MAGIC Before writing the business logic, predict whether these two values should match.
 # MAGIC
-# MAGIC If they do not match, determine which result matches the business requirement and explain why.
+# MAGIC If they do not match, determine which result matches the business
+# MAGIC requirement and explain why.
 # MAGIC
 # MAGIC
 # MAGIC ### How many payment methods — `countDistinct` vs `groupBy`?
@@ -101,38 +101,9 @@ trip_enriched.select(
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 1a - NULL key vs value vs sentinel
+# DBTITLE 1,Section 1a - Composite key
 # MAGIC %md
-# MAGIC ## 1a. NULL key vs value vs sentinel
-# MAGIC
-# MAGIC ### What makes trip 106 different from trips 104 and 105?
-
-# COMMAND ----------
-
-# Inspect the three edge-case trips: NULL key, NULL value, and sentinel
-trip_enriched.filter(F.col("trip_id").isin(104, 105, 106)).select(
-    "trip_id",
-    "payment_method",
-    "base_fare_amount",
-).orderBy("trip_id").show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC | Trip | `payment_method` | `base_fare_amount` | What it shows |
-# MAGIC |---|---|---|---|
-# MAGIC | 104 | `card` | NULL | Stays in **card**; NULL fare skipped (Notebook 01) |
-# MAGIC | 105 | `unknown` | 12.00 | Real string, not NULL — like Notebook 01 `UNKNOWN` |
-# MAGIC | 106 | NULL | NULL | No payment row — extra group `countDistinct` missed |
-# MAGIC
-# MAGIC `countDistinct` excludes NULL → reports 5.
-# MAGIC `groupBy` keeps NULL as one group → returns 6.
-
-# COMMAND ----------
-
-# DBTITLE 1,Section 1b - Composite key
-# MAGIC %md
-# MAGIC ## 1b. Composite key
+# MAGIC ## 1a. Composite key
 # MAGIC
 # MAGIC - `service_type`: 5 groups (no NULLs in this column)
 # MAGIC - `payment_method`: 6 groups
@@ -316,8 +287,7 @@ borough_method.orderBy(F.col("trip_count").desc()).show(40)
 # MAGIC | # | Concept | Rule |
 # MAGIC |---|---|---|
 # MAGIC | 1 | `countDistinct` vs `groupBy` | `groupBy` keeps a NULL group; distinct skips it |
-# MAGIC | 1a | NULL key vs value vs sentinel | `"unknown"` is a string; NULL key = no payment row |
-# MAGIC | 1b | Composite key | Output rows = observed key combinations only |
+# MAGIC | 1a | Composite key | Output rows = observed key combinations only |
 # MAGIC | 2 | `.filter()` before `groupBy` | Removes rows — aggregate values change |
 # MAGIC | 2a | `.filter()` after `.agg()` | Removes groups — aggregate values stay unchanged |
 # MAGIC
