@@ -4,30 +4,29 @@
 # MAGIC
 # MAGIC # 02 - Multi-column Keys, NULL Groups, and Filter Placement
 # MAGIC
-# MAGIC Few common mistakes can significantly impact aggregate results:
+# MAGIC Every aggregation requires two decisions:
 # MAGIC
-# MAGIC 1. **NULL Behavior**: In `groupBy`, `NULL` values create a separate group, while in `sum` or `avg`, they are ignored in calculations.
+# MAGIC 1. **Which columns define the group?** — Adding a key subdivides groups;
+# MAGIC    a NULL key creates an extra group you may not predict.
 # MAGIC
-# MAGIC 2. **Filter Position**: Filtering **before** `groupBy` removes rows that don’t meet conditions, while filtering **after** `agg` removes groups based on accumulated values.
+# MAGIC 2. **Where does the filter go?** — Before `groupBy` removes rows and changes
+# MAGIC    totals; after `agg` removes groups and leaves totals unchanged.
 # MAGIC
-# MAGIC | Scenario                                           | What happens                                                                                          |
-# MAGIC | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-# MAGIC | Group by `payment_method`                          | Spark returns **6 groups**: five payment methods plus one `NULL` group                                |
-# MAGIC | Apply `sum` or `avg` to a column containing `NULL` | Spark ignores the `NULL` values and calculates the aggregate using the remaining values               |
-# MAGIC | Filter `tip_amount > 5` before `groupBy`           | Spark removes rows that do not meet the condition before aggregation |
-# MAGIC | Filter `total_tip > 90` after `agg()`              | Spark removes groups whose aggregated `total_tip` does not meet the condition                         |
+# MAGIC This notebook demonstrates both with concrete checks:
+# MAGIC
+# MAGIC | Topic | What you will observe |
+# MAGIC |---|---|
+# MAGIC | Single-key profiling | Whether `countDistinct` and `groupBy` agree on the number of groups |
+# MAGIC | Composite key | How many `service_type` / `payment_method` pairs actually exist |
+# MAGIC | Filter before aggregation | Borough totals change when rows are excluded first |
+# MAGIC | Filter after aggregation | Borough totals stay the same; only groups are dropped |
 # MAGIC
 # MAGIC
-# MAGIC
-# MAGIC This notebook addresses both topics in the following order:
-# MAGIC
-# MAGIC 1. Composite keys and the NULL group — key versus value
-# MAGIC 2. `WHERE` vs `HAVING` — the same `.filter()`, different implications
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
 # MAGIC
-# MAGIC **Prerequisites:** Notebook 01 (covering `groupBy`, aliasing, and NULL
-# MAGIC skipping); Module 7 (join NULL semantics).
+# MAGIC **Prerequisites:** Notebook 01 (`groupBy`, aliasing, NULL exclusion);
+# MAGIC Module 7 (join NULL semantics).
 
 # COMMAND ----------
 
@@ -55,42 +54,23 @@ print("trip_enriched rows:", trip_enriched.count())
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 1 - Multi-column grouping
+# DBTITLE 1,Section 1 - Composite keys and the NULL group
 # MAGIC %md
 # MAGIC ## 1. Composite keys and the NULL group
 # MAGIC
-# MAGIC Start with the result you should predict **before** running:
+# MAGIC ### Prediction prompt
 # MAGIC
-# MAGIC | Aggregate | Predicted groups |
-# MAGIC |---|---|
-# MAGIC | `groupBy("service_type")` | 5 |
-# MAGIC | `groupBy("payment_method")` | 6 (`card`, `wallet`, `cash`, `corporate`, `unknown`, `NULL`) |  # noqa: E501
-# MAGIC | `groupBy("service_type", "payment_method")` | at most `5 * 6 = 30` |
+# MAGIC Before running anything, predict:
 # MAGIC
-# MAGIC The actual composite output is **18** rows, not 30, because Spark returns
-# MAGIC only combinations that exist in data.
+# MAGIC - `countDistinct("payment_method")` returns how many values?
+# MAGIC - `groupBy("payment_method").count()` returns how many rows?
 # MAGIC
-# MAGIC **Rule:** a `groupBy` grain is the **full key list**. Adding keys splits
-# MAGIC existing groups, so row count can only stay same or increase.
-# MAGIC
-# MAGIC ### Why 6 groups for `payment_method` if `countDistinct` is 5?
-# MAGIC
-# MAGIC | Operation | NULL behavior |
-# MAGIC |---|---|
-# MAGIC | `join` | NULL keys do not match (`NULL = NULL` is not true) |
-# MAGIC | `countDistinct` | NULL is ignored |
-# MAGIC | `groupBy` | NULL keys collapse into one output group |
-# MAGIC
-# MAGIC So `countDistinct("payment_method")` returns 5, while
-# MAGIC `groupBy("payment_method")` returns 6.
-# MAGIC
-# MAGIC `unknown` and `NULL` are different:
-# MAGIC - `unknown`: normalized sentinel for a blank method (trip 105)
-# MAGIC - `NULL`: no payment row at all (trip 106)
+# MAGIC Will these two numbers agree? If not, what could cause the difference?
 
 # COMMAND ----------
 
-# DBTITLE 1,How many payment methods — countDistinct vs groupBy("payment_method")?
+# DBTITLE 1,How many payment methods — countDistinct vs groupBy?
+# Prove the gap: countDistinct vs groupBy group count
 trip_enriched.select(
     F.countDistinct("service_type").alias("distinct_service_type"),
     F.countDistinct("payment_method").alias("distinct_payment_method"),
@@ -98,14 +78,41 @@ trip_enriched.select(
 
 print("groupBy(payment_method) groups:", trip_enriched.groupBy("payment_method").count().count())
 
-# COMMAND ----------
-
-# DBTITLE 1,How many trips used each payment method?
+# Display all 6 groups
 trip_enriched.groupBy("payment_method").agg(
     F.count("*").alias("trip_count"),
 ).orderBy(F.col("trip_count").desc()).show()
 
-# Expected 6 rows: card 59, wallet 20, cash 17, corporate 8, unknown 1, NULL 1
+# COMMAND ----------
+
+# DBTITLE 1,What makes trip 106 different from trips 104 and 105?
+# Inspect the three edge-case trips: NULL key, NULL value, and sentinel
+trip_enriched.filter(F.col("trip_id").isin(104, 105, 106)).select(
+    "trip_id", "payment_method", "base_fare_amount",
+).orderBy("trip_id").show()
+
+# COMMAND ----------
+
+# DBTITLE 1,Interpret: key NULL vs value NULL vs sentinel
+# MAGIC %md
+# MAGIC ### Interpretation
+# MAGIC
+# MAGIC | Trip | `payment_method` | `base_fare_amount` | What it shows |
+# MAGIC |---|---|---|---|
+# MAGIC | 104 | `card` (valid key) | NULL (missing value) | Row stays in the **card** group; NULL fare is excluded from aggregates (Notebook 01) |
+# MAGIC | 105 | `unknown` (sentinel) | 12.00 | A real string — not NULL. Lowercase equivalent of Notebook 01’s `UNKNOWN` service type |
+# MAGIC | 106 | NULL (missing key) | NULL | No payment row exists — this is the extra group that `countDistinct` missed |
+# MAGIC
+# MAGIC `countDistinct` excludes NULL → reports 5.  
+# MAGIC `groupBy` keeps NULL as one group → returns 6.
+# MAGIC
+# MAGIC ### Composite key — predict before running
+# MAGIC
+# MAGIC - `service_type`: 5 groups (no NULLs in this column)
+# MAGIC - `payment_method`: 6 groups
+# MAGIC - Upper bound: `5 × 6 = 30` possible pairs
+# MAGIC
+# MAGIC How many pairs actually exist in the data?
 
 # COMMAND ----------
 
@@ -267,11 +274,12 @@ borough_method.orderBy(F.col("trip_count").desc()).show(40)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC | Concept | What to remember |
-# MAGIC |---|---|
-# MAGIC | Composite key grain | Output row = one observed key combination |
-# MAGIC | NULL group behavior | `groupBy` keeps one NULL group; `countDistinct` ignores NULL |
-# MAGIC | `unknown` vs NULL | Sentinel string and missing join row are different issues |
-# MAGIC | Filter placement | `WHERE` changes values; `HAVING` changes which groups survive |
+# MAGIC | # | Concept | Rule |
+# MAGIC |---|---|---|
+# MAGIC | 1 | NULL group key | `groupBy` keeps NULL as one group; `countDistinct` excludes it |
+# MAGIC | 2 | Sentinel vs NULL | `"unknown"` is a real string; NULL means no row exists |
+# MAGIC | 3 | Composite grain | Output rows = observed key combinations only |
+# MAGIC | 4 | Filter before aggregation | Removes rows — aggregate values change |
+# MAGIC | 5 | Filter after aggregation | Removes groups — aggregate values stay unchanged |
 # MAGIC
 # MAGIC Next notebook: **`03 - Aggregate Functions Beyond Count and Sum`**.
