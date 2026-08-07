@@ -70,12 +70,10 @@ print("trip_enriched rows:", trip_enriched.count())
 # MAGIC %md
 # MAGIC ## 1. `countDistinct` vs `groupBy`
 # MAGIC
-# MAGIC Before running anything, predict:
+# MAGIC Before writing the business logic, predict whether these two values should match.
 # MAGIC
-# MAGIC - How many rows will `groupBy("payment_method")` return?
-# MAGIC - How many values will `countDistinct("payment_method")` return?
+# MAGIC If they do not match, determine which result matches the business requirement and explain why.
 # MAGIC
-# MAGIC Will these two numbers agree? If not, what could cause the difference?
 # MAGIC
 # MAGIC ### How many payment methods — `countDistinct` vs `groupBy`?
 
