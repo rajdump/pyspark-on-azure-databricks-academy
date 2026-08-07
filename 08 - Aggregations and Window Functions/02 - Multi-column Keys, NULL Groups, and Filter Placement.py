@@ -111,7 +111,7 @@ trip_enriched.select(
 # MAGIC
 # MAGIC How many pairs actually exist in the data?
 # MAGIC
-# MAGIC ### For each service type and payment method: trip count and total base fare?
+# MAGIC ### For each service type and payment method combination, how many trips were completed and what was the total base fare?
 
 # COMMAND ----------
 
