@@ -6,18 +6,15 @@ Turn the Module 7 managed tables into analytics-ready summaries and KPI
 tables — without losing rows to NULL-skipping aggregates, mistaking output
 grain, or treating a window like a `groupBy`.
 
-Two habits run through Notebooks **01–07**:
+Two habits run through the skill-building notebooks:
 
 1. **Name the output grain** before you write the aggregate — one row per *what*?
 2. **Verify with `count()`** after — especially on a new dataset or a new key
 
-The dividing question: do you want **fewer rows** (`groupBy` collapses) or
-**the same rows plus a summary column** (a window does not collapse)?
-Notebooks **01–04** cover the first; **05–07** the second.
-
-Notebooks **01–07** are skill-building only (**no write**). Notebook **08** is
-write-only: read the Module 7 tables, build three KPI outputs for Module 9,
-write Parquet. No pedagogy re-teach in **08**.
+Notebooks **01–04** use `groupBy` to produce fewer rows; **05–07** use windows
+to keep the input rows while adding summary columns. These notebooks do not
+write data. Notebook **08** applies the patterns to build three Parquet KPI
+outputs for Module 9, without re-teaching them.
 
 **Dataset reference:**
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
@@ -29,30 +26,18 @@ write Parquet. No pedagogy re-teach in **08**.
 
 By the end of this module, you'll be able to:
 
-- Name the **output grain** of an aggregate and verify its row count
-- Write **`groupBy().agg()`** with aliased columns; group by one key or a
-  **composite key**, whose output grain is the whole key list
-- Explain why **`F.count("*")`**, **`F.count("col")`**, and
-  **`F.countDistinct("col")`** disagree, and why **`F.avg`** / **`F.sum`** skip
-  NULLs
-- Explain why **`groupBy` keeps a NULL group** while **`countDistinct` ignores
-  NULL**, and why `unknown` ≠ NULL
-- Filter **before** aggregating (`WHERE`) vs **after** (`HAVING`) and say which
-  changes the numbers
-- Use **`F.collect_set`**, **`F.median`**, **`F.mode`**,
-  **`F.percentile_approx`**, and **`F.approx_count_distinct`**
-- Produce subtotals with **`rollup`** / **`cube`** / **`groupingSets`** and
-  identify them with **`F.grouping_id`**
-- Reshape with **`pivot`** (explicit value list) and reverse with **`stack`**
-- Build a **`Window`** (`partitionBy` / `orderBy`), rank with **`row_number`** /
-  **`rank`** / **`dense_rank`** / **`ntile`**, and add window aggregates that
-  keep every input row
-- Control window **frames** (`rowsBetween` vs `rangeBetween`), and use
-  **`lag`** / **`lead`**
+- Name and verify the **output grain** of grouped and windowed calculations
+- Build aliased aggregates with single or composite keys, and reason about
+  NULL keys, NULL values, and count semantics
+- Choose whether to filter input rows (`WHERE`) or aggregated groups (`HAVING`)
+- Use advanced aggregates, multi-level grouping, and pivoting to summarize and
+  reshape data
+- Build windows for ranking, running calculations, frames, and row-to-row
+  comparisons
 - Select **Top-N per group** and draw reproducible samples with **`sample`** /
   **`sampleBy`** / **`randomSplit`**
-- Apply those patterns in Notebook **08** to write the three `curated/` KPI
-  outputs
+- Apply the module patterns in Notebook **08** to write three `curated/` KPI
+  outputs for Module 9
 
 ## Prerequisites
 
@@ -81,10 +66,9 @@ already carry what this module needs.
 
 ## Paths and outputs
 
-| Role | Location |
-|---|---|
-| Reads | `rideshare_dev.processed.{trip_enriched, trip_driver_assignment}` |
-| Module writes | `/Volumes/rideshare_dev/processed/output_files/curated/{kpi_name}/` |
+Notebooks read the two managed tables listed under **Prerequisites**. Notebook
+**08** writes to
+`/Volumes/rideshare_dev/processed/output_files/curated/{kpi_name}/`.
 
 | Output | Path | Grain / contract |
 |---|---|---|
@@ -103,23 +87,16 @@ This module creates no managed tables — Level 4 is not required here.
 **Runtime:** Spark **4.0.0** / DBR **17.3 LTS**.
 
 **API:** DataFrame `groupBy` / `agg`, `rollup` / `cube` / `groupingSets`,
-`pivot`, and `pyspark.sql.window.Window` with `F.*` window functions. No Spark
-SQL dual-API and no `QUALIFY` (Module 9).
+`pivot`, and `pyspark.sql.window.Window` with `F.*` window functions.
 
-**In scope:** output grain; aggregate NULL behavior; NULL group keys; `WHERE` vs
-`HAVING`; multi-level grouping and pivot; windows, frames, `lag` / `lead`;
-Top-N and sampling; three KPI writes in Notebook **08**.
-
-**Out of scope:** SQL / `QUALIFY` (Module 9); Delta ACID / `MERGE` / incremental
-KPI refresh (Modules 10 and 13 — Notebook **08** fully overwrites each run); UC
-grants (Module 11); shuffle tuning beyond a one-line `partitionBy` note in
-Notebook **05** (Module 16); UDAFs — built-ins cover this module.
+**Out of scope:** Spark SQL / `QUALIFY` (Module 9); Delta ACID / `MERGE` /
+incremental KPI refresh (Modules 10 and 13); Unity Catalog grant administration
+(Module 11); shuffle tuning beyond a one-line `partitionBy` note in Notebook
+**05** (Module 16); UDAFs — built-ins cover this module.
 
 ## Notebooks
 
-Eight notebooks, in order. **01–07** skill-building (each ends with a short
-exercise). **08** write-only.
-
+Each skill-building notebook ends with a short exercise.
 Notebook **01** owns the `trip_enriched` setup description and the inherited-NULL
 map. Notebooks **02–07** load the table without re-describing it, and point back
 to the notebook that taught a concept instead of re-teaching it.
@@ -129,18 +106,19 @@ to the notebook that taught a concept instead of re-teaching it.
 Module-local quality gate for this module. It supplements
 `docs/standards/*.md` and does not replace global standards.
 
-- Begin each section with a concrete example from this dataset (a number, expected result, or small table) before the theory.
-- Give one clear explanation per concept. If you revisit it later, add new information.
-- Keep introductory content to two roles only: motivation and a short roadmap (no full concept teaching here).
-- In notebooks 02 and later, reference Notebook 01 or `docs/data/dataset-overview.md` for shared setup; do not repeat full schema tables.
-- Make sure each exercise step directly matches a worked example shown earlier in the notebook.
-- Keep paragraphs short and focused: one idea per paragraph, usually 2–4 lines.
-- Before push, scan intro, section prose, and summary for repeated sentences and remove duplicates.
+- Begin each section with a concrete example from this dataset — a number,
+  expected result, or small table — before the theory.
+- Keep introductory content to two roles: motivation and a short roadmap.
+- In notebooks 02 and later, reference Notebook 01 or
+  `docs/data/dataset-overview.md` for shared setup; do not repeat full schema
+  tables.
+- Before push, remove repeated statements across the introduction, sections,
+  and summary.
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
 | 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column in `.agg()` fails (window → **05**); three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
-| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | Composite grain (`service_type`, `payment_method` → 18 of 30); NULL group vs `countDistinct`; `unknown` ≠ NULL; `WHERE` vs `HAVING`; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
+| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain (`service_type`, `payment_method` → 18 of 30); progressive `WHERE` vs `HAVING` comparison; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
 | 3 | Aggregate Functions Beyond Count and Sum | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set`; `median` / `mode` / `percentile_approx` vs `avg`; exact vs `approx_count_distinct`; decimal growth; `first` / `last` need order |
 | 4 | Multi-Level Grouping and Pivot | `trip_enriched` | `rollup` / `cube` / `groupingSets`; `grouping_id`; `pivot` + explicit values; `stack` |
 | 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; ranking; window aggregates; generalizes Module 7 **02** dedup |
@@ -157,4 +135,4 @@ Module-local quality gate for this module. It supplements
   - **`SELECT`** on **`rideshare_dev.processed.trip_enriched`** and
     **`rideshare_dev.processed.trip_driver_assignment`**
   - **`WRITE VOLUME`** on **`rideshare_dev.processed.output_files`**
-    (KPI writes — Notebook **08**)
+    (Notebook **08** only)
