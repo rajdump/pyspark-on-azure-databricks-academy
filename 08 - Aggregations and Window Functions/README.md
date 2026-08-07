@@ -124,6 +124,19 @@ Notebook **01** owns the `trip_enriched` setup description and the inherited-NUL
 map. Notebooks **02–07** load the table without re-describing it, and point back
 to the notebook that taught a concept instead of re-teaching it.
 
+## Markdown Quality Gate (Module 8)
+
+Module-local quality gate for this module. It supplements
+`docs/standards/*.md` and does not replace global standards.
+
+- Begin each section with a concrete example from this dataset (a number, expected result, or small table) before the theory.
+- Give one clear explanation per concept. If you revisit it later, add new information.
+- Keep introductory content to two roles only: motivation and a short roadmap (no full concept teaching here).
+- In notebooks 02 and later, reference Notebook 01 or `docs/data/dataset-overview.md` for shared setup; do not repeat full schema tables.
+- Make sure each exercise step directly matches a worked example shown earlier in the notebook.
+- Keep paragraphs short and focused: one idea per paragraph, usually 2–4 lines.
+- Before push, scan intro, section prose, and summary for repeated sentences and remove duplicates.
+
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
 | 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; bare non-key column in `.agg()` fails (window → **05**); exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
