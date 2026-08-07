@@ -91,7 +91,7 @@ print("trip_enriched rows:", trip_enriched.count())
 
 # COMMAND ----------
 
-# The 5-vs-6 gap, proven
+# DBTITLE 1,How many payment methods — countDistinct vs groupBy("payment_method")?
 trip_enriched.select(
     F.countDistinct("service_type").alias("distinct_service_type"),
     F.countDistinct("payment_method").alias("distinct_payment_method"),
@@ -101,6 +101,7 @@ print("groupBy(payment_method) groups:", trip_enriched.groupBy("payment_method")
 
 # COMMAND ----------
 
+# DBTITLE 1,How many trips used each payment method?
 trip_enriched.groupBy("payment_method").agg(
     F.count("*").alias("trip_count"),
 ).orderBy(F.col("trip_count").desc()).show()
@@ -109,6 +110,7 @@ trip_enriched.groupBy("payment_method").agg(
 
 # COMMAND ----------
 
+# DBTITLE 1,For each service type and payment method: trip count and total base fare?
 method_by_service = trip_enriched.groupBy("service_type", "payment_method").agg(
     F.count("*").alias("trip_count"),
     F.round(F.sum("base_fare_amount"), 2).alias("total_base_fare"),
@@ -149,6 +151,7 @@ method_by_service.orderBy("service_type", "payment_method").show(30)
 
 # COMMAND ----------
 
+# DBTITLE 1,What is the total tip for each pickup borough?
 borough_tips = trip_enriched.groupBy("pickup_borough").agg(
     F.count("*").alias("trip_count"),
     F.sum("tip_amount").alias("total_tip"),
@@ -159,6 +162,7 @@ borough_tips.orderBy(F.col("total_tip").desc()).show()
 
 # COMMAND ----------
 
+# DBTITLE 1,What is the total tip for each borough if we only count tips over $5?
 # WHERE — filter runs first, so only generous tips reach the aggregate
 print("WHERE tip_amount > 5 (applied before groupBy):")
 (
@@ -174,6 +178,7 @@ print("WHERE tip_amount > 5 (applied before groupBy):")
 
 # COMMAND ----------
 
+# DBTITLE 1,Which boroughs received more than $90 in total tips?
 # HAVING — filter runs after, on the alias, so totals match the unfiltered run
 print("HAVING total_tip > 90 (applied after agg):")
 borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).show()
