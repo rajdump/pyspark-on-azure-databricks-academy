@@ -72,8 +72,8 @@ print("trip_enriched rows:", trip_enriched.count())
 # MAGIC
 # MAGIC Before running anything, predict:
 # MAGIC
-# MAGIC - `countDistinct("payment_method")` returns how many values?
-# MAGIC - `groupBy("payment_method").count()` returns how many rows?
+# MAGIC - How many rows will `groupBy("payment_method")` return?
+# MAGIC - How many values will `countDistinct("payment_method")` return?
 # MAGIC
 # MAGIC Will these two numbers agree? If not, what could cause the difference?
 # MAGIC
@@ -81,18 +81,25 @@ print("trip_enriched rows:", trip_enriched.count())
 
 # COMMAND ----------
 
-# Prove the gap: countDistinct vs groupBy group count
-trip_enriched.select(
-    F.countDistinct("service_type").alias("distinct_service_type"),
-    F.countDistinct("payment_method").alias("distinct_payment_method"),
-).show()
-
-print("groupBy(payment_method) groups:", trip_enriched.groupBy("payment_method").count().count())
-
-# Display all 6 groups
+# 1. Display every payment_method group (watch for a NULL row)
 trip_enriched.groupBy("payment_method").agg(
     F.count("*").alias("trip_count"),
 ).orderBy(F.col("trip_count").desc()).show()
+
+# COMMAND ----------
+
+# 2. Count groups — includes the NULL group
+print(
+    "groupBy(payment_method) groups:",
+    trip_enriched.groupBy("payment_method").count().count(),
+)
+
+# COMMAND ----------
+
+# 3. Distinct values — countDistinct skips NULL
+trip_enriched.select(
+    F.countDistinct("payment_method").alias("distinct_payment_method"),
+).show()
 
 # COMMAND ----------
 
