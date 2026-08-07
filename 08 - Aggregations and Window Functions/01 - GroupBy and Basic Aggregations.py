@@ -30,9 +30,7 @@
 # MAGIC `groupBy("service_type")` changes the data from one row per trip to one row
 # MAGIC per service type.
 # MAGIC
-# MAGIC **Core habit:** Before writing a `groupBy`, decide what **one row in the result
-# MAGIC should represent**. Then run the aggregation and verify that the number of
-# MAGIC output rows matches what you expected.
+# MAGIC **Core habit:** Before writing a `groupBy`, determine what **one row in the result should represent**. Then perform the aggregation and confirm that the number of output rows aligns with your expectations.
 # MAGIC
 # MAGIC ---
 # MAGIC
@@ -305,7 +303,7 @@ trip_enriched.groupBy("service_type").agg(
 # MAGIC | UNKNOWN | 2 | **0** | 2 | **0** |
 # MAGIC
 # MAGIC Notice the gap between `trip_count` and `dated_trip_count` — that's where NULLs hide.
-# MAGIC STANDARD is short by 3, but every row still looks plausible. Only by showing both counts side by side does the gap become obvious.
+# MAGIC STANDARD is short by 3, but every row still looks conceivable. Only by showing both counts side by side does the gap become evident.
 # MAGIC
 # MAGIC UNKNOWN is the extreme: 2 trips, **0** dated — the entire group has no date information.
 
@@ -336,31 +334,46 @@ trip_enriched.select(
 # MAGIC `F.avg` divided by **104** (non-NULL tips), not **106** (all trips).
 # MAGIC Two valid interpretations — choose deliberately:
 # MAGIC
-# MAGIC | If NULL means… | Use… |
+# MAGIC | NULL rows are… | Use… |
 # MAGIC |---|---|
-# MAGIC | *"we don't know"* | `F.avg` — correct denominator is non-NULL count |
-# MAGIC | *"no tip was given"* (worth 0.00) | `F.coalesce(col, F.lit(0))` before aggregating |
+# MAGIC | **Not valid for the metric** — exclude from the average | `F.avg` — denominator is non-NULL count only |
+# MAGIC | **Valid but zero** — include in the average as 0.00 | `F.coalesce(col, F.lit(0))` before aggregating |
 # MAGIC
 # MAGIC The same skip rule applies to `F.sum`, `F.min`, and `F.max`.
 
 # COMMAND ----------
 
-# Edge case: when ALL values in a group are NULL, F.sum returns NULL — not 0
-trip_enriched.filter(F.col("trip_id").isin(103, 105, 106)).groupBy("trip_id").agg(
-    F.count("*").alias("rows"),
-    F.count("tip_amount").alias("known_tips"),
-    F.sum("tip_amount").alias("total_tip"),
-    F.max("tip_amount").alias("max_tip"),
-).orderBy("trip_id").show()
+# MAGIC %md
+# MAGIC ##### Edge case — what if ALL values in a group are NULL?
 
 # COMMAND ----------
 
-# A multi-row all-NULL group: both UNKNOWN trips are undated, so max is NULL
-trip_enriched.groupBy("service_type").agg(
-    F.count("*").alias("trip_count"),
-    F.count("trip_date").alias("dated_trips"),
-    F.max("trip_date").alias("latest_trip_date"),
-).orderBy("service_type").show()
+# Edge case: when ALL values in a group are NULL, F.sum returns NULL — not 0
+# Note: trip_enriched has no multi-row group where ALL fares are NULL,
+# so we use a small handmade dataset that follows the same schema.
+from pyspark.sql.types import StructType, StructField, StringType, DecimalType
+from decimal import Decimal
+
+edge_case_schema = StructType([
+    StructField("payment_method", StringType()),
+    StructField("base_fare_amount", DecimalType(10, 2)),
+])
+
+edge_case_data = [
+    ("card", Decimal("25.00")),
+    ("card", Decimal("30.00")),
+    ("cash", None),
+    ("cash", None),
+]
+
+edge_case_df = spark.createDataFrame(edge_case_data, edge_case_schema)
+
+edge_case_df.groupBy("payment_method").agg(
+    F.count("*").alias("trips"),
+    F.count("base_fare_amount").alias("known_fares"),
+    F.sum("base_fare_amount").alias("total_fare"),
+    F.avg("base_fare_amount").alias("avg_fare"),
+).show()
 
 # COMMAND ----------
 
