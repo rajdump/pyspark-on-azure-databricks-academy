@@ -12,8 +12,9 @@
 # MAGIC
 # MAGIC ### Trap 2: Position of the filter answers different questions
 # MAGIC
-# MAGIC The questions “Which boroughs earned more than $90 in tips?” and “What are borough totals
-# MAGIC from tips over $5?” both use `.filter()`, but they differ in context. A filter before `groupBy` excludes input rows, while a filter after `agg()` excludes aggregated groups, but placing the filter incorrectly will go unnoticed by Spark.
+# MAGIC The questions “Which boroughs earned more than $90 in tips?” and “What are the borough totals from tips over $5?” both utilize the `.filter()` method, but they serve different purposes. 
+# MAGIC
+# MAGIC A filter applied before the `groupBy` function excludes specific input rows, while a filter used after `agg()` excludes certain aggregated groups. It’s important to place the filter correctly, as an incorrect placement may go unnoticed by Spark.
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
