@@ -16,9 +16,9 @@
 # MAGIC `NULL` in a **value** that you sum or average is ignored. Section 1
 # MAGIC illustrates both scenarios using the same dataset.
 # MAGIC
-# MAGIC The second mistake involves `.filter()` performing two different
-# MAGIC functions depending on its placement: one version alters your numbers,
-# MAGIC while the other only changes which rows are included in the results.
+# MAGIC Filtering before grouping changes which records go into each group, so a
+# MAGIC later `sum` sees different inputs. Filtering after grouping and
+# MAGIC aggregation removes entire groups.
 # MAGIC
 # MAGIC This notebook addresses both topics in the following order:
 # MAGIC
