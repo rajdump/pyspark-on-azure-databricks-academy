@@ -111,18 +111,23 @@ trip_enriched.select(
 # MAGIC
 # MAGIC How many pairs actually exist in the data?
 # MAGIC
-# MAGIC ### For each service type and payment method, how many trips were completed and what was the total base fare?
+# MAGIC ### For each service type and payment method: trip count and total base fare?
 
 # COMMAND ----------
 
+# 1. One row per observed (service_type, payment_method) pair
 method_by_service = trip_enriched.groupBy("service_type", "payment_method").agg(
     F.count("*").alias("trip_count"),
     F.round(F.sum("base_fare_amount"), 2).alias("total_base_fare"),
 )
 
-print("output rows:", method_by_service.count(), "(at most 5 groups * 6 groups = 30)")
 method_by_service.orderBy("service_type", "payment_method").show(30)
-# Expected: 18 rows (not all 30 possible service_type × payment_method combinations exist)
+
+# COMMAND ----------
+
+# 2. Count pairs — at most 5 * 6 = 30; only combinations in the data appear
+print("output rows:", method_by_service.count(), "(at most 5 * 6 = 30)")
+# Expected: 18
 
 # COMMAND ----------
 
