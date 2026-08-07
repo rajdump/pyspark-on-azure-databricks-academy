@@ -4,27 +4,34 @@
 # MAGIC
 # MAGIC # 02 - Multi-column Keys, NULL Groups, and Filter Placement
 # MAGIC
-# MAGIC ## Two traps in the key list and filter
+# MAGIC ## Two traps: the NULL group and the filter's position
 # MAGIC
 # MAGIC ### Trap 1: An unexpected group
 # MAGIC
-# MAGIC Your stakeholder wants trips broken down by payment method (e.g., `card`, `wallet`, `cash`, `corporate`, `unknown`); you might encounter a `NULL` group as well. This group contains real trips without any payment record, and while `countDistinct` ignores `NULL`, `groupBy` includes it.
+# MAGIC Your stakeholder wants trips broken down by payment method. You check the
+# MAGIC distinct values first — `card`, `wallet`, `cash`, `corporate`, `unknown` —
+# MAGIC and build the report for exactly those five.
 # MAGIC
-# MAGIC ### Trap 2: Position of the filter answers different questions
+# MAGIC The `groupBy` returns one more group, keyed `NULL`: trips with no payment
+# MAGIC record at all. Nothing failed, and that group holds real trips.
 # MAGIC
-# MAGIC The questions “Which boroughs earned more than $90 in tips?” and “What are the borough totals from tips over $5?” both utilize the `.filter()` method, but they serve different purposes. 
+# MAGIC ### Trap 2: The filter's position changes the question
 # MAGIC
-# MAGIC A filter applied before the `groupBy` function excludes specific input rows, while a filter used after `agg()` excludes certain aggregated groups. It’s important to place the filter correctly, as an incorrect placement may go unnoticed by Spark.
+# MAGIC "Which boroughs earned more than $90 in tips?" and "What are borough totals
+# MAGIC from tips over $5?" are different questions, yet both are written with
+# MAGIC `.filter()`. A filter before `groupBy` excludes input rows; a filter after
+# MAGIC `agg()` excludes aggregated groups. Spark runs either one without
+# MAGIC complaint, so the wrong placement returns a plausible answer.
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
-# MAGIC | Section          | Concept                                | Why it matters                                                     |
-# MAGIC | ---------------- | -------------------------------------- | ------------------------------------------------------------------ |
-# MAGIC | 1. One key       | `countDistinct` vs `groupBy`           | Predict the number of output groups before running the aggregation |
-# MAGIC | 1. Composite key | Two keys in one `groupBy`              | Output grain is defined by the full key list                       |
-# MAGIC | 2. Filter first  | `.filter()` before `groupBy`           | Removes input trips, so aggregate values can change                |
-# MAGIC | 2. Filter last   | `.filter()` after `.agg()`             | Removes groups after aggregate values are calculated               |
-# MAGIC | Exercise         | Per-borough summary, then a second key | Apply both ideas to a new grouping key                             |
+# MAGIC | Section | Concept | Why it matters |
+# MAGIC |---|---|---|
+# MAGIC | 1. One key | `countDistinct` vs `groupBy` | Predict the group count before running |
+# MAGIC | 1. Composite key | Two keys in one `groupBy` | Output grain is the full key list |
+# MAGIC | 2. Filter first | `.filter()` before `groupBy` | Removes input trips, so values change |
+# MAGIC | 2. Filter last | `.filter()` after `.agg()` | Removes groups once values are calculated |
+# MAGIC | Exercise | Per-borough summary, then a second key | Apply both ideas to a new key |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
 # MAGIC
@@ -69,10 +76,11 @@ print("trip_enriched rows:", trip_enriched.count())
 # MAGIC - `groupBy("payment_method").count()` returns how many rows?
 # MAGIC
 # MAGIC Will these two numbers agree? If not, what could cause the difference?
+# MAGIC
+# MAGIC ### How many payment methods — `countDistinct` vs `groupBy`?
 
 # COMMAND ----------
 
-# DBTITLE 1,How many payment methods — countDistinct vs groupBy?
 # Prove the gap: countDistinct vs groupBy group count
 trip_enriched.select(
     F.countDistinct("service_type").alias("distinct_service_type"),
@@ -88,25 +96,30 @@ trip_enriched.groupBy("payment_method").agg(
 
 # COMMAND ----------
 
-# DBTITLE 1,What makes trip 106 different from trips 104 and 105?
+# MAGIC %md
+# MAGIC ### What makes trip 106 different from trips 104 and 105?
+
+# COMMAND ----------
+
 # Inspect the three edge-case trips: NULL key, NULL value, and sentinel
 trip_enriched.filter(F.col("trip_id").isin(104, 105, 106)).select(
-    "trip_id", "payment_method", "base_fare_amount",
+    "trip_id",
+    "payment_method",
+    "base_fare_amount",
 ).orderBy("trip_id").show()
 
 # COMMAND ----------
 
-# DBTITLE 1,Interpret: key NULL vs value NULL vs sentinel
 # MAGIC %md
 # MAGIC ### Interpretation
 # MAGIC
 # MAGIC | Trip | `payment_method` | `base_fare_amount` | What it shows |
 # MAGIC |---|---|---|---|
-# MAGIC | 104 | `card` (valid key) | NULL (missing value) | Row stays in the **card** group; NULL fare is excluded from aggregates (Notebook 01) |
-# MAGIC | 105 | `unknown` (sentinel) | 12.00 | A real string — not NULL. Lowercase equivalent of Notebook 01’s `UNKNOWN` service type |
-# MAGIC | 106 | NULL (missing key) | NULL | No payment row exists — this is the extra group that `countDistinct` missed |
+# MAGIC | 104 | `card` | NULL | Stays in **card**; NULL fare skipped (Notebook 01) |
+# MAGIC | 105 | `unknown` | 12.00 | Real string, not NULL — like Notebook 01 `UNKNOWN` |
+# MAGIC | 106 | NULL | NULL | No payment row — extra group `countDistinct` missed |
 # MAGIC
-# MAGIC `countDistinct` excludes NULL → reports 5.  
+# MAGIC `countDistinct` excludes NULL → reports 5.
 # MAGIC `groupBy` keeps NULL as one group → returns 6.
 # MAGIC
 # MAGIC ### Composite key — predict before running
@@ -116,10 +129,11 @@ trip_enriched.filter(F.col("trip_id").isin(104, 105, 106)).select(
 # MAGIC - Upper bound: `5 × 6 = 30` possible pairs
 # MAGIC
 # MAGIC How many pairs actually exist in the data?
+# MAGIC
+# MAGIC ### For each service type and payment method: trip count and total base fare?
 
 # COMMAND ----------
 
-# DBTITLE 1,For each service type and payment method: trip count and total base fare?
 method_by_service = trip_enriched.groupBy("service_type", "payment_method").agg(
     F.count("*").alias("trip_count"),
     F.round(F.sum("base_fare_amount"), 2).alias("total_base_fare"),
@@ -157,10 +171,11 @@ method_by_service.orderBy("service_type", "payment_method").show(30)
 # MAGIC
 # MAGIC **Performance habit:** filter as early as the question allows to reduce
 # MAGIC shuffle input.
+# MAGIC
+# MAGIC ### What is the total tip for each pickup borough?
 
 # COMMAND ----------
 
-# DBTITLE 1,What is the total tip for each pickup borough?
 borough_tips = trip_enriched.groupBy("pickup_borough").agg(
     F.count("*").alias("trip_count"),
     F.sum("tip_amount").alias("total_tip"),
@@ -171,7 +186,11 @@ borough_tips.orderBy(F.col("total_tip").desc()).show()
 
 # COMMAND ----------
 
-# DBTITLE 1,What is the total tip for each borough if we only count tips over $5?
+# MAGIC %md
+# MAGIC ### What is the total tip for each borough if we only count tips over $5?
+
+# COMMAND ----------
+
 # WHERE — filter runs first, so only generous tips reach the aggregate
 print("WHERE tip_amount > 5 (applied before groupBy):")
 (
@@ -187,7 +206,11 @@ print("WHERE tip_amount > 5 (applied before groupBy):")
 
 # COMMAND ----------
 
-# DBTITLE 1,Which boroughs received more than $90 in total tips?
+# MAGIC %md
+# MAGIC ### Which boroughs received more than $90 in total tips?
+
+# COMMAND ----------
+
 # HAVING — filter runs after, on the alias, so totals match the unfiltered run
 print("HAVING total_tip > 90 (applied after agg):")
 borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).show()
