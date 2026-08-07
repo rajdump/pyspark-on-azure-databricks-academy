@@ -29,7 +29,7 @@
 # MAGIC | Section | Concept | Why it matters |
 # MAGIC |---|---|---|
 # MAGIC | 1 | `countDistinct` vs `groupBy` | Predict the group count before running |
-# MAGIC | 1a | Composite key | Output grain is the full key list |
+# MAGIC | 1a | Composite key | Only pairs that exist in the data become rows |
 # MAGIC | 2 | `.filter()` before `groupBy` | Removes input trips, so values change |
 # MAGIC | 2a | `.filter()` after `.agg()` | Removes groups once values are calculated |
 # MAGIC | Exercise | Per-borough summary, then a second key | Apply both ideas to a new key |
@@ -292,7 +292,7 @@ borough_method.orderBy(F.col("trip_count").desc()).show(40)
 # MAGIC | # | Concept | Rule |
 # MAGIC |---|---|---|
 # MAGIC | 1 | `countDistinct` vs `groupBy` | `groupBy` keeps a NULL group; distinct skips it |
-# MAGIC | 1a | Composite key | Output rows = observed key combinations only |
+# MAGIC | 1a | Composite key | Only key pairs present in the data become rows |
 # MAGIC | 2 | `.filter()` before `groupBy` | Removes rows — aggregate values change |
 # MAGIC | 2a | `.filter()` after `.agg()` | Removes groups — aggregate values stay unchanged |
 # MAGIC
