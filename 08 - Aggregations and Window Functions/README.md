@@ -67,18 +67,9 @@ Complete Module 7 notebooks **`01`–`07`**. You need:
 makes a point that trip grain cannot.
 
 **Inherited NULLs** on `trip_enriched` (join gaps + Module 6 value rejection)
-are teaching material — full column × `trip_id` map lives in
-[`dataset-overview.md`](../docs/data/dataset-overview.md). Short form:
-
-| Effect | Example |
-|---|---|
-| `F.count("*")` | Always **106** |
-| `F.count(col)` | 100 / 103 / 104 / 105 / 106 depending on the column |
-| `F.avg(col)` | Divides by that column's non-NULL count |
-
-Normalized group keys: `service_type` **uppercase** (`STANDARD` 55 … `UNKNOWN`
-2); `payment_method` **lowercase** (`card` 59 … `unknown` 1, plus **1 NULL**).
-`UNKNOWN` / `unknown` are string sentinels, **not** NULL.
+are teaching material — column × `trip_id` NULL map and normalized group-key
+values (`service_type`, `payment_method`) live in
+[`dataset-overview.md`](../docs/data/dataset-overview.md).
 
 Also recall: Module 3 NULL / `F.coalesce`; Module 4 wide/`Exchange` stages;
 Module 7 Notebook **02**'s `Window` + `row_number` dedup (generalized here in
