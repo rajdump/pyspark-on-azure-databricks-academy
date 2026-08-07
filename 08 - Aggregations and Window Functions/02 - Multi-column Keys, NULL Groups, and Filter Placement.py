@@ -10,16 +10,11 @@
 # MAGIC
 # MAGIC ### Part 1: Grouping on several columns — and NULL as a group key
 # MAGIC
-# MAGIC Module 7 hammered that `NULL = NULL` is **not true** in a join. `groupBy`
-# MAGIC behaves the **opposite** way: all NULLs in a key column collapse into
-# MAGIC **one group**. That creates a row you did not predict — and it looks exactly
-# MAGIC like a valid data row in the output.
-# MAGIC
-# MAGIC > `payment_method` has 5 distinct values; `countDistinct` reports 5; but
-# MAGIC > `groupBy` produces **6** (one extra NULL group for the trip with no payment
-# MAGIC > record). The exercise in Notebook 01 asked you to see this discrepancy.
-# MAGIC > This notebook explains it, shows you how it interacts with composite keys,
-# MAGIC > and tells you what to watch for.
+# MAGIC Notebook 01's exercise left you with a group nobody asked for: a
+# MAGIC `payment_method` row whose key is `NULL`. In the output it looks exactly
+# MAGIC like a valid data row. Section 1 explains where it comes from, what it does
+# MAGIC to your row-count prediction, and how it behaves once you group on more
+# MAGIC than one column.
 # MAGIC
 # MAGIC ### Part 2: `WHERE` vs `HAVING`
 # MAGIC
@@ -49,20 +44,13 @@
 # MAGIC %md
 # MAGIC ## Setup — load `trip_enriched`
 # MAGIC
-# MAGIC Module 7 Notebook **`07`** wrote this managed table: one row per `trip_id`,
-# MAGIC **106** rows, 16 columns.
+# MAGIC The same managed table Notebook 01 used: one row per `trip_id`, **106**
+# MAGIC rows, 16 columns. Column roles, types, and the inherited-NULL map are in
+# MAGIC Notebook 01's setup and in `docs/data/dataset-overview.md`.
 # MAGIC
-# MAGIC | Role | Columns |
-# MAGIC |---|---|
-# MAGIC | Key | `trip_id` |
-# MAGIC | Join keys (retained) | `pickup_location_id`, `dropoff_location_id` |
-# MAGIC | Group keys | `service_type`, `payment_method`, `trip_date`, `hour_of_day` |
-# MAGIC | Group keys (zone) | `pickup_borough`, `pickup_zone`, `dropoff_borough`, `dropoff_zone` |
-# MAGIC | Measures | `trip_distance_miles`, `ride_duration_mins` |
-# MAGIC | Measures (money) | `base_fare_amount`, `tip_amount`, `driver_payout_amount` |
-# MAGIC
-# MAGIC Money and distance columns are `decimal`; `ride_duration_mins` and
-# MAGIC `hour_of_day` are `int`; `trip_date` is a `date`.
+# MAGIC This notebook groups on `service_type`, `payment_method`, and
+# MAGIC `pickup_borough`, and aggregates `base_fare_amount`, `tip_amount`, and
+# MAGIC `trip_distance_miles`.
 
 # COMMAND ----------
 
@@ -98,8 +86,7 @@ print("trip_enriched rows:", trip_enriched.count())
 # MAGIC
 # MAGIC Read `groups(key)` as the number of groups a `groupBy` on that key alone
 # MAGIC would produce — **not** `countDistinct`. `payment_method` contributes **6**
-# MAGIC here (5 values plus a NULL group) even though `countDistinct` reports 5.
-# MAGIC The subsection below explains why those two numbers differ.
+# MAGIC here, not 5. The subsection below explains the gap.
 # MAGIC
 # MAGIC The 12 missing combinations are information in themselves: no `XL` trip was
 # MAGIC ever paid in cash, for instance. A `groupBy` reports what exists, not every
@@ -107,28 +94,29 @@ print("trip_enriched rows:", trip_enriched.count())
 # MAGIC
 # MAGIC ### The NULL group-key rule
 # MAGIC
-# MAGIC Module 7 hammered that `NULL = NULL` is **not true**, so NULL keys never
-# MAGIC match in a join. `groupBy` works the other way: **all NULLs collapse into
-# MAGIC one group**, displayed as `NULL`.
+# MAGIC Three operations, three different answers on the same NULL key:
 # MAGIC
 # MAGIC | Operation | NULL keys |
 # MAGIC |---|---|
-# MAGIC | `join` (Module 7) | Never match — need `eqNullSafe` |
-# MAGIC | `groupBy` | Collapse into a single NULL group |
+# MAGIC | `join` (Module 7) | Never match — `NULL = NULL` is not true; need `eqNullSafe` |
+# MAGIC | `groupBy` | Collapse into a single group, displayed as `NULL` |
 # MAGIC | `countDistinct` | Ignored entirely |
 # MAGIC
-# MAGIC So `payment_method` produces **6** groups (5 real values + NULL) while
-# MAGIC `countDistinct` reports **5**. Watch for `unknown` **and** NULL appearing as
-# MAGIC separate rows below: `unknown` is Module 6's sentinel for a blank method on
-# MAGIC trip 105, whereas the NULL is trip 106, which has no payment row at all.
-# MAGIC Two different data problems that a careless summary would merge.
+# MAGIC The middle row is the one that catches people: `groupBy` treats every NULL
+# MAGIC as the same key, which is why `payment_method` yields **6** groups where
+# MAGIC `countDistinct` reports **5**.
+# MAGIC
+# MAGIC Watch for `unknown` **and** NULL appearing as separate rows below. The
+# MAGIC `unknown` sentinel from Notebook 01 covers a blank method on trip 105; the
+# MAGIC NULL is trip 106, which has no payment row at all. Two different data
+# MAGIC problems that a careless summary would merge.
 # MAGIC
 # MAGIC Notebook `04` shows how this NULL group becomes genuinely ambiguous once
 # MAGIC `rollup` starts adding subtotal rows that *also* show NULL.
 
 # COMMAND ----------
 
-# countDistinct ignores NULL; groupBy does not — hence 5 vs 6
+# The 5-vs-6 gap, proven
 trip_enriched.select(
     F.countDistinct("service_type").alias("distinct_service_type"),
     F.countDistinct("payment_method").alias("distinct_payment_method"),
@@ -229,13 +217,13 @@ borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).
 # MAGIC %md
 # MAGIC ## Exercise — a per-borough trip summary
 # MAGIC
-# MAGIC Sections 1–2 introduced composite keys and filter placement. Apply both on
-# MAGIC **`pickup_borough`**.
+# MAGIC Steps 1–3 apply Section 2's filter placement to the single key
+# MAGIC **`pickup_borough`**. Step 4 then adds Section 1's composite key.
 # MAGIC
 # MAGIC **1. Predict.** Set `predicted_borough_groups` to the number of output rows
-# MAGIC you expect. Get it from `countDistinct("pickup_borough")` — and remember
-# MAGIC from the setup table that the zone columns have **no** NULLs, so there is no
-# MAGIC extra NULL group here.
+# MAGIC you expect. Get it from `countDistinct("pickup_borough")` — the zone
+# MAGIC columns carry **no** NULLs, so unlike `payment_method` there is no extra
+# MAGIC NULL group to add here.
 # MAGIC
 # MAGIC **2. Aggregate.** One row per `pickup_borough`, with these aliased columns:
 # MAGIC
@@ -266,6 +254,16 @@ borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).
 # MAGIC
 # MAGIC The `HAVING` should leave **3** rows — Bronx has exactly 10 trips, and
 # MAGIC `> 10` excludes it. Off-by-one traps are real; check the boundary.
+# MAGIC
+# MAGIC **4. Now the composite key.** Group on **`pickup_borough` *and*
+# MAGIC `payment_method`** with a single `trip_count`, and predict the row count
+# MAGIC *before* you run it.
+# MAGIC
+# MAGIC Two rules from Section 1 decide your answer: the upper bound is
+# MAGIC `groups(pickup_borough) * groups(payment_method)`, and `payment_method`
+# MAGIC contributes **6**, not 5. Expect the actual number to land well below that
+# MAGIC bound — no borough saw every payment method. If the check prints `✗`, work
+# MAGIC out which of the two rules you missed before looking at the result.
 
 # COMMAND ----------
 
@@ -288,6 +286,23 @@ borough_summary.orderBy(F.col("trip_count").desc()).show()
 
 # 3. YOUR CODE — keep only boroughs with more than 10 trips (HAVING)
 # Then compare Manhattan's total_base_fare against the unfiltered run above.
+
+# COMMAND ----------
+
+# 4. YOUR PREDICTION — replace None with the row count you expect
+predicted_pair_groups = None
+
+# 4. YOUR CODE — add the second key so the grain is one row per
+# (pickup_borough, payment_method)
+borough_method = trip_enriched.groupBy("pickup_borough").agg(  # TODO: add payment_method
+    F.count("*").alias("trip_count"),
+)
+
+actual_pairs = borough_method.count()
+pair_match = "✓" if predicted_pair_groups == actual_pairs else "✗"
+print(f"{pair_match} predicted={predicted_pair_groups}, actual={actual_pairs}")
+
+borough_method.orderBy(F.col("trip_count").desc()).show(40)
 
 # COMMAND ----------
 

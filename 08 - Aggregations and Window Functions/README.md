@@ -30,7 +30,8 @@ write Parquet. No pedagogy re-teach in **08**.
 By the end of this module, you'll be able to:
 
 - Name the **output grain** of an aggregate and verify its row count
-- Write **`groupBy().agg()`** with aliased columns; group by one or several keys
+- Write **`groupBy().agg()`** with aliased columns; group by one key or a
+  **composite key**, whose output grain is the whole key list
 - Explain why **`F.count("*")`**, **`F.count("col")`**, and
   **`F.countDistinct("col")`** disagree, and why **`F.avg`** / **`F.sum`** skip
   NULLs
@@ -119,10 +120,14 @@ Notebook **05** (Module 16); UDAFs — built-ins cover this module.
 Eight notebooks, in order. **01–07** skill-building (each ends with a short
 exercise). **08** write-only.
 
+Notebook **01** owns the `trip_enriched` setup description and the inherited-NULL
+map. Notebooks **02–07** load the table without re-describing it, and point back
+to the notebook that taught a concept instead of re-teaching it.
+
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
 | 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; bare non-key column in `.agg()` fails (window → **05**); exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
-| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | Composite grain (`service_type`, `payment_method` → 18 of 30); NULL group vs `countDistinct`; `unknown` ≠ NULL; `WHERE` vs `HAVING`; exercise — per-`pickup_borough` + HAVING |
+| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | Composite grain (`service_type`, `payment_method` → 18 of 30); NULL group vs `countDistinct`; `unknown` ≠ NULL; `WHERE` vs `HAVING`; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
 | 3 | Aggregate Functions Beyond Count and Sum | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set`; `median` / `mode` / `percentile_approx` vs `avg`; exact vs `approx_count_distinct`; decimal growth; `first` / `last` need order |
 | 4 | Multi-Level Grouping and Pivot | `trip_enriched` | `rollup` / `cube` / `groupingSets`; `grouping_id`; `pivot` + explicit values; `stack` |
 | 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; ranking; window aggregates; generalizes Module 7 **02** dedup |
