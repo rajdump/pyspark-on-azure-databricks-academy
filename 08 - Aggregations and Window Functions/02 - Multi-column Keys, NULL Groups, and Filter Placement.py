@@ -13,24 +13,26 @@
 # MAGIC and build the report for exactly those five.
 # MAGIC
 # MAGIC The `groupBy` returns one more group, keyed `NULL`: trips with no payment
-# MAGIC record at all. Nothing failed, and that group holds real trips.
+# MAGIC method. Nothing failed, and that group contains real trips.
 # MAGIC
 # MAGIC ### Trap 2: The filter's position changes the question
 # MAGIC
 # MAGIC "Which boroughs earned more than $90 in tips?" and "What are borough totals
 # MAGIC from tips over $5?" are different questions, yet both are written with
-# MAGIC `.filter()`. A filter before `groupBy` excludes input rows; a filter after
-# MAGIC `agg()` excludes aggregated groups. Spark runs either one without
-# MAGIC complaint, so the wrong placement returns a plausible answer.
+# MAGIC `.filter()`.
+# MAGIC
+# MAGIC A filter before `groupBy` excludes input rows; a filter after
+# MAGIC `agg()` excludes aggregated groups.
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
 # MAGIC | Section | Concept | Why it matters |
 # MAGIC |---|---|---|
-# MAGIC | 1. One key | `countDistinct` vs `groupBy` | Predict the group count before running |
-# MAGIC | 1. Composite key | Two keys in one `groupBy` | Output grain is the full key list |
-# MAGIC | 2. Filter first | `.filter()` before `groupBy` | Removes input trips, so values change |
-# MAGIC | 2. Filter last | `.filter()` after `.agg()` | Removes groups once values are calculated |
+# MAGIC | 1 | `countDistinct` vs `groupBy` | Predict the group count before running |
+# MAGIC | 1a | NULL key vs value vs sentinel | Separate key NULL, value NULL, and `"unknown"` |
+# MAGIC | 1b | Composite key | Output grain is the full key list |
+# MAGIC | 2 | `.filter()` before `groupBy` | Removes input trips, so values change |
+# MAGIC | 2a | `.filter()` after `.agg()` | Removes groups once values are calculated |
 # MAGIC | Exercise | Per-borough summary, then a second key | Apply both ideas to a new key |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
@@ -64,11 +66,9 @@ print("trip_enriched rows:", trip_enriched.count())
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 1 - Composite keys and the NULL group
+# DBTITLE 1,Section 1 - countDistinct vs groupBy
 # MAGIC %md
-# MAGIC ## 1. Composite keys and the NULL group
-# MAGIC
-# MAGIC ### Prediction prompt
+# MAGIC ## 1. `countDistinct` vs `groupBy`
 # MAGIC
 # MAGIC Before running anything, predict:
 # MAGIC
@@ -96,7 +96,10 @@ trip_enriched.groupBy("payment_method").agg(
 
 # COMMAND ----------
 
+# DBTITLE 1,Section 1a - NULL key vs value vs sentinel
 # MAGIC %md
+# MAGIC ## 1a. NULL key vs value vs sentinel
+# MAGIC
 # MAGIC ### What makes trip 106 different from trips 104 and 105?
 
 # COMMAND ----------
@@ -111,8 +114,6 @@ trip_enriched.filter(F.col("trip_id").isin(104, 105, 106)).select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Interpretation
-# MAGIC
 # MAGIC | Trip | `payment_method` | `base_fare_amount` | What it shows |
 # MAGIC |---|---|---|---|
 # MAGIC | 104 | `card` | NULL | Stays in **card**; NULL fare skipped (Notebook 01) |
@@ -121,8 +122,12 @@ trip_enriched.filter(F.col("trip_id").isin(104, 105, 106)).select(
 # MAGIC
 # MAGIC `countDistinct` excludes NULL → reports 5.
 # MAGIC `groupBy` keeps NULL as one group → returns 6.
-# MAGIC
-# MAGIC ### Composite key — predict before running
+
+# COMMAND ----------
+
+# DBTITLE 1,Section 1b - Composite key
+# MAGIC %md
+# MAGIC ## 1b. Composite key
 # MAGIC
 # MAGIC - `service_type`: 5 groups (no NULLs in this column)
 # MAGIC - `payment_method`: 6 groups
@@ -145,9 +150,9 @@ method_by_service.orderBy("service_type", "payment_method").show(30)
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 2 - Filter placement
+# DBTITLE 1,Section 2 - filter before groupBy
 # MAGIC %md
-# MAGIC ## 2. `WHERE` vs `HAVING` with the same `.filter()`
+# MAGIC ## 2. `.filter()` before `groupBy`
 # MAGIC
 # MAGIC Concrete check first (same borough metric, three query shapes):
 # MAGIC
@@ -206,7 +211,10 @@ print("WHERE tip_amount > 5 (applied before groupBy):")
 
 # COMMAND ----------
 
+# DBTITLE 1,Section 2a - filter after agg
 # MAGIC %md
+# MAGIC ## 2a. `.filter()` after `.agg()`
+# MAGIC
 # MAGIC ### Which boroughs received more than $90 in total tips?
 
 # COMMAND ----------
@@ -302,10 +310,10 @@ borough_method.orderBy(F.col("trip_count").desc()).show(40)
 # MAGIC
 # MAGIC | # | Concept | Rule |
 # MAGIC |---|---|---|
-# MAGIC | 1 | NULL group key | `groupBy` keeps NULL as one group; `countDistinct` excludes it |
-# MAGIC | 2 | Sentinel vs NULL | `"unknown"` is a real string; NULL means no row exists |
-# MAGIC | 3 | Composite grain | Output rows = observed key combinations only |
-# MAGIC | 4 | Filter before aggregation | Removes rows — aggregate values change |
-# MAGIC | 5 | Filter after aggregation | Removes groups — aggregate values stay unchanged |
+# MAGIC | 1 | `countDistinct` vs `groupBy` | `groupBy` keeps a NULL group; distinct skips it |
+# MAGIC | 1a | NULL key vs value vs sentinel | `"unknown"` is a string; NULL key = no payment row |
+# MAGIC | 1b | Composite key | Output rows = observed key combinations only |
+# MAGIC | 2 | `.filter()` before `groupBy` | Removes rows — aggregate values change |
+# MAGIC | 2a | `.filter()` after `.agg()` | Removes groups — aggregate values stay unchanged |
 # MAGIC
 # MAGIC Next notebook: **`03 - Aggregate Functions Beyond Count and Sum`**.
