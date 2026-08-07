@@ -6,19 +6,22 @@
 # MAGIC
 # MAGIC Two common mistakes can significantly impact aggregate results:
 # MAGIC
-# MAGIC | Situation | Expected outcome | Actual outcome from Spark |
-# MAGIC |---|---|---|
-# MAGIC | Grouping by `payment_method` | 5 groups | **6 groups** (`NULL` forms its own group) |
-# MAGIC | Filtering borough tips with `tip_amount > 5` | "Same totals, fewer rows" | **Different totals** (the `WHERE` clause changes the input rows) |  # noqa: E501
+# MAGIC First Mistake: `NULL` does not behave the same way in grouping and aggregation.
 # MAGIC
-# MAGIC The first mistake arises from treating every `NULL` value the same way.
-# MAGIC A `NULL` in a **group key** still creates a separate group, whereas a
-# MAGIC `NULL` in a **value** that you sum or average is ignored. Section 1
-# MAGIC illustrates both scenarios using the same dataset.
+# MAGIC When `NULL` appears in a `groupBy` key, Spark keeps those rows as a separate group. When `NULL` appears in a column used with `sum` or `avg`, Spark skips those values during the calculation.
 # MAGIC
-# MAGIC Filtering before grouping changes which records go into each group, so a
-# MAGIC later `sum` sees different inputs. Filtering after grouping and
-# MAGIC aggregation removes entire groups.
+# MAGIC Second Mistake: Filter position changes the aggregation result.
+# MAGIC
+# MAGIC When you filter **before** `groupBy`, Spark removes rows that do not meet the condition before calculating the aggregate. When you filter **after** `agg`, Spark removes groups that do not meet the condition based on their aggregated values.
+# MAGIC
+# MAGIC | Scenario                                           | What happens                                                                                          |
+# MAGIC | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+# MAGIC | Group by `payment_method`                          | Spark returns **6 groups**: five payment methods plus one `NULL` group                                |
+# MAGIC | Apply `sum` or `avg` to a column containing `NULL` | Spark ignores the `NULL` values and calculates the aggregate using the remaining values               |
+# MAGIC | Filter `tip_amount > 5` before `groupBy`           | Spark removes rows that do not meet the condition before aggregation |
+# MAGIC | Filter `total_tip > 90` after `agg()`              | Spark removes groups whose aggregated `total_tip` does not meet the condition                         |
+# MAGIC
+# MAGIC
 # MAGIC
 # MAGIC This notebook addresses both topics in the following order:
 # MAGIC
