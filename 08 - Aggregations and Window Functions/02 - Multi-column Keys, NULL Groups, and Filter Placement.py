@@ -150,7 +150,7 @@ print("output rows:", method_by_service.count(), "(at most 5 * 6 = 30)")
 
 # DBTITLE 1,2a - Inspect combinations
 # MAGIC %md
-# MAGIC ### 2a. Which pickup borough and tip combinations exist?
+# MAGIC ### 2a. Which combinations of pickup borough and tip-related categories actually appear in the data?
 
 # COMMAND ----------
 
@@ -162,6 +162,7 @@ pickup_borough_tip_combinations = (
 )
 
 pickup_borough_tip_combinations.show(106, truncate=False)
+pickup_borough_tip_combinations.count()
 
 # COMMAND ----------
 
@@ -178,6 +179,7 @@ tips_over_5 = trip_enriched.filter(F.col("tip_amount") > 5).select(
 )
 
 tips_over_5.orderBy("pickup_borough", "tip_amount").show(106, truncate=False)
+tips_over_5.count()
 
 # COMMAND ----------
 
