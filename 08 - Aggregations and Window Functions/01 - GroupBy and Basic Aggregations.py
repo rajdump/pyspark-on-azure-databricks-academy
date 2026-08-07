@@ -30,7 +30,9 @@
 # MAGIC `groupBy("service_type")` changes the data from one row per trip to one row
 # MAGIC per service type.
 # MAGIC
-# MAGIC **Core habit:** Before writing a `groupBy`, determine what **one row in the result should represent**. Then perform the aggregation and confirm that the number of output rows aligns with your expectations.
+# MAGIC **Core habit:** Before writing a `groupBy`, determine what **one row in
+# MAGIC the result should represent**. Then perform the aggregation and confirm
+# MAGIC that the number of output rows aligns with your expectations.
 # MAGIC
 # MAGIC ---
 # MAGIC
@@ -41,7 +43,7 @@
 # MAGIC | 1. Output grain | One row per group | Predict summary row count before running |
 # MAGIC | 2. `groupBy().agg()` | Syntax and aliasing | Name aggregate columns explicitly |
 # MAGIC | 3. Counting | 3 counts, 3 answers | Match count function to business question |
-# MAGIC | 4. Aggregates skip NULLs | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |
+# MAGIC | 4. Aggregates skip NULLs | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |  # noqa: E501
 # MAGIC | Exercise | Per-`payment_method` summary | Apply all four habits on a new key |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
@@ -235,7 +237,7 @@ try:
 ).filter(F.col("service_type") == "UNKNOWN")
 
     service_summary.show()
-except Exception as e:
+except Exception:
     print(
         "groupBy collapsed multiple rows into one row per group"
         " — there is no single trip_id to display."
@@ -264,9 +266,11 @@ except Exception as e:
 # MAGIC - **How many trips have a valid trip date?** — count only trips where the date is available.
 # MAGIC - **How many days does the dataset cover?** — count the distinct trip dates.
 # MAGIC
-# MAGIC All three questions are valid, but the appropriate question depends on the **business metric you are trying to measure**
+# MAGIC All three questions are valid, but the appropriate question depends on
+# MAGIC the **business metric you are trying to measure**
 # MAGIC
-# MAGIC **Cost note:** `countDistinct` is expensive at scale — Notebook `03` covers a faster approximate alternative.
+# MAGIC **Cost note:** `countDistinct` is expensive at scale — Notebook `03`
+# MAGIC covers a faster approximate alternative.
 
 # COMMAND ----------
 
@@ -281,7 +285,8 @@ trip_enriched.select(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Now apply the same three counts **per service type** — this is where the difference becomes visible.
+# MAGIC Now apply the same three counts **per service type** — this is where
+# MAGIC the difference becomes visible.
 
 # COMMAND ----------
 
@@ -303,7 +308,8 @@ trip_enriched.groupBy("service_type").agg(
 # MAGIC | UNKNOWN | 2 | **0** | 2 | **0** |
 # MAGIC
 # MAGIC Notice the gap between `trip_count` and `dated_trip_count` — that's where NULLs hide.
-# MAGIC STANDARD is short by 3, but every row still looks conceivable. Only by showing both counts side by side does the gap become evident.
+# MAGIC STANDARD is short by 3, but every row still looks conceivable. Only by
+# MAGIC showing both counts side by side does the gap become evident.
 # MAGIC
 # MAGIC UNKNOWN is the extreme: 2 trips, **0** dated — the entire group has no date information.
 
@@ -336,8 +342,8 @@ trip_enriched.select(
 # MAGIC
 # MAGIC | NULL rows are… | Use… |
 # MAGIC |---|---|
-# MAGIC | **Not valid for the metric** — exclude from the average | `F.avg` — denominator is non-NULL count only |
-# MAGIC | **Valid but zero** — include in the average as 0.00 | `F.coalesce(col, F.lit(0))` before aggregating |
+# MAGIC | **Not valid for the metric** — exclude from the average | `F.avg` — denominator is non-NULL count only |  # noqa: E501
+# MAGIC | **Valid but zero** — include in the average as 0.00 | `F.coalesce(col, F.lit(0))` before aggregating |  # noqa: E501
 # MAGIC
 # MAGIC The same skip rule applies to `F.sum`, `F.min`, and `F.max`.
 
@@ -351,8 +357,9 @@ trip_enriched.select(
 # Edge case: when ALL values in a group are NULL, F.sum returns NULL — not 0
 # Note: trip_enriched has no multi-row group where ALL fares are NULL,
 # so we use a small handmade dataset that follows the same schema.
-from pyspark.sql.types import StructType, StructField, StringType, DecimalType
-from decimal import Decimal
+from decimal import Decimal  # noqa: E402
+
+from pyspark.sql.types import DecimalType, StringType, StructField, StructType  # noqa: E402
 
 edge_case_schema = StructType([
     StructField("payment_method", StringType()),
@@ -366,7 +373,7 @@ edge_case_data = [
     ("cash", None),
 ]
 
-edge_case_df = spark.createDataFrame(edge_case_data, edge_case_schema)
+edge_case_df = spark.createDataFrame(edge_case_data, edge_case_schema)  # noqa: F821
 
 edge_case_df.groupBy("payment_method").agg(
     F.count("*").alias("trips"),
@@ -378,7 +385,8 @@ edge_case_df.groupBy("payment_method").agg(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **The fix:** `F.coalesce` replaces NULLs with 0 *before* aggregating — now the denominator is 106.
+# MAGIC **The fix:** `F.coalesce` replaces NULLs with 0 *before* aggregating —
+# MAGIC now the denominator is 106.
 
 # COMMAND ----------
 
@@ -448,11 +456,11 @@ method_summary.orderBy(F.col("trip_count").desc()).show()
 # MAGIC |---|---|
 # MAGIC | **Output grain** | One row per group; predict with `.distinct().count()` |
 # MAGIC | **Aliasing** | Always alias — ugly default names break downstream code |
-# MAGIC | **Only keys and aggregates** | Want a per-row column too? That's a window (Notebook `05`) |
+# MAGIC | **Only keys and aggregates** | Want a per-row column too? That's a window (Notebook `05`) |  # noqa: E501
 # MAGIC | **Three counts** | `count("*")`=106, `count("trip_date")`=100, `countDistinct`=14 |
 # MAGIC | **NULL skipping** | `avg` divides by 104 (non-NULL), not 106 (all rows) |
 # MAGIC | **`F.coalesce` first** | Use it when NULL means 0, not *unknown* |
-# MAGIC | **Predict, then verify** | A `groupBy`'s row count can differ from what you expect — always check `.count()` before trusting the shape |
+# MAGIC | **Predict, then verify** | A `groupBy`'s row count can differ from what you expect — always check `.count()` before trusting the shape |  # noqa: E501
 # MAGIC
 # MAGIC **Next:** **`02 - Multi-column Keys, NULL Groups, and Filter Placement`** —
 # MAGIC grouping on composite keys, why NULL becomes its own group, and how
