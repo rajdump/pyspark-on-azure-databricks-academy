@@ -418,19 +418,8 @@ trip_enriched.select(
 # MAGIC are `total_base_fare` and `avg_fare_skips_null` both NULL, while
 # MAGIC `trip_count` is 1?
 # MAGIC
-# MAGIC Expected results:
-# MAGIC
-# MAGIC | payment_method | trip_count | trips_with_fare | total_base_fare | avg_fare_skips_null | avg_fare_per_trip |
-# MAGIC |---|---|---|---|---|---|
-# MAGIC | card | 59 | 58 | 1874.24 | 32.31 | 31.77 |
-# MAGIC | wallet | 20 | 20 | 701.55 | 35.08 | 35.08 |
-# MAGIC | cash | 17 | 17 | 462.86 | 27.23 | 27.23 |
-# MAGIC | corporate | 8 | 8 | 257.18 | 32.15 | 32.15 |
-# MAGIC | unknown | 1 | 1 | 12.00 | 12.00 | 12.00 |
-# MAGIC | null | 1 | 0 | null | null | null |
-# MAGIC
-# MAGIC Notice `unknown` and `null` both appear — Notebook `02` explains that
-# MAGIC difference.
+# MAGIC **Self-check:** `trip_count` should sum to **106**; `trips_with_fare`
+# MAGIC should sum to **104** (matches the NULL map at the top of this notebook).
 
 # COMMAND ----------
 
@@ -463,6 +452,7 @@ method_summary.orderBy(F.col("trip_count").desc()).show()
 # MAGIC | **Three counts** | `count("*")`=106, `count("trip_date")`=100, `countDistinct`=14 |
 # MAGIC | **NULL skipping** | `avg` divides by 104 (non-NULL), not 106 (all rows) |
 # MAGIC | **`F.coalesce` first** | Use it when NULL means 0, not *unknown* |
+# MAGIC | **Predict, then verify** | A `groupBy`'s row count can differ from what you expect — always check `.count()` before trusting the shape |
 # MAGIC
 # MAGIC **Next:** **`02 - Multi-column Keys, NULL Groups, and Filter Placement`** —
 # MAGIC grouping on composite keys, why NULL becomes its own group, and how

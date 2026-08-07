@@ -139,7 +139,7 @@ Module-local quality gate for this module. It supplements
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
-| 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; bare non-key column in `.agg()` fails (window → **05**); exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
+| 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column in `.agg()` fails (window → **05**); three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
 | 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | Composite grain (`service_type`, `payment_method` → 18 of 30); NULL group vs `countDistinct`; `unknown` ≠ NULL; `WHERE` vs `HAVING`; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
 | 3 | Aggregate Functions Beyond Count and Sum | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set`; `median` / `mode` / `percentile_approx` vs `avg`; exact vs `approx_count_distinct`; decimal growth; `first` / `last` need order |
 | 4 | Multi-Level Grouping and Pivot | `trip_enriched` | `rollup` / `cube` / `groupingSets`; `grouping_id`; `pivot` + explicit values; `stack` |
