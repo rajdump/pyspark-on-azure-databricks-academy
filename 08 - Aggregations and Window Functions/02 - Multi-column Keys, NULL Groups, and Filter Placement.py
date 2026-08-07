@@ -4,24 +4,26 @@
 # MAGIC
 # MAGIC # 02 - Multi-column Keys, NULL Groups, and Filter Placement
 # MAGIC
-# MAGIC Every aggregation requires two decisions:
+# MAGIC ## Two traps in the key list and filter
 # MAGIC
-# MAGIC 1. **Which columns define the group?** — Adding a key subdivides groups;
-# MAGIC    a NULL key creates an extra group you may not predict.
+# MAGIC ### Trap 1: An unexpected group
 # MAGIC
-# MAGIC 2. **Where does the filter go?** — Before `groupBy` removes rows and changes
-# MAGIC    totals; after `agg` removes groups and leaves totals unchanged.
+# MAGIC Your stakeholder wants trips broken down by payment method (e.g., `card`, `wallet`, `cash`, `corporate`, `unknown`); you might encounter a `NULL` group as well. This group contains real trips without any payment record, and while `countDistinct` ignores `NULL`, `groupBy` includes it.
 # MAGIC
-# MAGIC This notebook demonstrates both with concrete checks:
+# MAGIC ### Trap 2: Position of the filter answers different questions
 # MAGIC
-# MAGIC | Topic | What you will observe |
-# MAGIC |---|---|
-# MAGIC | Single-key profiling | Whether `countDistinct` and `groupBy` agree on the number of groups |
-# MAGIC | Composite key | How many `service_type` / `payment_method` pairs actually exist |
-# MAGIC | Filter before aggregation | Borough totals change when rows are excluded first |
-# MAGIC | Filter after aggregation | Borough totals stay the same; only groups are dropped |
+# MAGIC The questions “Which boroughs earned more than $90 in tips?” and “What are borough totals
+# MAGIC from tips over $5?” both use `.filter()`, but they differ in context. A filter before `groupBy` excludes input rows, while a filter after `agg()` excludes aggregated groups, but placing the filter incorrectly will go unnoticed by Spark.
 # MAGIC
+# MAGIC ## What this notebook teaches
 # MAGIC
+# MAGIC | Section          | Concept                                | Why it matters                                                     |
+# MAGIC | ---------------- | -------------------------------------- | ------------------------------------------------------------------ |
+# MAGIC | 1. One key       | `countDistinct` vs `groupBy`           | Predict the number of output groups before running the aggregation |
+# MAGIC | 1. Composite key | Two keys in one `groupBy`              | Output grain is defined by the full key list                       |
+# MAGIC | 2. Filter first  | `.filter()` before `groupBy`           | Removes input trips, so aggregate values can change                |
+# MAGIC | 2. Filter last   | `.filter()` after `.agg()`             | Removes groups after aggregate values are calculated               |
+# MAGIC | Exercise         | Per-borough summary, then a second key | Apply both ideas to a new grouping key                             |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
 # MAGIC
