@@ -4,15 +4,11 @@
 # MAGIC
 # MAGIC # 02 - Multi-column Keys, NULL Groups, and Filter Placement
 # MAGIC
-# MAGIC Two common mistakes can significantly impact aggregate results:
+# MAGIC Few common mistakes can significantly impact aggregate results:
 # MAGIC
-# MAGIC First Mistake: `NULL` does not behave the same way in grouping and aggregation.
+# MAGIC 1. **NULL Behavior**: In `groupBy`, `NULL` values create a separate group, while in `sum` or `avg`, they are ignored in calculations.
 # MAGIC
-# MAGIC When `NULL` appears in a `groupBy` key, Spark keeps those rows as a separate group. When `NULL` appears in a column used with `sum` or `avg`, Spark skips those values during the calculation.
-# MAGIC
-# MAGIC Second Mistake: Filter position changes the aggregation result.
-# MAGIC
-# MAGIC When you filter **before** `groupBy`, Spark removes rows that do not meet the condition before calculating the aggregate. When you filter **after** `agg`, Spark removes groups that do not meet the condition based on their aggregated values.
+# MAGIC 2. **Filter Position**: Filtering **before** `groupBy` removes rows that don’t meet conditions, while filtering **after** `agg` removes groups based on accumulated values.
 # MAGIC
 # MAGIC | Scenario                                           | What happens                                                                                          |
 # MAGIC | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
