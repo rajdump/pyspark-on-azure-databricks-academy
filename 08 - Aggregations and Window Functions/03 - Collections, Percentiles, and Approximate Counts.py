@@ -4,7 +4,7 @@
 # MAGIC
 # MAGIC # 03 - Collections, Percentiles, and Approximate Counts
 # MAGIC
-# MAGIC ## Build driver profiles, distance bands, and route counts
+# MAGIC ## Build driver profiles, distance percentiles, and route counts
 # MAGIC
 # MAGIC A driver profile needs the services that driver has handled. An operations
 # MAGIC report needs both a typical trip distance and an upper-range threshold. A
@@ -85,8 +85,9 @@ driver_service_lists.orderBy("driver_id").show(12, truncate=False)
 # MAGIC %md
 # MAGIC ### Which unique service types did each driver handle?
 # MAGIC
-# MAGIC A capability list needs each service only once. `collect_set` removes repeated
-# MAGIC values. The next result places the full list and unique set side by side.
+# MAGIC A driver-level service summary needs each service type only once.
+# MAGIC `collect_set` removes repeated values. The next result places the full list
+# MAGIC and unique set side by side.
 
 # COMMAND ----------
 
@@ -109,8 +110,12 @@ driver_service_collections.orderBy("driver_id").show(12, truncate=False)
 # MAGIC Do not treat either array as trip order. `sort_array` gives the display a
 # MAGIC predictable order. Also keep collected groups bounded: a large group creates
 # MAGIC a large array.
-# MAGIC
-# MAGIC ### Does the `STANDARD` array keep its NULL payment method?
+
+# COMMAND ----------
+
+# DBTITLE 1,Does collect_list keep NULL payment methods?
+# MAGIC %md
+# MAGIC ### Does `collect_list` keep NULL payment methods?
 # MAGIC
 # MAGIC `STANDARD` has 55 trips, but trip 106 has no `payment_method`. Compare the
 # MAGIC row count with the number of values collected.
@@ -158,9 +163,9 @@ trip_enriched.agg(
 
 # COMMAND ----------
 
-# DBTITLE 1,p50 marks the middle; p90 marks the upper range
+# DBTITLE 1,p50 marks the middle; p90 marks an upper threshold
 # MAGIC %md
-# MAGIC ### p50 marks the middle; p90 marks the upper range
+# MAGIC ### p50 marks the middle; p90 marks an upper threshold
 # MAGIC
 # MAGIC About half of the 103 observed distances are at or below p50. About 90% are
 # MAGIC at or below p90, leaving roughly 10% above that threshold.
@@ -233,9 +238,9 @@ trip_enriched.agg(
 # MAGIC The exact result is 93 routes. On a much larger trip table, an estimated count
 # MAGIC may be enough for profiling or monitoring.
 # MAGIC
-# MAGIC `approx_count_distinct` counts one expression, so `struct` packages the pickup
-# MAGIC and drop-off IDs as one route value. The next cell compares that estimate with
-# MAGIC the exact count.
+# MAGIC `approx_count_distinct` accepts one expression, so `struct` combines the pickup
+# MAGIC and drop-off IDs into one route value. The next cell compares that estimate
+# MAGIC with the exact count.
 
 # COMMAND ----------
 
@@ -271,7 +276,7 @@ trip_enriched.agg(
 # MAGIC %md
 # MAGIC ## Exercise — pickup-borough summaries
 # MAGIC
-# MAGIC Operations now wants the same three patterns at borough level.
+# MAGIC Apply the same three patterns at pickup-borough level.
 # MAGIC
 # MAGIC **Shared output grain:** one row per `pickup_borough`. Predict the number of
 # MAGIC borough groups before running the TODO cells.
