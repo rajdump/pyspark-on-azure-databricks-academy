@@ -4,13 +4,17 @@
 # MAGIC
 # MAGIC # 03 - Collections, Percentiles, and Approximate Counts
 # MAGIC
-# MAGIC ## Three aggregate patterns used in data projects
+# MAGIC ## Build driver profiles, distance bands, and route counts
 # MAGIC
-# MAGIC This notebook answers three practical questions:
+# MAGIC A driver profile needs the services that driver has handled. An operations
+# MAGIC report needs both a typical trip distance and an upper-range threshold. A
+# MAGIC route audit needs the number of pickup-to-drop-off combinations.
 # MAGIC
-# MAGIC 1. Which values belong to each group?
-# MAGIC 2. What do typical and upper-end values look like?
-# MAGIC 3. When is an estimated distinct count useful?
+# MAGIC You will build those outputs in three steps:
+# MAGIC
+# MAGIC 1. Collect service types into driver-level arrays.
+# MAGIC 2. Calculate p50 and p90 trip-distance thresholds.
+# MAGIC 3. Compare exact and approximate route counts.
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
 # MAGIC `rideshare_dev.processed.trip_driver_assignment` (100 rows). **No writes.**
@@ -22,14 +26,18 @@
 
 # DBTITLE 1,Setup
 # MAGIC %md
-# MAGIC ## Setup — load both managed tables
+# MAGIC ## Setup — use the table that matches the question
 # MAGIC
-# MAGIC Setup details and the inherited NULL map stay in Notebook 01.
+# MAGIC Driver arrays need repeated trips per driver, so they use
+# MAGIC `trip_driver_assignment`. Distance and route summaries use
+# MAGIC `trip_enriched`.
 # MAGIC
-# MAGIC | DataFrame | Input grain | Columns used here |
+# MAGIC | DataFrame | Input grain | Used for |
 # MAGIC |---|---|---|
-# MAGIC | `trip_enriched` | One row per trip | service, distance, locations, payment |
-# MAGIC | `trip_driver_assignment` | One row per driver-trip assignment | driver, service |
+# MAGIC | `trip_driver_assignment` | One driver-trip assignment | Driver service arrays |
+# MAGIC | `trip_enriched` | One trip | Distance, payment, and route summaries |
+# MAGIC
+# MAGIC Notebook 01 owns the detailed schema and inherited NULL map.
 
 # COMMAND ----------
 
@@ -50,7 +58,7 @@ print("trip_driver_assignment rows:", trip_driver_assignment.count())
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 1 - collect_list
+# DBTITLE 1,Which service types did each driver handle?
 # MAGIC %md
 # MAGIC ## 1. Collect grouped values
 # MAGIC
@@ -58,7 +66,8 @@ print("trip_driver_assignment rows:", trip_driver_assignment.count())
 # MAGIC
 # MAGIC ### Which service types did each driver handle?
 # MAGIC
-# MAGIC `collect_list` keeps every value, including duplicates.
+# MAGIC A driver can complete the same service type many times. `collect_list` keeps
+# MAGIC one service value from every assignment, so repeated services remain.
 # MAGIC
 # MAGIC **Output grain:** one row per `driver_id` — 12 expected rows.
 
@@ -72,12 +81,12 @@ driver_service_lists.orderBy("driver_id").show(12, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 1a - collect_set
+# DBTITLE 1,Which unique service types did each driver handle?
 # MAGIC %md
 # MAGIC ### Which unique service types did each driver handle?
 # MAGIC
-# MAGIC A repeated service type is useful in a trip history but not in a list of
-# MAGIC services the driver has handled. `collect_set` removes those duplicates.
+# MAGIC A capability list needs each service only once. `collect_set` removes repeated
+# MAGIC values. The next result places the full list and unique set side by side.
 
 # COMMAND ----------
 
@@ -90,17 +99,21 @@ driver_service_collections.orderBy("driver_id").show(12, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Collection behavior
+# DBTITLE 1,Why are the arrays different lengths?
 # MAGIC %md
-# MAGIC Each list has 8 or 9 entries; each set has 3 or 4 unique services.
+# MAGIC ### Why are the arrays different lengths?
 # MAGIC
-# MAGIC Do not rely on the order returned by either collection function.
-# MAGIC `sort_array` makes presentation order explicit.
+# MAGIC `all_service_types` has 8 or 9 entries because it keeps one value per trip.
+# MAGIC `unique_service_types` has 3 or 4 entries because it removes repeats.
 # MAGIC
-# MAGIC **Production note:** use collection aggregates when each group is reasonably
-# MAGIC bounded. Large groups create large arrays.
+# MAGIC Do not treat either array as trip order. `sort_array` gives the display a
+# MAGIC predictable order. Also keep collected groups bounded: a large group creates
+# MAGIC a large array.
 # MAGIC
-# MAGIC One `STANDARD` trip has a NULL `payment_method`. Is that NULL collected?
+# MAGIC ### Does the `STANDARD` array keep its NULL payment method?
+# MAGIC
+# MAGIC `STANDARD` has 55 trips, but trip 106 has no `payment_method`. Compare the
+# MAGIC row count with the number of values collected.
 
 # COMMAND ----------
 
@@ -115,26 +128,25 @@ standard_payment_collections.show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Collection NULL conclusion
+# DBTITLE 1,Why are only 54 payment methods collected?
 # MAGIC %md
-# MAGIC `STANDARD` has 55 trips but only 54 collected payment methods.
-# MAGIC `collect_list` and `collect_set` exclude top-level NULLs, just like
-# MAGIC `count("payment_method")`.
+# MAGIC ### Why are only 54 payment methods collected?
+# MAGIC
+# MAGIC `collect_list` and `collect_set` skip the NULL input from trip 106. The list
+# MAGIC size therefore matches `count("payment_method")`: both return 54.
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 2 - Percentiles
+# DBTITLE 1,What is typical, and where does the upper range begin?
 # MAGIC %md
 # MAGIC ## 2. Calculate percentiles
 # MAGIC
 # MAGIC `trip_enriched` has 103 known trip distances from 1.18 to 17.96 miles.
 # MAGIC
-# MAGIC ### What is a typical trip distance, and how far are trips near the upper end?
+# MAGIC ### What is a typical trip distance, and where does the upper range begin?
 # MAGIC
-# MAGIC Compare the familiar average with:
-# MAGIC
-# MAGIC - **p50** — an approximate median: about half the values are at or below it
-# MAGIC - **p90** — an upper-tail threshold: about 90% are at or below it
+# MAGIC An average gives one center, but it does not show where longer trips begin.
+# MAGIC Compare it with approximate p50 and p90 thresholds.
 
 # COMMAND ----------
 
@@ -146,20 +158,23 @@ trip_enriched.agg(
 
 # COMMAND ----------
 
-# DBTITLE 1,Percentile interpretation
+# DBTITLE 1,p50 marks the middle; p90 marks the upper range
 # MAGIC %md
-# MAGIC The average uses all 103 known distances. Approximate p50 identifies the
-# MAGIC middle of the distribution, while p90 shows where the longest 10% begins.
+# MAGIC ### p50 marks the middle; p90 marks the upper range
 # MAGIC
-# MAGIC As in Notebook 01, NULL measures are excluded from these calculations.
+# MAGIC About half of the 103 observed distances are at or below p50. About 90% are
+# MAGIC at or below p90, leaving roughly 10% above that threshold.
+# MAGIC
+# MAGIC The three missing distance values are not part of these calculations.
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 2a - Percentiles by service
+# DBTITLE 1,How do trip-distance patterns differ by service type?
 # MAGIC %md
-# MAGIC ### How do distance distributions differ by service type?
+# MAGIC ### How do trip-distance patterns differ by service type?
 # MAGIC
-# MAGIC Calculate average, p50, and p90 inside each service group.
+# MAGIC The overall p50 and p90 can hide differences between `STANDARD`, `PREMIUM`,
+# MAGIC `SHARED`, `XL`, and `UNKNOWN`. Calculate the same measures inside each group.
 # MAGIC
 # MAGIC **Output grain:** one row per `service_type` — 5 expected rows.
 
@@ -176,18 +191,17 @@ service_distance_percentiles.orderBy("service_type").show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Grouped percentile interpretation
+# DBTITLE 1,The UNKNOWN group has only two known distances
 # MAGIC %md
-# MAGIC The average gives one overall center, while p50 and p90 separate the middle
-# MAGIC from the upper tail. That makes service-level distance patterns easier to
-# MAGIC compare.
+# MAGIC ### The `UNKNOWN` group has only two known distances
 # MAGIC
-# MAGIC Check `known_distance_count` before trusting a percentile. `UNKNOWN` has only
-# MAGIC 2 known distances, so its p50 and p90 describe very little data.
+# MAGIC Read `known_distance_count` before comparing the percentile columns.
+# MAGIC `UNKNOWN` has only 2 known distances, so its p50 and p90 describe those two
+# MAGIC trips—not a broad service pattern.
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 3 - Exact distinct routes
+# DBTITLE 1,How many distinct pickup-to-drop-off routes appear?
 # MAGIC %md
 # MAGIC ## 3. Count distinct values at scale
 # MAGIC
@@ -196,7 +210,10 @@ service_distance_percentiles.orderBy("service_type").show(truncate=False)
 # MAGIC
 # MAGIC ### How many distinct pickup-to-drop-off routes appear?
 # MAGIC
-# MAGIC This is one overall aggregate, so the result has one row.
+# MAGIC `countDistinct` treats each pickup and drop-off pair as one route and returns
+# MAGIC the exact number observed.
+# MAGIC
+# MAGIC **Output grain:** one row for the complete dataset.
 
 # COMMAND ----------
 
@@ -209,16 +226,16 @@ trip_enriched.agg(
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 3a - Approximate distinct routes
+# DBTITLE 1,What changes when an estimate is acceptable?
 # MAGIC %md
 # MAGIC ### What changes when an estimate is acceptable?
 # MAGIC
-# MAGIC `approx_count_distinct` estimates cardinality with bounded state instead of
-# MAGIC producing an exact answer. Its default relative standard deviation setting
-# MAGIC is `0.05`.
+# MAGIC The exact result is 93 routes. On a much larger trip table, an estimated count
+# MAGIC may be enough for profiling or monitoring.
 # MAGIC
-# MAGIC The approximate function accepts one expression, so `struct` represents the
-# MAGIC pickup and drop-off IDs as one route value.
+# MAGIC `approx_count_distinct` counts one expression, so `struct` packages the pickup
+# MAGIC and drop-off IDs as one route value. The next cell compares that estimate with
+# MAGIC the exact count.
 
 # COMMAND ----------
 
@@ -237,14 +254,16 @@ trip_enriched.agg(
 
 # COMMAND ----------
 
-# DBTITLE 1,Exact vs approximate interpretation
+# DBTITLE 1,Matching counts do not make the estimate exact
 # MAGIC %md
-# MAGIC The exact answer is 93 observed routes. The approximate result may match on
-# MAGIC this small dataset, but that does not make the function exact.
+# MAGIC ### Matching counts do not make the estimate exact
 # MAGIC
-# MAGIC Use exact counting when correctness requires the precise value. Consider the
-# MAGIC approximate version when cardinality is very large and an estimate is
-# MAGIC acceptable. This 106-row dataset demonstrates the API, not a performance gain.
+# MAGIC The approximate result may also show 93 on these 106 trips. That match belongs
+# MAGIC to this input; `approx_count_distinct` still returns an estimate.
+# MAGIC
+# MAGIC Use `countDistinct` when the precise value matters. Use
+# MAGIC `approx_count_distinct` when cardinality is large and an estimate is
+# MAGIC acceptable.
 
 # COMMAND ----------
 
@@ -252,18 +271,17 @@ trip_enriched.agg(
 # MAGIC %md
 # MAGIC ## Exercise — pickup-borough summaries
 # MAGIC
-# MAGIC Build three independent summaries from `trip_enriched`.
+# MAGIC Operations now wants the same three patterns at borough level.
 # MAGIC
-# MAGIC **Shared output grain:** one row per `pickup_borough`.
+# MAGIC **Shared output grain:** one row per `pickup_borough`. Predict the number of
+# MAGIC borough groups before running the TODO cells.
 # MAGIC
-# MAGIC Before running the TODO cells, set `predicted_borough_groups` to the expected
-# MAGIC number of groups.
+# MAGIC 1. Collect the sorted, unique service types in each borough.
+# MAGIC 2. Calculate approximate p50 and p90 ride duration in each borough.
+# MAGIC 3. Compare exact and approximate distinct drop-off locations in each borough.
 # MAGIC
-# MAGIC 1. Sorted unique service types
-# MAGIC 2. Approximate p50 and p90 ride duration
-# MAGIC 3. Exact and approximate distinct drop-off locations
-# MAGIC
-# MAGIC The final cell verifies that all three outputs preserve the predicted grain.
+# MAGIC Set `predicted_borough_groups`, complete each TODO, then verify that all three
+# MAGIC summaries have the expected row count.
 
 # COMMAND ----------
 
@@ -318,12 +336,12 @@ for summary_name, actual_groups in summary_group_counts.items():
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC | Pattern | Use it when |
+# MAGIC | Pattern | What it is used for |
 # MAGIC |---|---|
-# MAGIC | `collect_list` / `collect_set` | A bounded group needs all or unique values |
-# MAGIC | `percentile_approx` | p50 / p90 describe the middle and upper tail |
-# MAGIC | `countDistinct` | The result must be exact |
-# MAGIC | `approx_count_distinct` | Cardinality is large and an estimate is acceptable |
+# MAGIC | `collect_list` / `collect_set` | Build bounded arrays with repeated or unique values |
+# MAGIC | `percentile_approx` | Estimate p50 and p90 thresholds |
+# MAGIC | `countDistinct` | Return the exact number of unique values |
+# MAGIC | `approx_count_distinct` | Estimate high-cardinality distinct counts |
 # MAGIC
-# MAGIC **Next:** **`04 - Multi-Level Grouping and Pivot`** — produce subtotals,
-# MAGIC multi-dimensional summaries, and pivoted output.
+# MAGIC **Next:** **`04 - Multi-Level Grouping and Pivot`** — add subtotals and reshape
+# MAGIC grouped results.
