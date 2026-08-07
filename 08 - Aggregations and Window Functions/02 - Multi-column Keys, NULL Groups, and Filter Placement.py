@@ -150,7 +150,7 @@ print("output rows:", method_by_service.count(), "(at most 5 * 6 = 30)")
 
 # DBTITLE 1,2a - Inspect combinations
 # MAGIC %md
-# MAGIC ### 2a. Which combinations of pickup borough and tip-related categories actually appear in the data?
+# MAGIC ### 2a. Which pickup borough and tip amount combinations appear in the data?
 
 # COMMAND ----------
 
