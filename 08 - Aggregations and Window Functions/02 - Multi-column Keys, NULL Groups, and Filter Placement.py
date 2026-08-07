@@ -30,8 +30,7 @@
 # MAGIC |---|---|---|
 # MAGIC | 1 | `countDistinct` vs `groupBy` | Predict the group count before running |
 # MAGIC | 1a | Composite key | Only pairs that exist in the data become rows |
-# MAGIC | 2 | `.filter()` before `groupBy` | Removes input trips, so values change |
-# MAGIC | 2a | `.filter()` after `.agg()` | Removes groups once values are calculated |
+# MAGIC | 2a–2d | Filter placement | Compare filtering input rows with filtering groups |
 # MAGIC | Exercise | Per-borough summary, then a second key | Apply both ideas to a new key |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
@@ -111,7 +110,7 @@ trip_enriched.select(
 # MAGIC
 # MAGIC How many pairs actually exist in the data?
 # MAGIC
-# MAGIC ### For each service type and payment method combination, how many trips were completed and what was the total base fare?
+# MAGIC ### For each service type and payment method: trip count and total base fare?
 
 # COMMAND ----------
 
@@ -131,11 +130,9 @@ print("output rows:", method_by_service.count(), "(at most 5 * 6 = 30)")
 
 # COMMAND ----------
 
-# DBTITLE 1,Section 2 - filter before groupBy
+# DBTITLE 1,Section 2 - Filter placement
 # MAGIC %md
-# MAGIC ## 2. `.filter()` before `groupBy`
-# MAGIC
-# MAGIC Concrete check first (same borough metric, three query shapes):
+# MAGIC ## 2. Filter placement
 # MAGIC
 # MAGIC | Query | Groups | Manhattan total |
 # MAGIC |---|---|---|
@@ -143,65 +140,80 @@ print("output rows:", method_by_service.count(), "(at most 5 * 6 = 30)")
 # MAGIC | `WHERE tip_amount > 5` (before `groupBy`) | 4 | **91.00** |
 # MAGIC | `HAVING total_tip > 90` (after `agg`) | 2 | **134.45** |
 # MAGIC
-# MAGIC **Rule:** placement changes meaning.
-# MAGIC
-# MAGIC - `.filter()` before `groupBy(...).agg(...)` is a `WHERE`
-# MAGIC   - drops input rows
-# MAGIC   - aggregate values change
-# MAGIC - `.filter()` after `.agg(...)` is a `HAVING`
-# MAGIC   - drops whole groups
-# MAGIC   - aggregate values stay the same as unfiltered aggregate
-# MAGIC
 # MAGIC There is no `.having()` method in the DataFrame API; you filter on the
 # MAGIC alias created in `.agg()`.
 # MAGIC
 # MAGIC **Performance habit:** filter as early as the question allows to reduce
 # MAGIC shuffle input.
-# MAGIC
-# MAGIC ### What is the total tip for each pickup borough?
 
 # COMMAND ----------
 
-borough_tips = trip_enriched.groupBy("pickup_borough").agg(
-    F.count("*").alias("trip_count"),
-    F.sum("tip_amount").alias("total_tip"),
+# DBTITLE 1,2a - Inspect combinations
+# MAGIC %md
+# MAGIC ### 2a. Which pickup borough and tip combinations exist?
+
+# COMMAND ----------
+
+# Inspection only — do not use this deduplicated view to calculate totals
+pickup_borough_tip_combinations = (
+    trip_enriched.select("pickup_borough", "tip_amount")
+    .distinct()
+    .orderBy("pickup_borough", "tip_amount")
 )
 
-print("No filter — 5 groups, all 106 trips:")
+pickup_borough_tip_combinations.show(106, truncate=False)
+
+# COMMAND ----------
+
+# DBTITLE 1,2b - Filter input rows
+# MAGIC %md
+# MAGIC ### 2b. Which trip rows remain when `tip_amount > 5`?
+
+# COMMAND ----------
+
+# Keep original rows so repeated borough-tip pairs still contribute to totals
+tips_over_5 = trip_enriched.filter(F.col("tip_amount") > 5).select(
+    "pickup_borough",
+    "tip_amount",
+)
+
+tips_over_5.orderBy("pickup_borough", "tip_amount").show(106, truncate=False)
+
+# COMMAND ----------
+
+# DBTITLE 1,2c - Aggregate filtered rows
+# MAGIC %md
+# MAGIC ### 2c. What are the borough totals after filtering the input trips?
+
+# COMMAND ----------
+
+# Only tip rows over $5 reach the shuffle and aggregate
+borough_tips_over_5 = tips_over_5.groupBy("pickup_borough").agg(
+    F.round(F.sum("tip_amount"), 2).alias("total_tip"),
+)
+
+borough_tips_over_5.orderBy(F.col("total_tip").desc()).show()
+
+# COMMAND ----------
+
+# DBTITLE 1,2d - Aggregate all rows
+# MAGIC %md
+# MAGIC ### 2d. Which unfiltered borough totals exceed $90?
+
+# COMMAND ----------
+
+# Calculate each borough total before deciding which groups to keep
+borough_tips = trip_enriched.groupBy("pickup_borough").agg(
+    F.round(F.sum("tip_amount"), 2).alias("total_tip"),
+)
+
 borough_tips.orderBy(F.col("total_tip").desc()).show()
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### What is the total tip for each borough if we only count tips over $5?
+# DBTITLE 1,2d - Filter aggregate result
 
-# COMMAND ----------
-
-# WHERE — filter runs first, so only generous tips reach the aggregate
-print("WHERE tip_amount > 5 (applied before groupBy):")
-(
-    trip_enriched.filter(F.col("tip_amount") > 5)
-    .groupBy("pickup_borough")
-    .agg(
-        F.count("*").alias("trip_count"),
-        F.sum("tip_amount").alias("total_tip"),
-    )
-    .orderBy(F.col("total_tip").desc())
-    .show()
-)
-
-# COMMAND ----------
-
-# DBTITLE 1,Section 2a - filter after agg
-# MAGIC %md
-# MAGIC ## 2a. `.filter()` after `.agg()`
-# MAGIC
-# MAGIC ### Which boroughs received more than $90 in total tips?
-
-# COMMAND ----------
-
-# HAVING — filter runs after, on the alias, so totals match the unfiltered run
-print("HAVING total_tip > 90 (applied after agg):")
+# Keep groups by filtering the alias created in agg()
 borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).show()
 
 # COMMAND ----------
@@ -293,7 +305,6 @@ borough_method.orderBy(F.col("trip_count").desc()).show(40)
 # MAGIC |---|---|---|
 # MAGIC | 1 | `countDistinct` vs `groupBy` | `groupBy` keeps a NULL group; distinct skips it |
 # MAGIC | 1a | Composite key | Only key pairs present in the data become rows |
-# MAGIC | 2 | `.filter()` before `groupBy` | Removes rows — aggregate values change |
-# MAGIC | 2a | `.filter()` after `.agg()` | Removes groups — aggregate values stay unchanged |
+# MAGIC | 2 | Filter placement | Before grouping removes rows; after aggregation removes groups |
 # MAGIC
 # MAGIC Next notebook: **`03 - Aggregate Functions Beyond Count and Sum`**.
