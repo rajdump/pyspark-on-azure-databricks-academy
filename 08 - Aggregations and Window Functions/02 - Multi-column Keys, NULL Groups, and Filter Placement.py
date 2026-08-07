@@ -222,80 +222,85 @@ borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).
 
 # DBTITLE 1,Exercise
 # MAGIC %md
-# MAGIC ## Exercise — per-borough summary, then composite check
+# MAGIC ## Exercise — Build borough summaries
 # MAGIC
-# MAGIC **Steps 1–3:** apply `HAVING` logic on single key `pickup_borough`.
-# MAGIC **Step 4:** add the second key (`payment_method`) to practice composite grain.
+# MAGIC ### Step 1 — Create one row per pickup borough
 # MAGIC
-# MAGIC **1. Predict.** Set `predicted_borough_groups` from
-# MAGIC `countDistinct("pickup_borough")`. Zone columns have no NULLs, so no extra
-# MAGIC NULL group here.
-# MAGIC
-# MAGIC **2. Aggregate.** One row per `pickup_borough`, with:
+# MAGIC 1. Predict the number of output rows.
+# MAGIC 2. Group by `pickup_borough`.
+# MAGIC 3. Create these columns:
 # MAGIC - `trip_count` = all trips
 # MAGIC - `dated_trip_count` = non-NULL `trip_date`
 # MAGIC - `total_base_fare` = sum(`base_fare_amount`) rounded to 2
 # MAGIC - `avg_distance_miles` = avg(`trip_distance_miles`) rounded to 2
 # MAGIC
-# MAGIC **3. Apply `HAVING`.** Keep boroughs with `trip_count > 10`.
-# MAGIC Then explain: why Manhattan `total_base_fare` is unchanged before/after.
-# MAGIC
-# MAGIC **Expected results for step 2:**
-# MAGIC
-# MAGIC | pickup_borough | trip_count | dated_trip_count | total_base_fare | avg_distance_miles |
-# MAGIC |---|---|---|---|---|
-# MAGIC | Manhattan | 44 | 41 | 1389.04 | 7.60 |
-# MAGIC | Brooklyn | 29 | 27 | 927.91 | 8.01 |
-# MAGIC | Queens | 22 | 21 | 632.40 | 7.89 |
-# MAGIC | Bronx | 10 | 10 | 341.54 | 8.61 |
-# MAGIC | Staten Island | 1 | 1 | 16.94 | 6.10 |
-# MAGIC
-# MAGIC **4. Composite key check.** Build one row per
-# MAGIC (`pickup_borough`, `payment_method`) with `trip_count`.
-# MAGIC Predict first; verify after running.
-# MAGIC
-# MAGIC Use both rules:
-# MAGIC - upper bound: `groups(pickup_borough) * groups(payment_method)`
-# MAGIC - `payment_method` contributes **6** groups (not 5)
+# MAGIC 4. Run the cell to compare your prediction with the actual row count.
 
 # COMMAND ----------
 
-# 1. YOUR PREDICTION — replace None with the row count you expect
+# Replace None with your predicted row count
 predicted_borough_groups = None
 
-# 2. YOUR CODE — build the per-borough summary described above
+# Complete the three missing aggregate expressions
 borough_summary = trip_enriched.groupBy("pickup_borough").agg(
     F.count("*").alias("trip_count"),
-    # TODO: dated_trip_count, total_base_fare, avg_distance_miles
+    # TODO: count non-NULL trip_date values as dated_trip_count
+    # TODO: sum and round base_fare_amount as total_base_fare
+    # TODO: average and round trip_distance_miles as avg_distance_miles
 )
 
-actual = borough_summary.count()
-match = "✓" if predicted_borough_groups == actual else "✗"
-print(f"{match} predicted={predicted_borough_groups}, actual={actual}")
+actual_borough_groups = borough_summary.count()
+prediction_matches = "✓" if predicted_borough_groups == actual_borough_groups else "✗"
+print(f"{prediction_matches} predicted={predicted_borough_groups}, actual={actual_borough_groups}")
 
 borough_summary.orderBy(F.col("trip_count").desc()).show()
 
 # COMMAND ----------
 
-# 3. YOUR CODE — keep only boroughs with more than 10 trips (HAVING)
-# Then compare Manhattan's total_base_fare against the unfiltered run above.
+# DBTITLE 1,Exercise step 2 - Filter groups
+# MAGIC %md
+# MAGIC ### Step 2 — Keep boroughs with more than 10 trips
+# MAGIC
+# MAGIC 1. Filter `borough_summary` using the `trip_count` alias.
+# MAGIC 2. Display the remaining boroughs.
 
 # COMMAND ----------
 
-# 4. YOUR PREDICTION — replace None with the row count you expect
+# Add a filter on the aggregated trip_count column
+busy_boroughs = borough_summary  # TODO: keep only trip_count > 10
+
+busy_boroughs.orderBy(F.col("trip_count").desc()).show()
+
+# COMMAND ----------
+
+# DBTITLE 1,Exercise step 3 - Composite key
+# MAGIC %md
+# MAGIC ### Step 3 — Add payment method to the grouping key
+# MAGIC
+# MAGIC 1. Predict the number of observed (`pickup_borough`, `payment_method`) pairs.
+# MAGIC 2. Group the original `trip_enriched` DataFrame by both columns.
+# MAGIC 3. Count the trips in each pair.
+# MAGIC 4. Run the cell to compare your prediction with the actual row count.
+# MAGIC
+# MAGIC The upper bound is `5 × 6 = 30`, but only pairs present in the data appear.
+
+# COMMAND ----------
+
+# Replace None with your predicted row count
 predicted_pair_groups = None
 
-# 4. YOUR CODE — add the second key so the grain is one row per
-# (pickup_borough, payment_method)
-borough_method = trip_enriched.groupBy("pickup_borough").agg(  # TODO: add payment_method
+# Add payment_method as the second grouping key
+borough_payment_summary = trip_enriched.groupBy(
+    "pickup_borough",  # TODO: add payment_method
+).agg(
     F.count("*").alias("trip_count"),
 )
 
-actual_pairs = borough_method.count()
-pair_match = "✓" if predicted_pair_groups == actual_pairs else "✗"
-print(f"{pair_match} predicted={predicted_pair_groups}, actual={actual_pairs}")
+actual_pairs = borough_payment_summary.count()
+pair_prediction_matches = "✓" if predicted_pair_groups == actual_pairs else "✗"
+print(f"{pair_prediction_matches} predicted={predicted_pair_groups}, actual={actual_pairs}")
 
-borough_method.orderBy(F.col("trip_count").desc()).show(40)
+borough_payment_summary.orderBy(F.col("trip_count").desc()).show(40)
 
 # COMMAND ----------
 
@@ -305,8 +310,8 @@ borough_method.orderBy(F.col("trip_count").desc()).show(40)
 # MAGIC
 # MAGIC | # | Concept | Rule |
 # MAGIC |---|---|---|
-# MAGIC | 1 | `countDistinct` vs `groupBy` | `groupBy` keeps a NULL group; distinct skips it |
+# MAGIC | 1 | `countDistinct` vs `groupBy` | `groupBy` keeps a NULL group; `countDistinct` ignores NULL |
 # MAGIC | 1a | Composite key | Only key pairs present in the data become rows |
-# MAGIC | 2 | Filter placement | Before grouping removes rows; after aggregation removes groups |
+# MAGIC | 2 | Filter placement | Before grouping removes input rows; after aggregation removes groups |
 # MAGIC
 # MAGIC Next notebook: **`03 - Aggregate Functions Beyond Count and Sum`**.
