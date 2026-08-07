@@ -4,22 +4,31 @@
 # MAGIC
 # MAGIC # 02 - Multi-column Keys, NULL Groups, and Filter Placement
 # MAGIC
-# MAGIC Two mistakes quietly change aggregate results:
+# MAGIC Two common mistakes can significantly impact aggregate results:
 # MAGIC
-# MAGIC | Situation | What many people predict | What Spark returns |
+# MAGIC | Situation | Expected outcome | Actual outcome from Spark |
 # MAGIC |---|---|---|
-# MAGIC | Group by `payment_method` | 5 groups | **6 groups** (`NULL` becomes its own group) |
-# MAGIC | Borough tips with `tip_amount > 5` | "same totals, fewer rows" | **different totals** (`WHERE` changed input rows) |  # noqa: E501
+# MAGIC | Grouping by `payment_method` | 5 groups | **6 groups** (`NULL` forms its own group) |
+# MAGIC | Filtering borough tips with `tip_amount > 5` | "Same totals, fewer rows" | **Different totals** (the `WHERE` clause changes the input rows) |  # noqa: E501
 # MAGIC
-# MAGIC This notebook fixes both mistakes with concrete checks:
+# MAGIC The first mistake arises from treating every `NULL` value the same way.
+# MAGIC A `NULL` in a **group key** still creates a separate group, whereas a
+# MAGIC `NULL` in a **value** that you sum or average is ignored. Section 1
+# MAGIC illustrates both scenarios using the same dataset.
 # MAGIC
-# MAGIC 1. Composite keys + NULL group behavior
-# MAGIC 2. `WHERE` vs `HAVING` (same `.filter()`, different meaning)
+# MAGIC The second mistake involves `.filter()` performing two different
+# MAGIC functions depending on its placement: one version alters your numbers,
+# MAGIC while the other only changes which rows are included in the results.
+# MAGIC
+# MAGIC This notebook addresses both topics in the following order:
+# MAGIC
+# MAGIC 1. Composite keys and the NULL group — key versus value
+# MAGIC 2. `WHERE` vs `HAVING` — the same `.filter()`, different implications
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
 # MAGIC
-# MAGIC **Prerequisites:** Notebook 01 (`groupBy`, aliasing, NULL skipping);
-# MAGIC Module 7 (join NULL semantics).
+# MAGIC **Prerequisites:** Notebook 01 (covering `groupBy`, aliasing, and NULL
+# MAGIC skipping); Module 7 (join NULL semantics).
 
 # COMMAND ----------
 
