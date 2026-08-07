@@ -4,39 +4,31 @@
 # MAGIC
 # MAGIC # 02 - Multi-column Keys, NULL Groups, and Filter Placement
 # MAGIC
-# MAGIC Notebook 01 always grouped on a single column with no NULLs. Real summaries
-# MAGIC rarely stay that clean. This notebook covers the two concepts that break
-# MAGIC most real-world aggregations:
+# MAGIC Two common mistakes can significantly impact aggregate results:
 # MAGIC
-# MAGIC ### Part 1: Grouping on several columns — and NULL as a group key
-# MAGIC
-# MAGIC Notebook 01's exercise left you with a group nobody asked for: a
-# MAGIC `payment_method` row whose key is `NULL`. In the output it looks exactly
-# MAGIC like a valid data row. Section 1 explains where it comes from, what it does
-# MAGIC to your row-count prediction, and how it behaves once you group on more
-# MAGIC than one column.
-# MAGIC
-# MAGIC ### Part 2: `WHERE` vs `HAVING`
-# MAGIC
-# MAGIC Filtering *before* the aggregate and filtering *after* are different SQL
-# MAGIC clauses (`WHERE` / `HAVING`). In the DataFrame API they are both called
-# MAGIC `.filter()` — only line order distinguishes them. Putting `.filter()` on the
-# MAGIC wrong side silently changes every number in your result.
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC ## What this notebook teaches
-# MAGIC
-# MAGIC | Section | Concept | Why it matters |
+# MAGIC | Situation | Expected outcome | Actual outcome from Spark |
 # MAGIC |---|---|---|
-# MAGIC | 1. Multi-column keys | Composite grain & NULLs | Grain is defined by the full key list |
-# MAGIC | 2. Filter placement | `WHERE` vs `HAVING` | Filter early without breaking group logic |
-# MAGIC | Exercise | Per-borough summary | Composite grain + HAVING on a new key |
+# MAGIC | Grouping by `payment_method` | 5 groups | **6 groups** (`NULL` forms its own group) |
+# MAGIC | Filtering borough tips with `tip_amount > 5` | "Same totals, fewer rows" | **Different totals** (the `WHERE` clause changes the input rows) |  # noqa: E501
+# MAGIC
+# MAGIC The first mistake arises from treating every `NULL` value the same way.
+# MAGIC A `NULL` in a **group key** still creates a separate group, whereas a
+# MAGIC `NULL` in a **value** that you sum or average is ignored. Section 1
+# MAGIC illustrates both scenarios using the same dataset.
+# MAGIC
+# MAGIC Filtering before grouping changes which records go into each group, so a
+# MAGIC later `sum` sees different inputs. Filtering after grouping and
+# MAGIC aggregation removes entire groups.
+# MAGIC
+# MAGIC This notebook addresses both topics in the following order:
+# MAGIC
+# MAGIC 1. Composite keys and the NULL group — key versus value
+# MAGIC 2. `WHERE` vs `HAVING` — the same `.filter()`, different implications
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
 # MAGIC
-# MAGIC **Prerequisites:** Notebook 01 (`groupBy`, aliasing, NULL skipping);
-# MAGIC Module 7 (join NULL semantics).
+# MAGIC **Prerequisites:** Notebook 01 (covering `groupBy`, aliasing, and NULL
+# MAGIC skipping); Module 7 (join NULL semantics).
 
 # COMMAND ----------
 
@@ -44,13 +36,13 @@
 # MAGIC %md
 # MAGIC ## Setup — load `trip_enriched`
 # MAGIC
-# MAGIC The same managed table Notebook 01 used: one row per `trip_id`, **106**
-# MAGIC rows, 16 columns. Column roles, types, and the inherited-NULL map are in
-# MAGIC Notebook 01's setup and in `docs/data/dataset-overview.md`.
+# MAGIC Same managed table as Notebook 01: one row per `trip_id` (106 rows).
+# MAGIC Shared setup details (column roles, types, inherited NULL map) stay in
+# MAGIC Notebook 01 and `docs/data/dataset-overview.md`.
 # MAGIC
-# MAGIC This notebook groups on `service_type`, `payment_method`, and
-# MAGIC `pickup_borough`, and aggregates `base_fare_amount`, `tip_amount`, and
-# MAGIC `trip_distance_miles`.
+# MAGIC This notebook uses:
+# MAGIC - Group keys: `service_type`, `payment_method`, `pickup_borough`
+# MAGIC - Measures: `base_fare_amount`, `tip_amount`, `trip_distance_miles`
 
 # COMMAND ----------
 
@@ -66,53 +58,36 @@ print("trip_enriched rows:", trip_enriched.count())
 
 # DBTITLE 1,Section 1 - Multi-column grouping
 # MAGIC %md
-# MAGIC ## 1. Grouping on several columns — and NULL as a group key
+# MAGIC ## 1. Composite keys and the NULL group
 # MAGIC
-# MAGIC Pass more than one column and the **output grain becomes the whole key
-# MAGIC list**: one row per *combination* that actually occurs.
+# MAGIC Start with the result you should predict **before** running:
 # MAGIC
-# MAGIC | Group key | Output grain |
+# MAGIC | Aggregate | Predicted groups |
 # MAGIC |---|---|
-# MAGIC | `service_type` | One row per service type (5) |
-# MAGIC | `service_type`, `payment_method` | One row per service type **and** method |
+# MAGIC | `groupBy("service_type")` | 5 |
+# MAGIC | `groupBy("payment_method")` | 6 (`card`, `wallet`, `cash`, `corporate`, `unknown`, `NULL`) |  # noqa: E501
+# MAGIC | `groupBy("service_type", "payment_method")` | at most `5 * 6 = 30` |
 # MAGIC
-# MAGIC Adding a key can only **add** rows, never remove them — you are subdividing
-# MAGIC existing groups. Predicting the count is now a range, not a number:
+# MAGIC The actual composite output is **18** rows, not 30, because Spark returns
+# MAGIC only combinations that exist in data.
 # MAGIC
-# MAGIC ```
-# MAGIC at most  groups(key1) * groups(key2)              = 5 * 6 = 30
-# MAGIC actual   only combinations present in the data    = 18
-# MAGIC ```
+# MAGIC **Rule:** a `groupBy` grain is the **full key list**. Adding keys splits
+# MAGIC existing groups, so row count can only stay same or increase.
 # MAGIC
-# MAGIC Read `groups(key)` as the number of groups a `groupBy` on that key alone
-# MAGIC would produce — **not** `countDistinct`. `payment_method` contributes **6**
-# MAGIC here, not 5. The subsection below explains the gap.
+# MAGIC ### Why 6 groups for `payment_method` if `countDistinct` is 5?
 # MAGIC
-# MAGIC The 12 missing combinations are information in themselves: no `XL` trip was
-# MAGIC ever paid in cash, for instance. A `groupBy` reports what exists, not every
-# MAGIC combination that could.
-# MAGIC
-# MAGIC ### The NULL group-key rule
-# MAGIC
-# MAGIC Three operations, three different answers on the same NULL key:
-# MAGIC
-# MAGIC | Operation | NULL keys |
+# MAGIC | Operation | NULL behavior |
 # MAGIC |---|---|
-# MAGIC | `join` (Module 7) | Never match — `NULL = NULL` is not true; need `eqNullSafe` |
-# MAGIC | `groupBy` | Collapse into a single group, displayed as `NULL` |
-# MAGIC | `countDistinct` | Ignored entirely |
+# MAGIC | `join` | NULL keys do not match (`NULL = NULL` is not true) |
+# MAGIC | `countDistinct` | NULL is ignored |
+# MAGIC | `groupBy` | NULL keys collapse into one output group |
 # MAGIC
-# MAGIC The middle row is the one that catches people: `groupBy` treats every NULL
-# MAGIC as the same key, which is why `payment_method` yields **6** groups where
-# MAGIC `countDistinct` reports **5**.
+# MAGIC So `countDistinct("payment_method")` returns 5, while
+# MAGIC `groupBy("payment_method")` returns 6.
 # MAGIC
-# MAGIC Watch for `unknown` **and** NULL appearing as separate rows below. The
-# MAGIC `unknown` sentinel from Notebook 01 covers a blank method on trip 105; the
-# MAGIC NULL is trip 106, which has no payment row at all. Two different data
-# MAGIC problems that a careless summary would merge.
-# MAGIC
-# MAGIC Notebook `04` shows how this NULL group becomes genuinely ambiguous once
-# MAGIC `rollup` starts adding subtotal rows that *also* show NULL.
+# MAGIC `unknown` and `NULL` are different:
+# MAGIC - `unknown`: normalized sentinel for a blank method (trip 105)
+# MAGIC - `NULL`: no payment row at all (trip 106)
 
 # COMMAND ----------
 
@@ -147,38 +122,30 @@ method_by_service.orderBy("service_type", "payment_method").show(30)
 
 # DBTITLE 1,Section 2 - Filter placement
 # MAGIC %md
-# MAGIC ## 2. Filtering before vs after aggregating
+# MAGIC ## 2. `WHERE` vs `HAVING` with the same `.filter()`
 # MAGIC
-# MAGIC The same `filter` call means completely different things depending on which
-# MAGIC side of `.agg()` it sits on. In SQL these have separate keywords, which is
-# MAGIC why the distinction is easy to miss in the DataFrame API — here it is just
-# MAGIC line order.
-# MAGIC
-# MAGIC | Placement | SQL | What it does |
-# MAGIC |---|---|---|
-# MAGIC | `filter` **before** `groupBy` | `WHERE` | Drops input rows; **aggregate values change** |
-# MAGIC | `filter` **after** `agg` | `HAVING` | Drops whole groups; **values stay identical** |
-# MAGIC
-# MAGIC There is no `.having()` method — a `HAVING` is just a `filter` further down
-# MAGIC the chain, applied to the **alias** you created in `.agg()`. That is reason
-# MAGIC number two for Notebook 01's aliasing rule.
-# MAGIC
-# MAGIC Watch all three results below on the same per-borough tip totals:
+# MAGIC Concrete check first (same borough metric, three query shapes):
 # MAGIC
 # MAGIC | Query | Groups | Manhattan total |
 # MAGIC |---|---|---|
 # MAGIC | No filter | 5 | 134.45 |
-# MAGIC | `WHERE tip_amount > 5` first | 4 | **91.00** — value changed |
-# MAGIC | `HAVING total_tip > 90` after | 2 | **134.45** — value preserved |
+# MAGIC | `WHERE tip_amount > 5` (before `groupBy`) | 4 | **91.00** |
+# MAGIC | `HAVING total_tip > 90` (after `agg`) | 2 | **134.45** |
 # MAGIC
-# MAGIC `WHERE` did two things at once: it shrank every total *and* eliminated
-# MAGIC Staten Island entirely, because its single trip tipped 2.41 and no rows
-# MAGIC survived to form a group. `HAVING` dropped three groups but changed no
-# MAGIC number. Neither is more correct — but "boroughs whose total tips exceed 90"
-# MAGIC and "total of tips over 5, by borough" are different reports.
+# MAGIC **Rule:** placement changes meaning.
 # MAGIC
-# MAGIC **Habit:** filter as early as the question allows. Fewer rows enter the
-# MAGIC shuffle, which is the cheapest performance win in Spark (Module 4).
+# MAGIC - `.filter()` before `groupBy(...).agg(...)` is a `WHERE`
+# MAGIC   - drops input rows
+# MAGIC   - aggregate values change
+# MAGIC - `.filter()` after `.agg(...)` is a `HAVING`
+# MAGIC   - drops whole groups
+# MAGIC   - aggregate values stay the same as unfiltered aggregate
+# MAGIC
+# MAGIC There is no `.having()` method in the DataFrame API; you filter on the
+# MAGIC alias created in `.agg()`.
+# MAGIC
+# MAGIC **Performance habit:** filter as early as the question allows to reduce
+# MAGIC shuffle input.
 
 # COMMAND ----------
 
@@ -215,30 +182,25 @@ borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).
 
 # DBTITLE 1,Exercise
 # MAGIC %md
-# MAGIC ## Exercise — a per-borough trip summary
+# MAGIC ## Exercise — per-borough summary, then composite check
 # MAGIC
-# MAGIC Steps 1–3 apply Section 2's filter placement to the single key
-# MAGIC **`pickup_borough`**. Step 4 then adds Section 1's composite key.
+# MAGIC **Steps 1–3:** apply `HAVING` logic on single key `pickup_borough`.
+# MAGIC **Step 4:** add the second key (`payment_method`) to practice composite grain.
 # MAGIC
-# MAGIC **1. Predict.** Set `predicted_borough_groups` to the number of output rows
-# MAGIC you expect. Get it from `countDistinct("pickup_borough")` — the zone
-# MAGIC columns carry **no** NULLs, so unlike `payment_method` there is no extra
-# MAGIC NULL group to add here.
+# MAGIC **1. Predict.** Set `predicted_borough_groups` from
+# MAGIC `countDistinct("pickup_borough")`. Zone columns have no NULLs, so no extra
+# MAGIC NULL group here.
 # MAGIC
-# MAGIC **2. Aggregate.** One row per `pickup_borough`, with these aliased columns:
+# MAGIC **2. Aggregate.** One row per `pickup_borough`, with:
+# MAGIC - `trip_count` = all trips
+# MAGIC - `dated_trip_count` = non-NULL `trip_date`
+# MAGIC - `total_base_fare` = sum(`base_fare_amount`) rounded to 2
+# MAGIC - `avg_distance_miles` = avg(`trip_distance_miles`) rounded to 2
 # MAGIC
-# MAGIC | Alias | Aggregate |
-# MAGIC |---|---|
-# MAGIC | `trip_count` | All trips in the borough |
-# MAGIC | `dated_trip_count` | Trips with a non-NULL `trip_date` |
-# MAGIC | `total_base_fare` | Sum of `base_fare_amount`, rounded to 2 |
-# MAGIC | `avg_distance_miles` | Average `trip_distance_miles`, rounded to 2 |
+# MAGIC **3. Apply `HAVING`.** Keep boroughs with `trip_count > 10`.
+# MAGIC Then explain: why Manhattan `total_base_fare` is unchanged before/after.
 # MAGIC
-# MAGIC **3. Apply a `HAVING`.** Keep only boroughs with **more than 10** trips,
-# MAGIC then answer this: *why is `total_base_fare` for Manhattan identical before
-# MAGIC and after that filter?*
-# MAGIC
-# MAGIC Expected results to check yourself against:
+# MAGIC **Expected results for step 2:**
 # MAGIC
 # MAGIC | pickup_borough | trip_count | dated_trip_count | total_base_fare | avg_distance_miles |
 # MAGIC |---|---|---|---|---|
@@ -248,22 +210,13 @@ borough_tips.filter(F.col("total_tip") > 90).orderBy(F.col("total_tip").desc()).
 # MAGIC | Bronx | 10 | 10 | 341.54 | 8.61 |
 # MAGIC | Staten Island | 1 | 1 | 16.94 | 6.10 |
 # MAGIC
-# MAGIC `avg_distance_miles` divides by non-NULL distances only, so the three trips
-# MAGIC with a rejected distance (103, 105, 106) are excluded from their borough's
-# MAGIC average — Notebook 01's denominator lesson, applied.
+# MAGIC **4. Composite key check.** Build one row per
+# MAGIC (`pickup_borough`, `payment_method`) with `trip_count`.
+# MAGIC Predict first; verify after running.
 # MAGIC
-# MAGIC The `HAVING` should leave **3** rows — Bronx has exactly 10 trips, and
-# MAGIC `> 10` excludes it. Off-by-one traps are real; check the boundary.
-# MAGIC
-# MAGIC **4. Now the composite key.** Group on **`pickup_borough` *and*
-# MAGIC `payment_method`** with a single `trip_count`, and predict the row count
-# MAGIC *before* you run it.
-# MAGIC
-# MAGIC Two rules from Section 1 decide your answer: the upper bound is
-# MAGIC `groups(pickup_borough) * groups(payment_method)`, and `payment_method`
-# MAGIC contributes **6**, not 5. Expect the actual number to land well below that
-# MAGIC bound — no borough saw every payment method. If the check prints `✗`, work
-# MAGIC out which of the two rules you missed before looking at the result.
+# MAGIC Use both rules:
+# MAGIC - upper bound: `groups(pickup_borough) * groups(payment_method)`
+# MAGIC - `payment_method` contributes **6** groups (not 5)
 
 # COMMAND ----------
 
@@ -310,21 +263,11 @@ borough_method.orderBy(F.col("trip_count").desc()).show(40)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC | Concept | Key takeaway |
+# MAGIC | Concept | What to remember |
 # MAGIC |---|---|
-# MAGIC | **Composite keys** | Grain is the whole key list; ≤ product of per-key group counts |
-# MAGIC | **NULL group key** | One NULL group in output; ignored by `countDistinct`; never matches |
-# MAGIC | **`unknown` ≠ NULL** | String sentinel and missing row are separate groups — don't merge |
-# MAGIC | **Filter placement** | `WHERE` changes aggregate values; `HAVING` only drops groups |
-# MAGIC | **Aliasing for HAVING** | `HAVING` filters on the alias — another reason to always alias |
-# MAGIC | **Filter early** | Push `WHERE` as far left as possible; fewer rows = cheaper shuffle |
+# MAGIC | Composite key grain | Output row = one observed key combination |
+# MAGIC | NULL group behavior | `groupBy` keeps one NULL group; `countDistinct` ignores NULL |
+# MAGIC | `unknown` vs NULL | Sentinel string and missing join row are different issues |
+# MAGIC | Filter placement | `WHERE` changes values; `HAVING` changes which groups survive |
 # MAGIC
-# MAGIC **The two habits from this notebook:** (1) when grouping on a nullable
-# MAGIC column, add 1 to your `countDistinct` estimate for the NULL group; (2)
-# MAGIC ask "does this filter change what's *in* the groups or *which* groups
-# MAGIC survive?" — that tells you whether it is a `WHERE` or a `HAVING`.
-# MAGIC
-# MAGIC **Next:** **`03 - Aggregate Functions Beyond Count and Sum`** — where `avg`
-# MAGIC misleads and `F.median` / `F.percentile_approx` don't, collecting group
-# MAGIC values into arrays with `F.collect_set`, exact versus approximate distinct
-# MAGIC counts, and what `decimal` precision does under `sum` and `avg`.
+# MAGIC Next notebook: **`03 - Aggregate Functions Beyond Count and Sum`**.
