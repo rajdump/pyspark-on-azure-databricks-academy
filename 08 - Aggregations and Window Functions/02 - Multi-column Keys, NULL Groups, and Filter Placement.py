@@ -314,4 +314,4 @@ borough_payment_summary.orderBy(F.col("trip_count").desc()).show(40)
 # MAGIC | 1a | Composite key | Only key pairs present in the data become rows |
 # MAGIC | 2 | Filter placement | Before grouping removes input rows; after aggregation removes groups |
 # MAGIC
-# MAGIC Next notebook: **`03 - Collections, Percentiles, and Approximate Counts`**.
+# MAGIC Next notebook: **`03 - Collections, Percentiles, and Distinct Counts`**.

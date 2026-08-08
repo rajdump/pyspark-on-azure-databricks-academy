@@ -2,11 +2,11 @@
 # DBTITLE 1,Introduction
 # MAGIC %md
 # MAGIC
-# MAGIC # 03 - Collections, Percentiles, and Approximate Counts
+# MAGIC # 03 - Collections, Percentiles, and Distinct Counts
 # MAGIC
 # MAGIC `groupBy` with `count`, `sum`, and `avg` covers many common aggregation needs.
 # MAGIC This notebook adds `collect_list` / `collect_set`, `percentile_approx`, and
-# MAGIC `countDistinct` / `approx_count_distinct`.
+# MAGIC `countDistinct`.
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
@@ -14,13 +14,13 @@
 # MAGIC |---|---|---|
 # MAGIC | 1 | `collect_list` / `collect_set` | Build a driver profile showing all service types handled, or only the unique service types. |
 # MAGIC | 2 | `avg` vs `percentile_approx` (p50 / p90) | Compare average trip distance with median and upper-range distance thresholds. |
-# MAGIC | 3 | `countDistinct` vs `approx_count_distinct` | Count how many unique pickup-to-drop-off routes appear, exactly or approximately. |
+# MAGIC | 3 | `countDistinct` | Count how many unique pickup-to-drop-off routes appear. |
 # MAGIC | Exercise | Same three patterns by `pickup_borough` | Apply the same aggregation patterns to borough-level questions. |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
 # MAGIC `rideshare_dev.processed.trip_driver_assignment` (100 rows). **No writes.**
 # MAGIC
-# MAGIC **Prerequisites:** Notebook 01; Notebook 02; Module 6 Notebook 02 (structs).
+# MAGIC **Prerequisites:** Notebook 01; Notebook 02.
 
 # COMMAND ----------
 
@@ -108,8 +108,8 @@ trip_enriched.agg(
 # MAGIC %md
 # MAGIC ### How do trip-distance patterns differ by service type?
 # MAGIC
-# MAGIC Read `known_distance_count` before trusting a group's p50 / p90 — a tiny
-# MAGIC group (for example `UNKNOWN`) is not a broad pattern.
+# MAGIC For each service type, calculate average, median (p50), and upper-range (p90)
+# MAGIC trip distance.
 
 # COMMAND ----------
 
@@ -124,13 +124,13 @@ service_distance_percentiles.orderBy("service_type").show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,How many unique routes appear?
+# DBTITLE 1,Identify how many unique pickup-to-drop-off routes appear?
 # MAGIC %md
-# MAGIC ## 3. Count distinct values at scale
+# MAGIC ## 3. Count distinct values
 # MAGIC
-# MAGIC ### How many unique pickup-to-drop-off routes appear?
+# MAGIC ### Identify how many unique pickup-to-drop-off routes appear?
 # MAGIC
-# MAGIC `countDistinct` on pickup and drop-off IDs returns the exact route count.
+# MAGIC `countDistinct` on pickup and drop-off locations returns the unique route count.
 
 # COMMAND ----------
 
@@ -138,31 +138,7 @@ trip_enriched.agg(
     F.countDistinct(
         F.col("pickup_location_id"),
         F.col("dropoff_location_id"),
-    ).alias("exact_route_count"),
-).show()
-
-# COMMAND ----------
-
-# DBTITLE 1,Exact vs approximate route count
-# MAGIC %md
-# MAGIC ### What if an estimate is enough?
-# MAGIC
-# MAGIC `approx_count_distinct` takes one expression, so wrap the two IDs with
-# MAGIC `struct`. A matching count on this small table does not make the estimate exact.
-
-# COMMAND ----------
-
-route = F.struct(
-    F.col("pickup_location_id"),
-    F.col("dropoff_location_id"),
-)
-
-trip_enriched.agg(
-    F.countDistinct(
-        F.col("pickup_location_id"),
-        F.col("dropoff_location_id"),
-    ).alias("exact_route_count"),
-    F.approx_count_distinct(route).alias("approx_route_count"),
+    ).alias("unique_route_count"),
 ).show()
 
 # COMMAND ----------
@@ -175,7 +151,7 @@ trip_enriched.agg(
 # MAGIC
 # MAGIC 1. Unique service types per borough
 # MAGIC 2. p50 and p90 of `ride_duration_mins` per borough
-# MAGIC 3. Exact vs approximate distinct `dropoff_location_id` per borough
+# MAGIC 3. Distinct `dropoff_location_id` count per borough
 # MAGIC
 # MAGIC Predict the borough group count, complete the TODOs, then verify.
 
@@ -207,8 +183,7 @@ borough_duration_percentiles.orderBy("pickup_borough").show(truncate=False)
 # DBTITLE 1,Exercise step 3 - Distinct counts
 borough_dropoff_counts = trip_enriched.groupBy("pickup_borough").agg(
     F.count("*").alias("trip_count"),
-    # TODO: add exact distinct drop-off locations as exact_dropoff_location_count
-    # TODO: add approximate distinct locations as approx_dropoff_location_count
+    # TODO: add distinct drop-off locations as unique_dropoff_location_count
 )
 
 borough_dropoff_counts.orderBy("pickup_borough").show(truncate=False)
@@ -236,8 +211,7 @@ for summary_name, actual_groups in summary_group_counts.items():
 # MAGIC |---|---|
 # MAGIC | `collect_list` / `collect_set` | Per-group arrays — repeats vs unique values (NULLs skipped) |
 # MAGIC | `percentile_approx` | p50 / p90 thresholds alongside `avg` |
-# MAGIC | `countDistinct` | Exact distinct counts |
-# MAGIC | `approx_count_distinct` | Approximate distinct counts at scale |
+# MAGIC | `countDistinct` | Unique / distinct counts |
 # MAGIC
 # MAGIC **Next:** **`04 - Multi-Level Grouping and Pivot`** — add subtotals and reshape
 # MAGIC grouped results.

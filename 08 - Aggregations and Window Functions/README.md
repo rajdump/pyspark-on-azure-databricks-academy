@@ -119,7 +119,7 @@ Module-local quality gate for this module. It supplements
 |---|---|---|---|
 | 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column in `.agg()` fails (window → **05**); three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
 | 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain (`service_type`, `payment_method` → 18 of 30); progressive `WHERE` vs `HAVING` comparison; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
-| 3 | Collections, Percentiles, and Approximate Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set` (duplicates, unique values, NULL exclusion, bounded groups); `avg` vs approximate p50 / p90; exact vs `approx_count_distinct` route counts |
+| 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set` (duplicates, unique values, NULL exclusion, bounded groups); `avg` vs approximate p50 / p90; `countDistinct` route counts |
 | 4 | Multi-Level Grouping and Pivot | `trip_enriched` | `rollup` / `cube` / `groupingSets`; `grouping_id`; `pivot` + explicit values; `stack` |
 | 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; ranking; window aggregates; generalizes Module 7 **02** dedup |
 | 6 | Window Frames, Running Totals, and lag/lead | `trip_enriched` | Implicit frame gotcha; `rowsBetween` vs `rangeBetween`; ordered `first_value` / `last_value`; running totals; `lag` / `lead` |
