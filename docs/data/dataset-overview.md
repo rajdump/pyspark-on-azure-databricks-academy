@@ -352,7 +352,7 @@ Module 9 reads all three as its primary sources. All paths live under
 | Output folder | Grain / rows | Source table |
 |---|---|---|
 | `curated/kpi_daily_trip_summary/` | One row per **`trip_date`** — **14** rows (trips span 2026-03-01 – 2026-03-14; NULL-`trip_date` trips 101–106 are explicitly excluded) | `trip_enriched` |
-| `curated/kpi_zone_performance/` | One row per (**`pickup_borough`**, **`pickup_zone`**) — row count TBD (verify distinct pickup zones in `trip_enriched`) | `trip_enriched` |
+| `curated/kpi_zone_performance/` | One row per (**`pickup_borough`**, **`pickup_zone`**) — **20** rows (all pickup `location_id`s 1–20 are present) | `trip_enriched` |
 | `curated/kpi_driver_productivity/` | One row per **`driver_id`** — **12** rows | `trip_driver_assignment` |
 
 Column schemas will be defined in Module 8 Notebook **08** (not yet written).
