@@ -4,8 +4,6 @@
 # MAGIC
 # MAGIC # 03 - Collections, Percentiles, and Approximate Counts
 # MAGIC
-# MAGIC ## Collect arrays, percentiles, and distinct counts
-# MAGIC
 # MAGIC `groupBy` with `count`, `sum`, and `avg` covers many common aggregation needs.
 # MAGIC This notebook adds `collect_list` / `collect_set`, `percentile_approx`, and
 # MAGIC `countDistinct` / `approx_count_distinct`.
