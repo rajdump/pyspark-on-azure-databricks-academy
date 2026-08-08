@@ -65,12 +65,13 @@ driver_service_collections.orderBy("driver_id").show(12, truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Does collect_list keep NULL payment methods?
+# DBTITLE 1,Which payment methods appear on STANDARD trips?
 # MAGIC %md
-# MAGIC ### Does `collect_list` keep NULL payment methods?
+# MAGIC ### Which payment methods appear on STANDARD trips?
 # MAGIC
-# MAGIC Compare trip count with collected list size. Both `collect_list` and
-# MAGIC `collect_set` skip NULLs.
+# MAGIC Build the payment-method list and unique set for `STANDARD`. Trip count can
+# MAGIC be higher than the collected list size when a trip has no payment method —
+# MAGIC `collect_list` and `collect_set` skip NULLs.
 
 # COMMAND ----------
 
