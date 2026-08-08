@@ -30,9 +30,8 @@ By the end of this module, you'll be able to:
 - Build aliased aggregates with single or composite keys, and reason about
   NULL keys, NULL values, and count semantics
 - Choose whether to filter input rows (`WHERE`) or aggregated groups (`HAVING`)
-- Use advanced aggregates, multi-level grouping, and pivoting to summarize and
-  reshape data
-- Build windows for ranking, running calculations, frames, and row-to-row
+- Use advanced aggregates and pivoting to summarize and reshape data
+- Build windows for ranking, running calculations, and row-to-row
   comparisons
 - Select **Top-N per group** and draw reproducible samples with **`sample`** /
   **`sampleBy`** / **`randomSplit`**
@@ -86,8 +85,8 @@ This module creates no managed tables — Level 4 is not required here.
 
 **Runtime:** Spark **4.0.0** / DBR **17.3 LTS**.
 
-**API:** DataFrame `groupBy` / `agg`, `rollup` / `cube` / `groupingSets`,
-`pivot`, and `pyspark.sql.window.Window` with `F.*` window functions.
+**API:** DataFrame `groupBy` / `agg`, `pivot`, and
+`pyspark.sql.window.Window` with `F.*` window functions.
 
 **Out of scope:** Spark SQL / `QUALIFY` (Module 9); Delta ACID / `MERGE` /
 incremental KPI refresh (Modules 10 and 13); Unity Catalog grant administration
@@ -120,9 +119,9 @@ Module-local quality gate for this module. It supplements
 | 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column in `.agg()` fails (window → **05**); three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
 | 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain (`service_type`, `payment_method` → 18 of 30); progressive `WHERE` vs `HAVING` comparison; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
 | 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set` (duplicates, unique values, NULL exclusion, bounded groups); `avg` vs approximate p50 / p90; `countDistinct` route counts |
-| 4 | Multi-Level Grouping and Pivot | `trip_enriched` | `rollup` / `cube` / `groupingSets`; `grouping_id`; `pivot` + explicit values; `stack` |
+| 4 | Pivot | `trip_enriched` | `pivot` + explicit values |
 | 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; ranking; window aggregates; generalizes Module 7 **02** dedup |
-| 6 | Window Frames, Running Totals, and lag/lead | `trip_enriched` | Implicit frame gotcha; `rowsBetween` vs `rangeBetween`; ordered `first_value` / `last_value`; running totals; `lag` / `lead` |
+| 6 | Running Totals and lag/lead | `trip_enriched` | Ordered `first_value` / `last_value`; running totals; `lag` / `lead` |
 | 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number`; ties; `sample` / `sampleBy` / `randomSplit` |
 | 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Parquet outputs |
 

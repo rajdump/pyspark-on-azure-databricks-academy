@@ -267,10 +267,11 @@ except Exception:
 # MAGIC - **How many days does the dataset cover?** — count the distinct trip dates.
 # MAGIC
 # MAGIC All three questions are valid, but the appropriate question depends on
-# MAGIC the **business metric you are trying to measure**
+# MAGIC the **business metric you are trying to measure**.
 # MAGIC
-# MAGIC **Cost note:** `countDistinct` is expensive at scale — Notebook `03`
-# MAGIC covers a faster approximate alternative.
+# MAGIC **Cost note:** `countDistinct` is expensive at scale — use it when you need
+# MAGIC the exact distinct count. Notebook `03` continues with collections,
+# MAGIC percentiles, and route-level `countDistinct`.
 
 # COMMAND ----------
 

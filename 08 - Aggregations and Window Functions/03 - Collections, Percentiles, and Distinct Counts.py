@@ -213,5 +213,4 @@ for summary_name, actual_groups in summary_group_counts.items():
 # MAGIC | `percentile_approx` | p50 / p90 thresholds alongside `avg` |
 # MAGIC | `countDistinct` | Unique / distinct counts |
 # MAGIC
-# MAGIC **Next:** **`04 - Multi-Level Grouping and Pivot`** — add subtotals and reshape
-# MAGIC grouped results.
+# MAGIC **Next:** **`04 - Pivot`** — reshape grouped results with `pivot`.
