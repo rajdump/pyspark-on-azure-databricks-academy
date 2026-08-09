@@ -256,6 +256,12 @@ print(
 # MAGIC - `row_number` adds `trip_id` as a tie-breaker so the sequence is
 # MAGIC   repeatable.
 # MAGIC
+# MAGIC **Caution:** `row_number` must assign a unique position even when distances
+# MAGIC match. Without a secondary sort key such as `trip_id`, Spark may assign
+# MAGIC those positions **non-deterministically** — the same tie can flip between
+# MAGIC runs after a shuffle. Distance still ranks first; `trip_id` only breaks
+# MAGIC ties.
+# MAGIC
 # MAGIC Section 4 shows the difference using an actual tie.
 # MAGIC
 # MAGIC `trip_distance_miles` is non-NULL in this dataset, so NULL ordering does not
