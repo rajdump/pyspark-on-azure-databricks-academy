@@ -22,7 +22,7 @@
 # MAGIC | 2 | Window aggregates | Add counts, totals, and averages to each detail row |
 # MAGIC | 3 | Ranking functions | Rank rows within each group and handle ties |
 # MAGIC | 4 | Filter after rank | Keep the top rows per group |
-# MAGIC | Exercise | Combined windows | Combine group metrics and ranking in one result |
+# MAGIC | Exercise | Service windows | Add service totals and a duration rank to each trip |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
 # MAGIC `rideshare_dev.processed.trip_driver_assignment` (100 rows). **No writes.**
@@ -349,84 +349,72 @@ top2_trips_per_driver.select(
 
 # COMMAND ----------
 
-# DBTITLE 1,Exercise - Compare trips within service type
+# DBTITLE 1,Exercise - Add service metrics and duration rank
 # MAGIC %md
-# MAGIC ## Exercise — How does each trip compare within its service type?
+# MAGIC ## Exercise — Add service-type totals and a duration rank to each trip
 # MAGIC
-# MAGIC Reuse the partition-only pattern from Section 2 and the ordered `dense_rank`
-# MAGIC pattern from Section 3. Build the result from `trip_enriched` with:
+# MAGIC Start from every trip row (`trip_enriched`, 106 rows). For each row, add three
+# MAGIC columns:
 # MAGIC
-# MAGIC 1. `service_trip_count` — count `trip_id` over a partition-only
-# MAGIC    `service_type` specification
-# MAGIC 2. `service_avg_ride_duration_mins` — average `ride_duration_mins` over the
-# MAGIC    same partition-only specification, rounded to two decimals
-# MAGIC 3. `ride_duration_dense_rank` — rank `ride_duration_mins` from longest to
-# MAGIC    shortest using a separate ordered specification
+# MAGIC 1. How many trips that service type has (`STANDARD`, `PREMIUM`, …)
+# MAGIC 2. Average ride duration for that service type
+# MAGIC 3. Rank of this trip's duration inside its service type (longest = 1)
 # MAGIC
-# MAGIC `ride_duration_mins` has no NULLs. Leave `trip_id` out of the dense-rank order
-# MAGIC so equal durations remain tied. Do not filter the result.
+# MAGIC You still keep all 106 trips — no filter.
 # MAGIC
-# MAGIC Predict the output row count before completing the TODOs. Your checks:
-# MAGIC
-# MAGIC - output rows: **106**
-# MAGIC - distinct `trip_id` values: **106**
-# MAGIC - every `STANDARD` row repeats `service_trip_count` **55**
+# MAGIC Use column names `service_trip_count`, `service_avg_ride_duration_mins`
+# MAGIC (rounded to 2 decimals), and `ride_duration_dense_rank`. Predict **106**
+# MAGIC output rows; every `STANDARD` row should show `service_trip_count` **55**.
 
 # COMMAND ----------
 
-# DBTITLE 1,Exercise step 1 - Define window specifications
-predicted_output_rows = None  # TODO: replace with your prediction
+# DBTITLE 1,Exercise - Define the two windows
+predicted_output_rows = None  # TODO: predict the output row count (106)
 
-# TODO: partition by service_type only; do not add orderBy
+# TODO: Window.partitionBy("service_type")  — no orderBy
 service_aggregate_window = None
 
-# TODO: partition by service_type and order by ride_duration_mins descending
+# TODO: Window.partitionBy("service_type").orderBy(
+#           F.col("ride_duration_mins").desc()
+#       )
 service_duration_rank_window = None
 
 # COMMAND ----------
 
-# DBTITLE 1,Exercise step 2 - Build the windowed result
-# TODO: replace None with a transformation built from trip_enriched.
-# Add:
-# - service_trip_count using service_aggregate_window
-# - service_avg_ride_duration_mins using service_aggregate_window
-# - ride_duration_dense_rank using service_duration_rank_window
+# DBTITLE 1,Exercise - Add the three columns
+# TODO: start from trip_enriched and add:
+#   service_trip_count =
+#       F.count(F.col("trip_id")).over(service_aggregate_window)
+#   service_avg_ride_duration_mins =
+#       F.round(F.avg(F.col("ride_duration_mins")).over(service_aggregate_window), 2)
+#   ride_duration_dense_rank =
+#       F.dense_rank().over(service_duration_rank_window)
 service_window_summary = None
 
 # COMMAND ----------
 
-# DBTITLE 1,Exercise step 3 - Verify grain
+# DBTITLE 1,Exercise - Check the row count
 if service_window_summary is None:
-    raise NotImplementedError(
-        "Complete service_window_summary before verification.",
-    )
+    raise NotImplementedError("Complete service_window_summary first.")
 
 exercise_output_rows = service_window_summary.count()
-exercise_distinct_trip_ids = service_window_summary.select("trip_id").distinct().count()
-
 prediction_match = "✓" if predicted_output_rows == exercise_output_rows else "✗"
-row_grain_match = "✓" if exercise_output_rows == trip_enriched_rows else "✗"
-key_grain_match = "✓" if exercise_distinct_trip_ids == trip_enriched_rows else "✗"
 
 print(f"{prediction_match} predicted={predicted_output_rows}, actual={exercise_output_rows}")
-print(f"{row_grain_match} input rows={trip_enriched_rows}, output rows={exercise_output_rows}")
-print(
-    f"{key_grain_match} distinct trip_ids={exercise_distinct_trip_ids},"
-    f" expected={trip_enriched_rows}"
-)
+print(f"input rows={trip_enriched_rows}, output rows={exercise_output_rows}")
 
 # COMMAND ----------
 
-# DBTITLE 1,Exercise step 4 - Inspect STANDARD trips
+# DBTITLE 1,Exercise - Inspect STANDARD trips
 service_window_summary.filter(
     F.col("service_type") == "STANDARD",
 ).select(
     "service_type",
     "trip_id",
     "ride_duration_mins",
-    "service_trip_count",
-    "service_avg_ride_duration_mins",
-    "ride_duration_dense_rank",
+    "service_trip_count",  # derived column
+    "service_avg_ride_duration_mins",  # derived column
+    "ride_duration_dense_rank",  # derived column
 ).orderBy(
     "ride_duration_dense_rank",
     "trip_id",
@@ -444,8 +432,8 @@ service_window_summary.filter(
 # MAGIC   every row in a partition.
 # MAGIC - **Ordered rankings:** choose `row_number`, `rank`, or `dense_rank` based on
 # MAGIC   how the business rule should handle ties.
-# MAGIC - **Filter after rank:** keep Top-N rows per group with a filter on the rank
-# MAGIC   column (for example, `distance_row_number <= 2`).
+# MAGIC - **Filter after rank:** keep Top-N rows per group with a filter on the
+# MAGIC   ranking column (for example, `distance_row_number <= 2`).
 # MAGIC
 # MAGIC **Next:** Module 8 **`06 - Running Totals and lag/lead`** adds ordered frames,
 # MAGIC running calculations, `first_value`, `last_value`, `lag`, and `lead`.
