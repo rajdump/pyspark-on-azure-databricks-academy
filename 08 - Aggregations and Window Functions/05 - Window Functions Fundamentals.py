@@ -46,10 +46,13 @@
 # MAGIC | `trip_enriched` | One row per `trip_id` (106) | Section 1, exercise |
 # MAGIC | `trip_driver_assignment` | One (`driver_id`, `trip_id`) row (100) | Sections 2–4 |
 # MAGIC
-# MAGIC Each assignment row already includes `trip_distance_miles` and
-# MAGIC `ride_duration_mins`, so Sections 2–4 need no join. Both measures are non-NULL
-# MAGIC across the 100 assignment rows; the ranking examples can focus on ties rather
-# MAGIC than NULL ordering.
+# MAGIC `trip_driver_assignment` already contains `trip_distance_miles` and
+# MAGIC `ride_duration_mins` on every row, so Sections 2–4 do not need a join to
+# MAGIC `trip_enriched`.
+# MAGIC
+# MAGIC Both columns are non-NULL across the dataset. This lets the ranking examples
+# MAGIC focus on **ties**—what happens when two rows have the same value—without
+# MAGIC introducing NULL ordering rules.
 
 # COMMAND ----------
 
