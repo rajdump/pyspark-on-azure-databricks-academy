@@ -240,22 +240,28 @@ print(
 # MAGIC ## 3. How do we rank trips within each driver?
 # MAGIC
 # MAGIC Partitioning decides which driver's rows belong together. Ranking also needs
-# MAGIC an order inside each driver. For D001, trip 8 is longest at **12.75 miles**,
-# MAGIC so it should appear first.
+# MAGIC an order within each driver. For `D001`, trip 8 has the longest distance at
+# MAGIC **12.75 miles**, so it should rank first.
 # MAGIC
-# MAGIC | Function | Result when values tie |
+# MAGIC | Function | What happens when values tie |
 # MAGIC |---|---|
-# MAGIC | `row_number` | Gives every row a unique sequence number |
-# MAGIC | `rank` | Shares the rank, then leaves a gap |
-# MAGIC | `dense_rank` | Shares the rank, then continues without a gap |
+# MAGIC | `row_number` | Gives each row a unique sequence number |
+# MAGIC | `rank` | Gives tied rows the same rank, then leaves a gap |
+# MAGIC | `dense_rank` | Gives tied rows the same rank, with no gap afterward |
 # MAGIC
-# MAGIC We need two ordering rules: one that preserves equal distances for `rank` and
-# MAGIC `dense_rank`, and one that gives `row_number` a repeatable tie-breaker.
-# MAGIC Section 4 shows why the difference matters.
+# MAGIC We use two ordering rules:
 # MAGIC
-# MAGIC These distance values are non-NULL, so `nullsFirst` / `nullsLast` would not
-# MAGIC change the result here. Module 8 **`07 - Top-N per Group and Sampling`**
-# MAGIC shows those options when the order column can be NULL.
+# MAGIC - `rank` and `dense_rank` order only by trip distance so equal distances
+# MAGIC   remain tied.
+# MAGIC - `row_number` adds `trip_id` as a tie-breaker so the sequence is
+# MAGIC   repeatable.
+# MAGIC
+# MAGIC Section 4 shows the difference using an actual tie.
+# MAGIC
+# MAGIC `trip_distance_miles` is non-NULL in this dataset, so NULL ordering does not
+# MAGIC affect these rankings. Module 8 **`07 - Top-N per Group and Sampling`**
+# MAGIC covers `nullsFirst` and `nullsLast` when the ranking column can contain
+# MAGIC NULLs.
 
 # COMMAND ----------
 
