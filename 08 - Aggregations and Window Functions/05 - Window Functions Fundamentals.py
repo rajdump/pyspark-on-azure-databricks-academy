@@ -20,9 +20,8 @@
 # MAGIC |---|---|---|
 # MAGIC | 1 | `groupBy` vs window | Add group-level values without collapsing detail rows |
 # MAGIC | 2 | Window aggregates | Add counts, totals, and averages to each detail row |
-# MAGIC | 3 | Ranking functions | Rank rows within each group |
-# MAGIC | 4 | Ranking ties | Control how equal values receive ranks |
-# MAGIC | 5 | Deduplication | Keep one winning record per business key |
+# MAGIC | 3 | Ranking functions | Rank rows within each group and handle ties |
+# MAGIC | 4 | Deduplication | Keep one winning record per business key |
 # MAGIC | Exercise | Combined windows | Combine group metrics and ranking in one result |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
@@ -44,10 +43,10 @@
 # MAGIC | DataFrame | Grain | Used for |
 # MAGIC |---|---|---|
 # MAGIC | `trip_enriched` | One row per `trip_id` (106) | Section 1, exercise |
-# MAGIC | `trip_driver_assignment` | One (`driver_id`, `trip_id`) row (100) | Sections 2–4 |
+# MAGIC | `trip_driver_assignment` | One (`driver_id`, `trip_id`) row (100) | Sections 2–3 |
 # MAGIC
 # MAGIC `trip_driver_assignment` already contains `trip_distance_miles` and
-# MAGIC `ride_duration_mins` on every row, so Sections 2–4 do not need a join to
+# MAGIC `ride_duration_mins` on every row, so Sections 2–3 do not need a join to
 # MAGIC `trip_enriched`.
 # MAGIC
 # MAGIC Both columns are non-NULL across the dataset. This lets the ranking examples
@@ -300,69 +299,22 @@ driver_ranked.filter(
 
 # COMMAND ----------
 
-# DBTITLE 1,Why D001 rankings agree
+# DBTITLE 1,Interpret the D010 tie
 # MAGIC %md
 # MAGIC The three ranking columns **do not** all agree for D010.
 # MAGIC
 # MAGIC Trips 22 and 79 both have **8.81 miles**:
 # MAGIC
 # MAGIC - `rank` and `dense_rank` both stay at **4** — the tie is preserved.
-# MAGIC - `row_number`uses **4** and **5** — unique positions, here distance
-# MAGIC   alone does not decide which trip comes first.
+# MAGIC - `row_number` uses **4** and **5** — unique positions, but distance alone
+# MAGIC   does not decide which trip comes first.
 # MAGIC - The next trip (7.65 miles) shows the gap: `rank` **6**, `dense_rank` **5**.
-
-# COMMAND ----------
-
-# DBTITLE 1,What happens when ranking values tie?
-# MAGIC %md
-# MAGIC ## 4. What happens when ranking values tie?
-# MAGIC
-# MAGIC D010 contains the tie that exposes their differences:
-# MAGIC
-# MAGIC - Trips 22 and 79 are both **8.81 miles**.
-# MAGIC - Deterministic `row_number` should assign **4** and **5** by `trip_id`.
-# MAGIC - Both rows should receive `rank` **4** and `dense_rank` **4**.
-# MAGIC - The following 7.65-mile trip should receive `rank` **6** but `dense_rank`
-# MAGIC   **5**.
-# MAGIC
-# MAGIC Showing the complete D010 partition makes both the tie and the later gap
-# MAGIC visible.
-
-# COMMAND ----------
-
-# DBTITLE 1,Inspect the complete D010 ranking
-driver_ranked.filter(
-    F.col("driver_id") == "D010",
-).select(
-    "driver_id",
-    "trip_id",
-    "trip_distance_miles",
-    "distance_row_number",
-    "distance_rank",
-    "distance_dense_rank",
-).orderBy(
-    "distance_row_number",
-).show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Interpret the D010 tie
-# MAGIC %md
-# MAGIC The output separates three different requirements:
-# MAGIC
-# MAGIC - `row_number` gives the tied trips different positions: 4 and 5.
-# MAGIC - `rank` keeps both trips at 4, then skips position 5.
-# MAGIC - `dense_rank` keeps both trips at 4, then continues at position 5.
-# MAGIC
-# MAGIC `trip_id` belongs in the `row_number` specification because that sequence must
-# MAGIC be repeatable. It stays out of the other specification so equal distances
-# MAGIC remain equal ranks.
 
 # COMMAND ----------
 
 # DBTITLE 1,Why did the Module 7 dedup window work?
 # MAGIC %md
-# MAGIC ## 5. Why did Module 7's dedup window work?
+# MAGIC ## 4. Why did Module 7's dedup window work?
 # MAGIC
 # MAGIC Deterministic numbering can do more than label rows—it can select one
 # MAGIC surviving record.
