@@ -21,15 +21,15 @@
 # MAGIC | 1 | `groupBy` vs window | Add group-level values without collapsing detail rows |
 # MAGIC | 2 | Window aggregates | Add counts, totals, and averages to each detail row |
 # MAGIC | 3 | Ranking functions | Rank rows within each group and handle ties |
-# MAGIC | 4 | Deduplication | Keep one winning record per business key |
+# MAGIC | 4 | Filter after rank | Keep the top rows per group |
 # MAGIC | Exercise | Combined windows | Combine group metrics and ranking in one result |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
 # MAGIC `rideshare_dev.processed.trip_driver_assignment` (100 rows). **No writes.**
 # MAGIC
 # MAGIC **Prerequisites:** Module 8 Notebooks **01–04**; Module 7 Notebooks
-# MAGIC **01–07**, especially **`02 - Silent Join Failures and Validation`** and
-# MAGIC **`07 - Build Unified Curated Tables`**.
+# MAGIC **01–07**, especially **`07 - Build Unified Curated Tables`** (managed
+# MAGIC tables used here).
 
 # COMMAND ----------
 
@@ -43,10 +43,10 @@
 # MAGIC | DataFrame | Grain | Used for |
 # MAGIC |---|---|---|
 # MAGIC | `trip_enriched` | One row per `trip_id` (106) | Section 1, exercise |
-# MAGIC | `trip_driver_assignment` | One (`driver_id`, `trip_id`) row (100) | Sections 2–3 |
+# MAGIC | `trip_driver_assignment` | One (`driver_id`, `trip_id`) row (100) | Sections 2–4 |
 # MAGIC
 # MAGIC `trip_driver_assignment` already contains `trip_distance_miles` and
-# MAGIC `ride_duration_mins` on every row, so Sections 2–3 do not need a join to
+# MAGIC `ride_duration_mins` on every row, so Sections 2–4 do not need a join to
 # MAGIC `trip_enriched`.
 # MAGIC
 # MAGIC Both columns are non-NULL across the dataset. This lets the ranking examples
@@ -312,81 +312,52 @@ driver_ranked.filter(
 
 # COMMAND ----------
 
-# DBTITLE 1,Why did the Module 7 dedup window work?
+# DBTITLE 1,How do we keep the top rows per group?
 # MAGIC %md
-# MAGIC ## 4. Why did Module 7's dedup window work?
+# MAGIC ## 4. How do we keep the top rows per group?
 # MAGIC
-# MAGIC Deterministic numbering can do more than label rows—it can select one
-# MAGIC surviving record.
+# MAGIC Ranking keeps every row. A later `filter()` on the ranking column keeps only
+# MAGIC the rows you want and changes the grain.
 # MAGIC
-# MAGIC Module 7 **`02 - Silent Join Failures and Validation`** used this pattern with
-# MAGIC a recency column. Both managed tables in this notebook are already
-# MAGIC deduplicated, so this section constructs a tiny update history instead:
-# MAGIC **4 update rows**, **2 duplicated `trip_id` values**, and an expected
-# MAGIC **2 surviving rows**.
+# MAGIC For example, to keep the **top 2 longest trips per driver**, filter
+# MAGIC `distance_row_number <= 2`. With 12 drivers, expect **24** output rows.
 # MAGIC
-# MAGIC Here, the largest `update_version` represents the latest record:
+# MAGIC For D001, that should be trip **8** (12.75 miles) and trip **81**
+# MAGIC (12.31 miles).
 # MAGIC
-# MAGIC 1. Partition rows by the business key, `trip_id`.
-# MAGIC 2. Order each key by `update_version` descending.
-# MAGIC 3. Assign `row_number`.
-# MAGIC 4. Keep row number 1.
-# MAGIC
-# MAGIC This deliberate deduplication is the notebook's only row-reducing example.
+# MAGIC Module 8 **`07 - Top-N per Group and Sampling`** goes deeper on Top-N
+# MAGIC patterns.
 
 # COMMAND ----------
 
-# DBTITLE 1,Construct duplicate trip updates
-trip_updates = spark.createDataFrame(  # noqa: F821
-    [
-        (501, "requested", 1),
-        (501, "completed", 2),
-        (502, "requested", 1),
-        (502, "cancelled", 2),
-    ],
-    schema="trip_id bigint, trip_status string, update_version int",
+# DBTITLE 1,Keep the top 2 longest trips per driver
+top2_trips_per_driver = driver_ranked.filter(
+    F.col("distance_row_number") <= 2,
 )
-
-trip_updates.orderBy("trip_id", "update_version").show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Rank every update within its trip
-trip_update_window = Window.partitionBy("trip_id").orderBy(
-    F.col("update_version").desc(),
-)
-
-ranked_trip_updates = trip_updates.withColumn(
-    "update_row_number",
-    F.row_number().over(trip_update_window),
-)
-
-ranked_trip_updates.orderBy(
+# DBTITLE 1,Inspect D001 top 2 trips
+top2_trips_per_driver.filter(
+    F.col("driver_id") == "D001",
+).select(
+    "driver_id",
     "trip_id",
-    "update_row_number",
+    "trip_distance_miles",
+    "distance_row_number",  # derived column
+).orderBy(
+    "distance_row_number",
 ).show(truncate=False)
 
 # COMMAND ----------
 
-# DBTITLE 1,Keep the latest update per trip
-latest_trip_updates = (
-    ranked_trip_updates.filter(F.col("update_row_number") == 1)
-    .drop("update_row_number")
-    .orderBy("trip_id")
-)
+# DBTITLE 1,Verify top-2 grain
+top2_trips_per_driver_rows = top2_trips_per_driver.count()
+top2_drivers = top2_trips_per_driver.select("driver_id").distinct().count()
 
-latest_trip_updates.show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Verify the deduplicated grain
-trip_updates_rows = trip_updates.count()
-latest_trip_updates_rows = latest_trip_updates.count()
-latest_trip_ids = latest_trip_updates.select("trip_id").distinct().count()
-
-print(f"input updates: observed={trip_updates_rows}, expected=4")
-print(f"latest updates: observed={latest_trip_updates_rows}, expected=2")
-print(f"surviving trip_ids: observed={latest_trip_ids}, expected=2")
+print(f"input driver-trip rows: observed={trip_driver_assignment_rows}, expected=100")
+print(f"top-2 output rows: observed={top2_trips_per_driver_rows}, expected=24")
+print(f"drivers retained: observed={top2_drivers}, expected=12")
 
 # COMMAND ----------
 
@@ -485,10 +456,10 @@ service_window_summary.filter(
 # MAGIC   every row in a partition.
 # MAGIC - **Ordered rankings:** choose `row_number`, `rank`, or `dense_rank` based on
 # MAGIC   how the business rule should handle ties.
-# MAGIC - **Deterministic selection:** use an ordering rule that breaks every tie, then
-# MAGIC   keep `row_number == 1` when one record must survive per key.
+# MAGIC - **Filter after rank:** keep Top-N rows per group with a filter on the rank
+# MAGIC   column (for example, `distance_row_number <= 2`).
 # MAGIC
 # MAGIC **Next:** Module 8 **`06 - Running Totals and lag/lead`** adds ordered frames,
 # MAGIC running calculations, `first_value`, `last_value`, `lag`, and `lead`.
-# MAGIC Module 8 **`07 - Top-N per Group and Sampling`** then applies ranking to
-# MAGIC Top-N questions and introduces sampling.
+# MAGIC Module 8 **`07 - Top-N per Group and Sampling`** goes deeper on Top-N and
+# MAGIC introduces sampling.
