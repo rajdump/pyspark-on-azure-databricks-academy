@@ -160,9 +160,9 @@ print("window preserved trip rows:", trip_with_borough_avg_rows == trip_enriched
 
 # COMMAND ----------
 
-# DBTITLE 1,What driver-level metrics can we add to every driver-trip row?
+# DBTITLE 1,How do we add driver trip count, total distance, and average duration to each row?
 # MAGIC %md
-# MAGIC ## 2. What driver-level metrics can we add to every driver-trip row?
+# MAGIC ## 2. How do we add driver trip count, total distance, and average duration to each row?
 # MAGIC
 # MAGIC The borough example kept every trip row while adding a borough-level value.
 # MAGIC Use the same window pattern on `trip_driver_assignment` to add each driver's
