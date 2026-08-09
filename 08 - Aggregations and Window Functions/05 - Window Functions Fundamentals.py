@@ -165,8 +165,9 @@ print("window preserved trip rows:", trip_with_borough_avg_rows == trip_enriched
 # MAGIC ## 2. What driver-level metrics can we add to every driver-trip row?
 # MAGIC
 # MAGIC The borough example kept every trip row while adding a borough-level value.
-# MAGIC We can use the same window pattern to add driver-level metrics to every
-# MAGIC driver-trip row.
+# MAGIC Use the same window pattern on `trip_driver_assignment` to add each driver's
+# MAGIC trip count, total distance, and average ride duration to every driver-trip
+# MAGIC row.
 # MAGIC
 # MAGIC For driver `D001`, the expected metrics are:
 # MAGIC
