@@ -11,16 +11,13 @@ Two habits run through the skill-building notebooks:
 1. **Name the output grain** before you write the aggregate — one row per *what*?
 2. **Verify with `count()`** after — especially on a new dataset or a new key
 
-Notebooks **01–04** use `groupBy` to produce fewer rows; **05–07** use windows
-to keep the input rows while adding summary columns. These notebooks do not
-write data. Notebook **08** applies the patterns to build three Parquet KPI
-outputs for Module 9, without re-teaching them.
+Notebooks **01–04** use `groupBy` (fewer rows). **05–07** use windows (keep
+input rows, add summary columns). **01–07** do not write. Notebook **08**
+applies the patterns to three Parquet KPI outputs for Module 9.
 
 **Dataset reference:**
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
-(schemas, inherited NULLs, group-key values). Module 7 mappings:
-[`trip_enriched_mapping.md`](../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_enriched_mapping.md),
-[`trip_driver_assignment_mapping.md`](../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_driver_assignment_mapping.md).
+(schemas, inherited NULLs, normalized group-key values).
 
 ## Learning objectives
 
@@ -51,22 +48,20 @@ Complete Module 7 notebooks **`01`–`07`**. You need:
 `trip_driver_assignment` appears where a **1:M** grain (many trips per driver)
 makes a point that trip grain cannot.
 
-**Inherited NULLs** on `trip_enriched` (join gaps + Module 6 value rejection)
-are teaching material — column × `trip_id` NULL map and normalized group-key
-values (`service_type`, `payment_method`) live in
-[`dataset-overview.md`](../docs/data/dataset-overview.md).
+Inherited NULLs and group-key values live in
+[`dataset-overview.md`](../docs/data/dataset-overview.md). Notebook **01** owns
+the shared setup description; later notebooks load without re-describing it.
 
 Also recall: Module 3 NULL / `F.coalesce`; Module 4 wide/`Exchange` stages;
-Module 7 Notebook **02**'s `Window` + `row_number` dedup (revisited later as its
-own topic; Notebook **05** previews filter-after-rank with Top-2).
+Module 7 Notebook **02** (`Window` + `row_number` dedup — revisited as its own
+topic in **05**–**07**).
 
 Does **not** read `practice/` or Module 6 `curated/` — the managed tables
 already carry what this module needs.
 
 ## Paths and outputs
 
-Notebooks read the two managed tables listed under **Prerequisites**. Notebook
-**08** writes to
+Notebooks **01–07** read the managed tables above. Notebook **08** writes to
 `/Volumes/rideshare_dev/processed/output_files/curated/{kpi_name}/`.
 
 | Output | Path | Grain / contract |
@@ -96,39 +91,33 @@ incremental KPI refresh (Modules 10 and 13); Unity Catalog grant administration
 ## Notebooks
 
 Each skill-building notebook ends with a short exercise.
-Notebook **01** owns the `trip_enriched` setup description and the inherited-NULL
-map. Notebooks **02–07** load the table without re-describing it, and point back
-to the notebook that taught a concept instead of re-teaching it.
 
-**NULLs in windows:** Notebook **05** keeps ranking columns non-NULL (ties
-only) and points to **`nullsFirst` / `nullsLast`**. Notebook **07** demos NULL
-sort placement once on Top-N. No separate notebook — Module 3 and Notebooks
-**01–02** already own general NULL semantics.
+**NULLs in windows:** Notebook **05** keeps ranking measures non-NULL (ties
+only) and points ahead to **`nullsFirst` / `nullsLast`**. Notebook **07** demos
+NULL sort placement once on Top-N. General NULL semantics stay in Module 3 and
+Notebooks **01–02**.
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
-| 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column in `.agg()` fails (window → **05**); three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
-| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain (`service_type`, `payment_method` → 18 of 30); progressive `WHERE` vs `HAVING` comparison; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
-| 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set` (duplicates, unique values, NULL exclusion, bounded groups); `avg` vs approximate p50 / p90; `countDistinct` route counts |
+| 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column fails (window → **05**); three counts; `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` |
+| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain; `WHERE` vs `HAVING`; exercise — borough + HAVING, then composite key |
+| 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set`; `avg` vs approximate p50 / p90; `countDistinct` |
 | 4 | Pivot | `trip_enriched` | `pivot` + explicit values |
-| 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; ranking + ties; window aggregates; Top-2 filter-after-rank preview (non-NULL ranking measures) |
+| 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking + ties; Top-2 filter-after-rank preview |
 | 6 | Running Totals and lag/lead | `trip_enriched` | Ordered `first_value` / `last_value`; running totals; `lag` / `lead` |
-| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number`; ties; one short nullable-order example (`nullsFirst` / `nullsLast`); `sample` / `sampleBy` / `randomSplit` |
+| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number`; ties; `nullsFirst` / `nullsLast`; `sample` / `sampleBy` / `randomSplit` |
 | 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Parquet outputs |
 
 ## Markdown Quality Gate (Module 8)
 
-Module-local quality gate for this module. It supplements
-`docs/standards/*.md` and does not replace global standards.
+Module-local authoring gate (supplements `docs/standards/*.md`):
 
-- Begin each section with a concrete example from this dataset — a number,
-  expected result, or small table — before the theory.
-- Keep introductory content to two roles: motivation and a short roadmap.
-- In notebooks 02 and later, reference Notebook 01 or
-  `docs/data/dataset-overview.md` for shared setup; do not repeat full schema
-  tables.
-- Before push, remove repeated statements across the introduction, sections,
-  and summary.
+- Begin each section with a concrete dataset example before theory
+- Keep introductions to motivation + a short roadmap
+- Notebooks **02+**: point to Notebook **01** or `dataset-overview.md` for shared
+  setup — do not repeat full schema tables
+- Before push, remove repeated statements across introduction, sections, and
+  summary
 
 ## Minimum privileges required
 
