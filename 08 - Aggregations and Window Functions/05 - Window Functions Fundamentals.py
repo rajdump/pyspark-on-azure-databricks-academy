@@ -255,12 +255,6 @@ print(
 # MAGIC - `rank` and `dense_rank` keep equal distances tied (same rank value).
 # MAGIC - `row_number` still assigns a unique position even when distances match.
 # MAGIC
-# MAGIC **Caution:** on a distance tie, `row_number` must pick an order between those
-# MAGIC rows. With distance alone, that choice can be **non-deterministic** across
-# MAGIC runs. Section 4 shows this on D010.
-# MAGIC
-# MAGIC Section 4 shows the difference using an actual tie.
-# MAGIC
 # MAGIC `trip_distance_miles` is non-NULL in this dataset, so NULL ordering does not
 # MAGIC affect these rankings. Module 8 **`07 - Top-N per Group and Sampling`**
 # MAGIC covers `nullsFirst` and `nullsLast` when the ranking column can contain
@@ -290,7 +284,7 @@ driver_ranked = (
 
 # COMMAND ----------
 
-# DBTITLE 1,Inspect D001 distance rankings
+# DBTITLE 1,Inspect D010 distance rankings
 driver_ranked.filter(
     F.col("driver_id") == "D010",
 ).select(
@@ -308,13 +302,14 @@ driver_ranked.filter(
 
 # DBTITLE 1,Why D001 rankings agree
 # MAGIC %md
-# MAGIC All three columns agree for D001 because its nine trip distances are unique.
-# MAGIC Equal values are where their behavior separates.
+# MAGIC The three ranking columns **do not** all agree for D010.
 # MAGIC
-# MAGIC Keep the partition-only `driver_aggregate_window` separate from these ordered
-# MAGIC ranking specifications. Reusing an ordered specification for a total `sum` or
-# MAGIC `avg` can change its meaning. Module 8
-# MAGIC **`06 - Running Totals and lag/lead`** explains ordered aggregates and frames.
+# MAGIC Trips 22 and 79 both have **8.81 miles**:
+# MAGIC
+# MAGIC - `rank` and `dense_rank` both stay at **4** — the tie is preserved.
+# MAGIC - `row_number`uses **4** and **5** — unique positions, here distance
+# MAGIC   alone does not decide which trip comes first.
+# MAGIC - The next trip (7.65 miles) shows the gap: `rank` **6**, `dense_rank` **5**.
 
 # COMMAND ----------
 
@@ -322,8 +317,7 @@ driver_ranked.filter(
 # MAGIC %md
 # MAGIC ## 4. What happens when ranking values tie?
 # MAGIC
-# MAGIC D001's unique distances made the functions look identical. D010 contains the
-# MAGIC real tie that exposes their differences:
+# MAGIC D010 contains the tie that exposes their differences:
 # MAGIC
 # MAGIC - Trips 22 and 79 are both **8.81 miles**.
 # MAGIC - Deterministic `row_number` should assign **4** and **5** by `trip_id`.
