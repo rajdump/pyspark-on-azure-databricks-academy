@@ -305,9 +305,9 @@ driver_ranked.filter(
     "driver_id",
     "trip_id",
     "trip_distance_miles",
-    "distance_row_number",
-    "distance_rank",
-    "distance_dense_rank",
+    "distance_row_number",  # derived column
+    "distance_rank",  # derived column
+    "distance_dense_rank",  # derived column
 ).orderBy(
     "distance_row_number",
 ).show(truncate=False)
