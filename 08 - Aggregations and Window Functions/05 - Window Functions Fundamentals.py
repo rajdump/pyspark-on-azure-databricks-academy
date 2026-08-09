@@ -165,17 +165,18 @@ print("window preserved trip rows:", trip_with_borough_avg_rows == trip_enriched
 # MAGIC %md
 # MAGIC ## 2. What driver-level metrics can we add to every driver-trip row?
 # MAGIC
-# MAGIC The borough result kept all 106 trip rows. Driver assignments extend that
-# MAGIC idea by adding three driver-level metrics to each of their 100 rows.
+# MAGIC The borough example kept every trip row while adding a borough-level value.
+# MAGIC We can use the same window pattern to add driver-level metrics to every
+# MAGIC driver-trip row.
 # MAGIC
-# MAGIC Driver D001 gives us a concrete check:
+# MAGIC For driver `D001`, the expected metrics are:
 # MAGIC
-# MAGIC - **9** assigned `trip_id` values
-# MAGIC - **78.50** total `trip_distance_miles`
-# MAGIC - **33.67** average `ride_duration_mins`
+# MAGIC - **9** trips
+# MAGIC - **78.50 miles** total trip distance
+# MAGIC - **33.67 minutes** average ride duration
 # MAGIC
-# MAGIC Those values should repeat on all nine D001 rows while each trip's own
-# MAGIC distance and duration remain unchanged.
+# MAGIC These driver-level values should repeat across all nine D001 rows, while each
+# MAGIC row keeps its own trip distance and ride duration.
 
 # COMMAND ----------
 
@@ -213,9 +214,9 @@ driver_with_metrics.filter(
     "trip_id",
     "trip_distance_miles",
     "ride_duration_mins",
-    "driver_trip_count",
-    "driver_total_distance_miles",
-    "driver_avg_ride_duration_mins",
+    "driver_trip_count",  # derived column
+    "driver_total_distance_miles",  # derived column
+    "driver_avg_ride_duration_mins",  # derived column
 ).orderBy(
     "trip_id",
 ).show(truncate=False)
