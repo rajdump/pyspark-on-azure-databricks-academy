@@ -78,14 +78,18 @@ print(f"trip_driver_assignment: observed={trip_driver_assignment_rows}, expected
 # MAGIC %md
 # MAGIC ## 1. How is a window different from `groupBy`?
 # MAGIC
-# MAGIC A borough report needs the average base fare for each `pickup_borough`.
-# MAGIC A grouped result should contain **5 rows**—one per borough.
+# MAGIC A borough report needs the average `base_fare_amount` for each
+# MAGIC `pickup_borough`.
 # MAGIC
-# MAGIC The same borough average can also be placed beside every trip. That result
-# MAGIC should still contain **106 rows** because each `trip_id` remains present.
+# MAGIC With `groupBy`, the result contains **5 rows**—one row per borough.
 # MAGIC
-# MAGIC (`F.avg` skips the NULL `base_fare_amount` values on trips 104 and 106. Both
-# MAGIC approaches below therefore average the same known fares.)
+# MAGIC With a window function, the same borough average can be added to every trip
+# MAGIC row. The result still contains **106 rows** because no trip rows are
+# MAGIC collapsed.
+# MAGIC
+# MAGIC `F.avg` ignores NULL values, so trips 104 and 106 do not contribute to the
+# MAGIC average `base_fare_amount`. Both approaches therefore calculate the average
+# MAGIC from the same non-NULL values.
 
 # COMMAND ----------
 
@@ -105,20 +109,21 @@ borough_avg_fare.orderBy("pickup_borough").show(truncate=False)
 # MAGIC %md
 # MAGIC ### Window specification anatomy
 # MAGIC
-# MAGIC A **window specification** identifies which related rows participate in a
+# MAGIC A **window specification** defines which related rows participate in a window
 # MAGIC calculation.
 # MAGIC
-# MAGIC - `Window.partitionBy("pickup_borough")` places trips from the same borough in
-# MAGIC   the same calculation group.
-# MAGIC - `.over(borough_aggregate_window)` applies a function to that group for each
-# MAGIC   input row.
+# MAGIC - `Window.partitionBy("pickup_borough")` groups trips by `pickup_borough` for
+# MAGIC   the calculation.
+# MAGIC - `.over(borough_aggregate_window)` applies the window function to those
+# MAGIC   related rows for each input row.
 # MAGIC
-# MAGIC Unlike `groupBy`, `partitionBy` only defines which rows contribute to the
-# MAGIC calculation. It does not collapse the output. The borough average repeats
-# MAGIC while each trip row remains available.
+# MAGIC Unlike `groupBy`, `partitionBy` does not collapse the rows. It only defines
+# MAGIC the group used by the window calculation. The borough average is repeated on
+# MAGIC every trip row in that borough.
 # MAGIC
-# MAGIC Spark may shuffle rows to bring equal partition keys together. Module 16
-# MAGIC covers shuffle and window tuning; this notebook stays focused on correctness.
+# MAGIC Spark may shuffle data to bring rows with the same partition key together.
+# MAGIC Module 16 covers shuffle behavior and window performance; this notebook
+# MAGIC focuses on how windows work.
 
 # COMMAND ----------
 
@@ -246,6 +251,10 @@ print(
 # MAGIC We need two ordering rules: one that preserves equal distances for `rank` and
 # MAGIC `dense_rank`, and one that gives `row_number` a repeatable tie-breaker.
 # MAGIC Section 4 shows why the difference matters.
+# MAGIC
+# MAGIC These distance values are non-NULL, so `nullsFirst` / `nullsLast` would not
+# MAGIC change the result here. Module 8 **`07 - Top-N per Group and Sampling`**
+# MAGIC shows those options when the order column can be NULL.
 
 # COMMAND ----------
 

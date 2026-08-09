@@ -100,6 +100,22 @@ Notebook **01** owns the `trip_enriched` setup description and the inherited-NUL
 map. Notebooks **02–07** load the table without re-describing it, and point back
 to the notebook that taught a concept instead of re-teaching it.
 
+**NULLs in windows:** Notebook **05** keeps ranking columns non-NULL (ties
+only) and points to **`nullsFirst` / `nullsLast`**. Notebook **07** demos NULL
+sort placement once on Top-N. No separate notebook — Module 3 and Notebooks
+**01–02** already own general NULL semantics.
+
+| # | Notebook | Reads | Focus |
+|---|---|---|---|
+| 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column in `.agg()` fails (window → **05**); three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
+| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain (`service_type`, `payment_method` → 18 of 30); progressive `WHERE` vs `HAVING` comparison; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
+| 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set` (duplicates, unique values, NULL exclusion, bounded groups); `avg` vs approximate p50 / p90; `countDistinct` route counts |
+| 4 | Pivot | `trip_enriched` | `pivot` + explicit values |
+| 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; ranking; window aggregates; generalizes Module 7 **02** dedup (non-NULL ranking measures) |
+| 6 | Running Totals and lag/lead | `trip_enriched` | Ordered `first_value` / `last_value`; running totals; `lag` / `lead` |
+| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number`; ties; one short nullable-order example (`nullsFirst` / `nullsLast`); `sample` / `sampleBy` / `randomSplit` |
+| 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Parquet outputs |
+
 ## Markdown Quality Gate (Module 8)
 
 Module-local quality gate for this module. It supplements
@@ -113,17 +129,6 @@ Module-local quality gate for this module. It supplements
   tables.
 - Before push, remove repeated statements across the introduction, sections,
   and summary.
-
-| # | Notebook | Reads | Focus |
-|---|---|---|---|
-| 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column in `.agg()` fails (window → **05**); three counts (`*` / col / distinct); `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` summary (observe row count; NULL-group *why* → **02**) |
-| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain (`service_type`, `payment_method` → 18 of 30); progressive `WHERE` vs `HAVING` comparison; exercise — per-`pickup_borough` + HAVING, then composite (`pickup_borough`, `payment_method`) |
-| 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set` (duplicates, unique values, NULL exclusion, bounded groups); `avg` vs approximate p50 / p90; `countDistinct` route counts |
-| 4 | Pivot | `trip_enriched` | `pivot` + explicit values |
-| 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; ranking; window aggregates; generalizes Module 7 **02** dedup |
-| 6 | Running Totals and lag/lead | `trip_enriched` | Ordered `first_value` / `last_value`; running totals; `lag` / `lead` |
-| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number`; ties; `sample` / `sampleBy` / `randomSplit` |
-| 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Parquet outputs |
 
 ## Minimum privileges required
 
