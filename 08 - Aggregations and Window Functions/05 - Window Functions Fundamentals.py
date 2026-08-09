@@ -430,14 +430,12 @@ service_window_summary.filter(
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - **`groupBy` versus window:** `groupBy` returns one row per group; a window
-# MAGIC   can repeat the group metric while keeping detailed rows.
-# MAGIC - **Partition-only aggregates:** use them for totals, counts, and averages over
-# MAGIC   every row in a partition.
-# MAGIC - **Ordered rankings:** choose `row_number`, `rank`, or `dense_rank` based on
-# MAGIC   how the business rule should handle ties.
-# MAGIC - **Filter after rank:** keep Top-N rows per group with a filter on the
-# MAGIC   ranking column (for example, `distance_row_number <= 2`).
+# MAGIC | Idea | Takeaway |
+# MAGIC |---|---|
+# MAGIC | `groupBy` vs window | `groupBy` returns one row per group; a window repeats the group metric on every detail row |
+# MAGIC | Partition-only aggregates | Add trip count, total distance, and average duration per driver without collapsing rows |
+# MAGIC | Ranking + ties | `row_number` unique positions; `rank` gaps on ties; `dense_rank` no gaps |
+# MAGIC | Filter after rank | `distance_row_number <= 2` keeps Top-2 per driver and changes grain (100 → 24) |
 # MAGIC
 # MAGIC **Next:** Module 8 **`06 - Running Totals and lag/lead`** adds ordered frames,
 # MAGIC running calculations, `first_value`, `last_value`, `lag`, and `lead`.
