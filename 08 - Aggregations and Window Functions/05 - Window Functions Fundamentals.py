@@ -320,7 +320,7 @@ driver_ranked.filter(
 # MAGIC the rows you want and changes the grain.
 # MAGIC
 # MAGIC For example, to keep the **top 2 longest trips per driver**, filter
-# MAGIC `distance_row_number <= 2`. With 12 drivers, expect **24** output rows.
+# MAGIC `distance_row_number <= 2`. With 12 drivers.
 # MAGIC
 # MAGIC For D001, that should be trip **8** (12.75 miles) and trip **81**
 # MAGIC (12.31 miles).
@@ -337,27 +337,15 @@ top2_trips_per_driver = driver_ranked.filter(
 
 # COMMAND ----------
 
-# DBTITLE 1,Inspect D001 top 2 trips
-top2_trips_per_driver.filter(
-    F.col("driver_id") == "D001",
-).select(
+# DBTITLE 1,Inspect top 2 trips
+top2_trips_per_driver.select(
     "driver_id",
     "trip_id",
     "trip_distance_miles",
     "distance_row_number",  # derived column
 ).orderBy(
-    "distance_row_number",
+    "driver_id","distance_row_number",
 ).show(truncate=False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Verify top-2 grain
-top2_trips_per_driver_rows = top2_trips_per_driver.count()
-top2_drivers = top2_trips_per_driver.select("driver_id").distinct().count()
-
-print(f"input driver-trip rows: observed={trip_driver_assignment_rows}, expected=100")
-print(f"top-2 output rows: observed={top2_trips_per_driver_rows}, expected=24")
-print(f"drivers retained: observed={top2_drivers}, expected=12")
 
 # COMMAND ----------
 
