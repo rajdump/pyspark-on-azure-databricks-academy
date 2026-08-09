@@ -4,25 +4,26 @@
 # MAGIC
 # MAGIC # 05 - Window Functions Fundamentals
 # MAGIC
-# MAGIC A **window function** calculates across related rows while keeping each input
-# MAGIC row available in the result.
+# MAGIC A **window function** lets you add group-level information to each row while
+# MAGIC keeping the row-level details.
 # MAGIC
-# MAGIC Use one when every driver-trip row needs both its own distance and the driver's
-# MAGIC overall trip count.
+# MAGIC For example, each driver-trip row can keep its own trip distance while also
+# MAGIC showing the driver's total trip count.
 # MAGIC
-# MAGIC **Qualified rule:** a window expression preserves rows; a later filter can
+# MAGIC **Qualified rule:** a window function adds group-level values to each detail
+# MAGIC row without collapsing the rows. A later `filter()` can still remove rows and
 # MAGIC change the result grain.
 # MAGIC
 # MAGIC ## What this notebook teaches
 # MAGIC
 # MAGIC | Section | Concept | Why it matters |
 # MAGIC |---|---|---|
-# MAGIC | 1 | `groupBy` vs window | Add a summary without collapsing trip rows |
-# MAGIC | 2 | Window aggregates | Repeat driver metrics on every driver-trip row |
-# MAGIC | 3 | Ranking functions | Order trips within each driver |
-# MAGIC | 4 | Ranking ties | Choose deterministic or tie-preserving behavior |
-# MAGIC | 5 | Deduplication | Select one winning record per business key |
-# MAGIC | Exercise | Combined windows | Add service metrics and duration ranks |
+# MAGIC | 1 | `groupBy` vs window | Add group-level values without collapsing detail rows |
+# MAGIC | 2 | Window aggregates | Add counts, totals, and averages to each detail row |
+# MAGIC | 3 | Ranking functions | Rank rows within each group |
+# MAGIC | 4 | Ranking ties | Control how equal values receive ranks |
+# MAGIC | 5 | Deduplication | Keep one winning record per business key |
+# MAGIC | Exercise | Combined windows | Combine group metrics and ranking in one result |
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
 # MAGIC `rideshare_dev.processed.trip_driver_assignment` (100 rows). **No writes.**
