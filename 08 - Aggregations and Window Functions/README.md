@@ -11,9 +11,11 @@ Two habits run through the skill-building notebooks:
 1. **Name the output grain** before you write the aggregate — one row per *what*?
 2. **Verify with `count()`** after — especially on a new dataset or a new key
 
-Notebooks **01–04** use `groupBy` (fewer rows). **05–07** use windows (keep
-input rows, add summary columns). **01–07** do not write. Notebook **08**
-applies the patterns to three Parquet KPI outputs for Module 9.
+Notebooks **01–04** use `groupBy` (fewer rows). **05–07** focus on windows,
+which preserve the rows of the DataFrame they receive. Notebook **06** first
+groups to daily or service-date grain for some examples, then its windows
+preserve that derived grain. **01–07** do not write. Notebook **08** applies
+the patterns to three Parquet KPI outputs for Module 9.
 
 **Dataset reference:**
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
@@ -104,7 +106,7 @@ Notebooks **01–02**.
 | 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set`; `avg` vs approximate p50 / p90; `countDistinct` |
 | 4 | Pivot | `trip_enriched` | `pivot` + explicit values |
 | 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking + ties; Top-2 filter-after-rank preview |
-| 6 | Running Totals and lag/lead | `trip_enriched` | Ordered `first_value` / `last_value`; running totals; `lag` / `lead` |
+| 6 | Running Totals and lag/lead | `trip_enriched` | Default `RANGE` vs explicit `ROWS`; ordered `first_value` / `last_value`; daily running totals; `lag` / `lead` |
 | 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number`; ties; `nullsFirst` / `nullsLast`; `sample` / `sampleBy` / `randomSplit` |
 | 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Parquet outputs |
 
