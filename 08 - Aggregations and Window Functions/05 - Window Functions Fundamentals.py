@@ -240,8 +240,8 @@ print(
 # MAGIC ## 3. How do we rank trips within each driver?
 # MAGIC
 # MAGIC Partitioning decides which driver's rows belong together. Ranking also needs
-# MAGIC an order within each driver. For `D001`, trip 8 has the longest distance at
-# MAGIC **12.75 miles**, so it should rank first.
+# MAGIC an order within each driver. For `D010`, trip 64 has the longest distance at
+# MAGIC **13.99 miles**, so it should rank first.
 # MAGIC
 # MAGIC | Function | What happens when values tie |
 # MAGIC |---|---|
@@ -249,18 +249,15 @@ print(
 # MAGIC | `rank` | Gives tied rows the same rank, then leaves a gap |
 # MAGIC | `dense_rank` | Gives tied rows the same rank, with no gap afterward |
 # MAGIC
-# MAGIC We use two ordering rules:
+# MAGIC All three ranking functions use the same ordering rule: trip distance
+# MAGIC descending.
 # MAGIC
-# MAGIC - `rank` and `dense_rank` order only by trip distance so equal distances
-# MAGIC   remain tied.
-# MAGIC - `row_number` adds `trip_id` as a tie-breaker so the sequence is
-# MAGIC   repeatable.
+# MAGIC - `rank` and `dense_rank` keep equal distances tied (same rank value).
+# MAGIC - `row_number` still assigns a unique position even when distances match.
 # MAGIC
-# MAGIC **Caution:** `row_number` must assign a unique position even when distances
-# MAGIC match. Without a secondary sort key such as `trip_id`, Spark may assign
-# MAGIC those positions **non-deterministically** — the same tie can flip between
-# MAGIC runs after a shuffle. Distance still ranks first; `trip_id` only breaks
-# MAGIC ties.
+# MAGIC **Caution:** on a distance tie, `row_number` must pick an order between those
+# MAGIC rows. With distance alone, that choice can be **non-deterministic** across
+# MAGIC runs. Section 4 shows this on D010.
 # MAGIC
 # MAGIC Section 4 shows the difference using an actual tie.
 # MAGIC
@@ -276,15 +273,10 @@ distance_rank_window = Window.partitionBy("driver_id").orderBy(
     F.col("trip_distance_miles").desc(),
 )
 
-distance_row_number_window = Window.partitionBy("driver_id").orderBy(
-    F.col("trip_distance_miles").desc(),
-    F.col("trip_id").asc(),
-)
-
 driver_ranked = (
     driver_with_metrics.withColumn(
         "distance_row_number",
-        F.row_number().over(distance_row_number_window),
+        F.row_number().over(distance_rank_window),
     )
     .withColumn(
         "distance_rank",
@@ -300,7 +292,7 @@ driver_ranked = (
 
 # DBTITLE 1,Inspect D001 distance rankings
 driver_ranked.filter(
-    F.col("driver_id") == "D001",
+    F.col("driver_id") == "D010",
 ).select(
     "driver_id",
     "trip_id",
