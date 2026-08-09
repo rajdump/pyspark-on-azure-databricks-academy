@@ -362,61 +362,54 @@ print("filter reduced driver-trip rows:", top2_trips_per_driver_rows < driver_wi
 
 # DBTITLE 1,Exercise - Add service metrics and duration rank
 # MAGIC %md
-# MAGIC ## Exercise — Add service-type totals and a duration rank to each trip
+# MAGIC ## Exercise — Add service totals and a duration rank to each trip
 # MAGIC
-# MAGIC Start from every trip row (`trip_enriched`, 106 rows). For each row, add three
-# MAGIC columns:
+# MAGIC Repeat Sections 2 and 3 on `trip_enriched`, partitioned by `service_type`.
 # MAGIC
-# MAGIC 1. How many trips that service type has (`STANDARD`, `PREMIUM`, …)
-# MAGIC 2. Average ride duration for that service type
-# MAGIC 3. Rank of this trip's duration inside its service type (longest = 1)
+# MAGIC Add these columns to every trip row (keep all **106** rows):
 # MAGIC
-# MAGIC You still keep all 106 trips — no filter.
+# MAGIC | Column | Window pattern |
+# MAGIC |---|---|
+# MAGIC | `service_trip_count` | Count of trips per service type |
+# MAGIC | `service_avg_ride_duration_mins` | Average `ride_duration_mins` per service type, rounded to 2 |
+# MAGIC | `ride_duration_dense_rank` | `dense_rank` of duration within service type (longest = 1) |
 # MAGIC
-# MAGIC Use column names `service_trip_count`, `service_avg_ride_duration_mins`
-# MAGIC (rounded to 2 decimals), and `ride_duration_dense_rank`. Predict **106**
-# MAGIC output rows; every `STANDARD` row should show `service_trip_count` **55**.
+# MAGIC Fill in the two window specs and your row-count prediction. Every `STANDARD`
+# MAGIC row should show `service_trip_count` **55**.
 
 # COMMAND ----------
 
-# DBTITLE 1,Exercise - Define the two windows
-predicted_output_rows = None  # TODO: predict the output row count (106)
+# DBTITLE 1,Exercise - Build, verify, and inspect
+predicted_output_rows = None  # TODO: replace with your prediction
 
-# TODO: Window.partitionBy("service_type")  — no orderBy
+# TODO: Window.partitionBy("service_type")
 service_aggregate_window = None
 
-# TODO: Window.partitionBy("service_type").orderBy(
-#           F.col("ride_duration_mins").desc()
-#       )
+# TODO: Window.partitionBy("service_type").orderBy(F.col("ride_duration_mins").desc())
 service_duration_rank_window = None
 
-# COMMAND ----------
+service_window_summary = (
+    trip_enriched.withColumn(
+        "service_trip_count",
+        F.count(F.col("trip_id")).over(service_aggregate_window),
+    )
+    .withColumn(
+        "service_avg_ride_duration_mins",
+        F.round(
+            F.avg(F.col("ride_duration_mins")).over(service_aggregate_window),
+            2,
+        ),
+    )
+    .withColumn(
+        "ride_duration_dense_rank",
+        F.dense_rank().over(service_duration_rank_window),
+    )
+)
 
-# DBTITLE 1,Exercise - Add the three columns
-# TODO: start from trip_enriched and add:
-#   service_trip_count =
-#       F.count(F.col("trip_id")).over(service_aggregate_window)
-#   service_avg_ride_duration_mins =
-#       F.round(F.avg(F.col("ride_duration_mins")).over(service_aggregate_window), 2)
-#   ride_duration_dense_rank =
-#       F.dense_rank().over(service_duration_rank_window)
-service_window_summary = None
+actual = service_window_summary.count()
+match = "✓" if predicted_output_rows == actual else "✗"
+print(f"{match} predicted={predicted_output_rows}, actual={actual}")
 
-# COMMAND ----------
-
-# DBTITLE 1,Exercise - Check the row count
-if service_window_summary is None:
-    raise NotImplementedError("Complete service_window_summary first.")
-
-exercise_output_rows = service_window_summary.count()
-prediction_match = "✓" if predicted_output_rows == exercise_output_rows else "✗"
-
-print(f"{prediction_match} predicted={predicted_output_rows}, actual={exercise_output_rows}")
-print(f"input rows={trip_enriched_rows}, output rows={exercise_output_rows}")
-
-# COMMAND ----------
-
-# DBTITLE 1,Exercise - Inspect STANDARD trips
 service_window_summary.filter(
     F.col("service_type") == "STANDARD",
 ).select(
