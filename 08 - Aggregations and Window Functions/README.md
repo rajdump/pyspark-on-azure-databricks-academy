@@ -29,8 +29,9 @@ By the end of this module, you'll be able to:
 - Choose whether to filter input rows (`WHERE`) or aggregated groups (`HAVING`)
 - Use advanced aggregates and pivoting to summarize and reshape data
 - Build windows for ranking, running calculations, and row-to-row comparisons
-- Select **Top-N per group** and draw reproducible samples with **`sample`** /
-  **`sampleBy`** / **`randomSplit`**
+- Control NULL sort placement with **`nullsFirst` / `nullsLast`**
+- Select **Top-N per group** (including tie-selection policy) and draw
+  reproducible samples with **`sample`** / **`sampleBy`** / **`randomSplit`**
 - Apply the module patterns in Notebook **08** to write three `curated/` KPI
   outputs for Module 9
 
@@ -88,9 +89,16 @@ incremental KPI refresh (Modules 10 and 13); Unity Catalog grant administration
 
 Each skill-building notebook ends with a short exercise.
 
-**Ownership:** ranking-API ties (`row_number` / `rank` / `dense_rank`) → **05**;
-Top-N selection policy and `nullsFirst` / `nullsLast` → **07**; general NULL
-semantics → Module 3 and Notebooks **01–02**.
+**Ownership handoffs (do not re-teach across notebooks):**
+
+| Topic | Owner |
+|---|---|
+| Ranking-API ties (`row_number` vs `rank` vs `dense_rank`) | **05** |
+| Top-2 filter-after-rank preview | **05** (full Top-N → **07**) |
+| Frames, running totals, `first_value` / `last_value`, `lag` / `lead` | **06** |
+| Top-N per group; Top-N selection policy; sampling | **07** |
+| `nullsFirst` / `nullsLast` (ordered-window sort placement) | **07** (standalone; not only on Top-N) |
+| General NULL semantics | Module 3 and Notebooks **01–02** |
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
@@ -100,7 +108,7 @@ semantics → Module 3 and Notebooks **01–02**.
 | 4 | Pivot | `trip_enriched` | `pivot` + explicit values |
 | 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking-API ties; Top-2 filter-after-rank preview → **07** |
 | 6 | Running Totals and lag/lead | `trip_enriched` | Default `RANGE` vs explicit `ROWS`; ordered `first_value` / `last_value`; daily running totals; `lag` / `lead` |
-| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number` (deepens **05**); Top-N selection policy on ties; `nullsFirst` / `nullsLast`; `sample` / `sampleBy` / `randomSplit` |
+| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N per group (`row_number` + filter; extends **05** Top-2); Top-N selection policy (`row_number <= N` vs `rank <= N`, secondary sort); `nullsFirst` / `nullsLast` (standalone sort placement); `sample` / `sampleBy` / `randomSplit` |
 | 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Parquet outputs |
 
 ## Markdown Quality Gate (Module 8)
