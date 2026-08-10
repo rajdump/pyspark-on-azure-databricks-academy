@@ -12,14 +12,12 @@ Two habits run through the skill-building notebooks:
 2. **Verify with `count()`** after — especially on a new dataset or a new key
 
 Notebooks **01–04** use `groupBy` (fewer rows). **05–07** focus on windows,
-which preserve the rows of the DataFrame they receive. Notebook **06** first
-groups to daily or service-date grain for some examples, then its windows
-preserve that derived grain. **01–07** do not write. Notebook **08** applies
-the patterns to three Parquet KPI outputs for Module 9.
+which preserve the rows of the DataFrame they receive. Notebook **06** may
+first aggregate to daily grain, then window over that. **01–07** do not write.
+Notebook **08** writes three Parquet KPI outputs for Module 9.
 
-**Dataset reference:**
-[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
-(schemas, inherited NULLs, normalized group-key values).
+Schemas, inherited NULLs, and group-key values:
+[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
 
 ## Learning objectives
 
@@ -30,8 +28,7 @@ By the end of this module, you'll be able to:
   NULL keys, NULL values, and count semantics
 - Choose whether to filter input rows (`WHERE`) or aggregated groups (`HAVING`)
 - Use advanced aggregates and pivoting to summarize and reshape data
-- Build windows for ranking, running calculations, and row-to-row
-  comparisons
+- Build windows for ranking, running calculations, and row-to-row comparisons
 - Select **Top-N per group** and draw reproducible samples with **`sample`** /
   **`sampleBy`** / **`randomSplit`**
 - Apply the module patterns in Notebook **08** to write three `curated/` KPI
@@ -48,22 +45,19 @@ Complete Module 7 notebooks **`01`–`07`**. You need:
 
 `trip_enriched` is the primary source for Notebooks **01–07**.
 `trip_driver_assignment` appears where a **1:M** grain (many trips per driver)
-makes a point that trip grain cannot.
-
-Inherited NULLs and group-key values live in
-[`dataset-overview.md`](../docs/data/dataset-overview.md). Notebook **01** owns
-the shared setup description; later notebooks load without re-describing it.
+makes a point that trip grain cannot. Notebook **01** owns the shared setup
+description; later notebooks load without re-describing it.
 
 Also recall: Module 3 NULL / `F.coalesce`; Module 4 wide/`Exchange` stages;
-Module 7 Notebook **02** (`Window` + `row_number` dedup — revisited as its own
-topic in **05**–**07**).
+Module 7 Notebook **02** (`Window` + `row_number` dedup — revisited in **05**;
+Top-N reuses the pattern in **07**).
 
 Does **not** read `practice/` or Module 6 `curated/` — the managed tables
 already carry what this module needs.
 
 ## Paths and outputs
 
-Notebooks **01–07** read the managed tables above. Notebook **08** writes to
+Notebook **08** writes to
 `/Volumes/rideshare_dev/processed/output_files/curated/{kpi_name}/`.
 
 | Output | Path | Grain / contract |
@@ -94,10 +88,9 @@ incremental KPI refresh (Modules 10 and 13); Unity Catalog grant administration
 
 Each skill-building notebook ends with a short exercise.
 
-**NULLs in windows:** Notebook **05** keeps ranking measures non-NULL (ties
-only) and points ahead to **`nullsFirst` / `nullsLast`**. Notebook **07** demos
-NULL sort placement once on Top-N. General NULL semantics stay in Module 3 and
-Notebooks **01–02**.
+**Ownership:** ranking-API ties (`row_number` / `rank` / `dense_rank`) → **05**;
+Top-N selection policy and `nullsFirst` / `nullsLast` → **07**; general NULL
+semantics → Module 3 and Notebooks **01–02**.
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
@@ -105,9 +98,9 @@ Notebooks **01–02**.
 | 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain; `WHERE` vs `HAVING`; exercise — borough + HAVING, then composite key |
 | 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set`; `avg` vs approximate p50 / p90; `countDistinct` |
 | 4 | Pivot | `trip_enriched` | `pivot` + explicit values |
-| 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking + ties; Top-2 filter-after-rank preview |
+| 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking-API ties; Top-2 filter-after-rank preview → **07** |
 | 6 | Running Totals and lag/lead | `trip_enriched` | Default `RANGE` vs explicit `ROWS`; ordered `first_value` / `last_value`; daily running totals; `lag` / `lead` |
-| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number`; ties; `nullsFirst` / `nullsLast`; `sample` / `sampleBy` / `randomSplit` |
+| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N via `row_number` (deepens **05**); Top-N selection policy on ties; `nullsFirst` / `nullsLast`; `sample` / `sampleBy` / `randomSplit` |
 | 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Parquet outputs |
 
 ## Markdown Quality Gate (Module 8)
