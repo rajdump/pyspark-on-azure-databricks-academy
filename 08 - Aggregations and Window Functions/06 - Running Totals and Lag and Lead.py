@@ -206,8 +206,7 @@ trip_with_running_revenue = dated_trip.withColumn(
 )
 
 trip_with_running_revenue.filter(
-    (F.col("pickup_borough") == "Manhattan")
-    & (F.col("trip_date") == F.lit("2026-03-01"))
+    (F.col("pickup_borough") == "Manhattan") & (F.col("trip_date") == F.lit("2026-03-01"))
 ).select(
     "trip_date",
     "hour_of_day",
@@ -251,8 +250,7 @@ trip_with_running_revenue = trip_with_running_revenue.withColumn(
 )
 
 trip_with_running_revenue.filter(
-    (F.col("pickup_borough") == "Manhattan")
-    & (F.col("trip_date") == F.lit("2026-03-01"))
+    (F.col("pickup_borough") == "Manhattan") & (F.col("trip_date") == F.lit("2026-03-01"))
 ).select(
     "trip_date",
     "hour_of_day",
@@ -296,8 +294,7 @@ trip_with_running_revenue = trip_with_running_revenue.withColumn(
 )
 
 trip_with_running_revenue.filter(
-    (F.col("pickup_borough") == "Manhattan")
-    & (F.col("trip_date") == F.lit("2026-03-01"))
+    (F.col("pickup_borough") == "Manhattan") & (F.col("trip_date") == F.lit("2026-03-01"))
 ).select(
     "trip_date",
     "hour_of_day",
@@ -370,24 +367,15 @@ borough_current_row_window = borough_trip_order_window.rowsBetween(
     Window.currentRow,
 )
 
-trip_with_borough_edge_fares = (
-    dated_trip.withColumn(
-        "borough_first_base_fare",
-        F.first_value(F.col("base_fare_amount")).over(
-            borough_current_row_window
-        ),
-    )
-    .withColumn(
-        "borough_last_base_fare_current_row",
-        F.last_value(F.col("base_fare_amount")).over(
-            borough_current_row_window
-        ),
-    )
+trip_with_borough_edge_fares = dated_trip.withColumn(
+    "borough_first_base_fare",
+    F.first_value(F.col("base_fare_amount")).over(borough_current_row_window),
+).withColumn(
+    "borough_last_base_fare_current_row",
+    F.last_value(F.col("base_fare_amount")).over(borough_current_row_window),
 )
 
-trip_with_borough_edge_fares.filter(
-    F.col("pickup_borough") == "Bronx"
-).select(
+trip_with_borough_edge_fares.filter(F.col("pickup_borough") == "Bronx").select(
     "pickup_borough",
     "trip_date",
     "hour_of_day",
@@ -429,14 +417,10 @@ borough_full_frame_window = borough_trip_order_window.rowsBetween(
 
 trip_with_borough_edge_fares = trip_with_borough_edge_fares.withColumn(
     "borough_last_base_fare_full_frame",
-    F.last_value(F.col("base_fare_amount")).over(
-        borough_full_frame_window
-    ),
+    F.last_value(F.col("base_fare_amount")).over(borough_full_frame_window),
 )
 
-trip_with_borough_edge_fares.filter(
-    F.col("pickup_borough") == "Bronx"
-).select(
+trip_with_borough_edge_fares.filter(F.col("pickup_borough") == "Bronx").select(
     "pickup_borough",
     "trip_date",
     "hour_of_day",
@@ -531,18 +515,15 @@ daily_running_window = Window.orderBy("trip_date").rowsBetween(
     Window.currentRow,
 )
 
-daily_with_running_totals = (
-    daily_summary.withColumn(
-        "running_base_fare",
-        F.round(
-            F.sum(F.col("daily_base_fare")).over(daily_running_window),
-            2,
-        ),
-    )
-    .withColumn(
-        "running_trip_count",
-        F.sum(F.col("trip_count")).over(daily_running_window),
-    )
+daily_with_running_totals = daily_summary.withColumn(
+    "running_base_fare",
+    F.round(
+        F.sum(F.col("daily_base_fare")).over(daily_running_window),
+        2,
+    ),
+).withColumn(
+    "running_trip_count",
+    F.sum(F.col("trip_count")).over(daily_running_window),
 )
 
 daily_with_running_totals.orderBy("trip_date").show(truncate=False)
@@ -632,33 +613,42 @@ daily_with_comparisons.select(
 
 # COMMAND ----------
 
-# DBTITLE 1,Exercise - Track daily tip trends by service type
+# DBTITLE 1,Exercise
 # MAGIC %md
 # MAGIC ## Exercise — Track daily tip trends by service type
 # MAGIC
-# MAGIC The revenue team wants to monitor how tip revenue develops for each service
-# MAGIC type. Build one row per (`service_type`, `trip_date`), then calculate:
+# MAGIC Finance wants tip trends **per service type**, not across the whole fleet.
 # MAGIC
-# MAGIC | Column | Pattern to reuse |
+# MAGIC Work in three steps:
+# MAGIC
+# MAGIC 1. Collapse `dated_trip` to one row per (`service_type`, `trip_date`) with
+# MAGIC    `daily_tip_amount`.
+# MAGIC 2. Add `running_tip_amount` (Section 3 frame, partitioned by `service_type`).
+# MAGIC 3. Add `previous_row_tip_amount` and `tip_change_vs_previous_row` (Section 4
+# MAGIC    `lag`).
+# MAGIC
+# MAGIC | Column | Reuse from |
 # MAGIC |---|---|
-# MAGIC | `running_tip_amount` | Section 3 cumulative frame |
-# MAGIC | `previous_day_tip_amount` | Section 4 `lag` |
-# MAGIC | `tip_change_vs_previous_row` | Current tip minus the lagged tip |
-# MAGIC
-# MAGIC Together, these columns answer two questions:
-# MAGIC
-# MAGIC 1. How much tip revenue has this service type accumulated so far?
-# MAGIC 2. Did tip revenue increase or decrease from its previous active date?
-# MAGIC
-# MAGIC Before running the cell, predict how many service types remain after the
-# MAGIC NULL-date filter and how many service-date rows the grouped result contains.
-# MAGIC
-# MAGIC Remember: `lag` reads the previous **row** within a service type. A service
-# MAGIC type does not necessarily have trips on every calendar date.
+# MAGIC | `running_tip_amount` | Section 3 — `rowsBetween(unboundedPreceding, currentRow)` |
+# MAGIC | `previous_row_tip_amount` | Section 4 — `lag(..., 1)` |
+# MAGIC | `tip_change_vs_previous_row` | Section 4 — current minus lagged |
 
 # COMMAND ----------
 
-# DBTITLE 1,Exercise - Build the service-date input
+# DBTITLE 1,Exercise step 1 - Service-date grain
+# MAGIC %md
+# MAGIC ### Step 1 — One row per (`service_type`, `trip_date`)
+# MAGIC
+# MAGIC 1. Predict how many **distinct `service_type` values** appear in
+# MAGIC    `dated_trip` (`UNKNOWN` sits on undated trips only).
+# MAGIC 2. Predict how many rows the grouped result has.
+# MAGIC 3. Build `service_daily_tip` with `daily_tip_amount` = rounded sum of
+# MAGIC    `tip_amount`.
+# MAGIC 4. Compare predictions to the actual distinct service types and row count.
+
+# COMMAND ----------
+
+# DBTITLE 1,Build and verify service-date grain
 predicted_service_type_count = None  # TODO: replace with your prediction
 predicted_service_date_rows = None  # TODO: replace with your prediction
 
@@ -672,58 +662,91 @@ service_daily_tip = dated_trip.groupBy(
     ).alias("daily_tip_amount"),
 )
 
-# COMMAND ----------
-
-# DBTITLE 1,Exercise - Running tip total and previous-row change
-# TODO: partition by service_type, order by trip_date, and use the
-# first-row-through-current-row frame.
-service_running_window = None
-
-# TODO: use the same partition and order without a custom frame for lag.
-service_order_window = None
-
-service_tip_trend = (
-    service_daily_tip.withColumn(
-        "running_tip_amount",
-        F.round(
-            F.sum(F.col("daily_tip_amount")).over(service_running_window),
-            2,
-        ),
+actual_service_type_count = (
+    service_daily_tip.select(
+        "service_type",
     )
-    .withColumn(
-        "previous_day_tip_amount",
-        F.lag(F.col("daily_tip_amount"), 1).over(service_order_window),
-    )
-    .withColumn(
-        "tip_change_vs_previous_row",
-        F.round(
-            F.col("daily_tip_amount") - F.col("previous_day_tip_amount"),
-            2,
-        ),
-    )
+    .distinct()
+    .count()
 )
+actual_service_date_rows = service_daily_tip.count()
 
-actual_service_type_count = service_tip_trend.select(
-    "service_type",
-).distinct().count()
-actual_service_date_rows = service_tip_trend.count()
-
+service_type_match = "✓" if predicted_service_type_count == actual_service_type_count else "✗"
+service_date_match = "✓" if predicted_service_date_rows == actual_service_date_rows else "✗"
 print(
-    "service types:",
+    f"{service_type_match} service types:",
     f"predicted={predicted_service_type_count},",
     f"actual={actual_service_type_count}",
 )
 print(
-    "service-date rows:",
+    f"{service_date_match} service-date rows:",
     f"predicted={predicted_service_date_rows},",
     f"actual={actual_service_date_rows}",
 )
 
+service_daily_tip.orderBy("service_type", "trip_date").show(20, truncate=False)
+
+# COMMAND ----------
+
+# DBTITLE 1,Exercise step 2 - Running tip total
+# MAGIC %md
+# MAGIC ### Step 2 — Running tip total within each service type
+# MAGIC
+# MAGIC Partition by `service_type`, order by `trip_date`, and use the same
+# MAGIC cumulative **ROWS** frame as Section 3.
+# MAGIC
+# MAGIC Each service type's running total should **restart** on its first date.
+
+# COMMAND ----------
+
+# DBTITLE 1,Add running tip amount
+# TODO: Window.partitionBy("service_type").orderBy("trip_date").rowsBetween(
+# Window.unboundedPreceding, Window.currentRow)
+service_running_window = None
+
+service_with_running_tip = service_daily_tip.withColumn(
+    "running_tip_amount",
+    F.round(
+        F.sum(F.col("daily_tip_amount")).over(service_running_window),
+        2,
+    ),
+)
+
+service_with_running_tip.filter(
+    F.col("service_type") == "XL",
+).orderBy("trip_date").show(truncate=False)
+
+# COMMAND ----------
+
+# DBTITLE 1,Exercise step 3 - Lag and row-over-row change
+# MAGIC %md
+# MAGIC ### Step 3 — Change vs the previous row in that series
+# MAGIC
+# MAGIC Use the same partition and order **without** `rowsBetween`.
+# MAGIC
+# MAGIC `lag` reads the previous **row** in the ordered partition, not yesterday on
+# MAGIC the calendar. `XL` appears on only 8 of the 14 dates.
+
+# COMMAND ----------
+
+# DBTITLE 1,Add lag and tip change
+# TODO: Window.partitionBy("service_type").orderBy("trip_date")
+service_order_window = None
+
+service_tip_trend = service_with_running_tip.withColumn(
+    "previous_row_tip_amount",
+    F.lag(F.col("daily_tip_amount"), 1).over(service_order_window),
+).withColumn(
+    "tip_change_vs_previous_row",
+    F.round(
+        F.col("daily_tip_amount") - F.col("previous_row_tip_amount"),
+        2,
+    ),
+)
+
 service_tip_trend.filter(
     F.col("service_type") == "XL",
-).orderBy(
-    "trip_date",
-).show(truncate=False)
+).orderBy("trip_date").show(truncate=False)
 
 # COMMAND ----------
 
@@ -734,11 +757,8 @@ service_tip_trend.filter(
 # MAGIC   change values are NULL.
 # MAGIC - `XL` has rows on 8 of the 14 dates. Where dates are skipped, `lag` reads
 # MAGIC   the previous available XL row rather than necessarily yesterday.
-# MAGIC - A positive change identifies an increase from the previous active date;
-# MAGIC   a negative change identifies a decrease.
 # MAGIC
-# MAGIC The complete result contains **4 service types** and **44 service-date
-# MAGIC rows**.
+# MAGIC The grouped input contains **4 service types** and **44 service-date rows**.
 
 # COMMAND ----------
 
@@ -748,24 +768,17 @@ service_tip_trend.filter(
 # MAGIC
 # MAGIC | Idea | Takeaway |
 # MAGIC |---|---|
-# MAGIC | Default frame | An ordered aggregate with no frame uses `RANGE`, which includes same-value rows together |  # noqa: E501
-# MAGIC | Explicit `ROWS` | `rowsBetween(unboundedPreceding, currentRow)` accumulates one row at a time |  # noqa: E501
-# MAGIC | Stable order | Add `hour_of_day` and `trip_id` so tied dates resolve the same way on every run |  # noqa: E501
-# MAGIC | `first_value` / `last_value` | `first_value` works through the current row; `last_value` needs the full frame |  # noqa: E501
-# MAGIC | `lag` / `lead` | Fixed row offsets on an ordered window; boundary rows return NULL |  # noqa: E501
+# MAGIC | Default ordered frame | With `orderBy` and no frame, aggregates use `RANGE` — rows that share the sort key are evaluated together |  # noqa: E501
+# MAGIC | Running totals | Use `rowsBetween(unboundedPreceding, currentRow)` when each row should accumulate **physical** rows, not tied dates |  # noqa: E501
+# MAGIC | Trip-level order | After `trip_date`, add `hour_of_day` and `trip_id` so same-day trips sort the same way every run |  # noqa: E501
+# MAGIC | Edge values | `first_value` reads the partition start; `last_value` for the true final value needs `unboundedFollowing` |  # noqa: E501
+# MAGIC | Row offsets | `lag` / `lead` step by row within the partition — not calendar days; first/last rows in the partition get NULL |  # noqa: E501
 # MAGIC
-# MAGIC Which calculations need an explicit frame?
+# MAGIC **Frame rule of thumb:** set an explicit `ROWS` frame for running aggregates
+# MAGIC and for `last_value`; `lag` and `lead` only need `partitionBy` + `orderBy`.
 # MAGIC
-# MAGIC | Calculation | Explicit frame needed? |
-# MAGIC |---|---|
-# MAGIC | Running `sum` / `avg` | Yes — otherwise the default `RANGE` groups tied rows |
-# MAGIC | `last_value` over an ordered window | Yes — extend through `unboundedFollowing` |
-# MAGIC | `first_value` over an ordered window | No — the frame already starts at the first row |
-# MAGIC | `lag` / `lead` | No — they use a fixed row offset |
+# MAGIC NULL placement in ordered windows: Notebook **07** (`nullsFirst` /
+# MAGIC `nullsLast`).
 # MAGIC
-# MAGIC NULL-aware variants such as `ignoreNulls` are not needed here, because the
-# MAGIC dated trips are fully populated. Notebook **07** covers NULL placement in
-# MAGIC ordered windows with `nullsFirst` and `nullsLast`.
-# MAGIC
-# MAGIC **Next:** Module 8 **`07 - Top-N per Group and Sampling`** — Top-N per
-# MAGIC group with `row_number`, NULL sort placement, and sampling.
+# MAGIC **Next:** Module 8 **`07 - Top-N per Group and Sampling`** — Top-N with
+# MAGIC `row_number`, NULL sort placement, and sampling.
