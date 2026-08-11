@@ -590,6 +590,18 @@ trip_sample_by_service.groupBy("service_type").count().orderBy("service_type").s
 
 # COMMAND ----------
 
+# DBTITLE 1,Why can XL be missing from the sample counts?
+# MAGIC %md
+# MAGIC ### Why can `XL` be missing from the sample counts?
+# MAGIC
+# MAGIC `XL` is in the fractions map at **0.2**, and the full table has **12** XL
+# MAGIC trips. About 20% of 12 is roughly **2** rows — not a guaranteed count.
+# MAGIC
+# MAGIC With this seed, the sample kept **0** XL rows, so `groupBy` does not show
+# MAGIC that key.
+
+# COMMAND ----------
+
 # DBTITLE 1,How do we split rows into seeded subsets?
 # MAGIC %md
 # MAGIC ### 4c. How do we split rows into seeded subsets?
