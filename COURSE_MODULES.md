@@ -15,7 +15,7 @@ draft). No Cursor slash command writes to this file automatically.
 | Status | Meaning |
 |---|---|
 | Not Started | Roadmap entry — no learner notebooks yet (module `README.md` optional) |
-| Current | Actively authoring notebooks — see its `README.md` for detailed design |
+| Started | Actively authoring notebooks — see its `README.md` for detailed design |
 | Complete | Notebooks written, authoring-quality checked, and runtime-validated in Azure Databricks (see `docs/validation/`) |
 
 ## The running use case
@@ -40,7 +40,7 @@ switching examples. Full schema, join keys, and physical layout:
 ## Phase II — Core Data Engineering Skills (Modules 5–9)
 
 Land on UC Volumes → transform and write `curated/` outputs → join safely →
-aggregate and window → query bilingually and synthesize.
+aggregate and window into managed KPI tables → query bilingually and synthesize.
 
 Module 5 has additional environment prerequisites beyond "Module 4" (personal
 Azure workspace/storage setup and UC create privileges). See
@@ -51,8 +51,8 @@ Azure workspace/storage setup and UC create privileges). See
 | 5 | Reading, Writing, and Schemas | Land the shared rideshare dataset on UC Volumes and read/write production formats with explicit schemas | UC Volumes and data landing (including controlled-bad sources); CSV/JSON/Parquet/XML/Avro reads; explicit schemas vs inference; write modes; Delta file write and managed `saveAsTable` preview | Module 4 | Volume-based file I/O patterns used in real ingestion jobs | Builds the Volume ingestion layer for the final project | Complete |
 | 6 | Built-in Functions, Complex Types, and UDF Alternatives | Transform landing data with Spark built-ins, work with nested types, and write curated outputs — prefer built-ins over UDFs | Built-in `F.*` transforms; Volume path vs managed table; structs/arrays/`explode`; cleaned `curated/` outputs; built-in vs Python UDF (Pandas/Arrow note only) | Module 5 | Performant, idiomatic transformation logic | Implements cleaning, enrichment, and business rules | Complete |
 | 7 | Joins and Set Operations | Join and combine rideshare tables with predictable row counts and clear keys — no silent cardinality or key traps | Grain and cardinality; join types and silent failures; lookup joins, column cleanup, broadcast; semi/anti; set operations; read Module 6 `curated/` / write managed tables (`trip_enriched`, `trip_driver_assignment`); high-level AQE awareness | Module 6 | Multi-table integration — a core production pattern | Combines core tables (and flattened `drivers`) into unified managed tables | Complete |
-| 8 | Aggregations and Window Functions | Produce analytics-ready summaries and KPI tables | `groupBy` and aggregates (collections, percentiles, distinct counts); pivot; window functions (ranking, running totals, lag/lead); Top-N per group; sampling; KPI folders under `curated/` | Module 7 | Analytics and reporting layers | Produces KPI/metric tables for the project | Started |
-| 9 | Spark SQL and DataFrame Interoperability | Express and validate pipeline logic in both DataFrame and SQL APIs | Dual API patterns; SQL joins, windows, and `QUALIFY`; CTEs and params; end-to-end pipeline using prior `curated/` outputs and Module 7 managed tables | Module 8 | Supports SQL-first collaboration and dual-API validation | Enables SQL-based transforms and tests | Not Started |
+| 8 | Aggregations and Window Functions | Produce analytics-ready summaries and KPI tables | `groupBy` and aggregates (collections, percentiles, distinct counts); pivot; window functions (ranking, running totals, lag/lead); Top-N per group; sampling; managed Delta `kpi_*` tables (`saveAsTable`) | Module 7 | Analytics and reporting layers | Produces KPI/metric tables for the project | Started |
+| 9 | Spark SQL and DataFrame Interoperability | Express and validate pipeline logic in both DataFrame and SQL APIs | Dual API patterns; SQL joins, windows, and `QUALIFY`; CTEs and params; end-to-end pipeline using Module 8 managed KPI tables and Module 7 managed tables | Module 8 | Supports SQL-first collaboration and dual-API validation | Enables SQL-based transforms and tests | Not Started |
 
 ## Phase III — Lakehouse and Governance (Modules 10–12)
 

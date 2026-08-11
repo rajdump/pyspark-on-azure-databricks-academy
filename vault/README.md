@@ -20,8 +20,11 @@ Start from `home.md`.
 | `home.md` | Vault dashboard |
 | `progress.md` | Course progress tracker |
 | `decisions.md` | Decision log |
-| `NB07_personal_notes.md` | Author-only Module 7 notes |
 | `.obsidian/` | Obsidian app settings for this vault |
+
+Author-only Module 7 notes live outside this vault at
+[`take_notes/NB07_personal_notes.md`](../take_notes/NB07_personal_notes.md)
+(linked from progress/decisions; not a vault-local file).
 
 ## What does **not** belong here
 

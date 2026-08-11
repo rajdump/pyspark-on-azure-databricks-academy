@@ -5,7 +5,7 @@ aliases:
 tags:
   - course/decisions
   - architecture
-updated: 2026-08-11
+updated: 2026-08-12
 ---
 
 # Course decisions
@@ -26,9 +26,9 @@ When documents disagree, use this order:
 6. `docs/validation/` for author-recorded runtime evidence
 7. Personal and temporary notes as context only
 
-This precedence explains why Module 08 is considered current even though the
-root README still names Module 06, and why approved Module 07 mappings override
-conflicting personal notes.
+This precedence explains why Module 08 is considered current when
+[COURSE_MODULES](../COURSE_MODULES.md) marks it Started, and why approved
+Module 07 mappings override conflicting personal notes.
 
 ## D-001 — Course scope is batch data engineering
 
@@ -128,14 +128,14 @@ Canonical details: [dataset overview](../docs/data/dataset-overview.md)
 flowchart LR
     M5[Module 05<br/>Landing files] --> M6[Module 06<br/>Curated Parquet]
     M6 --> M7[Module 07<br/>Managed Delta]
-    M7 --> M8[Module 08<br/>KPI Parquet]
+    M7 --> M8[Module 08<br/>KPI managed Delta]
     M8 --> M9[Module 09<br/>SQL synthesis]
 ```
 
 - Module 05 writes practice outputs.
 - Module 06 writes curated Parquet.
 - Module 07 writes Unity Catalog managed Delta tables.
-- Module 08 writes `kpi_*` Parquet folders.
+- Module 08 writes managed Delta `kpi_*` tables (`saveAsTable`).
 - Modules after 05 do not read `practice/`.
 
 Source: [dataset overview — Module pipeline](../docs/data/dataset-overview.md#module-pipeline)
@@ -331,21 +331,22 @@ Sources:
 
 Source: [Module 08 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
 
-## D-020 — Module 08 will write three KPI folders
+## D-020 — Module 08 writes three managed Delta KPI tables
 
-**Status:** Planned; Notebook 08 is not yet authored
+**Status:** Accepted; Notebook 08 authoring follows the approved md replica
 
-- `kpi_daily_trip_summary/` — one row per non-NULL trip date
-- `kpi_zone_performance/` — one row per pickup borough and pickup zone
-- `kpi_driver_productivity/` — one row per driver
-- Format: Parquet
-- Mode: overwrite
-- Location: the curated output tier
+- `rideshare_dev.processed.kpi_daily_trip_summary` — one row per non-NULL trip date (14)
+- `rideshare_dev.processed.kpi_zone_performance` — one row per pickup borough and zone (20)
+- `rideshare_dev.processed.kpi_driver_productivity` — one row per driver (12)
+- Format: Unity Catalog managed Delta via `.mode("overwrite").saveAsTable(...)`
+- Cleanup: Module 5 **99** Level 4 (not Level 2 `curated/`)
 
-Final column schemas remain open until Module 08 Notebook 08 is written.
+Column contracts live in the Module 8 README (Paths and outputs). Preferred
+over Volume Parquet for Modules 9–13 (SQL/`spark.table`, Delta, Gold, MERGE).
 
 Sources: [Module 08 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md),
-[dataset overview — Module 8 KPI outputs](../docs/data/dataset-overview.md#module-8--kpi-outputs)
+[dataset overview — Module 8 KPI outputs](../docs/data/dataset-overview.md#module-8--kpi-outputs),
+[08 - Build KPI Tables.md](../08%20-%20Aggregations%20and%20Window%20Functions/08%20-%20Build%20KPI%20Tables.md)
 
 ## Security and portability decisions
 
@@ -366,7 +367,7 @@ Source: [coding standards — Security and portability](../docs/standards/coding
 
 ## Deferred and open decisions
 
-- [ ] Define the final Module 08 KPI column schemas in Notebook 08.
+- [x] Define Module 08 KPI column schemas in the Module 8 README (managed Delta tables).
 - [ ] Decide whether Modules 07–08 need serverless compatibility evidence.
 - [ ] Choose where to teach column- vs row-oriented files and warehouse vs
   lake vs lakehouse concepts from `take_notes/M5.txt`.
@@ -377,8 +378,6 @@ Source: [coding standards — Security and portability](../docs/standards/coding
 
 ## Known documentation conflicts
 
-- Root [README](../README.md) says Module 06 is active;
-  [COURSE_MODULES](../COURSE_MODULES.md) says Module 08 is Started.
 - [Module 02 validation](../docs/validation/02%20-%20DataFrame%20Fundamentals.md)
   omits Notebook 05 despite the module being marked Complete.
 - Module 07 personal notes ([[NB07_personal_notes]]) contain target columns

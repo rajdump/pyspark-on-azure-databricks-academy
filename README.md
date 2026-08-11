@@ -65,7 +65,7 @@ workflow.
 
 - **Full roadmap:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — all 19 modules, their purpose, and status
 - **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
-- **Authoring status (current):** Module 5 is complete; active authoring is **Module 6 — Built-in Functions, Complex Types, and UDF Alternatives** — design: [`06 - Built-in Functions, Complex Types, and UDF Alternatives`](06%20-%20Built-in%20Functions%2C%20Complex%20Types%2C%20and%20UDF%20Alternatives/README.md); status source: [`COURSE_MODULES.md`](COURSE_MODULES.md)
+- **Authoring status (current):** Modules 1–7 are complete; active authoring is **Module 8 — Aggregations and Window Functions** — design: [`08 - Aggregations and Window Functions`](08%20-%20Aggregations%20and%20Window%20Functions/README.md); status source: [`COURSE_MODULES.md`](COURSE_MODULES.md)
 - **Before Module 5 (Azure requirements):** confirm personal Azure Databricks + ADLS setup, existing storage credential, required Unity Catalog create privileges, and Databricks Git folder access in [`05 - Reading, Writing, and Schemas/README.md`](05%20-%20Reading%2C%20Writing%2C%20and%20Schemas/README.md#before-notebook-01). Storage credential creation how-to is documented in course PDF materials (not in this repository).
 
 ## Repository conventions

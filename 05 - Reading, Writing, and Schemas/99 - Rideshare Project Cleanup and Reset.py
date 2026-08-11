@@ -7,7 +7,7 @@
 # MAGIC
 # MAGIC **Learning objectives.** After this notebook, you will be able to:
 # MAGIC - Clear Module 5 `practice/` outputs without touching `curated/`
-# MAGIC - Clear Module 6–9 `curated/` outputs (wide blast radius — rebuild from Module 6)
+# MAGIC - Clear Module 6 `curated/` outputs (wide blast radius — rebuild from Module 6)
 # MAGIC - Clear landing source files and re-copy from Notebook 01
 # MAGIC - Fully tear down the rideshare catalog, external location, and ADLS folder
 # MAGIC   while leaving the storage credential in place
@@ -19,7 +19,7 @@
 # MAGIC | Level | What it does | When to use |
 # MAGIC |-------|-------------|-------------|
 # MAGIC | 1 | Clear `practice/` outputs | Redo Module 5 write practice only |
-# MAGIC | 2 | Clear `curated/` outputs | Wipe Module 6–9 pipeline outputs (wide blast radius) |
+# MAGIC | 2 | Clear `curated/` outputs | Wipe Module 6 curated Parquet (wide blast radius) |
 # MAGIC | 3 | Clear landing source files | You copied source files incorrectly |
 # MAGIC | 4 | Full project teardown | Start over from scratch |
 # MAGIC
@@ -110,7 +110,7 @@ else:
 # COMMAND ----------
 
 # -------------------------------------------------------
-# Level 2 — Clear curated outputs (Module 6–9 pipeline outputs)
+# Level 2 — Clear curated outputs (Module 6 curated Parquet)
 #
 # BLAST RADIUS: deletes ALL curated folders (cleaned datasets, joins, KPIs).
 # You must re-run Module 6 onward to rebuild.

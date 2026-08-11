@@ -4,14 +4,14 @@ aliases:
 tags:
   - course/progress
   - status/started
-updated: 2026-08-11
+updated: 2026-08-12
 ---
 
 # Course progress
 
 > [!important] Status authority
 > [COURSE_MODULES](../COURSE_MODULES.md) is the author-owned source of truth.
-> This note summarizes the repository as inspected on **2026-08-11** and does
+> This note summarizes the repository as inspected on **2026-08-12** and does
 > not change roadmap or runtime-validation status.
 
 ## At a glance
@@ -22,8 +22,8 @@ updated: 2026-08-11
 - **11 not started** — Modules 09–19
 - **44 Databricks source notebooks on disk**
 - **39 notebook entries with recorded runtime evidence**
-- **Current work:** Module 08 Notebook 07 polish, followed by missing Notebook
-  08
+- **Current work:** Module 08 Notebook 08 — Build KPI Tables (docs/contracts
+  locked; author `.py` from approved md replica)
 
 ## Phase summary
 
@@ -121,10 +121,8 @@ not unfinished author content.
 
 ### Missing
 
-- `08 - Build KPI Tables.py`
+- `08 - Build KPI Tables.py` (md replica approved; contracts in Module 8 README)
 - Runtime evidence for Notebooks 04–08
-- Final KPI schemas in
-  [dataset overview — Module 8 KPI outputs](../docs/data/dataset-overview.md#module-8--kpi-outputs)
 - Author-owned roadmap transition from Started to Complete after authoring and
   Azure validation
 
@@ -132,36 +130,30 @@ not unfinished author content.
 
 | Output | Intended grain |
 |---|---|
-| `kpi_daily_trip_summary/` | One row per non-NULL `trip_date` — 14 rows |
-| `kpi_zone_performance/` | One row per pickup borough and pickup zone — 20 rows |
-| `kpi_driver_productivity/` | One row per `driver_id` — 12 rows |
+| `rideshare_dev.processed.kpi_daily_trip_summary` | One row per non-NULL `trip_date` — 14 rows |
+| `rideshare_dev.processed.kpi_zone_performance` | One row per pickup borough and pickup zone — 20 rows |
+| `rideshare_dev.processed.kpi_driver_productivity` | One row per `driver_id` — 12 rows |
 
-All three are planned as overwrite-mode Parquet under
-`/Volumes/rideshare_dev/processed/output_files/curated/`.
+All three are overwrite-mode managed Delta tables via `saveAsTable`. Column
+contracts: [Module 8 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
 
 ## Next sequence
 
-1. Finish and author-review Module 08 Notebook 07.
-2. Create and write Module 08 Notebook 08 from the module README contract.
-3. Define the three KPI output schemas in the canonical dataset documentation.
-4. Run Module 08 Notebooks 04–08 in Azure Databricks using Standard
+1. Author Module 08 Notebook 08 (`08 - Build KPI Tables.py`) from the approved
+   md replica and Module 8 README contract.
+2. Run Module 08 Notebooks 04–08 in Azure Databricks using Standard
    all-purpose compute first.
-5. Record runtime evidence in
+3. Record runtime evidence in
    [Module 08 validation](../docs/validation/08%20-%20Aggregations%20and%20Window%20Functions.md).
-6. Let the author update [COURSE_MODULES](../COURSE_MODULES.md) after the
+4. Let the author update [COURSE_MODULES](../COURSE_MODULES.md) after the
    module meets the Complete definition.
-7. Begin Module 09 — Spark SQL and DataFrame Interoperability.
+5. Begin Module 09 — Spark SQL and DataFrame Interoperability.
 
 ## Documentation and consistency backlog
 
 ### High priority
 
-- [ ] Update [README — Where to start](../README.md#where-to-start): it still
-  names Module 06 as active, while [COURSE_MODULES](../COURSE_MODULES.md)
-  identifies Module 08 as Started.
 - [ ] Confirm or add the missing Module 02 Notebook 05 runtime record.
-- [ ] Finish Module 08 Notebook 08 and replace its “not yet written” dataset
-  note with the final schema contract.
 - [ ] Reconcile [[NB07_personal_notes|NB07 personal notes]] with approved
   mappings. The personal note currently shows `surge_amount` in
   `trip_enriched` and time/payment fields in `trip_driver_assignment`; neither

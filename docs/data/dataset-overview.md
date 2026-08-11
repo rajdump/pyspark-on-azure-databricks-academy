@@ -183,7 +183,7 @@ Module 6 Notebook **02** flattens this to `curated/drivers_flat/`
 
 End-to-end flow: **Module 5** lands source files → **Module 6** produces
 curated Parquet → **Module 7** builds managed Delta tables → **Module 8**
-writes KPI Parquet outputs.
+writes managed Delta KPI tables.
 
 ### Module 5 — Landing
 
@@ -345,20 +345,19 @@ table joins trips 1–100 only, so every column is fully populated.
 
 ### Module 8 — KPI outputs
 
-Parquet written by Module 8 Notebook **08** with `.mode("overwrite")`.
-Module 9 reads all three as its primary sources. All paths live under
-`/Volumes/rideshare_dev/processed/output_files/curated/`.
+Unity Catalog managed Delta tables written by Module 8 Notebook **08** with
+`.mode("overwrite").saveAsTable(...)`. Module 9 reads all three as its
+primary KPI sources. Full column contracts:
+[Module 8 README — Paths and outputs](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
 
-| Output folder | Grain / rows | Source table |
+| Table | Grain / rows | Source table |
 |---|---|---|
-| `curated/kpi_daily_trip_summary/` | One row per **`trip_date`** — **14** rows (trips span 2026-03-01 – 2026-03-14; NULL-`trip_date` trips 101–106 are explicitly excluded) | `trip_enriched` |
-| `curated/kpi_zone_performance/` | One row per (**`pickup_borough`**, **`pickup_zone`**) — **20** rows (all pickup `location_id`s 1–20 are present) | `trip_enriched` |
-| `curated/kpi_driver_productivity/` | One row per **`driver_id`** — **12** rows | `trip_driver_assignment` |
+| `rideshare_dev.processed.kpi_daily_trip_summary` | One row per **`trip_date`** — **14** (NULL-`trip_date` trips 101–106 excluded; measure-NULL trips 103–106 are inside that undated set, so dated rows 1–100 are fully populated) | `trip_enriched` |
+| `rideshare_dev.processed.kpi_zone_performance` | One row per (**`pickup_borough`**, **`pickup_zone`**) — **20** | `trip_enriched` |
+| `rideshare_dev.processed.kpi_driver_productivity` | One row per **`driver_id`** — **12** | `trip_driver_assignment` |
 
-Column schemas will be defined in Module 8 Notebook **08** (not yet written).
-Cleared by Module 5 **`99`** Level 2 cleanup (same pass that clears all
-Module 6–9 `curated/` outputs).
-
+Cleared by Module 5 **`99`** Level 4 (catalog teardown), same as Module 7
+managed tables — not by Level 2 `curated/` cleanup.
 ---
 
 ## Unity Catalog platform reference
@@ -405,7 +404,8 @@ the `practice/` / `curated/` tier.
 | Module 5 practice | `…/processed/output_files/practice/{output_name}/` |
 | Module 6 curated Parquet | `…/processed/output_files/curated/{output_name}/` |
 | Module 7 analytical tables | Unity Catalog managed tables (`saveAsTable`) — not Volume folders |
-| Module 8+ KPI / pipeline Parquet | `…/processed/output_files/curated/{output_name}/` (e.g. `kpi_*`) |
+| Module 8 KPI tables | Unity Catalog managed tables (`saveAsTable`) in `rideshare_dev.processed` (`kpi_*`) |
 
 Do not read `practice/` after Module 5. Later modules read landing,
-prior `curated/` outputs, and/or Module 7 managed tables.
+prior `curated/` outputs, Module 7 managed tables, and/or Module 8 KPI
+managed tables.

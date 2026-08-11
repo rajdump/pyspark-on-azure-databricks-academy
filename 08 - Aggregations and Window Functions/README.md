@@ -14,10 +14,11 @@ Two habits run through the skill-building notebooks:
 Notebooks **01–04** use `groupBy` (fewer rows). **05–07** focus on windows,
 which preserve the rows of the DataFrame they receive. Notebook **06** may
 first aggregate to daily grain, then window over that. **01–07** do not write.
-Notebook **08** writes three Parquet KPI outputs for Module 9.
+Notebook **08** writes three managed Delta KPI tables for Module 9.
 
 Schemas, inherited NULLs, and group-key values:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
+KPI column contracts live in this README (Paths and outputs).
 
 ## Learning objectives
 
@@ -32,8 +33,8 @@ By the end of this module, you'll be able to:
 - Control NULL sort placement with **`nullsFirst` / `nullsLast`**
 - Select **Top-N per group** (including tie-selection policy) and draw
   reproducible samples with **`sample`** / **`sampleBy`** / **`randomSplit`**
-- Apply the module patterns in Notebook **08** to write three `curated/` KPI
-  outputs for Module 9
+- Apply the module patterns in Notebook **08** to write three managed `kpi_*`
+  tables for Module 9
 
 ## Prerequisites
 
@@ -58,20 +59,59 @@ already carry what this module needs.
 
 ## Paths and outputs
 
-Notebook **08** writes to
-`/Volumes/rideshare_dev/processed/output_files/curated/{kpi_name}/`.
+Notebook **08** writes Unity Catalog managed Delta tables with
+`.mode("overwrite").saveAsTable(...)`. Module 9 reads them with
+`spark.table(...)` / SQL `FROM` and re-expresses the same logic.
 
-| Output | Path | Grain / contract |
+| Table | Grain / rows | Source |
 |---|---|---|
-| Daily trip summary | `…/curated/kpi_daily_trip_summary/` | One row per **`trip_date`**. Drops the 6 NULL-`trip_date` rows (trips 101–106) **explicitly** |
-| Zone performance | `…/curated/kpi_zone_performance/` | One row per (**`pickup_borough`**, **`pickup_zone`**). Includes tip rate |
-| Driver productivity | `…/curated/kpi_driver_productivity/` | One row per **`driver_id`** (12). Includes `dense_rank` on distance |
+| `rideshare_dev.processed.kpi_daily_trip_summary` | One row per **`trip_date`** — **14**. Explicitly drops NULL-`trip_date` trips **101–106** (that filter also removes all measure-NULL rows; remaining trips 1–100 are fully populated) | `trip_enriched` |
+| `rideshare_dev.processed.kpi_zone_performance` | One row per (**`pickup_borough`**, **`pickup_zone`**) — **20**. All 106 rows; primary NULL-aggregate surface | `trip_enriched` |
+| `rideshare_dev.processed.kpi_driver_productivity` | One row per **`driver_id`** — **12**. Includes fleet-wide `distance_dense_rank` after aggregate | `trip_driver_assignment` |
 
-Write as **Parquet** with **`.mode("overwrite")`**. KPI folders use the
-**`kpi_`** prefix. Module 9 reads these folders and re-expresses them in SQL.
+### `kpi_daily_trip_summary` columns
 
-**Cleanup:** Module 5 **`99`** Level 2 clears Module 6–9 `curated/` outputs.
-This module creates no managed tables — Level 4 is not required here.
+| Column | Formula |
+|---|---|
+| `trip_date` | key |
+| `trip_count` | `count("*")` |
+| `total_base_fare` | `sum(base_fare_amount)` |
+| `total_tip` | `sum(tip_amount)` |
+| `total_driver_payout` | `sum(driver_payout_amount)` |
+| `total_distance_miles` | `sum(trip_distance_miles)` — Module 9 running-total candidate |
+| `avg_distance_miles` | `round(avg(trip_distance_miles), 2)` |
+| `avg_ride_duration_mins` | `round(avg(ride_duration_mins), 2)` |
+
+### `kpi_zone_performance` columns
+
+| Column | Formula |
+|---|---|
+| `pickup_borough`, `pickup_zone` | composite key |
+| `pickup_location_id` | `max(pickup_location_id)` — deterministic per zone |
+| `trip_count` | `count("*")` |
+| `total_base_fare`, `total_tip` | sums (NULL-skipping) |
+| `tip_percent_of_base` | `when(sum(base_fare_amount) > 0, round(100 * sum(tip) / sum(base), 1)).otherwise(NULL)` — not avg of row percents |
+| `avg_distance_miles`, `avg_ride_duration_mins` | rounded avgs |
+
+NULL-affected pickup zones (verified): Financial District (104 base), Harlem
+(106 base/tip/distance — densest), Astoria (103 tip/distance), Williamsburg
+(105 distance only).
+
+### `kpi_driver_productivity` columns
+
+| Column | Formula |
+|---|---|
+| `driver_id` | key |
+| `driver_name` | `max(driver_name)` |
+| `trip_count` | `count("*")` |
+| `total_distance_miles` | `sum(trip_distance_miles)` |
+| `avg_ride_duration_mins` | `round(avg(ride_duration_mins), 2)` |
+| `unique_service_types` | `sort_array(collect_set(service_type))` |
+| `distance_dense_rank` | after agg: `dense_rank` over fleet by `total_distance_miles` desc |
+
+**Cleanup:** Module 5 **`99`** Level 4 (catalog teardown) drops these managed
+tables with the rest of `rideshare_dev` — same as Module 7. Level 2 clears
+Module 6 `curated/` Parquet only and does **not** remove KPI tables.
 
 ## Runtime and scope
 
@@ -109,7 +149,7 @@ Each skill-building notebook ends with a short exercise.
 | 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking-API ties; Top-2 filter-after-rank preview → **07** |
 | 6 | Running Totals and lag/lead | `trip_enriched` | Default `RANGE` vs explicit `ROWS`; ordered `first_value` / `last_value`; daily running totals; `lag` / `lead` |
 | 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N per group (`row_number` + filter; extends **05** Top-2); Top-N selection policy (`row_number <= N` vs `rank <= N`, secondary sort); `nullsFirst` / `nullsLast` (standalone sort placement); `sample` / `sampleBy` / `randomSplit` |
-| 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Delta outputs |
+| 8 | Build KPI Tables | both managed tables | Write-only: three managed `kpi_*` Delta tables (`saveAsTable`) |
 
 ## Markdown Quality Gate (Module 8)
 
@@ -125,10 +165,9 @@ Module-local authoring gate (supplements `docs/standards/*.md`):
 ## Minimum privileges required
 
 - Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
-- Unity Catalog (no catalog / external-location / volume DDL; no `CREATE TABLE`):
+- Unity Catalog (no catalog / external-location / volume DDL):
   - **`USE CATALOG`** on **`rideshare_dev`**
   - **`USE SCHEMA`** on **`rideshare_dev.processed`**
   - **`SELECT`** on **`rideshare_dev.processed.trip_enriched`** and
     **`rideshare_dev.processed.trip_driver_assignment`**
-  - **`WRITE VOLUME`** on **`rideshare_dev.processed.output_files`**
-    (Notebook **08** only)
+  - **`CREATE TABLE`** on **`rideshare_dev.processed`** (Notebook **08** only)

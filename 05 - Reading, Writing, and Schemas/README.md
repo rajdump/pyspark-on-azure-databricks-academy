@@ -103,7 +103,7 @@ with no exercise.
 | 5 | Reading XML | Read **`drivers`** with **`rowTag`** only — no **`explode`** (Module 6) |
 | 6 | Reading Avro | Read **`payment`** from landing (Avro copied in Notebook **01**) |
 | 7 | Write Patterns and Table Preview | Save modes; brief partitioned write; Delta **file** under `practice/` + managed **`saveAsTable`** to **`rideshare_dev.processed.trip_time_preview`** (managed location ≠ external volume); files vs tables; Module 6 **`01`** reads this table alongside landing **`trip_time`** Parquet; deep Delta → Module 10 |
-| 99 | Rideshare Project Cleanup and Reset | Level 1 clear `practice/`; Level 2 clear `curated/` (blast radius); Level 3 clear landing; Level 4 full teardown |
+| 99 | Rideshare Project Cleanup and Reset | Level 1 clear `practice/`; Level 2 clear `curated/` (Module 6 Parquet); Level 3 clear landing; Level 4 full teardown (drops managed tables including Module 7/8 `saveAsTable` outputs) |
 
 ## Minimum privileges required
 

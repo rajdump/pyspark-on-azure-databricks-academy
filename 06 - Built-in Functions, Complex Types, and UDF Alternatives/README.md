@@ -69,7 +69,7 @@ these curated folders plus **landing** datasets such as **`trip_time`** and
 `curated/` is created on first write. Schema names `landing` / `processed` are
 not medallion Bronze/Silver/Gold (Module 12).
 
-**Cleanup:** reuse Module 5 **`99`** (Level 2 clears all Module 6–9 curated
+**Cleanup:** reuse Module 5 **`99`** (Level 2 clears Module 6 curated
 outputs). This module has no dedicated cleanup notebook.
 
 ## Runtime and scope

@@ -83,11 +83,12 @@ Does **not** read **`practice/`**. Clean rerun: Module 5 Notebook **99**, Level 
 Writes use `saveAsTable` overwrite (Delta by default). Delta internals → Module 10.
 
 **Cleanup:** Module 5 **`99`** Level 2 clears Module 6 curated Parquet only —
-by design, Levels 1–2 never touch managed tables. To reset the two Module 7
-managed tables (**`trip_enriched`**, **`trip_driver_assignment`**), use **99**
-Level 4 (full project teardown): its `DROP CATALOG rideshare_dev CASCADE`
-step drops every managed table in the catalog, current and future, with no
-per-table statement required.
+by design, Levels 1–2 never touch managed tables. To reset Module 7
+managed tables (**`trip_enriched`**, **`trip_driver_assignment`**) and
+Module 8 KPI tables (**`kpi_*`**), use **99** Level 4 (full project
+teardown): its `DROP CATALOG rideshare_dev CASCADE` step drops every
+managed table in the catalog, current and future, with no per-table
+statement required.
 
 ## Runtime and scope
 

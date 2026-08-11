@@ -717,5 +717,5 @@ top2_tips_per_borough.select(
 # MAGIC | NULL ordering | Specify NULL placement when the sort column can be NULL |
 # MAGIC | Sampling | Use a seed when reproducibility matters |
 # MAGIC
-# MAGIC **Next:** Module 8 **`08 - Build KPI Tables`** — write three `kpi_*`
-# MAGIC Parquet outputs for Module 9.
+# MAGIC **Next:** Module 8 **`08 - Build KPI Tables`** — write three managed
+# MAGIC `kpi_*` Delta tables for Module 9.

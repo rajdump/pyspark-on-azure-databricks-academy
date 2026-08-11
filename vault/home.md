@@ -29,8 +29,8 @@ tags:
 
 - **Current module:** [Module 08 — Aggregations and Window Functions](../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
 - **Roadmap state:** 7 complete, 1 started, 11 not started
-- **Current authoring:** Notebooks 01–07 exist; Notebook 07 has active local
-  edits
+- **Current authoring:** Notebooks 01–07 authored; next is Notebook 08
+  (managed Delta KPI tables)
 - **Next deliverable:** Module 08 Notebook 08 — Build KPI Tables
 - **Runtime baseline:** Databricks Runtime 17.3 LTS, Spark 4.0.0, Python 3.12
 - **Source of truth for status:** [COURSE_MODULES](../COURSE_MODULES.md)
@@ -72,7 +72,7 @@ flowchart LR
     R[Repository source files] --> M5[Module 05<br/>UC Volume landing]
     M5 --> M6[Module 06<br/>Curated Parquet]
     M6 --> M7[Module 07<br/>Managed Delta tables]
-    M7 --> M8[Module 08<br/>KPI Parquet]
+    M7 --> M8[Module 08<br/>KPI managed Delta]
     M8 --> M9[Module 09<br/>SQL and DataFrame synthesis]
 ```
 
@@ -91,6 +91,9 @@ Important downstream contracts:
 - `curated/drivers_flat/` — 100 driver-trip assignments
 - `rideshare_dev.processed.trip_enriched` — 106 rows, 16 columns
 - `rideshare_dev.processed.trip_driver_assignment` — 100 rows, 13 columns
+- `rideshare_dev.processed.kpi_daily_trip_summary` — 14 rows (planned; NB08)
+- `rideshare_dev.processed.kpi_zone_performance` — 20 rows (planned; NB08)
+- `rideshare_dev.processed.kpi_driver_productivity` — 12 rows (planned; NB08)
 
 Canonical schemas, keys, NULL contracts, and paths:
 [dataset overview](../docs/data/dataset-overview.md).
