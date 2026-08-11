@@ -308,15 +308,19 @@ driver_stable_ranked.filter(
 # MAGIC Adding `row_number` changes the order position, not the number of rows:
 # MAGIC the result still has **106 trips**.
 # MAGIC
-# MAGIC Spark's default NULL placement depends on the sort direction:
+# MAGIC Spark's default NULL placement depends on sort direction. Column helpers
+# MAGIC make the intended placement explicit:
 # MAGIC
-# MAGIC | Sort direction | Default |
-# MAGIC |---|---|
-# MAGIC | Ascending | NULLs **first** |
-# MAGIC | Descending | NULLs **last** |
+# MAGIC | Method | Non-NULL order | NULLs |
+# MAGIC |---|---|---|
+# MAGIC | `asc()` | smallest → largest | **first** (default) |
+# MAGIC | `asc_nulls_last()` | smallest → largest | **last** |
+# MAGIC | `desc()` | largest → smallest | **last** (default) |
+# MAGIC | `desc_nulls_first()` | largest → smallest | **first** |
+# MAGIC | `desc_nulls_last()` | largest → smallest | **last** (same as `desc()`) |
 # MAGIC
-# MAGIC Column helpers override that: `asc_nulls_last()`, `desc_nulls_first()`, and
-# MAGIC related methods.
+# MAGIC Prefer the helper when NULL placement matters so the order is visible in
+# MAGIC the code.
 
 # COMMAND ----------
 
@@ -370,7 +374,7 @@ trip_date_nulls_last.filter(
 # MAGIC %md
 # MAGIC Manhattan undated trips are **101**, **104**, and **106**.
 # MAGIC
-# MAGIC - Default ascending `trip_date`: those trips appear among the **earliest**
+# MAGIC - Default `asc()`: those trips appear among the **earliest**
 # MAGIC   `date_row_number` values.
 # MAGIC - `asc_nulls_last()`: the same trips appear at the **end** of the borough
 # MAGIC   ordering.
@@ -384,15 +388,14 @@ trip_date_nulls_last.filter(
 # MAGIC Trip **106** has NULL `tip_amount` in Manhattan (trip **103**'s NULL tip
 # MAGIC is in Queens).
 # MAGIC
-# MAGIC For descending tip order:
+# MAGIC The next cell compares two descending tip orders:
 # MAGIC
-# MAGIC - `desc()` places NULLs **last** by default.
-# MAGIC - `desc_nulls_first()` deliberately places NULLs before known tip values.
+# MAGIC - Default `desc()`: NULL tips stay **last**.
+# MAGIC - `desc_nulls_first()`: NULL tips move **first**, ahead of known tip values.
 # MAGIC
-# MAGIC For this "highest known tip" ranking, a NULL tip has no known numeric
-# MAGIC value, so `desc_nulls_last()` expresses the intended order clearly
-# MAGIC (`desc_nulls_last()` matches the descending default; write it explicitly
-# MAGIC when the placement matters).
+# MAGIC For a "highest known tip" ranking, prefer `desc_nulls_last()` so NULL tips
+# MAGIC do not win early ranks. That matches Spark's descending default — write
+# MAGIC `desc_nulls_last()` explicitly when the placement matters.
 
 # COMMAND ----------
 
@@ -441,8 +444,9 @@ tip_desc_nulls_first.filter(
 
 # DBTITLE 1,Section 3 rule of thumb
 # MAGIC %md
-# MAGIC **Rule of thumb:** if an ordered column can contain NULLs, specify the NULL
-# MAGIC placement explicitly so the intended ordering is visible in the code.
+# MAGIC **Rule of thumb:** if an ordered column can contain NULLs, name the NULL
+# MAGIC placement in `orderBy` (`asc_nulls_last()`, `desc_nulls_last()`, and so
+# MAGIC on) so the intended ordering is visible in the code.
 
 # COMMAND ----------
 
