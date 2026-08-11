@@ -62,14 +62,16 @@ trip_driver_assignment = spark.table(trip_driver_assignment_table)  # noqa: F821
 trip_enriched_rows = trip_enriched.count()
 trip_driver_assignment_rows = trip_driver_assignment.count()
 
-print(f"trip_enriched: observed={trip_enriched_rows}, expected=106")
-print(f"trip_driver_assignment: observed={trip_driver_assignment_rows}, expected=100")
+print(f"trip_enriched: {trip_enriched_rows} rows")
+print(f"trip_driver_assignment: {trip_driver_assignment_rows} rows")
 
 # COMMAND ----------
 
 # DBTITLE 1,How does Top-N change the output grain?
 # MAGIC %md
 # MAGIC ## 1. How does Top-N change the output grain?
+# MAGIC
+# MAGIC A mileage review needs each driver's longest trips.
 # MAGIC
 # MAGIC Before applying the Top-N filter, compare what one row represents before and
 # MAGIC after the filter:
@@ -105,25 +107,34 @@ top3_trips_per_driver = driver_ranked.filter(
 
 # COMMAND ----------
 
-# DBTITLE 1,Inspect top 3 trips
+# DBTITLE 1,Inspect top 3 trips and confirm grain
 top3_trips_per_driver.select(
     "driver_id",
+    "driver_name",
     "trip_id",
     "trip_distance_miles",
     "distance_row_number",  # derived column
 ).orderBy(
     "driver_id",
     "distance_row_number",
-).show(truncate=False)
+).show(40, truncate=False)
+
+top3_trips_per_driver_rows = top3_trips_per_driver.count()
+print(f"Top-3 result: {top3_trips_per_driver_rows} rows (12 drivers × 3 trips)")
 
 # COMMAND ----------
 
-# DBTITLE 1,Verify Top-3 grain
-top3_trips_per_driver_rows = top3_trips_per_driver.count()
+# DBTITLE 1,Summarize miles among each driver's top 3 trips
+# MAGIC %md
+# MAGIC After Top-N keeps the rows you need, a later aggregate can summarize them.
+# MAGIC Here: total miles among each driver's three longest trips — still no write.
 
-print(f"input grain: observed={trip_driver_assignment_rows}, expected=100")
-print(f"Top-3 output grain: observed={top3_trips_per_driver_rows}, expected=36")
-print("filter reduced driver-trip rows:", top3_trips_per_driver_rows < trip_driver_assignment_rows)
+# COMMAND ----------
+
+# DBTITLE 1,Total miles in the Top-3 set per driver
+top3_trips_per_driver.groupBy("driver_id").agg(
+    F.sum("trip_distance_miles").alias("top3_total_miles"),
+).orderBy("driver_id").show(truncate=False)
 
 # COMMAND ----------
 
@@ -131,7 +142,9 @@ print("filter reduced driver-trip rows:", top3_trips_per_driver_rows < trip_driv
 # MAGIC %md
 # MAGIC ## 2. What happens when rows tie at the Top-N cutoff?
 # MAGIC
-# MAGIC For driver **D010**, trips **22** and **79** both have **8.81 miles**.
+# MAGIC Exact-N eligibility and "keep every trip tied at the cutoff" are different
+# MAGIC policies — for driver **D010**, trips **22** and **79** both have
+# MAGIC **8.81 miles**.
 # MAGIC
 # MAGIC Both trips are tied at the Top-4 cutoff. Because `row_number` assigns a
 # MAGIC unique position to every row, only one can receive position 4. If the
@@ -191,11 +204,9 @@ d010_rank_top4 = driver_policy_ranked.filter(
 d010_row_number_top4_rows = d010_row_number_top4.count()
 d010_rank_top4_rows = d010_rank_top4.count()
 
-print(f"D010 row_number <= 4: observed={d010_row_number_top4_rows}, expected=4")
-print(f"D010 rank <= 4: observed={d010_rank_top4_rows}")
 print(
-    "rank cutoff kept more rows than exact-N cutoff:",
-    d010_rank_top4_rows > d010_row_number_top4_rows,
+    f"D010: row_number keeps {d010_row_number_top4_rows} rows, "
+    f"rank keeps {d010_rank_top4_rows} — the tie adds an extra row"
 )
 
 d010_rank_top4.select(
@@ -221,11 +232,9 @@ fleet_rank_top4 = driver_policy_ranked.filter(
 fleet_row_number_top4_rows = fleet_row_number_top4.count()
 fleet_rank_top4_rows = fleet_rank_top4.count()
 
-print(f"fleet row_number <= 4: observed={fleet_row_number_top4_rows}, expected=48")
-print(f"fleet rank <= 4: observed={fleet_rank_top4_rows}")
 print(
-    "fleet rank cutoff kept extra tied rows:",
-    fleet_rank_top4_rows > fleet_row_number_top4_rows,
+    f"fleet totals — row_number <= 4: {fleet_row_number_top4_rows}; "
+    f"rank <= 4: {fleet_rank_top4_rows}"
 )
 
 print("rows kept per driver — row_number <= 4:")
@@ -286,6 +295,9 @@ driver_stable_ranked.filter(
 # DBTITLE 1,How does NULL placement affect window ordering?
 # MAGIC %md
 # MAGIC ## 3. How does NULL placement affect window ordering?
+# MAGIC
+# MAGIC Undated trips and missing tips change who appears first in an ordered
+# MAGIC borough report.
 # MAGIC
 # MAGIC Adding `row_number` changes the order position, not the number of rows:
 # MAGIC the result still has **106 trips**.
@@ -356,14 +368,6 @@ trip_date_nulls_last.filter(
 # MAGIC   `date_row_number` values.
 # MAGIC - `asc_nulls_last()`: the same trips appear at the **end** of the borough
 # MAGIC   ordering.
-
-# COMMAND ----------
-
-# DBTITLE 1,Verify window grain is still one row per trip
-trip_date_nulls_last_rows = trip_date_nulls_last.count()
-
-print(f"after date window: observed={trip_date_nulls_last_rows}, expected=106")
-print("window preserved trip grain:", trip_date_nulls_last_rows == trip_enriched_rows)
 
 # COMMAND ----------
 
@@ -440,10 +444,8 @@ tip_desc_nulls_first.filter(
 # MAGIC %md
 # MAGIC ## 4. How do we draw a reproducible subset of rows?
 # MAGIC
-# MAGIC Sometimes we do not want the highest or lowest rows. We simply need a
-# MAGIC subset of the data for testing, validation, or inspection.
-# MAGIC
-# MAGIC Spark provides three useful patterns:
+# MAGIC Before running a fare audit across all trips, you may need a smaller
+# MAGIC reproducible subset to spot-check. Spark provides three useful patterns:
 # MAGIC
 # MAGIC | API | Use it when |
 # MAGIC |---|---|
@@ -467,9 +469,7 @@ trip_sample_a = trip_enriched.sample(
 
 trip_sample_a_rows = trip_sample_a.count()
 
-print(f"trip_enriched rows: {trip_enriched_rows}")
-print(f"sample A (~0.2, seed=42) rows: {trip_sample_a_rows}")
-print("sample returned fewer rows than the full table:", trip_sample_a_rows < trip_enriched_rows)
+print(f"sample (~0.2, seed=42): {trip_sample_a_rows} rows from {trip_enriched_rows}")
 
 trip_sample_a.select(
     "trip_id",
@@ -489,9 +489,7 @@ trip_sample_b = trip_enriched.sample(
 
 trip_sample_b_rows = trip_sample_b.count()
 
-print(f"sample A rows: {trip_sample_a_rows}")
-print(f"sample B rows: {trip_sample_b_rows}")
-print("same seed → same row count:", trip_sample_a_rows == trip_sample_b_rows)
+print(f"Sample B: {trip_sample_b_rows} rows (same as A)")
 
 only_in_a = (
     trip_sample_a.select("trip_id")
@@ -503,9 +501,10 @@ only_in_b = (
     .subtract(trip_sample_a.select("trip_id"))
     .count()
 )
-print(f"trip_ids only in A: {only_in_a}")
-print(f"trip_ids only in B: {only_in_b}")
-print("same seed → same trip_id set:", only_in_a == 0 and only_in_b == 0)
+print(
+    f"Trips only in A: {only_in_a}, only in B: {only_in_b} — "
+    "same seed produces identical subsets"
+)
 
 # COMMAND ----------
 
@@ -545,11 +544,6 @@ trip_sample_by_service.groupBy("service_type").count().orderBy("service_type").s
     truncate=False,
 )
 
-unknown_in_sample = trip_sample_by_service.filter(
-    F.col("service_type") == "UNKNOWN",
-).count()
-print(f"UNKNOWN rows in sampleBy result: observed={unknown_in_sample}, expected=0")
-
 # COMMAND ----------
 
 # DBTITLE 1,How do we split rows into seeded subsets?
@@ -574,15 +568,27 @@ subset_a, subset_b = trip_driver_assignment.randomSplit(
 subset_a_rows = subset_a.count()
 subset_b_rows = subset_b.count()
 
-print(f"subset A rows: {subset_a_rows}")
-print(f"subset B rows: {subset_b_rows}")
-print(f"subset A + B: observed={subset_a_rows + subset_b_rows}, expected=100")
+print(f"\nsubset A ({subset_a_rows} rows):")
+subset_a.select(
+    "driver_id",
+    "trip_id",
+    "trip_distance_miles",
+).show(5, truncate=False)
+
+print(f"subset B ({subset_b_rows} rows):")
+subset_b.select(
+    "driver_id",
+    "trip_id",
+    "trip_distance_miles",
+).show(5, truncate=False)
 
 # COMMAND ----------
 
 # DBTITLE 1,Exercise — Top tips per borough with explicit NULL placement
 # MAGIC %md
 # MAGIC ## Exercise — Top tips per borough with explicit NULL placement
+# MAGIC
+# MAGIC Which 2 trips per `pickup_borough` had the highest known tips?
 # MAGIC
 # MAGIC Repeat the Top-N pattern on `trip_enriched`, partitioned by
 # MAGIC `pickup_borough`.
@@ -598,8 +604,7 @@ print(f"subset A + B: observed={subset_a_rows + subset_b_rows}, expected=100")
 # MAGIC | `tip_row_number` | `row_number` within `pickup_borough`, tip descending, NULLs last |
 # MAGIC | filter | keep `tip_row_number <= 2` |
 # MAGIC
-# MAGIC Predict the output row count (Top-2 per pickup borough), then build and
-# MAGIC verify.
+# MAGIC Predict the output row count, then build, verify, and inspect.
 
 # COMMAND ----------
 
