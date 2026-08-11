@@ -2,27 +2,40 @@
 # MAGIC %md
 # MAGIC # 08 - Build KPI Tables
 # MAGIC
-# MAGIC Build three analytics KPI tables from Module 7's managed sources and write
-# MAGIC them as Unity Catalog managed Delta tables. Module 9 reads these tables and
-# MAGIC re-expresses the same logic in Spark SQL (dual-API check).
+# MAGIC In this notebook, we bring together the aggregation and window patterns from
+# MAGIC this module to build three analytics-ready KPI tables.
 # MAGIC
-# MAGIC This notebook applies patterns from Notebooks **01–07** (`groupBy` / `agg`,
-# MAGIC NULL-aware filters, `collect_set`, aggregate-then-`dense_rank`). It does not
-# MAGIC introduce new APIs.
+# MAGIC We will create:
 # MAGIC
-# MAGIC | Table | Grain | Rows |
+# MAGIC | KPI table | Grain | Expected rows |
 # MAGIC |---|---|---:|
-# MAGIC | `rideshare_dev.processed.kpi_daily_trip_summary` | one per `trip_date` | 14 |
-# MAGIC | `rideshare_dev.processed.kpi_zone_performance` | one per (`pickup_borough`, `pickup_zone`) | 20 |
-# MAGIC | `rideshare_dev.processed.kpi_driver_productivity` | one per `driver_id` | 12 |
+# MAGIC | `rideshare_dev.processed.kpi_daily_trip_summary` | one row per `trip_date` | 14 |
+# MAGIC | `rideshare_dev.processed.kpi_zone_performance` | one row per (`pickup_borough`, `pickup_zone`) | 20 |
+# MAGIC | `rideshare_dev.processed.kpi_driver_productivity` | one row per `driver_id` | 12 |
 # MAGIC
-# MAGIC Column contracts: this module's README — Paths and outputs.
-# MAGIC Write-only — no exercise (same pattern as Module 7 Notebook **07**).
+# MAGIC The notebook uses patterns covered in Notebooks **01–07**, including:
+# MAGIC
+# MAGIC - `groupBy` and `agg`
+# MAGIC - NULL-aware aggregation
+# MAGIC - `collect_set`
+# MAGIC - aggregate first, then rank
+# MAGIC
+# MAGIC Each result is written as a **Unity Catalog managed Delta table**. Module 9
+# MAGIC will read these tables and reproduce the same KPI logic using Spark SQL.
+# MAGIC
+# MAGIC This is a **write-only notebook** — there is no exercise.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ##### LOAD: `trip_enriched` and `trip_driver_assignment`
+# MAGIC
+# MAGIC Load the two managed tables created in Module 7:
+# MAGIC
+# MAGIC - `trip_enriched` — used for the daily and pickup-zone KPIs
+# MAGIC - `trip_driver_assignment` — used for the driver productivity KPI
+# MAGIC
+# MAGIC We also check the source row counts before building the KPI tables.
 
 # COMMAND ----------
 
@@ -42,26 +55,46 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### What does daily trip volume look like across the fleet's 14 active days?
+# MAGIC ### 1. What does daily trip activity look like?
 # MAGIC
-# MAGIC Finance wants one summary row per calendar day — trip counts, fares, tips,
-# MAGIC payouts, distance, and average duration — so Module 9 can chart trends and
-# MAGIC running totals.
+# MAGIC Finance wants a daily view of trip activity so it can compare volume,
+# MAGIC revenue, payouts, distance, and ride duration across days.
 # MAGIC
-# MAGIC **Grain:** one row per `trip_date` → **14** rows (2026-03-01 – 2026-03-14).
+# MAGIC For each day, we will calculate:
 # MAGIC
-# MAGIC **Filter first:** drop NULL `trip_date` (trips **101–106**). Those six undated
-# MAGIC trips are also the only rows with measure NULLs. After the filter, the
-# MAGIC remaining **100** trips are fully populated on fare, tip, payout, and
-# MAGIC distance — the explicit filter **is** the NULL-handling for this KPI.
+# MAGIC - number of trips
+# MAGIC - total base fare
+# MAGIC - total tips
+# MAGIC - total driver payout
+# MAGIC - total distance
+# MAGIC - average trip distance
+# MAGIC - average ride duration
 # MAGIC
-# MAGIC `total_distance_miles` is included so Module 9 can build running totals /
-# MAGIC `lag` over dates without re-aggregating trips.
+# MAGIC The output grain is:
+# MAGIC
+# MAGIC **one row per `trip_date`**
+# MAGIC
+# MAGIC The dataset covers **14 dated days**, from **2026-03-01 through
+# MAGIC 2026-03-14**, so the final KPI should contain **14 rows**.
+# MAGIC
+# MAGIC Trips **101–106** have a NULL `trip_date`, so we remove them before
+# MAGIC grouping. Those same rows contain the NULL measures in this dataset,
+# MAGIC which means the remaining **100 dated trips** have complete values for
+# MAGIC the measures used here.
+# MAGIC
+# MAGIC We keep `total_distance_miles` in the KPI because Module 9 will use the
+# MAGIC daily values for calculations such as **running totals and `lag` across
+# MAGIC dates**.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `1a: Filter dated trips and aggregate`
+# MAGIC ##### `1a: Keep dated trips and aggregate by day`
+# MAGIC
+# MAGIC First, remove rows where `trip_date` is NULL.
+# MAGIC
+# MAGIC Then group the remaining trips by `trip_date` and calculate the daily
+# MAGIC measures.
 
 # COMMAND ----------
 
@@ -81,7 +114,12 @@ kpi_daily_trip_summary = dated_trip.groupBy("trip_date").agg(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `1b: Preview daily KPI`
+# MAGIC ##### `1b: Preview the daily KPI`
+# MAGIC
+# MAGIC Sort the result by `trip_date` so we can inspect the daily values in
+# MAGIC calendar order.
+# MAGIC
+# MAGIC We expect **14 rows — one for each active date**.
 
 # COMMAND ----------
 
@@ -90,7 +128,11 @@ kpi_daily_trip_summary.orderBy("trip_date").show(14, truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `1c: Write daily KPI`
+# MAGIC ##### `1c: Write the daily KPI table`
+# MAGIC
+# MAGIC Save the result as the managed table:
+# MAGIC
+# MAGIC `rideshare_dev.processed.kpi_daily_trip_summary`
 
 # COMMAND ----------
 
@@ -101,7 +143,11 @@ kpi_daily_trip_summary.write.mode("overwrite").saveAsTable(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `1d: Verify daily KPI`
+# MAGIC ##### `1d: Verify the daily KPI`
+# MAGIC
+# MAGIC Read the saved table back and verify its row count.
+# MAGIC
+# MAGIC Because the grain is **one row per `trip_date`**, we expect **14 rows**.
 
 # COMMAND ----------
 
@@ -113,35 +159,65 @@ print(f"kpi_daily_trip_summary: {daily_out.count()} rows")  # expect 14
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Which pickup zones generate the most revenue, and how do tip rates compare?
+# MAGIC ### 2. Which pickup zones generate the most business?
 # MAGIC
-# MAGIC Ops wants pickup-zone performance — trip volume, fare and tip totals, and an
-# MAGIC aggregate tip percent — across every trip in `trip_enriched`.
+# MAGIC Operations wants to compare performance across pickup zones.
 # MAGIC
-# MAGIC **Grain:** one row per (`pickup_borough`, `pickup_zone`) → **20** rows.
+# MAGIC For each pickup zone, we will calculate:
 # MAGIC
-# MAGIC Uses **all 106** rows (no date filter). This is the module's **primary
-# MAGIC NULL-aggregate surface** — `sum` / `avg` skip NULLs inside affected zones.
+# MAGIC - trip count
+# MAGIC - total base fare
+# MAGIC - total tips
+# MAGIC - tip percentage (`tip_percent_of_base`)
+# MAGIC - average trip distance
+# MAGIC - average ride duration
 # MAGIC
-# MAGIC | Pickup zone | NULL measures | Source trip(s) |
-# MAGIC |---|---|---|
+# MAGIC The output grain is:
+# MAGIC
+# MAGIC **one row per (`pickup_borough`, `pickup_zone`)**
+# MAGIC
+# MAGIC There are **20 pickup zones**, so the final KPI should contain **20 rows**.
+# MAGIC
+# MAGIC Unlike the daily KPI, this calculation uses **all 106 trips**. Some of the
+# MAGIC additional trips contain NULL measure values, which gives us a useful
+# MAGIC example of how Spark aggregates handle NULLs.
+# MAGIC
+# MAGIC | Pickup zone | NULL measure | Trip |
+# MAGIC |---|---|---:|
 # MAGIC | Manhattan / Financial District | `base_fare_amount` | 104 |
-# MAGIC | Manhattan / Harlem | `base_fare`, `tip`, `distance` (densest) | 106 |
+# MAGIC | Manhattan / Harlem | `base_fare_amount`, `tip_amount`, `trip_distance_miles` | 106 |
 # MAGIC | Queens / Astoria | `tip_amount`, `trip_distance_miles` | 103 |
-# MAGIC | Brooklyn / Williamsburg | `trip_distance_miles` only | 105 |
+# MAGIC | Brooklyn / Williamsburg | `trip_distance_miles` | 105 |
 # MAGIC
-# MAGIC For Williamsburg, NULL distance lowers the denominator of
-# MAGIC `avg_distance_miles` (avg skips that row) while `trip_count` still includes
-# MAGIC the trip.
+# MAGIC Spark's `sum` and `avg` ignore NULL values rather than treating them as
+# MAGIC zero.
 # MAGIC
-# MAGIC **`tip_percent_of_base`:** `100 * sum(tip) / sum(base)` when
-# MAGIC `sum(base) > 0`, else NULL — aggregate ratio, not the average of row-level
-# MAGIC percents. The guard is defensive (no zone has a zero base sum here).
+# MAGIC For example, the Williamsburg trip with NULL distance still contributes to
+# MAGIC `trip_count`, but it does not contribute to `avg_distance_miles`.
+# MAGIC
+# MAGIC We also calculate `tip_percent_of_base` from the **total tips for the
+# MAGIC zone** and the **total base fare for the zone**:
+# MAGIC
+# MAGIC `total_tip / total_base_fare × 100`
+# MAGIC
+# MAGIC This is a ratio of aggregated totals, not an average of trip-level
+# MAGIC percentages.
+# MAGIC
+# MAGIC The calculation is applied only when the total base fare is greater than
+# MAGIC **0**. Otherwise, the result is NULL.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ##### `2a: Aggregate by pickup zone`
+# MAGIC
+# MAGIC Group the trips by:
+# MAGIC
+# MAGIC - `pickup_borough`
+# MAGIC - `pickup_zone`
+# MAGIC
+# MAGIC Then calculate the volume, fare, tip, distance, and duration measures for
+# MAGIC each zone.
 
 # COMMAND ----------
 
@@ -171,7 +247,12 @@ kpi_zone_performance = trip_enriched.groupBy(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `2b: Preview zone KPI`
+# MAGIC ##### `2b: Preview the zone KPI`
+# MAGIC
+# MAGIC Sort by `pickup_borough` and `pickup_zone` so the output is easy to
+# MAGIC inspect.
+# MAGIC
+# MAGIC We expect **20 rows — one for each pickup zone**.
 
 # COMMAND ----------
 
@@ -183,7 +264,11 @@ kpi_zone_performance.orderBy(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `2c: Write zone KPI`
+# MAGIC ##### `2c: Write the zone KPI table`
+# MAGIC
+# MAGIC Save the result as the managed table:
+# MAGIC
+# MAGIC `rideshare_dev.processed.kpi_zone_performance`
 
 # COMMAND ----------
 
@@ -194,7 +279,11 @@ kpi_zone_performance.write.mode("overwrite").saveAsTable(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `2d: Verify zone KPI`
+# MAGIC ##### `2d: Verify the zone KPI`
+# MAGIC
+# MAGIC Read the saved table back and verify its row count.
+# MAGIC
+# MAGIC Because the grain is **one row per pickup zone**, we expect **20 rows**.
 
 # COMMAND ----------
 
@@ -206,23 +295,45 @@ print(f"kpi_zone_performance: {zone_out.count()} rows")  # expect 20
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Which drivers cover the most distance across the fleet?
+# MAGIC ### 3. Which drivers cover the most distance?
 # MAGIC
-# MAGIC Fleet ops wants one productivity row per driver — trip count, total
-# MAGIC distance, average ride duration, service mix — then a fleet-wide distance
-# MAGIC rank.
+# MAGIC Fleet operations wants a productivity summary for every driver.
 # MAGIC
-# MAGIC **Grain:** one row per `driver_id` → **12** rows.
+# MAGIC For each driver, we will calculate:
 # MAGIC
-# MAGIC **Source:** `trip_driver_assignment` (trips 1–100 only; **no NULLs**).
+# MAGIC - number of trips
+# MAGIC - total distance driven
+# MAGIC - average ride duration
+# MAGIC - service types handled
 # MAGIC
-# MAGIC **Two-step pattern:** aggregate first, then `dense_rank` the aggregated
-# MAGIC result (do not rank trip-level rows and collapse afterward).
+# MAGIC We will then rank drivers across the fleet by **total distance driven**.
+# MAGIC
+# MAGIC The source is `trip_driver_assignment`, which contains trips **1–100** and
+# MAGIC has complete values for the measures used here.
+# MAGIC
+# MAGIC The output grain is:
+# MAGIC
+# MAGIC **one row per `driver_id`**
+# MAGIC
+# MAGIC There are **12 drivers**, so the final KPI should contain **12 rows**.
+# MAGIC
+# MAGIC This calculation uses two steps:
+# MAGIC
+# MAGIC 1. aggregate the trip rows into one row per driver
+# MAGIC 2. rank those driver-level rows by total distance
+# MAGIC
+# MAGIC The ranking therefore compares **driver totals**, not individual trips.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `3a: Aggregate per driver`
+# MAGIC ##### `3a: Aggregate by driver`
+# MAGIC
+# MAGIC Group the trips by `driver_id` and calculate one productivity row for each
+# MAGIC driver.
+# MAGIC
+# MAGIC We also collect the distinct `service_type` values handled by each driver
+# MAGIC into an array.
 
 # COMMAND ----------
 
@@ -238,7 +349,14 @@ driver_agg = trip_driver_assignment.groupBy("driver_id").agg(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `3b: Rank by total distance (fleet-wide)`
+# MAGIC ##### `3b: Rank drivers by total distance`
+# MAGIC
+# MAGIC The DataFrame now contains **one row per driver**.
+# MAGIC
+# MAGIC Create a fleet-wide window ordered by `total_distance_miles` from highest
+# MAGIC to lowest, then use `dense_rank` to assign each driver a distance rank.
+# MAGIC
+# MAGIC Drivers with the same total distance receive the same rank.
 
 # COMMAND ----------
 
@@ -252,7 +370,15 @@ kpi_driver_productivity = driver_agg.withColumn(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `3c: Preview driver KPI`
+# MAGIC ##### `3c: Preview the driver KPI`
+# MAGIC
+# MAGIC Sort by `distance_dense_rank` so the drivers with the greatest total
+# MAGIC distance appear first.
+# MAGIC
+# MAGIC Use `driver_id` as a secondary display order when drivers share the same
+# MAGIC rank.
+# MAGIC
+# MAGIC We expect **12 rows — one for each driver**.
 
 # COMMAND ----------
 
@@ -264,7 +390,11 @@ kpi_driver_productivity.orderBy(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `3d: Write driver KPI`
+# MAGIC ##### `3d: Write the driver KPI table`
+# MAGIC
+# MAGIC Save the result as the managed table:
+# MAGIC
+# MAGIC `rideshare_dev.processed.kpi_driver_productivity`
 
 # COMMAND ----------
 
@@ -275,7 +405,11 @@ kpi_driver_productivity.write.mode("overwrite").saveAsTable(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### `3e: Verify driver KPI`
+# MAGIC ##### `3e: Verify the driver KPI`
+# MAGIC
+# MAGIC Read the saved table back and verify its row count.
+# MAGIC
+# MAGIC Because the grain is **one row per driver**, we expect **12 rows**.
 
 # COMMAND ----------
 
@@ -289,16 +423,20 @@ print(f"kpi_driver_productivity: {driver_out.count()} rows")  # expect 12
 # MAGIC %md
 # MAGIC ## Output
 # MAGIC
-# MAGIC | Table | Rows | Grain |
-# MAGIC |---|---:|---|
-# MAGIC | `rideshare_dev.processed.kpi_daily_trip_summary` | 14 | one per `trip_date` |
-# MAGIC | `rideshare_dev.processed.kpi_zone_performance` | 20 | one per (`pickup_borough`, `pickup_zone`) |
-# MAGIC | `rideshare_dev.processed.kpi_driver_productivity` | 12 | one per `driver_id` |
+# MAGIC This notebook created three analytics-ready KPI tables:
 # MAGIC
-# MAGIC **Pattern:** filter (when needed) → aggregate → preview → write → count.
+# MAGIC | Table | Grain | Expected rows |
+# MAGIC |---|---|---:|
+# MAGIC | `rideshare_dev.processed.kpi_daily_trip_summary` | one row per `trip_date` | 14 |
+# MAGIC | `rideshare_dev.processed.kpi_zone_performance` | one row per (`pickup_borough`, `pickup_zone`) | 20 |
+# MAGIC | `rideshare_dev.processed.kpi_driver_productivity` | one row per `driver_id` | 12 |
 # MAGIC
-# MAGIC Written with `.mode("overwrite").saveAsTable(...)`. Cleared by Module 5
-# MAGIC Notebook **99** Level 4 (catalog teardown), same as Module 7 managed tables.
+# MAGIC Across the three KPIs, the workflow follows the same pattern:
 # MAGIC
-# MAGIC **Next:** Module 9 re-expresses these KPIs in Spark SQL and validates both
-# MAGIC APIs produce matching results.
+# MAGIC **prepare the input → aggregate → inspect → write → verify**
+# MAGIC
+# MAGIC The results are stored as **Unity Catalog managed Delta tables** using
+# MAGIC `saveAsTable()`.
+# MAGIC
+# MAGIC In **Module 9**, we will reproduce the same KPI calculations using Spark
+# MAGIC SQL and compare the SQL results with the DataFrame results.
