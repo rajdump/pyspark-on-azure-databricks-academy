@@ -282,8 +282,9 @@ driver_stable_ranked.filter(
 # MAGIC
 # MAGIC - `row_number <= 4` keeps exactly **4** rows. Only one of the tied trips
 # MAGIC   receives the final slot.
-# MAGIC - `rank <= 4` keeps every row ranked **4**. Because both trips share rank
-# MAGIC   **4**, both are kept so that the result can contain more than **4** rows.
+# MAGIC - `rank <= 4` keeps every row with `distance_rank <= 4`. Because both trips
+# MAGIC   share rank **4**, both are kept so that the result can contain more than
+# MAGIC   **4** rows.
 # MAGIC
 # MAGIC Across the full fleet, `row_number <= 4` always returns **48** rows
 # MAGIC (12 drivers × 4 trips). With `rank <= 4`, the row count increases whenever
@@ -388,14 +389,13 @@ trip_date_nulls_last.filter(
 # MAGIC Trip **106** has NULL `tip_amount` in Manhattan (trip **103**'s NULL tip
 # MAGIC is in Queens).
 # MAGIC
-# MAGIC The next cell compares two descending tip orders:
+# MAGIC The next cells compare two descending tip orders, then show the explicit
+# MAGIC helper for a "highest known tip" ranking:
 # MAGIC
 # MAGIC - Default `desc()`: NULL tips stay **last**.
 # MAGIC - `desc_nulls_first()`: NULL tips move **first**, ahead of known tip values.
-# MAGIC
-# MAGIC For a "highest known tip" ranking, prefer `desc_nulls_last()` so NULL tips
-# MAGIC do not win early ranks. That matches Spark's descending default — write
-# MAGIC `desc_nulls_last()` explicitly when the placement matters.
+# MAGIC - `desc_nulls_last()`: same NULL placement as default `desc()`, written
+# MAGIC   explicitly so known tips rank before NULLs.
 
 # COMMAND ----------
 
@@ -442,6 +442,30 @@ tip_desc_nulls_first.filter(
 
 # COMMAND ----------
 
+# DBTITLE 1,desc_nulls_last — highest known tip first
+nulls_last_tip_window = Window.partitionBy("pickup_borough").orderBy(
+    F.col("tip_amount").desc_nulls_last(),
+)
+
+tip_desc_nulls_last = trip_enriched.withColumn(
+    "tip_row_number",
+    F.row_number().over(nulls_last_tip_window),
+)
+
+print("tip desc_nulls_last — Manhattan:")
+tip_desc_nulls_last.filter(
+    F.col("pickup_borough") == "Manhattan",
+).select(
+    "pickup_borough",
+    "trip_id",
+    "tip_amount",
+    "tip_row_number",  # derived column
+).orderBy(
+    "tip_row_number",
+).show(10, truncate=False)
+
+# COMMAND ----------
+
 # DBTITLE 1,Section 3 rule of thumb
 # MAGIC %md
 # MAGIC **Rule of thumb:** if an ordered column can contain NULLs, name the NULL
@@ -454,27 +478,33 @@ tip_desc_nulls_first.filter(
 # MAGIC %md
 # MAGIC ## 4. How do we draw a reproducible subset of rows?
 # MAGIC
-# MAGIC Before running a fare audit across all trips, you may need a smaller
-# MAGIC reproducible subset to spot-check. Spark provides three useful patterns:
+# MAGIC Before running a fare audit across the full trip dataset, you may want a
+# MAGIC smaller subset for quick spot-checks. Spark provides three useful options:
 # MAGIC
 # MAGIC | API | Use it when |
 # MAGIC |---|---|
-# MAGIC | `sample` | Draw an approximate fraction of the DataFrame |
-# MAGIC | `sampleBy` | Draw different fractions for different key values |
-# MAGIC | `randomSplit` | Divide the DataFrame into reproducible subsets |
+# MAGIC | `sample` | Select an approximate fraction of rows |
+# MAGIC | `sampleBy` | Sample different fractions for different key values |
+# MAGIC | `randomSplit` | Split the DataFrame into multiple subsets |
 # MAGIC
-# MAGIC Pass a `seed` when you need the sampling operation to be reproducible for
-# MAGIC the same input.
+# MAGIC Use a **`seed`** when you want the random selection to be repeatable for the
+# MAGIC same input data and sampling configuration.
 # MAGIC
 # MAGIC ### 4a. `sample` — approximate fraction and seed reproducibility
+# MAGIC
+# MAGIC `fraction` is a per-row probability, not a guaranteed row count — so
+# MAGIC `0.2` means "about 20%," not exactly one-fifth of the table.
+# MAGIC
+# MAGIC The next cells draw a seeded sample, then confirm the same seed on the
+# MAGIC same input returns the same `trip_id` set.
 
 # COMMAND ----------
 
 # DBTITLE 1,sample with seed 42
 trip_sample_a = trip_enriched.sample(
-    withReplacement=False,
-    fraction=0.2,
-    seed=42,
+    withReplacement=False,  # each row can appear at most once
+    fraction=0.2,  # aim for about 20% of rows (not an exact count)
+    seed=42,  # fixed starting number so a rerun keeps the same rows
 )
 
 trip_sample_a_rows = trip_sample_a.count()
@@ -492,9 +522,9 @@ trip_sample_a.select(
 
 # DBTITLE 1,Verify the same seed reproduces the sample
 trip_sample_b = trip_enriched.sample(
-    withReplacement=False,
-    fraction=0.2,
-    seed=42,
+    withReplacement=False,  # each row can appear at most once
+    fraction=0.2,  # aim for about 20% of rows (not an exact count)
+    seed=42,  # fixed starting number so a rerun keeps the same rows
 )
 
 trip_sample_b_rows = trip_sample_b.count()
@@ -522,11 +552,15 @@ print(
 # MAGIC %md
 # MAGIC ### 4b. Which service types get sampled?
 # MAGIC
-# MAGIC `sampleBy` draws within each key using the fractions you supply. Keys
-# MAGIC **omitted** from the map are not sampled (fraction 0).
+# MAGIC `sampleBy` samples rows **within each key** using the fraction assigned to that
+# MAGIC key.
 # MAGIC
-# MAGIC The map below includes four service types and **omits** `UNKNOWN`, so the
-# MAGIC sample should contain **0** UNKNOWN rows even though the full table has 2.
+# MAGIC Any key **not included** in the fractions map gets a sampling fraction of **0**
+# MAGIC and is therefore excluded.
+# MAGIC
+# MAGIC Here, the map includes four service types but omits **`UNKNOWN`**. The full
+# MAGIC dataset contains **2 UNKNOWN rows**, but the sampled result should contain
+# MAGIC **0**.
 
 # COMMAND ----------
 
@@ -540,8 +574,8 @@ service_type_fractions = {
 
 trip_sample_by_service = trip_enriched.sampleBy(
     "service_type",
-    fractions=service_type_fractions,
-    seed=42,
+    fractions=service_type_fractions,  # rate per service_type; missing keys are skipped
+    seed=42,  # fixed starting number so a rerun keeps the same sample
 )
 
 print("full counts by service_type:")
@@ -560,19 +594,23 @@ trip_sample_by_service.groupBy("service_type").count().orderBy("service_type").s
 # MAGIC %md
 # MAGIC ### 4c. How do we split rows into seeded subsets?
 # MAGIC
-# MAGIC Use `trip_driver_assignment` here (100 rows, no undated-trip NULLs) so an
-# MAGIC approximately 70/30 split is easy to read. Sections 4a–4b used
-# MAGIC `trip_enriched` because stratification keyed on `service_type` there.
+# MAGIC Use **`trip_driver_assignment`** here because it has **100 rows** and no NULL
+# MAGIC trip dates, making the split easier to inspect.
 # MAGIC
-# MAGIC `[0.7, 0.3]` requests an approximately 70/30 split. The exact row counts
-# MAGIC can vary. With the same input and seed, the split is reproducible.
+# MAGIC Sections **4a–4b** used **`trip_enriched`** because `sampleBy` needed the
+# MAGIC **`service_type`** column.
+# MAGIC
+# MAGIC With `randomSplit([0.7, 0.3], seed=...)`, Spark aims for an approximately
+# MAGIC **70/30 split**. The exact number of rows in each subset can vary.
+# MAGIC
+# MAGIC For the same input and seed, the split is reproducible.
 
 # COMMAND ----------
 
 # DBTITLE 1,Split assignment rows ~70/30 with seed 42
 subset_a, subset_b = trip_driver_assignment.randomSplit(
-    [0.7, 0.3],
-    seed=42,
+    [0.7, 0.3],  # aim for about 70% then 30% (counts can vary)
+    seed=42,  # fixed starting number so a rerun keeps the same split
 )
 
 subset_a_rows = subset_a.count()
