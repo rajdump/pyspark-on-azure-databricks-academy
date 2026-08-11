@@ -109,7 +109,7 @@ Each skill-building notebook ends with a short exercise.
 | 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking-API ties; Top-2 filter-after-rank preview → **07** |
 | 6 | Running Totals and lag/lead | `trip_enriched` | Default `RANGE` vs explicit `ROWS`; ordered `first_value` / `last_value`; daily running totals; `lag` / `lead` |
 | 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N per group (`row_number` + filter; extends **05** Top-2); Top-N selection policy (`row_number <= N` vs `rank <= N`, secondary sort); `nullsFirst` / `nullsLast` (standalone sort placement); `sample` / `sampleBy` / `randomSplit` |
-| 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Parquet outputs |
+| 8 | Build KPI Tables | both managed tables | Write-only: three `kpi_*` Delta outputs |
 
 ## Markdown Quality Gate (Module 8)
 
