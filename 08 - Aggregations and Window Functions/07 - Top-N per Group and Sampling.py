@@ -273,22 +273,28 @@ driver_stable_ranked.filter(
 
 # COMMAND ----------
 
-# DBTITLE 1,What did the two cutoffs keep?
+# DBTITLE 1,What to remember when trips tie at Top-N
 # MAGIC %md
-# MAGIC ### What did the two cutoffs keep?
+# MAGIC ### What to remember when trips tie at Top-N
 # MAGIC
-# MAGIC For D010 at the **4** cutoff:
+# MAGIC First decide how many rows to keep. For D010 at Top-4 (trips 22 and 79 both
+# MAGIC 8.81 miles):
 # MAGIC
-# MAGIC - `row_number <= 4` keeps **4** rows — only one of the 8.81-mile trips fits
-# MAGIC   in the last slot.
-# MAGIC - `rank <= 4` also keeps rows tied at rank **4**, so the result can contain
-# MAGIC   **more than 4** rows.
+# MAGIC - `row_number <= 4` keeps exactly **4** rows. Only one of the tied trips
+# MAGIC   receives the final slot.
+# MAGIC - `rank <= 4` keeps every row ranked **4**. Because both trips share rank
+# MAGIC   **4**, both are kept so that the result can contain more than **4** rows.
 # MAGIC
-# MAGIC Across all 12 drivers, `row_number <= 4` always yields **48** rows
-# MAGIC (12 × 4). `rank <= 4` can exceed 48 wherever a tie sits on the cutoff.
+# MAGIC Across the full fleet, `row_number <= 4` always returns **48** rows
+# MAGIC (12 drivers × 4 trips). With `rank <= 4`, the row count increases whenever
+# MAGIC multiple trips are tied at the cutoff rank.
 # MAGIC
-# MAGIC Adding `trip_id` as a secondary sort key **breaks the distance tie** and
-# MAGIC makes the Top-N order **deterministic for the same input**.
+# MAGIC If the requirement is exactly N rows per driver, add a secondary sort such
+# MAGIC as `trip_id.asc()`. This gives Spark an explicit and repeatable way to
+# MAGIC choose between tied rows for the same input.
+# MAGIC
+# MAGIC The secondary sort does not preserve both tied trips. It only decides which
+# MAGIC one gets the final slot.
 
 # COMMAND ----------
 
