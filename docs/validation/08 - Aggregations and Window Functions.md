@@ -48,3 +48,78 @@ Validated on: 2026-08-08
 
 - Databricks Runtime observed: **17.3 LTS**
 - Serverless compatibility: **not tested**
+
+## `04 - Pivot.py`
+
+Validated on: 2026-08-12
+
+| Compute | Result | Notes |
+|---|---|---|
+| Classic all-purpose, Standard access mode | Passed | Baseline confirmed — `trip_enriched` read, long `groupBy` service-type counts, explicit-value `pivot` to wide layout, high-cardinality caution, and payment-method pivot exercise all ran as expected |
+| Serverless | Not tested | Standard baseline confirmed; serverless not yet run |
+| Classic all-purpose, Dedicated access mode | Not tested | Standard passed, so Dedicated not required for this notebook |
+| Jobs compute | Not applicable | No jobs content in this module |
+| Pipeline-managed compute | Not applicable | No Lakeflow Pipelines content in this module |
+
+- Databricks Runtime observed: **17.3 LTS**
+- Serverless compatibility: **not tested**
+
+## `05 - Window Functions Fundamentals.py`
+
+Validated on: 2026-08-12
+
+| Compute | Result | Notes |
+|---|---|---|
+| Classic all-purpose, Standard access mode | Passed | Baseline confirmed — `trip_enriched` and `trip_driver_assignment` reads, `groupBy` vs window comparison, window aggregates, ranking tie APIs, filter-after-rank Top-2 preview, and service-window exercise all ran as expected |
+| Serverless | Not tested | Standard baseline confirmed; serverless not yet run |
+| Classic all-purpose, Dedicated access mode | Not tested | Standard passed, so Dedicated not required for this notebook |
+| Jobs compute | Not applicable | No jobs content in this module |
+| Pipeline-managed compute | Not applicable | No Lakeflow Pipelines content in this module |
+
+- Databricks Runtime observed: **17.3 LTS**
+- Serverless compatibility: **not tested**
+
+## `06 - Running Totals and Lag and Lead.py`
+
+Validated on: 2026-08-12
+
+| Compute | Result | Notes |
+|---|---|---|
+| Classic all-purpose, Standard access mode | Passed | Baseline confirmed — `trip_enriched` read with NULL-date filter to 100 rows, default `RANGE` running-total trap, `ROWS` frame fix, `lag` / `lead`, and exercise all ran as expected |
+| Serverless | Not tested | Standard baseline confirmed; serverless not yet run |
+| Classic all-purpose, Dedicated access mode | Not tested | Standard passed, so Dedicated not required for this notebook |
+| Jobs compute | Not applicable | No jobs content in this module |
+| Pipeline-managed compute | Not applicable | No Lakeflow Pipelines content in this module |
+
+- Databricks Runtime observed: **17.3 LTS**
+- Serverless compatibility: **not tested**
+
+## `07 - Top-N per Group and Sampling.py`
+
+Validated on: 2026-08-12
+
+| Compute | Result | Notes |
+|---|---|---|
+| Classic all-purpose, Standard access mode | Passed | Baseline confirmed — `trip_enriched` and `trip_driver_assignment` reads, Top-N grain checks, tie-selection (`row_number` vs `rank`), NULL sort placement, `sample` / `sampleBy` / `randomSplit`, and Top-tips exercise all ran as expected |
+| Serverless | Not tested | Standard baseline confirmed; serverless not yet run |
+| Classic all-purpose, Dedicated access mode | Not tested | Standard passed, so Dedicated not required for this notebook |
+| Jobs compute | Not applicable | No jobs content in this module |
+| Pipeline-managed compute | Not applicable | No Lakeflow Pipelines content in this module |
+
+- Databricks Runtime observed: **17.3 LTS**
+- Serverless compatibility: **not tested**
+
+## `08 - Build KPI Tables.py`
+
+Validated on: 2026-08-12
+
+| Compute | Result | Notes |
+|---|---|---|
+| Classic all-purpose, Standard access mode | Passed | Baseline confirmed — `trip_enriched` and `trip_driver_assignment` reads; wrote `kpi_daily_trip_summary` (14), `kpi_zone_performance` (20), and `kpi_driver_productivity` (12) via `saveAsTable` overwrite; row-count verifies matched expected grains |
+| Serverless | Not tested | Standard baseline confirmed; serverless not yet run |
+| Classic all-purpose, Dedicated access mode | Not tested | Standard passed, so Dedicated not required for this notebook |
+| Jobs compute | Not applicable | No jobs content in this module |
+| Pipeline-managed compute | Not applicable | No Lakeflow Pipelines content in this module |
+
+- Databricks Runtime observed: **17.3 LTS**
+- Serverless compatibility: **not tested**

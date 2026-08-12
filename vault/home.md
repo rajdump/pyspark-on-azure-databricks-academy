@@ -27,15 +27,16 @@ tags:
 
 ## Current snapshot
 
-- **Current module:** [Module 08 — Aggregations and Window Functions](../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
-- **Roadmap state:** 7 complete, 1 started, 11 not started
-- **Current authoring:** Notebooks 01–07 authored; next is Notebook 08
-  (managed Delta KPI tables)
-- **Next deliverable:** Module 08 Notebook 08 — Build KPI Tables
+- **Current module:** Module 09 — Spark SQL and DataFrame Interoperability
+  (Not Started)
+- **Roadmap state:** 8 complete, 0 started, 11 not started
+- **Last completed:** [Module 08 — Aggregations and Window Functions](../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
+  — all 8 notebooks validated on classic all-purpose Standard
+- **Next deliverable:** Module 09 module design / first lesson
 - **Runtime baseline:** Databricks Runtime 17.3 LTS, Spark 4.0.0, Python 3.12
 - **Source of truth for status:** [COURSE_MODULES](../COURSE_MODULES.md)
 
-See [[progress#Current focus — Module 08]] for the detailed handoff.
+See [[progress#Current focus — Module 09]] for the detailed handoff.
 
 ## Course map
 
@@ -51,7 +52,7 @@ See [[progress#Current focus — Module 08]] for the detailed handoff.
 - [05 — Reading, Writing, and Schemas](../05%20-%20Reading,%20Writing,%20and%20Schemas/README.md) — complete
 - [06 — Built-in Functions, Complex Types, and UDF Alternatives](../06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives/README.md) — complete
 - [07 — Joins and Set Operations](../07%20-%20Joins%20and%20Set%20Operations/README.md) — complete
-- [08 — Aggregations and Window Functions](../08%20-%20Aggregations%20and%20Window%20Functions/README.md) — started
+- [08 — Aggregations and Window Functions](../08%20-%20Aggregations%20and%20Window%20Functions/README.md) — complete
 - Module 09 — Spark SQL and DataFrame Interoperability — not started
 
 ### Later phases
@@ -91,9 +92,9 @@ Important downstream contracts:
 - `curated/drivers_flat/` — 100 driver-trip assignments
 - `rideshare_dev.processed.trip_enriched` — 106 rows, 16 columns
 - `rideshare_dev.processed.trip_driver_assignment` — 100 rows, 13 columns
-- `rideshare_dev.processed.kpi_daily_trip_summary` — 14 rows (planned; NB08)
-- `rideshare_dev.processed.kpi_zone_performance` — 20 rows (planned; NB08)
-- `rideshare_dev.processed.kpi_driver_productivity` — 12 rows (planned; NB08)
+- `rideshare_dev.processed.kpi_daily_trip_summary` — 14 rows
+- `rideshare_dev.processed.kpi_zone_performance` — 20 rows
+- `rideshare_dev.processed.kpi_driver_productivity` — 12 rows
 
 Canonical schemas, keys, NULL contracts, and paths:
 [dataset overview](../docs/data/dataset-overview.md).

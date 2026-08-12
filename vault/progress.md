@@ -17,21 +17,20 @@ updated: 2026-08-12
 ## At a glance
 
 - **19 planned modules**
-- **7 complete** — Modules 01–07
-- **1 started** — Module 08
+- **8 complete** — Modules 01–08
+- **0 started**
 - **11 not started** — Modules 09–19
-- **44 Databricks source notebooks on disk**
-- **39 notebook entries with recorded runtime evidence**
-- **Current work:** Module 08 Notebook 08 — Build KPI Tables (docs/contracts
-  locked; author `.py` from approved md replica)
+- **45 Databricks source notebooks on disk**
+- **44 notebook entries with recorded runtime evidence**
+- **Current work:** Module 09 — Spark SQL and DataFrame Interoperability
+  (Not Started)
 
 ## Phase summary
 
 | Phase | Modules | Current state |
 |---|---:|---|
 | I — Language and Engine Foundations | 01–04 | Complete |
-| II — Core Data Engineering Skills | 05–07 | Complete |
-| II — Current authoring | 08 | Started |
+| II — Core Data Engineering Skills | 05–08 | Complete |
 | II — Next module | 09 | Not started |
 | III — Lakehouse and Governance | 10–12 | Not started |
 | IV — Production Batch Engineering | 13–15 | Not started |
@@ -48,7 +47,7 @@ updated: 2026-08-12
 | [05 — I/O and schemas](../05%20-%20Reading,%20Writing,%20and%20Schemas/README.md) | Complete | 8 of 8 | 8 of 8 |
 | [06 — Built-ins and complex types](../06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives/README.md) | Complete | 4 of 4 | 4 of 4 |
 | [07 — Joins and set operations](../07%20-%20Joins%20and%20Set%20Operations/README.md) | Complete | 7 of 7 | 7 of 7 |
-| [08 — Aggregations and windows](../08%20-%20Aggregations%20and%20Window%20Functions/README.md) | Started | 7 of 8 | 3 of 8 |
+| [08 — Aggregations and windows](../08%20-%20Aggregations%20and%20Window%20Functions/README.md) | Complete | 8 of 8 | 8 of 8 |
 | 09 — Spark SQL and DataFrame Interoperability | Not started | 0 | 0 |
 | 10–19 | Not started | 0 | 0 |
 
@@ -77,20 +76,13 @@ Reset.py` is included in Module 05's eight files.
   serverless runtime evidence.
 - Module 05 lands canonical formats into Unity Catalog Volumes and separates
   `practice/` from `curated/`.
-- Module 06 produces:
-  - `curated/drivers_flat/`
-  - `curated/trip/` — 106 rows
-  - `curated/payment/` — 105 rows
-- Built-in Spark functions remain the default; Python UDFs are a last-resort
-  contrast.
+- Module 06 produces cleaned curated Parquet under the Volume `curated/`
+  paths.
 
-### Module 07 — Unified managed tables
+### Module 07 — Joins and set operations
 
-- All seven notebooks passed on classic all-purpose Standard compute on
-  2026-08-05.
-- Serverless compatibility has not been tested.
-- The BRD and both mappings are approved and signed off.
-- Outputs:
+- All seven notebooks validated on classic all-purpose Standard (2026-08-05).
+- Managed analytical tables written by Notebook 07:
   - `trip_enriched` — 106 rows, 16 columns
   - `trip_driver_assignment` — 100 rows, 13 columns
 
@@ -100,54 +92,37 @@ Requirements:
 - [Trip enriched mapping](../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_enriched_mapping.md)
 - [Driver assignment mapping](../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_driver_assignment_mapping.md)
 
-## Current focus — Module 08
+### Module 08 — Aggregations and window functions
 
-### Authored
+- All eight notebooks authored and validated on classic all-purpose Standard
+  access mode (Notebooks **01–03** on 2026-08-08; **04–08** on 2026-08-12).
+- Evidence:
+  [Module 08 validation](../docs/validation/08%20-%20Aggregations%20and%20Window%20Functions.md)
+- Serverless not tested (policy: Standard baseline first; serverless is a
+  later compatibility check).
+- Managed KPI tables written by Notebook **08**:
 
-- Notebook 01 — GroupBy and Basic Aggregations — validated
-- Notebook 02 — Multi-column Keys, NULL Groups, and Filter Placement —
-  validated
-- Notebook 03 — Collections, Percentiles, and Distinct Counts — validated
-- Notebook 04 — Pivot — authored, runtime evidence pending
-- Notebook 05 — Window Functions Fundamentals — authored, runtime evidence
-  pending
-- Notebook 06 — Running Totals and Lag and Lead — authored, runtime evidence
-  pending
-- Notebook 07 — Top-N per Group and Sampling — authored with active,
-  uncommitted local polish; runtime evidence pending
-
-The `TODO` markers inside these notebooks are learner exercise scaffolding,
-not unfinished author content.
-
-### Missing
-
-- `08 - Build KPI Tables.py` (md replica approved; contracts in Module 8 README)
-- Runtime evidence for Notebooks 04–08
-- Author-owned roadmap transition from Started to Complete after authoring and
-  Azure validation
-
-### Planned KPI outputs
-
-| Output | Intended grain |
+| Output | Grain |
 |---|---|
 | `rideshare_dev.processed.kpi_daily_trip_summary` | One row per non-NULL `trip_date` — 14 rows |
 | `rideshare_dev.processed.kpi_zone_performance` | One row per pickup borough and pickup zone — 20 rows |
 | `rideshare_dev.processed.kpi_driver_productivity` | One row per `driver_id` — 12 rows |
 
-All three are overwrite-mode managed Delta tables via `saveAsTable`. Column
-contracts: [Module 8 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
+Column contracts:
+[Module 8 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
+
+## Current focus — Module 09
+
+Next module after Module 08 Complete: Spark SQL and DataFrame
+Interoperability — dual API patterns; SQL joins, windows, and `QUALIFY`;
+CTEs and params; end-to-end pipeline using Module 8 managed KPI tables and
+Module 7 managed tables.
 
 ## Next sequence
 
-1. Author Module 08 Notebook 08 (`08 - Build KPI Tables.py`) from the approved
-   md replica and Module 8 README contract.
-2. Run Module 08 Notebooks 04–08 in Azure Databricks using Standard
-   all-purpose compute first.
-3. Record runtime evidence in
-   [Module 08 validation](../docs/validation/08%20-%20Aggregations%20and%20Window%20Functions.md).
-4. Let the author update [COURSE_MODULES](../COURSE_MODULES.md) after the
-   module meets the Complete definition.
-5. Begin Module 09 — Spark SQL and DataFrame Interoperability.
+1. Begin Module 09 — Spark SQL and DataFrame Interoperability.
+2. Optionally run Module 08 serverless compatibility checks and record
+   results in the Module 08 validation file.
 
 ## Documentation and consistency backlog
 
@@ -192,5 +167,5 @@ contracts: [Module 8 README](../08%20-%20Aggregations%20and%20Window%20Functions
 
 - [[home|Vault home]]
 - [[decisions|Course decisions]]
-- [COURSE_MODULES](../COURSE_MODULES.md) — canonical roadmap
+- [COURSE_MODULES](../COURSE_MODULES.md)
 - [Validation policy](../docs/standards/compute-validation-policy.md)
