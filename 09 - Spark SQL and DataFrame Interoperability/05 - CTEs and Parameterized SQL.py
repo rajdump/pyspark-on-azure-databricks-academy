@@ -2,28 +2,25 @@
 # MAGIC %md
 # MAGIC # 05 - CTEs and Parameterized SQL
 # MAGIC
-# MAGIC As SQL queries become more complex when they grow, nested logic can be
-# MAGIC challenging to follow, and hard-coded values can make it difficult to
-# MAGIC reuse the same query.
+# MAGIC As SQL queries grow, nested logic can be hard to follow, and hard-coded
+# MAGIC values make the same query harder to reuse.
 # MAGIC
-# MAGIC In this notebook, we will address both issues:
+# MAGIC In this notebook, we'll address both:
 # MAGIC
-# MAGIC - Use **Common Table Expressions (CTEs)** to break down multi-step SQL
-# MAGIC   queries into named query steps.
-# MAGIC - Utilize **named parameters** to pass values into SQL without
-# MAGIC   manually constructing the query string.
+# MAGIC - **Common table expressions (CTEs)** name each step of a multi-step query
+# MAGIC - **Named parameters** pass values into SQL without building the query
+# MAGIC   string by hand
 # MAGIC
-# MAGIC We will apply both of these techniques to a tip-sharing calculation:
-# MAGIC determining how much of the fleet's total tips originate from a
-# MAGIC specific borough.
+# MAGIC We'll apply both to a tip-share calculation: how much of the fleet's
+# MAGIC total tip comes from a particular borough.
 # MAGIC
-# MAGIC ## Learning Objectives
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Organize multi-step SQL queries using CTEs
-# MAGIC - Combine multiple CTEs within a single query
+# MAGIC - Organize multi-step SQL with CTEs
+# MAGIC - Combine multiple CTEs in one query
 # MAGIC - Compare CTEs with nested subqueries
-# MAGIC - Pass values using named `:params` (instead of f-string SQL)
-# MAGIC - Integrate CTEs and parameters in one query
+# MAGIC - Pass values with named `:params` (not f-string SQL)
+# MAGIC - Combine CTEs and parameters in one query
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` — **106 rows**
 # MAGIC
@@ -36,16 +33,19 @@
 # MAGIC %md
 # MAGIC ## Setup — load `trip_enriched`
 # MAGIC
-# MAGIC We'll use `trip_enriched` — **106 trips**, one row per `trip_id`.
+# MAGIC We'll use `rideshare_dev.processed.trip_enriched` throughout — **106** trips,
+# MAGIC one row per `trip_id`. Each row includes `pickup_borough`, `tip_amount`,
+# MAGIC and `trip_date`.
 # MAGIC
-# MAGIC Three columns drive the examples:
+# MAGIC | pickup_borough | tip_amount | trip_date |
+# MAGIC |---|---:|---|
+# MAGIC | Borough A | 5.00 | day 1 |
+# MAGIC | Borough B | 3.00 | day 1 |
+# MAGIC | Borough A | 2.00 | day 2 |
 # MAGIC
-# MAGIC - `pickup_borough` — grouping
-# MAGIC - `tip_amount` — borough and fleet tip totals
-# MAGIC - `trip_date` — daily tip share later
-# MAGIC
-# MAGIC First we compare each borough's total tip with the fleet total. Later we
-# MAGIC apply the same idea by date for a borough passed as a SQL parameter.
+# MAGIC We will first compare each borough's total tip with the fleet total.
+# MAGIC Later we will apply the same idea by date, for a borough passed as a
+# MAGIC SQL parameter.
 
 # COMMAND ----------
 
