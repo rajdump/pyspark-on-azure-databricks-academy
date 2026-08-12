@@ -72,7 +72,7 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC   COUNT(*) AS trip_count
 # MAGIC FROM rideshare_dev.processed.trip_enriched
 # MAGIC GROUP BY pickup_borough, service_type
-# MAGIC ORDER BY 1, 2
+# MAGIC ORDER BY pickup_borough, service_type
 
 # COMMAND ----------
 
