@@ -12,24 +12,12 @@
 # MAGIC - Apply row-level `CASE WHEN` for absolute `tip_amount_band`
 # MAGIC - Choose among `%sql`, `spark.table`, `spark.sql`→DF, and DF→temp view
 # MAGIC
-# MAGIC ## Module 9 preview
-# MAGIC
-# MAGIC | # | Notebook | Focus |
-# MAGIC |---|---|---|
-# MAGIC | 01 | Dual API Foundations and When to Choose | Bridges + row-level `CASE` |
-# MAGIC | 02 | SQL Joins, Aggregations, and Filtering | JOIN, `GROUP BY`, `HAVING` |
-# MAGIC | 03 | SQL Pivot, Unpivot, and Sampling | Reshape + `TABLESAMPLE` |
-# MAGIC | 04 | SQL Windows and QUALIFY | Ranking, running totals, `LAG` |
-# MAGIC | 05 | CTEs and Parameterized SQL | Named steps + `:params` |
-# MAGIC | 06 | End-to-End SQL Pipeline and Parity Inspection | Rebuild KPIs; inspect diffs |
-# MAGIC
 # MAGIC **Callback:** Module 2 `06 - Querying DataFrames with SQL` already covered
 # MAGIC temp views, `%sql`, and `spark.sql`. This notebook adds UC table paths and
 # MAGIC a when-to-choose habit.
 # MAGIC
 # MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106). **No writes.**
-# MAGIC **No `GROUP BY` / `.groupBy()`** — first Module 9 aggregation is
-# MAGIC `02 - SQL Joins, Aggregations, and Filtering`.
+# MAGIC Aggregations start in `02 - SQL Joins, Aggregations, and Filtering`.
 # MAGIC
 # MAGIC **Prerequisites:** Module 7–8 managed tables; Module 2 SQL intro.
 
@@ -38,8 +26,7 @@
 # MAGIC %md
 # MAGIC ## Setup — load `trip_enriched`
 # MAGIC
-# MAGIC Module 7 wrote this managed table: **one row per `trip_id`**, **106** rows.
-# MAGIC Confirm the count before querying.
+# MAGIC Module 7 managed table: one row per `trip_id`, **106** rows.
 
 # COMMAND ----------
 
@@ -54,11 +41,8 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 1. Direct SQL on a UC table
 # MAGIC
-# MAGIC Business question: glance at tip and borough for a few trips — without
-# MAGIC registering a temp view first.
-# MAGIC
-# MAGIC SQL can name the Unity Catalog table directly:
-# MAGIC `rideshare_dev.processed.trip_enriched`.
+# MAGIC Glance at tip and borough for a few trips. `%sql` can name
+# MAGIC `rideshare_dev.processed.trip_enriched` directly — no temp view.
 
 # COMMAND ----------
 
@@ -82,8 +66,7 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 2. Same projection via DataFrame API
 # MAGIC
-# MAGIC Same physical table, second entry point: the DataFrame already loaded in
-# MAGIC Setup → `.select` → `.limit`. Two APIs, one source.
+# MAGIC Same table via the Setup DataFrame: `.select` → `.limit`.
 
 # COMMAND ----------
 
@@ -99,11 +82,9 @@ trip_enriched.select(
 # MAGIC %md
 # MAGIC ## 3. SQL → DataFrame bridge
 # MAGIC
-# MAGIC `spark.sql(...)` runs SQL and returns a **DataFrame** — continue in Python
-# MAGIC without rewriting the filter.
+# MAGIC `spark.sql(...)` returns a DataFrame.
 # MAGIC
-# MAGIC `WHERE tip_amount IS NOT NULL` keeps rows that have a tip value (**104** of
-# MAGIC 106 if you count). Still row grain — **no aggregation**.
+# MAGIC `WHERE tip_amount IS NOT NULL` → **104** rows.
 
 # COMMAND ----------
 
@@ -116,18 +97,15 @@ known_tips = spark.sql(  # noqa: F821
 )
 
 print(f"known_tips: {known_tips.count()} rows")  # expect 104
-known_tips.select("trip_id", "tip_amount", "pickup_borough").limit(5).show()
+known_tips.limit(5).show()
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 4. Row-level `CASE WHEN` (absolute tip bands)
 # MAGIC
-# MAGIC `CASE WHEN` here is a **row transform** — each trip gets a label; the row
-# MAGIC count stays **106**. This is not grouping.
-# MAGIC
-# MAGIC Column: `tip_amount_band`. These are **absolute dollar bands**, not the
-# MAGIC Module 6 percent-of-base `tip_band`.
+# MAGIC Add `tip_amount_band` with `CASE WHEN` — still **106** rows. Absolute
+# MAGIC dollar bands (≠ Module 6 percent `tip_band`):
 # MAGIC
 # MAGIC | Condition | Band |
 # MAGIC |---|---|
@@ -137,8 +115,7 @@ known_tips.select("trip_id", "tip_amount", "pickup_borough").limit(5).show()
 # MAGIC | `<= 6` | `medium` |
 # MAGIC | else | `high` |
 # MAGIC
-# MAGIC Validated distribution (stated here so we do not need `GROUP BY` yet):
-# MAGIC **zero 26 / low 40 / medium 20 / high 18 / no_data 2**.
+# MAGIC Expected: **zero 26 / low 40 / medium 20 / high 18 / no_data 2**.
 
 # COMMAND ----------
 
@@ -161,9 +138,8 @@ known_tips.select("trip_id", "tip_amount", "pickup_borough").limit(5).show()
 # MAGIC %md
 # MAGIC ## 5. DataFrame → SQL bridge
 # MAGIC
-# MAGIC When a computed DataFrame needs a SQL name, register it with
-# MAGIC `createOrReplaceTempView` (Module 2 callback — `%sql` resolves names, not
-# MAGIC Python variables).
+# MAGIC Register a computed DataFrame with `createOrReplaceTempView` so `%sql` can
+# MAGIC use a name (Module 2 — `%sql` resolves names, not Python variables).
 
 # COMMAND ----------
 
@@ -191,15 +167,12 @@ print("Temp view registered: trip_tip_band")
 # MAGIC %md
 # MAGIC ## 6. When to choose
 # MAGIC
-# MAGIC The cells above already proved each path. Use this table when you start a
-# MAGIC new cell:
-# MAGIC
 # MAGIC | Entry point | Use when |
 # MAGIC |---|---|
 # MAGIC | Direct `%sql` on a UC table | Whole cell is SQL; table already has a catalog name |
-# MAGIC | `spark.table` → DataFrame API | You want PySpark transforms / reuse a loaded DF |
+# MAGIC | `spark.table` → DataFrame API | PySpark transforms / reuse a loaded DF |
 # MAGIC | `spark.sql(...)` → DataFrame | Filter or project in SQL, then continue in Python |
-# MAGIC | DF → `createOrReplaceTempView` | You computed columns in PySpark and need a SQL name |
+# MAGIC | DF → `createOrReplaceTempView` | Computed columns in PySpark need a SQL name |
 # MAGIC
 # MAGIC Pick one entry point per cell and stay consistent inside that cell.
 
@@ -208,17 +181,14 @@ print("Temp view registered: trip_tip_band")
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Return Manhattan trips that have a known tip, labeled with
-# MAGIC `tip_amount_band`.
+# MAGIC Return Manhattan trips with a known tip, labeled with `tip_amount_band`.
 # MAGIC
 # MAGIC Requirements:
 # MAGIC
 # MAGIC - `WHERE pickup_borough = 'Manhattan'` and `tip_amount IS NOT NULL`
 # MAGIC - Same absolute `CASE` bands as Section 4
 # MAGIC - SQL only — no PySpark rewrite
-# MAGIC
-# MAGIC Also add a one-line SQL comment stating which entry point you would choose
-# MAGIC for this query and why (1–2 sentences).
+# MAGIC - One SQL comment: which entry point you would choose and why
 # MAGIC
 # MAGIC **Expected:** **43** rows.
 
@@ -244,8 +214,7 @@ print("Temp view registered: trip_tip_band")
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - Four entry points: `%sql`, `spark.table`, `spark.sql`→DF, DF→temp view
-# MAGIC - `CASE WHEN` at row grain labels every trip (`tip_amount_band`); count stays 106
-# MAGIC - Absolute dollar bands ≠ Module 6 percent `tip_band`
+# MAGIC - Row-level `CASE WHEN` → `tip_amount_band` (106 rows; absolute ≠ Module 6 `tip_band`)
 # MAGIC
-# MAGIC **Next:** `02 - SQL Joins, Aggregations, and Filtering` — first Module 9
-# MAGIC `GROUP BY`, JOIN with aliases, and `HAVING`.
+# MAGIC **Next:** `02 - SQL Joins, Aggregations, and Filtering` — JOIN aliases,
+# MAGIC first Module 9 `GROUP BY`, `HAVING`.
