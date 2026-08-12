@@ -2,8 +2,8 @@
 # MAGIC %md
 # MAGIC # 04 - SQL Windows and QUALIFY
 # MAGIC
-# MAGIC Window functions calculate across related rows while keeping each row in
-# MAGIC the result.
+# MAGIC A window function adds group-level information to each row while keeping
+# MAGIC the row-level details (Module 8 `05 - Window Functions Fundamentals`).
 # MAGIC
 # MAGIC In this notebook, we'll answer two questions with Spark SQL:
 # MAGIC
@@ -39,7 +39,7 @@
 # MAGIC %md
 # MAGIC ## Setup — load the KPI tables
 # MAGIC
-# MAGIC We'll use two Module 8 KPI tables.
+# MAGIC We'll use two KPI tables from Module 8.
 # MAGIC
 # MAGIC `kpi_zone_performance` (**20** rows):
 # MAGIC
