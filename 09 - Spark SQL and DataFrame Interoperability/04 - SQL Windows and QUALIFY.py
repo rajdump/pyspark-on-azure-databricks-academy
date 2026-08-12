@@ -151,8 +151,20 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC | `QUALIFY` | in the same query |
 # MAGIC | subquery | `WHERE rn <= 2` outside |
 # MAGIC
-# MAGIC Use the subquery when `QUALIFY` is unavailable or you need to reuse the
-# MAGIC ranked rows.
+# MAGIC In Databricks, the `QUALIFY` clause is a way to keep Top-N results. If your
+# MAGIC SQL engine doesn't support `QUALIFY`, or if you need the `rn` column for
+# MAGIC later use, consider using a subquery.
+# MAGIC
+# MAGIC ```sql
+# MAGIC WITH ranked AS (
+# MAGIC   SELECT ..., ROW_NUMBER() OVER (...) AS rn
+# MAGIC   FROM kpi_zone_performance
+# MAGIC )
+# MAGIC SELECT *
+# MAGIC FROM ranked
+# MAGIC WHERE rn <= 2
+# MAGIC -- later you could also: JOIN other_table ON ... using ranked
+# MAGIC ```
 # MAGIC
 # MAGIC **Expected:** same **9 rows**.
 
