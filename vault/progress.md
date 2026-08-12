@@ -18,12 +18,14 @@ updated: 2026-08-12
 
 - **19 planned modules**
 - **8 complete** — Modules 01–08
-- **0 started**
-- **11 not started** — Modules 09–19
-- **45 Databricks source notebooks on disk**
+- **1 authored, awaiting runtime** — Module 09 (roadmap status still Not
+  Started in [COURSE_MODULES](../COURSE_MODULES.md))
+- **10 not started** — Modules 10–19
+- **51 Databricks source notebooks on disk**
 - **44 notebook entries with recorded runtime evidence**
 - **Current work:** Module 09 — Spark SQL and DataFrame Interoperability
-  (Not Started)
+  (6 notebooks authored; Cursor review clean; Azure Databricks runtime
+  validation pending)
 
 ## Phase summary
 
@@ -31,7 +33,7 @@ updated: 2026-08-12
 |---|---:|---|
 | I — Language and Engine Foundations | 01–04 | Complete |
 | II — Core Data Engineering Skills | 05–08 | Complete |
-| II — Next module | 09 | Not started |
+| II — Next module | 09 | Authored (awaiting runtime) |
 | III — Lakehouse and Governance | 10–12 | Not started |
 | IV — Production Batch Engineering | 13–15 | Not started |
 | V — Excellence and Delivery | 16–19 | Not started |
@@ -48,7 +50,7 @@ updated: 2026-08-12
 | [06 — Built-ins and complex types](../06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives/README.md) | Complete | 4 of 4 | 4 of 4 |
 | [07 — Joins and set operations](../07%20-%20Joins%20and%20Set%20Operations/README.md) | Complete | 7 of 7 | 7 of 7 |
 | [08 — Aggregations and windows](../08%20-%20Aggregations%20and%20Window%20Functions/README.md) | Complete | 8 of 8 | 8 of 8 |
-| 09 — Spark SQL and DataFrame Interoperability | Not started | 0 | 0 |
+| [09 — Spark SQL and DataFrame Interoperability](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md) | Not Started | 6 of 6 | 0 of 6 |
 | 10–19 | Not started | 0 | 0 |
 
 `05 - Reading, Writing, and Schemas/99 - Rideshare Project Cleanup and
@@ -113,14 +115,19 @@ Column contracts:
 
 ## Current focus — Module 09
 
-Next module after Module 08 Complete: Spark SQL and DataFrame
-Interoperability — dual API patterns; SQL joins, windows, and `QUALIFY`;
-CTEs and params; end-to-end pipeline using Module 8 managed KPI tables and
-Module 7 managed tables.
+[Module 09 README](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md)
+and notebooks **01–06** are authored (SQL-first dual API, joins/aggs,
+pivot/unpivot, windows/`QUALIFY`, CTEs/params, KPI parity inspection).
+Cursor authoring review is clean.
+
+**Roadmap status** in [COURSE_MODULES](../COURSE_MODULES.md) remains
+**Not Started** until the author marks it after Azure Databricks runtime
+validation (and optional `docs/validation/` evidence).
 
 ## Next sequence
 
-1. Begin Module 09 — Spark SQL and DataFrame Interoperability.
+1. Run Module 09 notebooks **01–06** on classic all-purpose Standard in Azure
+   Databricks; record validation evidence when ready.
 2. Optionally run Module 08 serverless compatibility checks and record
    results in the Module 08 validation file.
 
@@ -151,7 +158,7 @@ Module 7 managed tables.
 
 ## Deferred roadmap work
 
-- Module 09: dual DataFrame/SQL API patterns and KPI reads
+- Module 09: Azure Databricks runtime validation + roadmap status (authored)
 - Module 10: Delta Lake
 - Module 11: govern existing Unity Catalog objects
 - Module 12: formal medallion architecture and fuller purpose-built tables
