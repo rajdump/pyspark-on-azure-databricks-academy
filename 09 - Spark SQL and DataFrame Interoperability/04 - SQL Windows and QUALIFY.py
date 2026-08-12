@@ -47,8 +47,6 @@
 # MAGIC compare zones within the same borough and rank them from highest to
 # MAGIC lowest based on these metrics.
 # MAGIC
-# MAGIC Example shape:
-# MAGIC
 # MAGIC | pickup_borough | pickup_zone | total_tip | trip_count |
 # MAGIC |---|---|---:|---:|
 # MAGIC | Bronx | Zone A | 50 | 8 |
@@ -59,8 +57,6 @@
 # MAGIC will order these daily records by date to calculate the running distance,
 # MAGIC bring in the previous day's distance with `LAG`, and measure the
 # MAGIC day-over-day change.
-# MAGIC
-# MAGIC Example shape:
 # MAGIC
 # MAGIC | trip_date | total_distance_miles |
 # MAGIC |---|---:|
@@ -85,20 +81,13 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ## Part 1 — Rank zones within each borough
 # MAGIC
-# MAGIC ### 1. Assign a row number within each borough
-# MAGIC
-# MAGIC Within each borough, `ROW_NUMBER()` ranks zones by `total_tip` DESC.
-# MAGIC
-# MAGIC Example shape (toy — not the full result):
+# MAGIC ### 1. Rank zones by total tip
 # MAGIC
 # MAGIC | pickup_borough | pickup_zone | total_tip | rn |
 # MAGIC |---|---|---:|---:|
 # MAGIC | Bronx | Zone A | 50 | 1 |
 # MAGIC | Bronx | Zone B | 30 | 2 |
 # MAGIC | Bronx | Zone C | 10 | 3 |
-# MAGIC
-# MAGIC `PARTITION BY pickup_borough` restarts `rn` per borough. The `ORDER BY`
-# MAGIC inside `OVER(...)` drives the ranking — not the final display sort.
 # MAGIC
 # MAGIC **Expected:** **20 rows**.
 
@@ -120,10 +109,6 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 
 # MAGIC %md
 # MAGIC ### 2. Keep the Top 2 zones with `QUALIFY`
-# MAGIC
-# MAGIC `QUALIFY ... <= 2` keeps only `rn` 1 and 2 within each borough.
-# MAGIC
-# MAGIC Example shape (toy — after `QUALIFY`):
 # MAGIC
 # MAGIC | pickup_borough | pickup_zone | total_tip | rn |
 # MAGIC |---|---|---:|---:|
@@ -155,17 +140,15 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 3. Write the same Top-N logic with a subquery
-# MAGIC
-# MAGIC Same Top-N: inner query builds `rn`, outer query uses `WHERE rn <= 2`.
+# MAGIC ### 3. Same Top-N with a subquery
 # MAGIC
 # MAGIC | form | filter |
 # MAGIC |---|---|
 # MAGIC | `QUALIFY` | in the same query |
 # MAGIC | subquery | `WHERE rn <= 2` outside |
 # MAGIC
-# MAGIC Use the subquery form when `QUALIFY` is unavailable or you need to reuse
-# MAGIC the ranked rows in more logic.
+# MAGIC Use the subquery when `QUALIFY` is unavailable or you need to reuse the
+# MAGIC ranked rows.
 # MAGIC
 # MAGIC **Expected:** same **9 rows**.
 
@@ -192,11 +175,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ## Part 2 — Track distance across days
 # MAGIC
-# MAGIC ### 4. Calculate a running distance total
-# MAGIC
-# MAGIC Order by `trip_date` and accumulate `total_distance_miles`.
-# MAGIC
-# MAGIC Example shape (toy):
+# MAGIC ### 4. Running distance total
 # MAGIC
 # MAGIC | trip_date | total_distance_miles | running_distance |
 # MAGIC |---|---:|---:|
@@ -225,11 +204,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 5. Compare each day with the previous day
-# MAGIC
-# MAGIC `LAG` pulls the previous day's miles; `delta = current − previous`.
-# MAGIC
-# MAGIC Example shape (toy):
+# MAGIC ### 5. Previous day with `LAG`
 # MAGIC
 # MAGIC | trip_date | total_distance_miles | prev_day | delta |
 # MAGIC |---|---:|---:|---:|
@@ -261,9 +236,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 6. Turn the daily change into a direction
-# MAGIC
-# MAGIC Map `delta` to a label:
+# MAGIC ### 6. Direction from `delta`
 # MAGIC
 # MAGIC | `delta` | `direction` |
 # MAGIC |---|---|
@@ -272,8 +245,10 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC | less than 0 | `down` |
 # MAGIC | equal to 0 | `flat` |
 # MAGIC
-# MAGIC Check NULL first so day 1 is `n/a`, not `flat`. The inner query builds
-# MAGIC `delta`; the outer query applies `CASE`.
+# MAGIC Check NULL first so day 1 is `n/a`, not `flat`. Inner query builds
+# MAGIC `delta`; outer query applies `CASE`.
+# MAGIC
+# MAGIC **Expected:** same 14 daily rows with a `direction` label.
 
 # COMMAND ----------
 
