@@ -196,18 +196,27 @@ print("Temp view registered: trip_tip_band")
 # MAGIC %md
 # MAGIC ## 6. When to choose
 # MAGIC
-# MAGIC Choose based on **where you write the logic and where the result needs to go
-# MAGIC next**. The APIs are not competing ways to access different data — they are
-# MAGIC different entry points into the same Spark workflow.
+# MAGIC | You want to… | Use | Why |
+# MAGIC |---|---|---|
+# MAGIC | Explore a UC table interactively | `%sql` + UC name | Table already has a SQL name |
+# MAGIC | Load then chain DF transforms | `spark.table("...")` | Load once; DF API for the rest |
+# MAGIC | Write SQL; keep result in Python | `spark.sql(...)` → DF | SQL query; DF for pipeline |
+# MAGIC | Query a DF with no catalog name | temp view → `%sql` | Session SQL name for the DF |
 # MAGIC
-# MAGIC | Entry point | Use when |
+# MAGIC ### Broader: SQL vs DataFrame for your logic
+# MAGIC
+# MAGIC | SQL works especially well for | DataFrame API works especially well for |
 # MAGIC |---|---|
-# MAGIC | Direct `%sql` | Whole cell is SQL; table already has a catalog name |
-# MAGIC | `spark.table` → DataFrame | Work with a catalog table in the DataFrame API |
-# MAGIC | `spark.sql(...)` → DataFrame | Write SQL, then continue with the result in Python |
-# MAGIC | DF → `createOrReplaceTempView` | Built in PySpark; need a SQL name |
+# MAGIC | Ad-hoc exploration; stakeholder collaboration | Dynamic columns; programmatic pipelines |
+# MAGIC | `QUALIFY`, CTEs, `PIVOT`/`UNPIVOT` (concise SQL) | Runtime logic (loops over columns) |
+# MAGIC | Quick validation against known contracts | Refactoring and IDE-assisted development |
+# MAGIC | Shared with analysts who do not write Python | Unit-testable transforms (Module 17) |
 # MAGIC
-# MAGIC Choose the entry point deliberately, then keep the cell focused on that path.
+# MAGIC Both APIs can express equivalent Spark transformations.
+# MAGIC
+# MAGIC Module 9 proves that in `06 - End-to-End SQL Pipeline and Parity Inspection`:
+# MAGIC the KPI results are rebuilt in SQL and compared with the existing managed
+# MAGIC tables for matching row counts and empty `exceptAll` differences.
 
 # COMMAND ----------
 
