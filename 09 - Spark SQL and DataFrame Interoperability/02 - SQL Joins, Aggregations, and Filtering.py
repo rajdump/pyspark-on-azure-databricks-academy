@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 02 - SQL Joins, Aggregations, and Filtering
 # MAGIC
@@ -300,7 +304,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC INNER JOIN rideshare_dev.processed.trip_driver_assignment AS d
 # MAGIC   ON t.trip_id = d.trip_id
 # MAGIC GROUP BY tier
-# MAGIC HAVING SUM(t.base_fare_amount) > 500
+# MAGIC HAVING total_base_fare > 500
 
 # COMMAND ----------
 
