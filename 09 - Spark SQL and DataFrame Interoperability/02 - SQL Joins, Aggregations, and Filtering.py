@@ -2,23 +2,32 @@
 # MAGIC %md
 # MAGIC # 02 - SQL Joins, Aggregations, and Filtering
 # MAGIC
-# MAGIC Build one evolving SQL query that an analyst would hand to a reporting
-# MAGIC layer — then a short side path for existence checks.
+# MAGIC In this notebook, we'll build one SQL query step by step — starting with
+# MAGIC trip-level columns and ending with an aggregated result filtered by
+# MAGIC `HAVING`.
+# MAGIC
+# MAGIC Along the way, we'll also handle a common JOIN problem: two tables containing
+# MAGIC the same column name.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Layer projection → `CASE` → `COALESCE` → JOIN → `GROUP BY` → `HAVING`
-# MAGIC - Qualify ambiguous columns with table aliases (one intentional error)
-# MAGIC - Filter groups with `HAVING`; find missing keys with `NOT EXISTS`
-# MAGIC
-# MAGIC **Main arc:** one query that grows cell by cell (full statement each step
-# MAGIC after the base projection). **Side path:** `NOT EXISTS` for undriven trips.
+# MAGIC - Add row-level categories with `CASE WHEN`
+# MAGIC - Replace NULL values with `COALESCE`
+# MAGIC - Join tables using clear SQL aliases
+# MAGIC - Resolve ambiguous column references after a JOIN
+# MAGIC - Aggregate joined data with `GROUP BY`
+# MAGIC - Filter aggregated results with `HAVING`
+# MAGIC - Find rows with no matching record using `NOT EXISTS`
 # MAGIC
 # MAGIC **Callbacks:** Module 7 join notebooks; Module 8 `01 - GroupBy and Basic
 # MAGIC Aggregations` and `02 - Multi-column Keys, NULL Groups, and Filter
-# MAGIC Placement`. Do not re-teach those APIs — this notebook is the SQL spelling.
+# MAGIC Placement`. This notebook is the Spark SQL spelling — not a re-teach.
 # MAGIC
-# MAGIC **Reads:** `trip_enriched` (106), `trip_driver_assignment` (100). **No writes.**
+# MAGIC **Reads:**
+# MAGIC - `rideshare_dev.processed.trip_enriched` — **106 rows**
+# MAGIC - `rideshare_dev.processed.trip_driver_assignment` — **100 rows**
+# MAGIC
+# MAGIC **Writes:** None.
 # MAGIC
 # MAGIC **Prerequisites:** Module 9 `01 - Dual API Foundations and When to Choose`.
 
@@ -27,8 +36,15 @@
 # MAGIC %md
 # MAGIC ## Setup — load both tables
 # MAGIC
-# MAGIC Trips **101–106** have no row in `trip_driver_assignment`.
-# MAGIC Both tables include `service_type` — that collision matters at the JOIN.
+# MAGIC We'll join two managed tables:
+# MAGIC
+# MAGIC - `trip_enriched` — **106 trips**
+# MAGIC - `trip_driver_assignment` — driver assignments for **100 trips**
+# MAGIC
+# MAGIC Trips **101–106** have no driver assignment.
+# MAGIC
+# MAGIC Both tables also contain `service_type`. That shared name matters at the
+# MAGIC JOIN.
 
 # COMMAND ----------
 
@@ -38,26 +54,31 @@ trip_driver_assignment = spark.table(  # noqa: F821
 )
 
 print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
-print(
-    f"trip_driver_assignment: {trip_driver_assignment.count()} rows"
-)  # expect 100
+print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expect 100
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Main arc — layered aggregate query
+# MAGIC ## Main arc — build the query step by step
 # MAGIC
-# MAGIC After Step 1, each SQL cell shows the **full** statement. Call out only
-# MAGIC what is new.
+# MAGIC We'll start with trip-level data and add one SQL concept at a time.
+# MAGIC
+# MAGIC Each step keeps the previous logic and introduces one new piece, so you can
+# MAGIC see how a larger SQL query develops.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Step 1 — Base projection (NULLs visible)
+# MAGIC ### Step 1 — Start with the base columns
 # MAGIC
-# MAGIC Start from raw columns — **no tip filter yet**, so NULL tips and fares stay
-# MAGIC visible. Tip NULL on trips **103** and **106**; base fare NULL on **104**
-# MAGIC and **106**. **106** rows.
+# MAGIC Begin with the trip-level columns needed for the rest of the query.
+# MAGIC
+# MAGIC We intentionally keep NULL values visible for now:
+# MAGIC
+# MAGIC - `tip_amount` is NULL for trips **103** and **106**
+# MAGIC - `base_fare_amount` is NULL for trips **104** and **106**
+# MAGIC
+# MAGIC No filtering or grouping yet — result stays at **106 rows**.
 
 # COMMAND ----------
 
@@ -68,17 +89,18 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Step 2 — CASE → tier (still row grain)
+# MAGIC ### Step 2 — Classify `service_type` into a tier
 # MAGIC
-# MAGIC Reuse the `01 - Dual API Foundations and When to Choose` `CASE` idea in a
-# MAGIC new context: map `service_type` to `tier`. Still **106** rows — labeling,
-# MAGIC not grouping.
+# MAGIC Add a row-level `CASE WHEN` (same idea as
+# MAGIC `01 - Dual API Foundations and When to Choose`, new labels).
 # MAGIC
 # MAGIC | `service_type` | `tier` |
 # MAGIC |---|---|
 # MAGIC | `PREMIUM` | `high` |
 # MAGIC | `STANDARD`, `XL` | `standard` |
-# MAGIC | else | `other` |
+# MAGIC | Anything else | `other` |
+# MAGIC
+# MAGIC Each trip gets a `tier` label — the result is still **106 rows**.
 
 # COMMAND ----------
 
@@ -98,10 +120,20 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Step 3 — COALESCE while NULLs remain
+# MAGIC ### Step 3 — Replace NULL tips with `COALESCE`
 # MAGIC
-# MAGIC **What's new:** `COALESCE(tip_amount, 0) AS safe_tip`. Former NULL tips
-# MAGIC show as `0` because we have not filtered them yet.
+# MAGIC Add `COALESCE(tip_amount, 0) AS safe_tip`.
+# MAGIC
+# MAGIC `COALESCE` does **not** remove rows. It keeps every trip and substitutes
+# MAGIC `0` when `tip_amount` is NULL.
+# MAGIC
+# MAGIC Look at trips **103** and **106** in the result:
+# MAGIC
+# MAGIC - `tip_amount` stays NULL (raw value)
+# MAGIC - `safe_tip` shows `0` (substituted value)
+# MAGIC
+# MAGIC Row count is still **106**. We add `COALESCE` here — before the JOIN —
+# MAGIC while those NULL tips are still visible.
 
 # COMMAND ----------
 
@@ -122,13 +154,16 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Step 4 — JOIN + ambiguous column lesson
+# MAGIC ### Step 4 — Join the driver assignment table
 # MAGIC
-# MAGIC Add driver assignment with an INNER JOIN. Both tables have `service_type`.
+# MAGIC Add `trip_driver_assignment` with an `INNER JOIN` on `trip_id`.
 # MAGIC
-# MAGIC The next cell is **intentionally broken**: the JOIN and aliases are
-# MAGIC correct, but the `CASE` still uses bare `service_type`. Expect
-# MAGIC `AMBIGUOUS_REFERENCE` (or the Spark 4 equivalent). Run it to see the error.
+# MAGIC Both tables contain `service_type`, so after the JOIN a bare
+# MAGIC `service_type` is no longer specific enough.
+# MAGIC
+# MAGIC The next query is **intentionally incorrect**: JOIN aliases are defined,
+# MAGIC but the `CASE WHEN` still uses bare `service_type`. Expect an ambiguous
+# MAGIC column reference error (`AMBIGUOUS_REFERENCE` or the Spark 4 equivalent).
 
 # COMMAND ----------
 
@@ -150,10 +185,14 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Fix:** qualify as `t.service_type` (and qualify tip/fare columns from `t`).
-# MAGIC One deliberate break only — do not invent a second error.
+# MAGIC #### Fix the ambiguous reference
 # MAGIC
-# MAGIC **Expected after the fix:** **100** rows (trips **101–106** drop).
+# MAGIC Qualify which `service_type` Spark should read: `t.service_type`.
+# MAGIC Qualify the other trip columns with `t.` for consistency.
+# MAGIC
+# MAGIC This `INNER JOIN` keeps only trips that have a driver assignment.
+# MAGIC
+# MAGIC **Expected:** **100 rows** — trips **101–106** are removed.
 
 # COMMAND ----------
 
@@ -175,16 +214,24 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Step 5 — First GROUP BY
+# MAGIC ### Step 5 — Aggregate by tier
 # MAGIC
-# MAGIC **What's new:** collapse to tier grain and alias aggregates.
+# MAGIC Until now, the query returned one row per driven trip. `GROUP BY` changes
+# MAGIC the result to one row per `tier`.
+# MAGIC
+# MAGIC For each tier we calculate trip count, average tip, and total base fare.
 # MAGIC
 # MAGIC Spark SQL also accepts the select alias in `GROUP BY` (`GROUP BY tier`).
-# MAGIC This notebook repeats the explicit `CASE` in `GROUP BY` for clarity —
-# MAGIC both work.
+# MAGIC Here we repeat the `CASE WHEN` in `GROUP BY` so the grouping logic stays
+# MAGIC visible — both forms work.
 # MAGIC
-# MAGIC **Expected:** `high` 15 / `standard` 64 / `other` 21;
-# MAGIC `total_base_fare` **966.75 / 1970.15 / 308.68**.
+# MAGIC **Expected:**
+# MAGIC
+# MAGIC | `tier` | `trip_count` | `total_base_fare` |
+# MAGIC |---|---:|---:|
+# MAGIC | `high` | 15 | 966.75 |
+# MAGIC | `standard` | 64 | 1970.15 |
+# MAGIC | `other` | 21 | 308.68 |
 
 # COMMAND ----------
 
@@ -211,33 +258,41 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Step 6 — COALESCE vs WHERE (honest data note)
+# MAGIC ### Step 6 — `COALESCE` vs `WHERE`
 # MAGIC
-# MAGIC In **this** dataset, the INNER JOIN already removed every NULL-tip row
-# MAGIC (trips **103** and **106** are undriven). After the JOIN, `COALESCE` on tip
-# MAGIC has no effect and `WHERE tip_amount IS NOT NULL` removes nothing — both
-# MAGIC would still show **15 / 64 / 21**.
+# MAGIC `COALESCE` and `WHERE ... IS NOT NULL` solve different problems:
 # MAGIC
-# MAGIC **In production** with LEFT JOINs or incomplete tip data, you choose:
-# MAGIC
-# MAGIC | Approach | Effect |
+# MAGIC | Approach | What happens |
 # MAGIC |---|---|
-# MAGIC | `COALESCE(tip, 0)` | Keep the row; substitute a value |
-# MAGIC | `WHERE tip IS NOT NULL` | Drop the row |
+# MAGIC | `COALESCE(tip_amount, 0)` | Keep the row; substitute `0` for a NULL tip |
+# MAGIC | `WHERE tip_amount IS NOT NULL` | Remove rows whose tip is NULL |
 # MAGIC
-# MAGIC We showed `COALESCE` where it was visible — Step 3 on the raw **106** rows.
-# MAGIC No second SQL cell here; do not fake a Strategy B that changes nothing.
+# MAGIC In this dataset, both NULL-tip trips (**103** and **106**) have no driver
+# MAGIC assignment. The `INNER JOIN` already removed them, so after the JOIN:
+# MAGIC
+# MAGIC - `COALESCE` no longer changes any tip values
+# MAGIC - `WHERE tip_amount IS NOT NULL` would remove no additional rows
+# MAGIC
+# MAGIC Tier counts stay **15 / 64 / 21**. That is why we showed `COALESCE` in
+# MAGIC Step 3 on the raw **106-row** table — while the NULLs were still visible.
+# MAGIC
+# MAGIC No second SQL cell here; the semantics differ even when this JOIN makes
+# MAGIC the outputs match.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Step 7 — HAVING
+# MAGIC ### Step 7 — Filter aggregated groups with `HAVING`
 # MAGIC
-# MAGIC **What's new:** `HAVING` filters **groups** after aggregation (`WHERE`
-# MAGIC filters rows before). Callback: Module 8 `02 - Multi-column Keys, NULL
-# MAGIC Groups, and Filter Placement`.
+# MAGIC `WHERE` filters rows **before** aggregation. `HAVING` filters groups
+# MAGIC **after** aggregation.
 # MAGIC
-# MAGIC **Expected:** **2** rows (`other` with base **308.68** drops).
+# MAGIC Keep tiers whose total base fare is greater than `500`.
+# MAGIC
+# MAGIC Callback: Module 8 `02 - Multi-column Keys, NULL Groups, and Filter
+# MAGIC Placement`.
+# MAGIC
+# MAGIC **Expected:** **2 rows** — `other` drops (total base fare **308.68**).
 
 # COMMAND ----------
 
@@ -265,11 +320,15 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Side path — existence (`NOT EXISTS`)
+# MAGIC ## Side path — find trips with no driver assignment
 # MAGIC
-# MAGIC Existence checks do not fold into the aggregate arc — separate query shape.
+# MAGIC Not every question needs aggregation. To find trips with **no** matching
+# MAGIC row in `trip_driver_assignment`, use `NOT EXISTS`.
 # MAGIC
-# MAGIC **Expected:** **6** undriven `trip_id`s (**101–106**).
+# MAGIC For each trip, Spark checks whether a matching `trip_id` exists in the
+# MAGIC assignment table and keeps the trip only when no match is found.
+# MAGIC
+# MAGIC **Expected:** **6 trips** — `101` through `106`.
 
 # COMMAND ----------
 
@@ -286,23 +345,34 @@ print(
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC One-line awareness: Spark `LEFT ANTI JOIN` is an alternate spelling of the
-# MAGIC same “rows with no match” idea.
+# MAGIC `LEFT ANTI JOIN` asks the same high-level question: keep left-side rows with
+# MAGIC no match on the right. Module 7 used that pattern in the DataFrame API;
+# MAGIC here `NOT EXISTS` is the SQL form.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC **Q1.** On **driven** trips only, which tiers have **more than 20 trips AND
-# MAGIC total base fare greater than 300**?
-# MAGIC Use `JOIN` + aliases + `CASE` + `GROUP BY` + a compound `HAVING`.
+# MAGIC ### Q1 — Filter aggregated tiers
 # MAGIC
-# MAGIC **Expected:** **2** rows — `standard` (64, ~1970) and `other` (21, ~308).
+# MAGIC Using **driven trips only**, return tiers that satisfy both:
 # MAGIC
-# MAGIC **Q2.** List undriven `trip_id`s with `NOT EXISTS`.
+# MAGIC - more than **20 trips**
+# MAGIC - total base fare greater than **300**
 # MAGIC
-# MAGIC **Expected:** **6** ids.
+# MAGIC Use table aliases, `JOIN`, `CASE WHEN`, `GROUP BY`, and compound `HAVING`.
+# MAGIC
+# MAGIC **Expected:** **2 rows**
+# MAGIC
+# MAGIC - `standard` — 64 trips
+# MAGIC - `other` — 21 trips
+# MAGIC
+# MAGIC ### Q2 — Find undriven trips
+# MAGIC
+# MAGIC Use `NOT EXISTS` to return trips with no driver assignment.
+# MAGIC
+# MAGIC **Expected:** **6 `trip_id`s** — `101–106`.
 
 # COMMAND ----------
 
@@ -341,9 +411,17 @@ print(
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Qualify shared column names after a JOIN (`t.service_type`)
-# MAGIC - `COALESCE` was visible on the raw 106 rows; no-op after this INNER JOIN
-# MAGIC - First Module 9 `GROUP BY` (+ note: alias-in-`GROUP BY` also works)
-# MAGIC - `HAVING` filters groups; `NOT EXISTS` finds undriven trips
+# MAGIC One SQL query grew from row-level data into an aggregated result:
 # MAGIC
-# MAGIC **Next:** `03 - SQL Pivot, Unpivot, and Sampling` — reshape long ↔ wide.
+# MAGIC `SELECT` → `CASE WHEN` → `COALESCE` → `JOIN` → `GROUP BY` → `HAVING`
+# MAGIC
+# MAGIC Key takeaways:
+# MAGIC
+# MAGIC - Qualify shared column names after a JOIN (`t.service_type`)
+# MAGIC - `COALESCE` keeps a row and substitutes; `WHERE` can remove the row
+# MAGIC - `GROUP BY` changes trip grain to tier grain
+# MAGIC - `HAVING` filters aggregated groups
+# MAGIC - `NOT EXISTS` finds rows with no matching record
+# MAGIC
+# MAGIC **Next:** `03 - SQL Pivot, Unpivot, and Sampling` reshapes aggregated data
+# MAGIC between long and wide forms.
