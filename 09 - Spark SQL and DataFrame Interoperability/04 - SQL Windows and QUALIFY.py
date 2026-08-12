@@ -39,19 +39,34 @@
 # MAGIC %md
 # MAGIC ## Setup — load the KPI tables
 # MAGIC
-# MAGIC We'll use two KPI tables from Module 8.
+# MAGIC This notebook uses two KPI tables created in Module 8.
 # MAGIC
-# MAGIC `kpi_zone_performance` (**20** rows):
+# MAGIC The `kpi_zone_performance` table contains one row for each combination of
+# MAGIC `pickup_borough` and `pickup_zone` (**20** rows). Each row includes
+# MAGIC aggregated zone metrics such as `total_tip` and `trip_count`. We will
+# MAGIC compare zones within the same borough and rank them from highest to
+# MAGIC lowest based on these metrics.
 # MAGIC
-# MAGIC - `pickup_borough` — partition for ranking
-# MAGIC - `pickup_zone` — ranked entity
-# MAGIC - `total_tip` — Part 1 ranking measure
-# MAGIC - `trip_count` — used later in the exercise
+# MAGIC Example shape (toy):
 # MAGIC
-# MAGIC `kpi_daily_trip_summary` (**14** rows):
+# MAGIC | pickup_borough | pickup_zone | total_tip | trip_count |
+# MAGIC |---|---|---:|---:|
+# MAGIC | Bronx | Zone A | 50 | 8 |
+# MAGIC | Bronx | Zone B | 30 | 5 |
 # MAGIC
-# MAGIC - `trip_date` — order for running totals and `LAG`
-# MAGIC - `total_distance_miles` — Part 2 measure
+# MAGIC The `kpi_daily_trip_summary` table contains one row for each `trip_date`
+# MAGIC (**14** rows). Each row includes `total_distance_miles` for that day. We
+# MAGIC will order these daily records by date to calculate the running distance,
+# MAGIC bring in the previous day's distance with `LAG`, and measure the
+# MAGIC day-over-day change.
+# MAGIC
+# MAGIC Example shape (toy):
+# MAGIC
+# MAGIC | trip_date | total_distance_miles |
+# MAGIC |---|---:|
+# MAGIC | day 1 | 20 |
+# MAGIC | day 2 | 10 |
+# MAGIC | day 3 | 15 |
 
 # COMMAND ----------
 
