@@ -2,16 +2,29 @@
 # MAGIC %md
 # MAGIC # 05 - CTEs and Parameterized SQL
 # MAGIC
-# MAGIC Build an auditable tip-share pipeline with named SQL steps, then bind
-# MAGIC values safely with `:params` instead of string-building SQL.
+# MAGIC As SQL queries grow, nested logic can become difficult to follow, and
+# MAGIC hard-coded values make the same query harder to reuse.
+# MAGIC
+# MAGIC In this notebook, we'll solve both problems:
+# MAGIC
+# MAGIC - use **CTEs** to break multi-step SQL into named query steps
+# MAGIC - use **named parameters** to pass values into SQL without building the
+# MAGIC   query string by hand
+# MAGIC
+# MAGIC We'll apply both patterns to a tip-share calculation: how much of the
+# MAGIC fleet's total tip comes from a particular borough.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Name multi-step SQL with CTEs instead of nested subqueries
-# MAGIC - Parameterize safely with named `:params` (not f-string SQL)
-# MAGIC - Combine CTEs and parameters for a filtered daily tip-share query
+# MAGIC - Organize multi-step SQL with CTEs
+# MAGIC - Combine multiple CTEs in one query
+# MAGIC - Compare CTEs with nested subqueries
+# MAGIC - Pass values with named `:params` (not f-string SQL)
+# MAGIC - Combine CTEs and parameters in one query
 # MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106). **No writes.**
+# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` — **106 rows**
+# MAGIC
+# MAGIC **Writes:** None.
 # MAGIC
 # MAGIC **Prerequisites:** Module 9 `04 - SQL Windows and QUALIFY`.
 
@@ -20,7 +33,16 @@
 # MAGIC %md
 # MAGIC ## Setup — load `trip_enriched`
 # MAGIC
-# MAGIC Columns used here: `pickup_borough`, `tip_amount`, `trip_date`.
+# MAGIC We'll use `trip_enriched` — **106 trips**, one row per `trip_id`.
+# MAGIC
+# MAGIC Three columns drive the examples:
+# MAGIC
+# MAGIC - `pickup_borough` — grouping
+# MAGIC - `tip_amount` — borough and fleet tip totals
+# MAGIC - `trip_date` — daily tip share later
+# MAGIC
+# MAGIC First we compare each borough's total tip with the fleet total. Later we
+# MAGIC apply the same idea by date for a borough passed as a SQL parameter.
 
 # COMMAND ----------
 
@@ -33,10 +55,14 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 1. Single CTE
 # MAGIC
-# MAGIC A CTE (`WITH name AS (...)`) is a **named intermediate** you can select from.
-# MAGIC Prefer it when the next reader should see the steps, not a nested blob.
+# MAGIC **How much total tip did each borough collect?**
 # MAGIC
-# MAGIC **Expected:** **5** borough rows.
+# MAGIC The aggregation is familiar: `GROUP BY pickup_borough` and `SUM(tip_amount)`.
+# MAGIC
+# MAGIC A CTE names that result `borough_tips`. The final `SELECT` can then read
+# MAGIC from `borough_tips` instead of repeating the aggregation.
+# MAGIC
+# MAGIC **Expected:** **5 borough rows**.
 
 # COMMAND ----------
 
@@ -57,10 +83,18 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 2. Multi-CTE composition
 # MAGIC
-# MAGIC Add a fleet-wide total CTE, then join the intermediates for each borough's
-# MAGIC tip share percent.
+# MAGIC **What percentage of the fleet's total tip came from each borough?**
 # MAGIC
-# MAGIC **Expected:** **5** rows with `tip_share_pct`.
+# MAGIC | name | meaning |
+# MAGIC |---|---|
+# MAGIC | `borough_tips` | tip per borough |
+# MAGIC | `fleet_total` | tip across all trips (one row) |
+# MAGIC | `tip_share_pct` | borough / fleet × 100 |
+# MAGIC
+# MAGIC `fleet_total` returns a single row, so that value can be combined with
+# MAGIC every borough row.
+# MAGIC
+# MAGIC **Expected:** **5 rows** with `tip_share_pct`.
 
 # COMMAND ----------
 
@@ -90,8 +124,13 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 3. Nested subquery contrast
 # MAGIC
-# MAGIC Same share logic as nested subqueries — intentionally harder to read.
-# MAGIC Same **5** rows. CTEs win on auditability, not on a different answer.
+# MAGIC The same calculation can be written without CTEs. Borough total and fleet
+# MAGIC total sit inside the `FROM` clause as nested subqueries.
+# MAGIC
+# MAGIC The result is unchanged: same totals, same `tip_share_pct`, same **5 rows**.
+# MAGIC
+# MAGIC The difference is organization. CTEs give each step a name, which usually
+# MAGIC makes multi-step SQL easier to follow and change.
 
 # COMMAND ----------
 
@@ -117,14 +156,17 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Named parameters
+# MAGIC ## 4. Named parameters (`:borough`)
 # MAGIC
-# MAGIC Bind literals with `:borough` and `spark.sql(..., args={...})`. The SQL text
-# MAGIC stays fixed; only the args dict changes.
+# MAGIC So far the SQL uses fixed values. To run the same query for another
+# MAGIC borough, do not rewrite the SQL or insert the value with an f-string.
 # MAGIC
-# MAGIC **Anti-pattern:** building SQL with an f-string
-# MAGIC (`f"... WHERE pickup_borough = '{borough}'"`) — that invites injection and
-# MAGIC makes every borough a different query string. Prefer `:params`.
+# MAGIC Place `:borough` in the SQL and pass the value with
+# MAGIC `spark.sql(..., args={...})`. The SQL text stays fixed; only the args
+# MAGIC dict changes.
+# MAGIC
+# MAGIC `f"... WHERE pickup_borough = '{borough}'"` builds a different string per
+# MAGIC value and is unsafe. Prefer `:params`.
 
 # COMMAND ----------
 
@@ -151,12 +193,29 @@ queens.show()
 # MAGIC %md
 # MAGIC ## 5. CTE + params combined
 # MAGIC
-# MAGIC Daily grain: for a borough, each dated day's tip as a share of **that day's
-# MAGIC fleet tip**. Parameters: `:borough`, `:min_tip`. Drop NULL dates
-# MAGIC (`WHERE trip_date IS NOT NULL`) — trips **101–106**.
+# MAGIC **For a selected borough, what share of that day's fleet tip came from
+# MAGIC the borough?**
 # MAGIC
-# MAGIC **Expected:** **14** dated rows for Manhattan with `:min_tip = 0`. Share can
-# MAGIC hit **100%** when every tip that day is in the borough.
+# MAGIC Two daily CTEs join on `trip_date`:
+# MAGIC
+# MAGIC | name | meaning |
+# MAGIC |---|---|
+# MAGIC | `borough_daily` | tip for the selected borough on each date |
+# MAGIC | `fleet_daily` | tip across all boroughs on each date |
+# MAGIC | `tip_share_pct` | borough daily / fleet daily × 100 |
+# MAGIC
+# MAGIC Parameters:
+# MAGIC
+# MAGIC - `:borough` — which borough
+# MAGIC - `:min_tip` — keeps **individual trip rows** with
+# MAGIC   `COALESCE(tip_amount, 0) >= :min_tip` **before** `GROUP BY trip_date`
+# MAGIC   (not a filter on the daily total)
+# MAGIC
+# MAGIC With `:borough = 'Manhattan'` and `:min_tip = 0`, dated days are included.
+# MAGIC Trips **101–106** have no `trip_date` and drop out.
+# MAGIC
+# MAGIC **Expected:** **14 rows**. Share can be **100%** when all tip that day is
+# MAGIC in the borough.
 
 # COMMAND ----------
 
@@ -203,13 +262,25 @@ manhattan_daily.show(14, truncate=False)
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC For a `:borough` you choose, return that borough's **daily tip as a share of
-# MAGIC fleet daily tip** (dated days only). Use CTEs + `spark.sql` + `args`.
+# MAGIC Reuse the daily tip-share pattern for a borough of your choice.
 # MAGIC
-# MAGIC Some dates may show **100%** (for example Manhattan on **2026-03-01**) —
-# MAGIC correct when all fleet tips that day are in the borough.
+# MAGIC Your query should:
 # MAGIC
-# MAGIC **Expected:** **14** dated rows for the borough you pick.
+# MAGIC - use one CTE for the borough's daily tip
+# MAGIC - use another CTE for the fleet's daily tip
+# MAGIC - exclude rows where `trip_date` is NULL
+# MAGIC - use `:borough` instead of hard-coding the borough name
+# MAGIC - use `:min_tip = 0`
+# MAGIC - execute with `spark.sql(..., args={...})`
+# MAGIC
+# MAGIC For each date, return:
+# MAGIC
+# MAGIC - `trip_date`
+# MAGIC - borough daily tip
+# MAGIC - fleet daily tip
+# MAGIC - borough `tip_share_pct`
+# MAGIC
+# MAGIC **Expected:** **14 dated rows**.
 
 # COMMAND ----------
 
@@ -223,10 +294,14 @@ manhattan_daily.show(14, truncate=False)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - CTEs name intermediates; nested subqueries compute the same thing less
-# MAGIC   clearly
-# MAGIC - `:params` + `args={...}` keep SQL text stable and avoid f-string SQL
-# MAGIC - Combine both for reusable, filterable multi-step pipelines
+# MAGIC - A **CTE** gives an intermediate query result a name
+# MAGIC - Multiple CTEs build a calculation as a sequence of named steps
+# MAGIC - Nested subqueries can produce the same result, but keep the steps
+# MAGIC   inside the main query
+# MAGIC - Named `:params` keep the SQL text fixed while input values change
+# MAGIC - `spark.sql(..., args={...})` binds those values from Python
+# MAGIC - CTEs and parameters work together for reusable multi-step SQL
 # MAGIC
-# MAGIC **Next:** `06 - End-to-End SQL Pipeline and Parity Inspection` — rebuild
-# MAGIC Module 8 KPIs in SQL and inspect parity (no asserts).
+# MAGIC **Next:** `06 - End-to-End SQL Pipeline and Parity Inspection` rebuilds
+# MAGIC the Module 8 KPI results in SQL and compares them with the existing
+# MAGIC managed tables.
