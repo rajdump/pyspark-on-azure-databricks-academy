@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 04 - SQL Windows and QUALIFY
 # MAGIC
@@ -89,7 +93,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC
 # MAGIC Within each borough, `ROW_NUMBER()` ranks zones by `total_tip` DESC.
 # MAGIC
-# MAGIC Example shape (toy — not the full result):
+# MAGIC Example shape:
 # MAGIC
 # MAGIC | pickup_borough | pickup_zone | total_tip | rn |
 # MAGIC |---|---|---:|---:|
@@ -123,7 +127,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC
 # MAGIC `QUALIFY ... <= 2` keeps only `rn` 1 and 2 within each borough.
 # MAGIC
-# MAGIC Example shape (toy — after `QUALIFY`):
+# MAGIC Example shape:
 # MAGIC
 # MAGIC | pickup_borough | pickup_zone | total_tip | rn |
 # MAGIC |---|---|---:|---:|
