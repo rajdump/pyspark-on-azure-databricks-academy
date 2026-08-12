@@ -198,6 +198,9 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC The `INNER JOIN` keeps only driven trips.
 # MAGIC
 # MAGIC **Expected:** **100 rows** — undriven trips **101–106** are removed.
+# MAGIC
+# MAGIC NULL-tip trips **103** and **106** were undriven, so they leave with this
+# MAGIC JOIN — `COALESCE` no longer changes tips on the remaining **100** rows.
 
 # COMMAND ----------
 
@@ -257,31 +260,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Step 6 — `COALESCE` vs `WHERE`
-# MAGIC
-# MAGIC `COALESCE` and `WHERE ... IS NOT NULL` solve different problems:
-# MAGIC
-# MAGIC | Approach | What happens |
-# MAGIC |---|---|
-# MAGIC | `COALESCE(tip_amount, 0)` | Keep the row; substitute `0` for a NULL tip |
-# MAGIC | `WHERE tip_amount IS NOT NULL` | Remove rows whose tip is NULL |
-# MAGIC
-# MAGIC In this dataset, both NULL-tip trips (**103** and **106**) have no driver
-# MAGIC assignment. The `INNER JOIN` already removed them, so after the JOIN:
-# MAGIC
-# MAGIC - `COALESCE` no longer changes any tip values
-# MAGIC - `WHERE tip_amount IS NOT NULL` would remove no additional rows
-# MAGIC
-# MAGIC Tier counts stay **15 / 64 / 21**. That is why we showed `COALESCE` in
-# MAGIC Step 3 on the raw **106-row** table — while the NULLs were still visible.
-# MAGIC
-# MAGIC We don't rerun SQL here — the result would match Step 5. The semantics
-# MAGIC still differ even when this JOIN makes the outputs match.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Step 7 — Filter aggregated groups with `HAVING`
+# MAGIC ### Step 6 — Filter aggregated groups with `HAVING`
 # MAGIC
 # MAGIC `WHERE` filters rows **before** aggregation. `HAVING` filters groups
 # MAGIC **after** aggregation.

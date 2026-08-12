@@ -111,7 +111,7 @@ synthesis).
 | Dual entry + SQL↔DF bridges + when-to-choose | **01** |
 | Row-level `CASE WHEN` (`tip_amount_band`, absolute bands) | **01** (reuse in **02** tier / **04** delta / **06** tip %) |
 | First Module 9 `GROUP BY` / JOIN aliases / `HAVING` / `NOT EXISTS` | **02** |
-| `COALESCE` visible on raw 106; honest no-op note after this INNER JOIN | **02** |
+| `COALESCE` visible on raw 106; one-line honesty after JOIN (NULL tips undriven) | **02** |
 | `PIVOT` / `UNPIVOT` / `TABLESAMPLE` | **03** |
 | Window `OVER` / `QUALIFY` / running `SUM` / `LAG` | **04** |
 | CTEs + named `:params` | **05** |
@@ -147,10 +147,9 @@ Main arc (one evolving query):
 1. Base projection (NULLs visible on 106)
 2. CASE → `tier`
 3. `COALESCE` while NULLs remain
-4. JOIN + ambiguous column (one intentional error, then fix → 100)
+4. JOIN + ambiguous column (one intentional error, then fix → 100; one-line COALESCE honesty)
 5. First `GROUP BY` (`GROUP BY tier` alias; repeating `CASE` also works)
-6. `COALESCE` vs `WHERE` (md only — honest no-op after this JOIN)
-7. `HAVING`
+6. `HAVING`
 
 Side path: `NOT EXISTS` undriven trips (+ one-line `LEFT ANTI JOIN` awareness).
 
