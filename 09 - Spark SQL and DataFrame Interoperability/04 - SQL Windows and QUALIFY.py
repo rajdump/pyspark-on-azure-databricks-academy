@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 04 - SQL Windows and QUALIFY
 # MAGIC
@@ -259,7 +263,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC | less than 0 | `down` |
 # MAGIC | equal to 0 | `flat` |
 # MAGIC
-# MAGIC Check NULL first so day 1 is `n/a`, not `flat`. Inner query builds
+# MAGIC Check NULL first so day 1 is `n/a`. Inner query builds
 # MAGIC `distance_change`; outer query applies `CASE`.
 # MAGIC
 # MAGIC **Expected:** same 14 daily rows with a `direction` label.
