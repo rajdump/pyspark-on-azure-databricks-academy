@@ -1,8 +1,4 @@
 # Databricks notebook source
-# /// script
-# [tool.databricks.environment]
-# environment_version = "5"
-# ///
 # MAGIC %md
 # MAGIC # 04 - SQL Windows and QUALIFY
 # MAGIC
@@ -154,6 +150,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC In Databricks, the `QUALIFY` clause is a way to keep Top-N results. If your
 # MAGIC SQL engine doesn't support `QUALIFY`, or if you need the `rn` column for
 # MAGIC later use, consider using a subquery.
+# MAGIC
 # MAGIC
 # MAGIC ```sql
 # MAGIC WITH ranked AS (
