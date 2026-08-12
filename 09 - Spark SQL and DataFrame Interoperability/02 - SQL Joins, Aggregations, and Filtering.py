@@ -3,8 +3,8 @@
 # MAGIC # 02 - SQL Joins, Aggregations, and Filtering
 # MAGIC
 # MAGIC In this notebook, we'll build one SQL query step by step — starting with
-# MAGIC trip-level columns and ending with an aggregated result filtered by
-# MAGIC `HAVING`.
+# MAGIC trip-level columns and ending with a **driven-trip** tier summary filtered
+# MAGIC by `HAVING`.
 # MAGIC
 # MAGIC Along the way, we'll also handle a common JOIN problem: two tables containing
 # MAGIC the same column name.
@@ -61,10 +61,10 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ## Main arc — build the query step by step
 # MAGIC
-# MAGIC We'll start with trip-level data and add one SQL concept at a time.
+# MAGIC We'll start with all trips and add one SQL concept at a time until we have
+# MAGIC a driven-trip tier aggregate — then filter those groups with `HAVING`.
 # MAGIC
-# MAGIC Each step keeps the previous logic and introduces one new piece, so you can
-# MAGIC see how a larger SQL query develops.
+# MAGIC Each step keeps the previous logic and introduces one new piece.
 
 # COMMAND ----------
 
@@ -156,7 +156,11 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ### Step 4 — Join the driver assignment table
 # MAGIC
-# MAGIC Add `trip_driver_assignment` with an `INNER JOIN` on `trip_id`.
+# MAGIC Restrict the report to **driven trips** — trips that have a row in
+# MAGIC `trip_driver_assignment` — with an `INNER JOIN` on `trip_id`.
+# MAGIC
+# MAGIC Alias `d` is used only in the `ON` clause (an existence filter). We do not
+# MAGIC select columns from the assignment table.
 # MAGIC
 # MAGIC Both tables contain `service_type`, so after the JOIN a bare
 # MAGIC `service_type` is no longer specific enough.
@@ -188,11 +192,12 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC #### Fix the ambiguous reference
 # MAGIC
 # MAGIC Qualify which `service_type` Spark should read: `t.service_type`.
-# MAGIC Qualify the other trip columns with `t.` for consistency.
+# MAGIC Qualify the other trip columns with `t.` for consistency — the SELECT list
+# MAGIC is still trip columns only.
 # MAGIC
-# MAGIC This `INNER JOIN` keeps only trips that have a driver assignment.
+# MAGIC The `INNER JOIN` keeps only driven trips.
 # MAGIC
-# MAGIC **Expected:** **100 rows** — trips **101–106** are removed.
+# MAGIC **Expected:** **100 rows** — undriven trips **101–106** are removed.
 
 # COMMAND ----------
 
@@ -221,9 +226,8 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC
 # MAGIC For each tier we calculate trip count, average tip, and total base fare.
 # MAGIC
-# MAGIC Spark SQL also accepts the select alias in `GROUP BY` (`GROUP BY tier`).
-# MAGIC Here we repeat the `CASE WHEN` in `GROUP BY` so the grouping logic stays
-# MAGIC visible — both forms work.
+# MAGIC Group with `GROUP BY tier` (Spark allows the select alias). Repeating the
+# MAGIC full `CASE` in `GROUP BY` also works in dialects that disallow aliases.
 # MAGIC
 # MAGIC **Expected:**
 # MAGIC
@@ -248,12 +252,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC FROM rideshare_dev.processed.trip_enriched AS t
 # MAGIC INNER JOIN rideshare_dev.processed.trip_driver_assignment AS d
 # MAGIC   ON t.trip_id = d.trip_id
-# MAGIC GROUP BY
-# MAGIC   CASE
-# MAGIC     WHEN t.service_type = 'PREMIUM' THEN 'high'
-# MAGIC     WHEN t.service_type IN ('STANDARD', 'XL') THEN 'standard'
-# MAGIC     ELSE 'other'
-# MAGIC   END
+# MAGIC GROUP BY tier
 
 # COMMAND ----------
 
@@ -276,8 +275,8 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC Tier counts stay **15 / 64 / 21**. That is why we showed `COALESCE` in
 # MAGIC Step 3 on the raw **106-row** table — while the NULLs were still visible.
 # MAGIC
-# MAGIC No second SQL cell here; the semantics differ even when this JOIN makes
-# MAGIC the outputs match.
+# MAGIC We don't rerun SQL here — the result would match Step 5. The semantics
+# MAGIC still differ even when this JOIN makes the outputs match.
 
 # COMMAND ----------
 
@@ -309,12 +308,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC FROM rideshare_dev.processed.trip_enriched AS t
 # MAGIC INNER JOIN rideshare_dev.processed.trip_driver_assignment AS d
 # MAGIC   ON t.trip_id = d.trip_id
-# MAGIC GROUP BY
-# MAGIC   CASE
-# MAGIC     WHEN t.service_type = 'PREMIUM' THEN 'high'
-# MAGIC     WHEN t.service_type IN ('STANDARD', 'XL') THEN 'standard'
-# MAGIC     ELSE 'other'
-# MAGIC   END
+# MAGIC GROUP BY tier
 # MAGIC HAVING SUM(t.base_fare_amount) > 500
 
 # COMMAND ----------
@@ -389,12 +383,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC FROM rideshare_dev.processed.trip_enriched AS t
 # MAGIC INNER JOIN rideshare_dev.processed.trip_driver_assignment AS d
 # MAGIC   ON t.trip_id = d.trip_id
-# MAGIC GROUP BY
-# MAGIC   CASE
-# MAGIC     WHEN t.service_type = 'PREMIUM' THEN 'high'
-# MAGIC     WHEN t.service_type IN ('STANDARD', 'XL') THEN 'standard'
-# MAGIC     ELSE 'other'
-# MAGIC   END
+# MAGIC GROUP BY tier
 # MAGIC HAVING 1 = 0  -- TODO: compound HAVING (trip count and total base fare)
 
 # COMMAND ----------
@@ -411,17 +400,18 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC One SQL query grew from row-level data into an aggregated result:
+# MAGIC One SQL query grew into a driven-trip tier summary:
 # MAGIC
 # MAGIC `SELECT` → `CASE WHEN` → `COALESCE` → `JOIN` → `GROUP BY` → `HAVING`
 # MAGIC
 # MAGIC Key takeaways:
 # MAGIC
+# MAGIC - `INNER JOIN` to assignment restricts to driven trips (`d` in `ON` only)
 # MAGIC - Qualify shared column names after a JOIN (`t.service_type`)
 # MAGIC - `COALESCE` keeps a row and substitutes; `WHERE` can remove the row
-# MAGIC - `GROUP BY` changes trip grain to tier grain
+# MAGIC - `GROUP BY tier` changes driven-trip grain to tier grain
 # MAGIC - `HAVING` filters aggregated groups
-# MAGIC - `NOT EXISTS` finds rows with no matching record
+# MAGIC - `NOT EXISTS` finds undriven trips
 # MAGIC
 # MAGIC **Next:** `03 - SQL Pivot, Unpivot, and Sampling` reshapes aggregated data
 # MAGIC between long and wide forms.

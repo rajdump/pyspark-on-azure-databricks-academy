@@ -148,7 +148,7 @@ Main arc (one evolving query):
 2. CASE → `tier`
 3. `COALESCE` while NULLs remain
 4. JOIN + ambiguous column (one intentional error, then fix → 100)
-5. First `GROUP BY` (explicit CASE in `GROUP BY`; note alias-in-GROUP-BY also works)
+5. First `GROUP BY` (`GROUP BY tier` alias; repeating `CASE` also works)
 6. `COALESCE` vs `WHERE` (md only — honest no-op after this JOIN)
 7. `HAVING`
 
