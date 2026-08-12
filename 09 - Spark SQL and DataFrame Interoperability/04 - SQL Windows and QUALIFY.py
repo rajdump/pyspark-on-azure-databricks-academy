@@ -151,6 +151,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC SQL engine doesn't support `QUALIFY`, or if you need the `rn` column for
 # MAGIC later use, consider using a subquery.
 # MAGIC
+# MAGIC <br>
 # MAGIC
 # MAGIC ```sql
 # MAGIC WITH ranked AS (
