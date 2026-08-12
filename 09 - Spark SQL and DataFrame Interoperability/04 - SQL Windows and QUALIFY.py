@@ -2,15 +2,15 @@
 # MAGIC %md
 # MAGIC # 04 - SQL Windows and QUALIFY
 # MAGIC
-# MAGIC Window functions let us calculate across related rows while keeping each
-# MAGIC row in the result.
+# MAGIC Window functions calculate across related rows while keeping each row in
+# MAGIC the result.
 # MAGIC
-# MAGIC In this notebook, we'll use them for two practical questions:
+# MAGIC In this notebook, we'll answer two questions with Spark SQL:
 # MAGIC
 # MAGIC 1. Within each borough, which zones rank highest by total tip?
 # MAGIC 2. How does total trip distance change from one day to the next?
 # MAGIC
-# MAGIC We'll also use `QUALIFY` to filter window results directly in SQL.
+# MAGIC We'll also use `QUALIFY` to filter window results in the same query.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -39,20 +39,19 @@
 # MAGIC %md
 # MAGIC ## Setup — load the KPI tables
 # MAGIC
-# MAGIC We'll use two KPI tables from Module 8.
+# MAGIC We'll use two Module 8 KPI tables.
 # MAGIC
-# MAGIC `kpi_zone_performance` contains zone-level metrics such as:
+# MAGIC `kpi_zone_performance` (**20** rows):
 # MAGIC
-# MAGIC - `pickup_borough`
-# MAGIC - `pickup_zone`
-# MAGIC - `total_tip`
-# MAGIC - `trip_count`
+# MAGIC - `pickup_borough` — partition for ranking
+# MAGIC - `pickup_zone` — ranked entity
+# MAGIC - `total_tip` — Part 1 ranking measure
+# MAGIC - `trip_count` — used later in the exercise
 # MAGIC
-# MAGIC `kpi_daily_trip_summary` contains one row per day, including
-# MAGIC `total_distance_miles`.
+# MAGIC `kpi_daily_trip_summary` (**14** rows):
 # MAGIC
-# MAGIC The first table supports **ranking within each borough**. The second supports
-# MAGIC **calculations across dates**.
+# MAGIC - `trip_date` — order for running totals and `LAG`
+# MAGIC - `total_distance_miles` — Part 2 measure
 
 # COMMAND ----------
 
@@ -73,29 +72,20 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC
 # MAGIC ### 1. Assign a row number within each borough
 # MAGIC
-# MAGIC Our first question is:
+# MAGIC Within each borough, `ROW_NUMBER()` ranks zones by `total_tip` DESC.
 # MAGIC
-# MAGIC **Within each borough, which zones rank highest by total tip?**
+# MAGIC Example shape (toy — not the full result):
 # MAGIC
-# MAGIC Use `ROW_NUMBER()` with a window:
+# MAGIC | pickup_borough | pickup_zone | total_tip | rn |
+# MAGIC |---|---|---:|---:|
+# MAGIC | Bronx | Zone A | 50 | 1 |
+# MAGIC | Bronx | Zone B | 30 | 2 |
+# MAGIC | Bronx | Zone C | 10 | 3 |
 # MAGIC
-# MAGIC ```text
-# MAGIC ROW_NUMBER() OVER (
-# MAGIC   PARTITION BY ...
-# MAGIC   ORDER BY ...
-# MAGIC )
-# MAGIC ```
+# MAGIC `PARTITION BY pickup_borough` restarts `rn` per borough. The `ORDER BY`
+# MAGIC inside `OVER(...)` drives the ranking — not the final display sort.
 # MAGIC
-# MAGIC For this query:
-# MAGIC
-# MAGIC - `PARTITION BY pickup_borough` restarts the numbering for each borough
-# MAGIC - `ORDER BY total_tip DESC` gives the highest-tip zone row number `1`
-# MAGIC
-# MAGIC The `ORDER BY` inside `OVER(...)` controls the **window calculation**.
-# MAGIC It does not guarantee the final display order, so the query uses a separate
-# MAGIC `ORDER BY` at the end.
-# MAGIC
-# MAGIC **Expected:** **20 rows**. Each borough gets its own sequence of row numbers.
+# MAGIC **Expected:** **20 rows**.
 
 # COMMAND ----------
 
@@ -116,23 +106,18 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ### 2. Keep the Top 2 zones with `QUALIFY`
 # MAGIC
-# MAGIC The previous query calculates a row number for every zone.
+# MAGIC `QUALIFY ... <= 2` keeps only `rn` 1 and 2 within each borough.
 # MAGIC
-# MAGIC Now we only want the **Top 2 zones in each borough**.
+# MAGIC Example shape (toy — after `QUALIFY`):
 # MAGIC
-# MAGIC `QUALIFY` filters rows using the result of a window function, so we can apply
-# MAGIC the Top-N condition in the same query without adding an outer subquery.
+# MAGIC | pickup_borough | pickup_zone | total_tip | rn |
+# MAGIC |---|---|---:|---:|
+# MAGIC | Bronx | Zone A | 50 | 1 |
+# MAGIC | Bronx | Zone B | 30 | 2 |
 # MAGIC
-# MAGIC Here:
+# MAGIC Zone C (`rn` 3) is gone — no outer subquery needed.
 # MAGIC
-# MAGIC `ROW_NUMBER() ... <= 2`
-# MAGIC
-# MAGIC keeps row numbers `1` and `2` within each borough.
-# MAGIC
-# MAGIC **Expected:** **9 rows**.
-# MAGIC
-# MAGIC Four boroughs contribute two zones each, while Staten Island has only one
-# MAGIC zone.
+# MAGIC **Expected:** **9 rows** (Staten Island has only one zone).
 
 # COMMAND ----------
 
@@ -157,21 +142,17 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ### 3. Write the same Top-N logic with a subquery
 # MAGIC
-# MAGIC `QUALIFY` gives us a concise way to filter a window result, but the same
-# MAGIC logic can be written with a subquery.
+# MAGIC Same Top-N: inner query builds `rn`, outer query uses `WHERE rn <= 2`.
 # MAGIC
-# MAGIC The inner query calculates:
+# MAGIC | form | filter |
+# MAGIC |---|---|
+# MAGIC | `QUALIFY` | in the same query |
+# MAGIC | subquery | `WHERE rn <= 2` outside |
 # MAGIC
-# MAGIC `ROW_NUMBER() ... AS rn`
+# MAGIC Use the subquery form when `QUALIFY` is unavailable or you need to reuse
+# MAGIC the ranked rows in more logic.
 # MAGIC
-# MAGIC The outer query can then use:
-# MAGIC
-# MAGIC `WHERE rn <= 2`
-# MAGIC
-# MAGIC Both queries answer the same question and should return the same **9 rows**.
-# MAGIC
-# MAGIC The subquery pattern is useful when `QUALIFY` is unavailable or when the
-# MAGIC window result needs to be reused by additional logic.
+# MAGIC **Expected:** same **9 rows**.
 
 # COMMAND ----------
 
@@ -196,31 +177,19 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ## Part 2 — Track distance across days
 # MAGIC
-# MAGIC The zone example partitioned rows by borough.
-# MAGIC
-# MAGIC For the next calculations, we'll work across the daily KPI table in
-# MAGIC `trip_date` order.
-# MAGIC
 # MAGIC ### 4. Calculate a running distance total
 # MAGIC
-# MAGIC A running total answers:
+# MAGIC Order by `trip_date` and accumulate `total_distance_miles`.
 # MAGIC
-# MAGIC **How much distance have we accumulated up to each day?**
+# MAGIC Example shape (toy):
 # MAGIC
-# MAGIC Order the rows by `trip_date` and calculate:
+# MAGIC | trip_date | total_distance_miles | running_distance |
+# MAGIC |---|---:|---:|
+# MAGIC | day 1 | 20 | 20 |
+# MAGIC | day 2 | 10 | 30 |
+# MAGIC | day 3 | 5 | 35 |
 # MAGIC
-# MAGIC ```text
-# MAGIC SUM(total_distance_miles) OVER (...)
-# MAGIC ```
-# MAGIC
-# MAGIC The explicit frame:
-# MAGIC
-# MAGIC ```text
-# MAGIC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-# MAGIC ```
-# MAGIC
-# MAGIC means: start from the first ordered row and include every row through the
-# MAGIC current day.
+# MAGIC Frame: `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`.
 # MAGIC
 # MAGIC **Expected:** **14 rows**; running distance
 # MAGIC **21.35 → 113.34 → … → 793.20**.
@@ -243,24 +212,19 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ### 5. Compare each day with the previous day
 # MAGIC
-# MAGIC A running total tells us how distance accumulates.
+# MAGIC `LAG` pulls the previous day's miles; `delta = current − previous`.
 # MAGIC
-# MAGIC Now ask a different question:
+# MAGIC Example shape (toy):
 # MAGIC
-# MAGIC **Did total distance increase or decrease compared with the previous day?**
+# MAGIC | trip_date | total_distance_miles | prev_day | delta |
+# MAGIC |---|---:|---:|---:|
+# MAGIC | day 1 | 20 | NULL | NULL |
+# MAGIC | day 2 | 10 | 20 | −10 |
+# MAGIC | day 3 | 15 | 10 | +5 |
 # MAGIC
-# MAGIC `LAG(total_distance_miles, 1)` returns the value from the previous row in
-# MAGIC `trip_date` order.
+# MAGIC Day 1 has no previous row, so `prev_day` and `delta` are NULL.
 # MAGIC
-# MAGIC We can then calculate:
-# MAGIC
-# MAGIC `current distance - previous distance`
-# MAGIC
-# MAGIC as `delta`.
-# MAGIC
-# MAGIC The first day has no previous row, so both `prev_day` and `delta` are NULL.
-# MAGIC
-# MAGIC **Expected:** `delta` begins with NULL, followed by values such as
+# MAGIC **Expected:** `delta` begins with NULL, then
 # MAGIC **+70.64, −61.99, +25.52, ...**
 
 # COMMAND ----------
@@ -284,9 +248,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ### 6. Turn the daily change into a direction
 # MAGIC
-# MAGIC The numeric `delta` tells us how much the distance changed.
-# MAGIC
-# MAGIC Now convert that value into a simple label:
+# MAGIC Map `delta` to a label:
 # MAGIC
 # MAGIC | `delta` | `direction` |
 # MAGIC |---|---|
@@ -295,11 +257,8 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC | less than 0 | `down` |
 # MAGIC | equal to 0 | `flat` |
 # MAGIC
-# MAGIC Check NULL first because the first date has no previous day. Calling that
-# MAGIC row `flat` would incorrectly imply that a comparison was available.
-# MAGIC
-# MAGIC The inner query calculates `delta`; the outer query then uses that result
-# MAGIC inside `CASE`.
+# MAGIC Check NULL first so day 1 is `n/a`, not `flat`. The inner query builds
+# MAGIC `delta`; the outer query applies `CASE`.
 
 # COMMAND ----------
 
@@ -336,22 +295,19 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Return the **Top 2 zones in each borough by `trip_count`**, but only consider
-# MAGIC zones with at least **3 trips**.
+# MAGIC Top 2 zones per borough by **`trip_count`**, only zones with
+# MAGIC `trip_count >= 3`.
 # MAGIC
-# MAGIC Use both filters in the correct place:
-# MAGIC
-# MAGIC - `WHERE` to remove zones with `trip_count < 3`
-# MAGIC - `QUALIFY` to keep row numbers `1` and `2` within each borough
+# MAGIC | clause | job |
+# MAGIC |---|---|
+# MAGIC | `WHERE` | drop zones with `trip_count < 3` |
+# MAGIC | `QUALIFY` | keep `rn` 1 and 2 within each borough |
 # MAGIC
 # MAGIC Rank with:
 # MAGIC
 # MAGIC `ROW_NUMBER() OVER (PARTITION BY pickup_borough ORDER BY trip_count DESC)`
 # MAGIC
-# MAGIC **Expected:** **8 rows**.
-# MAGIC
-# MAGIC Staten Island is removed by the `WHERE` condition before the ranking is
-# MAGIC filtered.
+# MAGIC **Expected:** **8 rows** (Staten Island removed by `WHERE`).
 
 # COMMAND ----------
 
@@ -372,22 +328,13 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC This notebook used SQL window functions for two different types of analysis.
+# MAGIC | topic | pattern |
+# MAGIC |---|---|
+# MAGIC | Rank within borough | `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` |
+# MAGIC | Top-N in place | `QUALIFY ... <= N` |
+# MAGIC | Top-N portable | subquery + `WHERE rn <= N` |
+# MAGIC | Running total | windowed `SUM` + `ROWS` frame |
+# MAGIC | Day-over-day | `LAG` → `delta` → `CASE` direction |
 # MAGIC
-# MAGIC ### Ranking within groups
-# MAGIC
-# MAGIC - `PARTITION BY` creates a separate window for each borough
-# MAGIC - `ORDER BY` inside `OVER(...)` determines the ranking order
-# MAGIC - `ROW_NUMBER()` assigns a position within each borough
-# MAGIC - `QUALIFY` filters those window results directly
-# MAGIC - A subquery with `WHERE` can express the same Top-N pattern
-# MAGIC
-# MAGIC ### Calculations across time
-# MAGIC
-# MAGIC - Windowed `SUM` builds a running distance total
-# MAGIC - `LAG` brings the previous day's value onto the current row
-# MAGIC - Subtracting the previous value produces the day-over-day `delta`
-# MAGIC - `CASE` converts that numeric change into `up`, `down`, `flat`, or `n/a`
-# MAGIC
-# MAGIC **Next:** `05 - CTEs and Parameterized SQL` introduces named query steps
-# MAGIC and safe SQL parameters.
+# MAGIC **Next:** `05 - CTEs and Parameterized SQL` — named query steps and safe
+# MAGIC SQL parameters.
