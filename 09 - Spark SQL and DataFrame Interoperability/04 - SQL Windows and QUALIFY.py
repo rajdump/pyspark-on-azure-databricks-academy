@@ -7,7 +7,7 @@
 # MAGIC
 # MAGIC In this notebook, we'll use them for two practical questions:
 # MAGIC
-# MAGIC 1. Which zones rank highest within each borough?
+# MAGIC 1. Within each borough, which zones rank highest by total tip?
 # MAGIC 2. How does total trip distance change from one day to the next?
 # MAGIC
 # MAGIC We'll also use `QUALIFY` to filter window results directly in SQL.
@@ -75,7 +75,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC
 # MAGIC Our first question is:
 # MAGIC
-# MAGIC **Which zones generate the most tip within each borough?**
+# MAGIC **Within each borough, which zones rank highest by total tip?**
 # MAGIC
 # MAGIC Use `ROW_NUMBER()` with a window:
 # MAGIC
