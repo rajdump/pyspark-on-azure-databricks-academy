@@ -220,15 +220,15 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ### 5. Previous day with `LAG`
 # MAGIC
-# MAGIC | trip_date | total_distance_miles | prev_day | delta |
+# MAGIC | trip_date | total_distance_miles | prev_day | distance_change |
 # MAGIC |---|---:|---:|---:|
 # MAGIC | day 1 | 20 | NULL | NULL |
 # MAGIC | day 2 | 10 | 20 | −10 |
 # MAGIC | day 3 | 15 | 10 | +5 |
 # MAGIC
-# MAGIC Day 1 has no previous row, so `prev_day` and `delta` are NULL.
+# MAGIC Day 1 has no previous row, so `prev_day` and `distance_change` are NULL.
 # MAGIC
-# MAGIC **Expected:** `delta` begins with NULL, then
+# MAGIC **Expected:** `distance_change` begins with NULL, then
 # MAGIC **+70.64, −61.99, +25.52, ...**
 
 # COMMAND ----------
@@ -243,16 +243,16 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC   ) AS running_distance,
 # MAGIC   LAG(total_distance_miles, 1) OVER (ORDER BY trip_date) AS prev_day,
 # MAGIC   total_distance_miles
-# MAGIC     - LAG(total_distance_miles, 1) OVER (ORDER BY trip_date) AS delta
+# MAGIC     - LAG(total_distance_miles, 1) OVER (ORDER BY trip_date) AS distance_change
 # MAGIC FROM rideshare_dev.processed.kpi_daily_trip_summary
 # MAGIC ORDER BY trip_date
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 6. Direction from `delta`
+# MAGIC ### 6. Direction from `distance_change`
 # MAGIC
-# MAGIC | `delta` | `direction` |
+# MAGIC | `distance_change` | `direction` |
 # MAGIC |---|---|
 # MAGIC | NULL | `n/a` |
 # MAGIC | greater than 0 | `up` |
@@ -260,7 +260,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC | equal to 0 | `flat` |
 # MAGIC
 # MAGIC Check NULL first so day 1 is `n/a`, not `flat`. Inner query builds
-# MAGIC `delta`; outer query applies `CASE`.
+# MAGIC `distance_change`; outer query applies `CASE`.
 # MAGIC
 # MAGIC **Expected:** same 14 daily rows with a `direction` label.
 
@@ -272,11 +272,11 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC   total_distance_miles,
 # MAGIC   running_distance,
 # MAGIC   prev_day,
-# MAGIC   delta,
+# MAGIC   distance_change,
 # MAGIC   CASE
-# MAGIC     WHEN delta IS NULL THEN 'n/a'
-# MAGIC     WHEN delta > 0 THEN 'up'
-# MAGIC     WHEN delta < 0 THEN 'down'
+# MAGIC     WHEN distance_change IS NULL THEN 'n/a'
+# MAGIC     WHEN distance_change > 0 THEN 'up'
+# MAGIC     WHEN distance_change < 0 THEN 'down'
 # MAGIC     ELSE 'flat'
 # MAGIC   END AS direction
 # MAGIC FROM (
@@ -289,9 +289,9 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC     ) AS running_distance,
 # MAGIC     LAG(total_distance_miles, 1) OVER (ORDER BY trip_date) AS prev_day,
 # MAGIC     total_distance_miles
-# MAGIC       - LAG(total_distance_miles, 1) OVER (ORDER BY trip_date) AS delta
+# MAGIC       - LAG(total_distance_miles, 1) OVER (ORDER BY trip_date) AS distance_change
 # MAGIC   FROM rideshare_dev.processed.kpi_daily_trip_summary
-# MAGIC ) daily_delta
+# MAGIC ) daily_change
 # MAGIC ORDER BY trip_date
 
 # COMMAND ----------
@@ -338,7 +338,7 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC | Top-N in place | `QUALIFY ... <= N` |
 # MAGIC | Top-N portable | subquery + `WHERE rn <= N` |
 # MAGIC | Running total | windowed `SUM` + `ROWS` frame |
-# MAGIC | Day-over-day | `LAG` → `delta` → `CASE` direction |
+# MAGIC | Day-over-day | `LAG` → `distance_change` → `CASE` direction |
 # MAGIC
 # MAGIC **Next:** `05 - CTEs and Parameterized SQL` — named query steps and safe
 # MAGIC SQL parameters.
