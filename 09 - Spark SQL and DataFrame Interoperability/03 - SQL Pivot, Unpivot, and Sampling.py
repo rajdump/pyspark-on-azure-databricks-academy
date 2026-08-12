@@ -2,21 +2,29 @@
 # MAGIC %md
 # MAGIC # 03 - SQL Pivot, Unpivot, and Sampling
 # MAGIC
-# MAGIC Reshape borough × service counts long → wide → long, then a brief sampling
-# MAGIC coda.
+# MAGIC In this notebook, we'll reshape trip counts between **long** and **wide**
+# MAGIC formats with Spark SQL.
+# MAGIC
+# MAGIC We'll start with one row per borough and service type, pivot service types
+# MAGIC into columns, then unpivot those columns back into rows.
+# MAGIC
+# MAGIC We'll finish with a short look at SQL `TABLESAMPLE`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Reshape long → wide with SQL `PIVOT` and back with `UNPIVOT`
-# MAGIC - Fill sparse pivot NULLs with `COALESCE` and register a SQL temp view
-# MAGIC - Contrast SQL `TABLESAMPLE` (non-deterministic here) with seeded DataFrame
-# MAGIC   sampling
+# MAGIC - Reshape long-form data to wide form with `PIVOT`
+# MAGIC - Convert wide-form data back to long form with `UNPIVOT`
+# MAGIC - Replace missing pivot combinations with `COALESCE`
+# MAGIC - Store an intermediate result in a SQL temp view
+# MAGIC - Compare SQL `TABLESAMPLE` with seeded DataFrame sampling
 # MAGIC
-# MAGIC **Callbacks:** Module 8 `04 - Pivot` (DataFrame `pivot`); Module 8
-# MAGIC `07 - Top-N per Group and Sampling` (seeded `.sample()`). SQL wins on
-# MAGIC `UNPIVOT` versus an awkward DataFrame `stack()`.
+# MAGIC **Callbacks:** Module 8 `04 - Pivot` introduced the DataFrame `pivot`
+# MAGIC operation; Module 8 `07 - Top-N per Group and Sampling` used seeded
+# MAGIC `.sample()`. Here we use the SQL forms, including `UNPIVOT`.
 # MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106). **No writes.**
+# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` — **106 rows**
+# MAGIC
+# MAGIC **Writes:** None.
 # MAGIC
 # MAGIC **Prerequisites:** Module 9 `02 - SQL Joins, Aggregations, and Filtering`.
 
@@ -25,8 +33,16 @@
 # MAGIC %md
 # MAGIC ## Setup — load `trip_enriched`
 # MAGIC
-# MAGIC Columns used here: `pickup_borough`, `service_type`, `payment_method`,
-# MAGIC `trip_id`.
+# MAGIC We'll use `trip_enriched` throughout the notebook.
+# MAGIC
+# MAGIC The main columns are:
+# MAGIC
+# MAGIC - `pickup_borough` — the row grouping
+# MAGIC - `service_type` — the values we'll pivot into columns
+# MAGIC - `trip_id` — used to count trips
+# MAGIC - `payment_method` — used later in the exercise
+# MAGIC
+# MAGIC The table contains **106 trips**.
 
 # COMMAND ----------
 
@@ -39,11 +55,13 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 1. Long-form baseline
 # MAGIC
-# MAGIC Establish the long data `PIVOT` will reshape: one row per
-# MAGIC (`pickup_borough`, `service_type`) with a trip count.
+# MAGIC Before pivoting, look at the data in its current shape.
 # MAGIC
-# MAGIC **Expected:** **18** rows (not 17) — some borough × service combos are
-# MAGIC missing and will become NULLs after the pivot.
+# MAGIC Each row is one `pickup_borough` + `service_type` combination with a trip
+# MAGIC count. Not every borough × service combination exists in the source data —
+# MAGIC those missing combinations become visible after we pivot.
+# MAGIC
+# MAGIC **Expected:** **18 rows**.
 
 # COMMAND ----------
 
@@ -61,10 +79,16 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 2. PIVOT to wide
 # MAGIC
-# MAGIC `PIVOT` turns `service_type` values into columns. A NULL cell means zero
-# MAGIC matching rows for that borough × service (watch Bronx / Staten Island).
+# MAGIC `PIVOT` turns values from `service_type` into separate columns.
 # MAGIC
-# MAGIC **Expected:** **5** borough rows × the five service columns.
+# MAGIC The grain changes from one row per `pickup_borough` + `service_type` to one
+# MAGIC row per `pickup_borough`. The listed service types become columns such as
+# MAGIC `STANDARD`, `PREMIUM`, and `XL`.
+# MAGIC
+# MAGIC If a borough has no trips for one of the listed service types, that pivot
+# MAGIC cell appears as NULL — a missing combination, not yet a zero.
+# MAGIC
+# MAGIC **Expected:** **5 borough rows** with **5 service-type columns**.
 
 # COMMAND ----------
 
@@ -91,13 +115,14 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 3. COALESCE zeros + SQL temp view
 # MAGIC
-# MAGIC Optional zeros via `COALESCE(col, 0)` — same idea as
+# MAGIC The pivot result contains NULLs where a borough has no trips for a listed
+# MAGIC service type. Use `COALESCE(column, 0)` to make those missing combinations
+# MAGIC explicit as zero counts — the same idea as in
 # MAGIC `02 - SQL Joins, Aggregations, and Filtering`, now on pivot columns.
 # MAGIC
-# MAGIC Register with pure SQL `CREATE OR REPLACE TEMP VIEW` (not Python
-# MAGIC `createOrReplaceTempView` from `01 - Dual API Foundations and When to
-# MAGIC Choose`). A CTE can replace this temp view later in
-# MAGIC `05 - CTEs and Parameterized SQL`.
+# MAGIC Store the wide result in a session temp view named `borough_service_wide`
+# MAGIC with SQL `CREATE OR REPLACE TEMP VIEW`. Later SQL cells can query it
+# MAGIC directly by name.
 
 # COMMAND ----------
 
@@ -140,8 +165,15 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 4. UNPIVOT round-trip
 # MAGIC
-# MAGIC `UNPIVOT` proves the reshape. Rows with `0` are now **explicit** — Step 1's
-# MAGIC long form omitted missing combos entirely.
+# MAGIC `UNPIVOT` performs the reverse reshape. The five service-type columns become
+# MAGIC values in a single `service_type` column, and their counts move into
+# MAGIC `trip_count`.
+# MAGIC
+# MAGIC Because we replaced pivot NULLs with `0`, the unpivoted result includes
+# MAGIC those zero-count combinations explicitly. That differs from Step 1, where
+# MAGIC combinations with no source rows did not appear at all.
+# MAGIC
+# MAGIC **Expected:** **25 rows** (5 boroughs × 5 service types).
 
 # COMMAND ----------
 
@@ -162,13 +194,18 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5. TABLESAMPLE coda
+# MAGIC ## 5. TABLESAMPLE
 # MAGIC
-# MAGIC Brief coda. Module 8 `07 - Top-N per Group and Sampling` used seeded
-# MAGIC `.sample()` for reproducible draws. SQL `TABLESAMPLE (25 PERCENT)` here is
-# MAGIC **non-deterministic** — re-run and the row set can change.
+# MAGIC Spark SQL can sample rows directly from a table. Here we request
+# MAGIC approximately **25%** of `trip_enriched` with `TABLESAMPLE (25 PERCENT)`.
 # MAGIC
-# MAGIC **Expected:** roughly ~25 rows (not exact).
+# MAGIC This sample is not seeded, so repeated runs can return a different set of
+# MAGIC rows. The percentage is approximate, not an exact row-count guarantee.
+# MAGIC
+# MAGIC Module 8 `07 - Top-N per Group and Sampling` used seeded `.sample()` for
+# MAGIC reproducible draws — prefer that when you need the same sample again.
+# MAGIC
+# MAGIC **Expected:** roughly **25–30 rows** from this 106-row table.
 
 # COMMAND ----------
 
@@ -181,16 +218,35 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Full reshape round-trip on **`payment_method`** by `pickup_borough` —
-# MAGIC `PIVOT` then `UNPIVOT` (not `UNPIVOT` alone).
+# MAGIC Repeat the same reshape pattern using `payment_method`.
 # MAGIC
-# MAGIC Use these payment values as columns: `card`, `cash`, `wallet`, `corporate`,
-# MAGIC `unknown`. Coalesce NULLs to 0 before unpivoting. Note Staten Island
-# MAGIC sparsity (and that a NULL `payment_method` on trip 106 does not become its
-# MAGIC own column when the `IN` list is explicit).
+# MAGIC ### Q1 — Pivot payment methods to columns
 # MAGIC
-# MAGIC **Expected:** 5×5 wide matrix, then long form back from the coalesced wide
-# MAGIC table.
+# MAGIC Create one row per `pickup_borough` and pivot these payment methods into
+# MAGIC columns:
+# MAGIC
+# MAGIC - `card`
+# MAGIC - `cash`
+# MAGIC - `wallet`
+# MAGIC - `corporate`
+# MAGIC - `unknown`
+# MAGIC
+# MAGIC Count trips with `trip_id`.
+# MAGIC
+# MAGIC **Expected:** **5 borough rows × 5 payment-method columns**.
+# MAGIC
+# MAGIC ### Q2 — Replace NULLs and unpivot
+# MAGIC
+# MAGIC Replace missing pivot values with `0`, then `UNPIVOT` the wide result back
+# MAGIC to long form. The final result should include explicit zero-count rows for
+# MAGIC missing borough and payment-method combinations.
+# MAGIC
+# MAGIC One source row has a NULL `payment_method`. Because NULL is not in the
+# MAGIC explicit `PIVOT ... IN (...)` list, it does not become a separate pivot
+# MAGIC column.
+# MAGIC
+# MAGIC **Expected:** long form from the coalesced wide table (explicit zeros
+# MAGIC included).
 
 # COMMAND ----------
 
@@ -205,8 +261,8 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 
 # MAGIC %sql
 # MAGIC -- Q2: COALESCE zeros, then UNPIVOT back to long (expect explicit 0 rows)
-# MAGIC -- Prefer one statement: UNPIVOT a subquery that applies COALESCE
-# MAGIC -- (or: CREATE TEMP VIEW in one cell, UNPIVOT in the next — not both in one %sql cell)
+# MAGIC -- Hint: UNPIVOT a subquery that applies COALESCE, or create a temp view
+# MAGIC -- then UNPIVOT in the next cell (not both in one %sql cell)
 # MAGIC SELECT pickup_borough
 # MAGIC FROM rideshare_dev.processed.trip_enriched
 # MAGIC WHERE 1 = 0
@@ -216,9 +272,19 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - `PIVOT` reshapes long → wide; NULL cells mark missing combos
-# MAGIC - `COALESCE` makes zeros explicit; SQL temp views hold the wide table
-# MAGIC - `UNPIVOT` round-trips — including the zero rows Step 1 never showed
-# MAGIC - Prefer seeded DataFrame `.sample()` when you need a reproducible draw
+# MAGIC In this notebook, we reshaped the same aggregated data in both directions:
 # MAGIC
-# MAGIC **Next:** `04 - SQL Windows and QUALIFY` — ranking, running totals, and `LAG`.
+# MAGIC `long → PIVOT → wide → UNPIVOT → long`
+# MAGIC
+# MAGIC Key takeaways:
+# MAGIC
+# MAGIC - `PIVOT` turns values from one column into multiple columns
+# MAGIC - Missing pivot combinations appear as NULL
+# MAGIC - `COALESCE` can make those missing combinations explicit as zero
+# MAGIC - `UNPIVOT` turns wide columns back into row values
+# MAGIC - A SQL temp view can hold an intermediate result for later SQL cells
+# MAGIC - `TABLESAMPLE` provides approximate sampling; use a seeded DataFrame
+# MAGIC   sample when reproducibility matters
+# MAGIC
+# MAGIC **Next:** `04 - SQL Windows and QUALIFY` covers ranking, running totals,
+# MAGIC and `LAG`.

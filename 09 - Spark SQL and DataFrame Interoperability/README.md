@@ -159,7 +159,7 @@ Side path: `NOT EXISTS` undriven trips (+ one-line `LEFT ANTI JOIN` awareness).
 2. `PIVOT` to wide
 3. `COALESCE` zeros + SQL temp view
 4. `UNPIVOT` round-trip
-5. `TABLESAMPLE` coda
+5. `TABLESAMPLE`
 
 **04 — SQL Windows and QUALIFY**
 
