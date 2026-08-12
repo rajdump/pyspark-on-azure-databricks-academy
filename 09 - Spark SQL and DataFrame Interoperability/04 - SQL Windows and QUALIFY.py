@@ -47,7 +47,7 @@
 # MAGIC compare zones within the same borough and rank them from highest to
 # MAGIC lowest based on these metrics.
 # MAGIC
-# MAGIC Example shape (toy):
+# MAGIC Example shape:
 # MAGIC
 # MAGIC | pickup_borough | pickup_zone | total_tip | trip_count |
 # MAGIC |---|---|---:|---:|
@@ -60,7 +60,7 @@
 # MAGIC bring in the previous day's distance with `LAG`, and measure the
 # MAGIC day-over-day change.
 # MAGIC
-# MAGIC Example shape (toy):
+# MAGIC Example shape:
 # MAGIC
 # MAGIC | trip_date | total_distance_miles |
 # MAGIC |---|---:|
