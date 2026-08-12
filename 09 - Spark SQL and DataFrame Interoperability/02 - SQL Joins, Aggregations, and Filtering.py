@@ -3,11 +3,11 @@
 # MAGIC # 02 - SQL Joins, Aggregations, and Filtering
 # MAGIC
 # MAGIC In this notebook, we'll build one SQL query step by step — starting with
-# MAGIC trip-level columns and ending with a **driven-trip** tier summary filtered
-# MAGIC by `HAVING`.
+# MAGIC trip-level data and ending with a driven-trip tier summary filtered by
+# MAGIC `HAVING`.
 # MAGIC
-# MAGIC Along the way, we'll also handle a common JOIN problem: two tables containing
-# MAGIC the same column name.
+# MAGIC Along the way, we'll handle a common JOIN problem: both tables contain a
+# MAGIC column with the same name.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -19,9 +19,10 @@
 # MAGIC - Filter aggregated results with `HAVING`
 # MAGIC - Find rows with no matching record using `NOT EXISTS`
 # MAGIC
-# MAGIC **Callbacks:** Module 7 join notebooks; Module 8 `01 - GroupBy and Basic
-# MAGIC Aggregations` and `02 - Multi-column Keys, NULL Groups, and Filter
-# MAGIC Placement`. This notebook is the Spark SQL spelling — not a re-teach.
+# MAGIC **Callbacks:** Module 7 covered join patterns. Module 8 `01 - GroupBy and
+# MAGIC Basic Aggregations` and `02 - Multi-column Keys, NULL Groups, and Filter
+# MAGIC Placement` covered aggregations and filter placement. Here we apply those
+# MAGIC ideas with Spark SQL.
 # MAGIC
 # MAGIC **Reads:**
 # MAGIC - `rideshare_dev.processed.trip_enriched` — **106 rows**
@@ -36,15 +37,15 @@
 # MAGIC %md
 # MAGIC ## Setup — load both tables
 # MAGIC
-# MAGIC We'll join two managed tables:
+# MAGIC We'll use two managed tables:
 # MAGIC
 # MAGIC - `trip_enriched` — **106 trips**
 # MAGIC - `trip_driver_assignment` — driver assignments for **100 trips**
 # MAGIC
 # MAGIC Trips **101–106** have no driver assignment.
 # MAGIC
-# MAGIC Both tables also contain `service_type`. That shared name matters at the
-# MAGIC JOIN.
+# MAGIC Both tables contain `service_type`. Once we join them, we'll need to make
+# MAGIC clear which table that column comes from.
 
 # COMMAND ----------
 
@@ -61,24 +62,25 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ## Main arc — build the query step by step
 # MAGIC
-# MAGIC We'll start with all trips and add one SQL concept at a time until we have
-# MAGIC a driven-trip tier aggregate — then filter those groups with `HAVING`.
+# MAGIC We'll start with trip-level data and add one SQL concept at a time until we
+# MAGIC reach a driven-trip tier summary.
 # MAGIC
-# MAGIC Each step keeps the previous logic and introduces one new piece.
+# MAGIC Each step keeps the previous logic and adds one new piece. The final step
+# MAGIC uses `HAVING` to filter the aggregated result.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Step 1 — Start with the base columns
 # MAGIC
-# MAGIC Begin with the trip-level columns needed for the rest of the query.
+# MAGIC Begin with the trip-level columns we'll need throughout the query.
 # MAGIC
-# MAGIC We intentionally keep NULL values visible for now:
+# MAGIC For now, keep the NULL values visible:
 # MAGIC
 # MAGIC - `tip_amount` is NULL for trips **103** and **106**
 # MAGIC - `base_fare_amount` is NULL for trips **104** and **106**
 # MAGIC
-# MAGIC No filtering or grouping yet — result stays at **106 rows**.
+# MAGIC No filtering, joining, or grouping yet — the result remains at **106 rows**.
 
 # COMMAND ----------
 
@@ -91,8 +93,10 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ### Step 2 — Classify `service_type` into a tier
 # MAGIC
-# MAGIC Add a row-level `CASE WHEN` (same idea as
-# MAGIC `01 - Dual API Foundations and When to Choose`, new labels).
+# MAGIC Add a row-level `CASE WHEN`, using the same conditional pattern introduced in
+# MAGIC `01 - Dual API Foundations and When to Choose`.
+# MAGIC
+# MAGIC Classify each `service_type` into a broader `tier`:
 # MAGIC
 # MAGIC | `service_type` | `tier` |
 # MAGIC |---|---|
@@ -100,7 +104,8 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC | `STANDARD`, `XL` | `standard` |
 # MAGIC | Anything else | `other` |
 # MAGIC
-# MAGIC Each trip gets a `tier` label — the result is still **106 rows**.
+# MAGIC Each trip gets a `tier` label — still **106 rows**. Grain changes only when
+# MAGIC we `GROUP BY` later.
 
 # COMMAND ----------
 
@@ -124,16 +129,18 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC
 # MAGIC Add `COALESCE(tip_amount, 0) AS safe_tip`.
 # MAGIC
-# MAGIC `COALESCE` does **not** remove rows. It keeps every trip and substitutes
-# MAGIC `0` when `tip_amount` is NULL.
+# MAGIC `COALESCE` returns the first non-NULL value. Here that means:
 # MAGIC
-# MAGIC Look at trips **103** and **106** in the result:
+# MAGIC - keep the original `tip_amount` when it has a value
+# MAGIC - use `0` when `tip_amount` is NULL
 # MAGIC
-# MAGIC - `tip_amount` stays NULL (raw value)
-# MAGIC - `safe_tip` shows `0` (substituted value)
+# MAGIC Look at trips **103** and **106**:
 # MAGIC
-# MAGIC Row count is still **106**. We add `COALESCE` here — before the JOIN —
-# MAGIC while those NULL tips are still visible.
+# MAGIC - `tip_amount` remains NULL — the original value
+# MAGIC - `safe_tip` shows `0` — the substituted value
+# MAGIC
+# MAGIC `COALESCE` does not remove rows, so the result remains at **106 rows**.
+# MAGIC Apply it before the JOIN while the NULL-tip rows are still present.
 
 # COMMAND ----------
 
@@ -156,18 +163,17 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ### Step 4 — Join the driver assignment table
 # MAGIC
-# MAGIC Restrict the report to **driven trips** — trips that have a row in
-# MAGIC `trip_driver_assignment` — with an `INNER JOIN` on `trip_id`.
+# MAGIC Restrict the result to **driven trips** by joining
+# MAGIC `trip_driver_assignment` on `trip_id`.
 # MAGIC
-# MAGIC Alias `d` is used only in the `ON` clause (an existence filter). We do not
-# MAGIC select columns from the assignment table.
+# MAGIC We need the assignment table to keep only trips that have a matching
+# MAGIC driver assignment; the selected columns still come from `trip_enriched`.
 # MAGIC
-# MAGIC Both tables contain `service_type`, so after the JOIN a bare
-# MAGIC `service_type` is no longer specific enough.
+# MAGIC Both tables contain `service_type`. After the JOIN, a bare `service_type`
+# MAGIC is no longer specific enough — Spark cannot tell which table we mean.
 # MAGIC
-# MAGIC The next query is **intentionally incorrect**: JOIN aliases are defined,
-# MAGIC but the `CASE WHEN` still uses bare `service_type`. Expect an ambiguous
-# MAGIC column reference error (`AMBIGUOUS_REFERENCE` or the Spark 4 equivalent).
+# MAGIC The next query intentionally leaves `service_type` unqualified so you can
+# MAGIC see the ambiguous column reference error.
 
 # COMMAND ----------
 
@@ -191,16 +197,20 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC #### Fix the ambiguous reference
 # MAGIC
-# MAGIC Qualify which `service_type` Spark should read: `t.service_type`.
-# MAGIC Qualify the other trip columns with `t.` for consistency — the SELECT list
-# MAGIC is still trip columns only.
+# MAGIC Qualify the column with the table alias:
 # MAGIC
-# MAGIC The `INNER JOIN` keeps only driven trips.
+# MAGIC `t.service_type`
 # MAGIC
-# MAGIC **Expected:** **100 rows** — undriven trips **101–106** are removed.
+# MAGIC Qualify the other trip columns with `t.` as well so their source is clear.
 # MAGIC
-# MAGIC NULL-tip trips **103** and **106** were undriven, so they leave with this
-# MAGIC JOIN — `COALESCE` no longer changes tips on the remaining **100** rows.
+# MAGIC The `INNER JOIN` keeps only trips that have a matching driver assignment.
+# MAGIC
+# MAGIC **Expected:** **100 rows** — trips **101–106** have no assignment and are
+# MAGIC removed.
+# MAGIC
+# MAGIC Trips **103** and **106** (NULL tips earlier) are among those undriven
+# MAGIC trips. After this JOIN, `COALESCE` no longer changes any remaining tip
+# MAGIC values.
 
 # COMMAND ----------
 
@@ -224,13 +234,14 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ### Step 5 — Aggregate by tier
 # MAGIC
-# MAGIC Until now, the query returned one row per driven trip. `GROUP BY` changes
-# MAGIC the result to one row per `tier`.
+# MAGIC Until now, the query returned one row per driven trip.
 # MAGIC
-# MAGIC For each tier we calculate trip count, average tip, and total base fare.
+# MAGIC `GROUP BY tier` changes the result to one row per **tier**.
 # MAGIC
-# MAGIC Group with `GROUP BY tier` (Spark allows the select alias). Repeating the
-# MAGIC full `CASE` in `GROUP BY` also works in dialects that disallow aliases.
+# MAGIC For each tier, calculate trip count, average tip, and total base fare.
+# MAGIC
+# MAGIC Spark SQL allows the `tier` alias from the `SELECT` list in `GROUP BY`, so
+# MAGIC we write `GROUP BY tier`.
 # MAGIC
 # MAGIC **Expected:**
 # MAGIC
@@ -262,15 +273,16 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ### Step 6 — Filter aggregated groups with `HAVING`
 # MAGIC
-# MAGIC `WHERE` filters rows **before** aggregation. `HAVING` filters groups
-# MAGIC **after** aggregation.
+# MAGIC `WHERE` filters individual rows **before** aggregation.
 # MAGIC
-# MAGIC Keep tiers whose total base fare is greater than `500`.
+# MAGIC `HAVING` filters the grouped result **after** aggregation.
 # MAGIC
-# MAGIC Callback: Module 8 `02 - Multi-column Keys, NULL Groups, and Filter
-# MAGIC Placement`.
+# MAGIC Keep only tiers whose total base fare is greater than `500`.
 # MAGIC
-# MAGIC **Expected:** **2 rows** — `other` drops (total base fare **308.68**).
+# MAGIC **Expected:** **2 rows** — `other` is removed (total base fare **308.68**).
+# MAGIC
+# MAGIC **Callback:** Module 8 `02 - Multi-column Keys, NULL Groups, and Filter
+# MAGIC Placement` covered the same filter-placement idea with the DataFrame API.
 
 # COMMAND ----------
 
@@ -295,11 +307,11 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ## Side path — find trips with no driver assignment
 # MAGIC
-# MAGIC Not every question needs aggregation. To find trips with **no** matching
-# MAGIC row in `trip_driver_assignment`, use `NOT EXISTS`.
+# MAGIC Not every question needs aggregation.
 # MAGIC
-# MAGIC For each trip, Spark checks whether a matching `trip_id` exists in the
-# MAGIC assignment table and keeps the trip only when no match is found.
+# MAGIC To find trips that have **no matching driver assignment**, use
+# MAGIC `NOT EXISTS`. The condition keeps a trip when no matching `trip_id` exists
+# MAGIC in `trip_driver_assignment`.
 # MAGIC
 # MAGIC **Expected:** **6 trips** — `101` through `106`.
 
@@ -318,9 +330,9 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `LEFT ANTI JOIN` asks the same high-level question: keep left-side rows with
-# MAGIC no match on the right. Module 7 used that pattern in the DataFrame API;
-# MAGIC here `NOT EXISTS` is the SQL form.
+# MAGIC `LEFT ANTI JOIN` expresses the same business question: keep left-side rows
+# MAGIC that have no match on the right. Module 7 used the anti-join pattern in the
+# MAGIC DataFrame API; here `NOT EXISTS` is the SQL form.
 
 # COMMAND ----------
 
@@ -329,12 +341,13 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC
 # MAGIC ### Q1 — Filter aggregated tiers
 # MAGIC
-# MAGIC Using **driven trips only**, return tiers that satisfy both:
+# MAGIC Using **driven trips only**, return tiers that meet both conditions:
 # MAGIC
 # MAGIC - more than **20 trips**
 # MAGIC - total base fare greater than **300**
 # MAGIC
-# MAGIC Use table aliases, `JOIN`, `CASE WHEN`, `GROUP BY`, and compound `HAVING`.
+# MAGIC Use table aliases, `JOIN`, `CASE WHEN`, `GROUP BY`, and a compound `HAVING`
+# MAGIC condition.
 # MAGIC
 # MAGIC **Expected:** **2 rows**
 # MAGIC
@@ -343,7 +356,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC
 # MAGIC ### Q2 — Find undriven trips
 # MAGIC
-# MAGIC Use `NOT EXISTS` to return trips with no driver assignment.
+# MAGIC Use `NOT EXISTS` to return trips that have no driver assignment.
 # MAGIC
 # MAGIC **Expected:** **6 `trip_id`s** — `101–106`.
 
@@ -379,18 +392,19 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC One SQL query grew into a driven-trip tier summary:
+# MAGIC We built one SQL query from trip-level data into a driven-trip tier summary:
 # MAGIC
 # MAGIC `SELECT` → `CASE WHEN` → `COALESCE` → `JOIN` → `GROUP BY` → `HAVING`
 # MAGIC
 # MAGIC Key takeaways:
 # MAGIC
-# MAGIC - `INNER JOIN` to assignment restricts to driven trips (`d` in `ON` only)
-# MAGIC - Qualify shared column names after a JOIN (`t.service_type`)
-# MAGIC - `COALESCE` keeps a row and substitutes; `WHERE` can remove the row
-# MAGIC - `GROUP BY tier` changes driven-trip grain to tier grain
+# MAGIC - `CASE WHEN` adds row-level categories without changing the grain
+# MAGIC - `COALESCE` substitutes a value without removing the row
+# MAGIC - An `INNER JOIN` keeps trips with matching driver assignments
+# MAGIC - Qualify shared column names after a JOIN, such as `t.service_type`
+# MAGIC - `GROUP BY tier` changes the result from trip grain to tier grain
 # MAGIC - `HAVING` filters aggregated groups
-# MAGIC - `NOT EXISTS` finds undriven trips
+# MAGIC - `NOT EXISTS` finds rows that have no matching record
 # MAGIC
 # MAGIC **Next:** `03 - SQL Pivot, Unpivot, and Sampling` reshapes aggregated data
 # MAGIC between long and wide forms.
