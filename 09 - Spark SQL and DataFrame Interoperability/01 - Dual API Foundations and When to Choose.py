@@ -2,22 +2,29 @@
 # MAGIC %md
 # MAGIC # 01 - Dual API Foundations and When to Choose
 # MAGIC
-# MAGIC Module 9 re-expresses analytics you already built in PySpark — this time in
-# MAGIC Spark SQL — and shows when each API entry point fits.
+# MAGIC Spark lets us work with the same data through **Spark SQL** or the
+# MAGIC **DataFrame API**.
+# MAGIC
+# MAGIC In this notebook, we'll use the same `trip_enriched` table through both APIs,
+# MAGIC move results between SQL and DataFrames, and learn when each entry point is
+# MAGIC the better fit.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Query a Unity Catalog table with `%sql` and with `spark.table`
-# MAGIC - Bridge SQL → DataFrame (`spark.sql`) and DataFrame → SQL (temp view)
-# MAGIC - Apply row-level `CASE WHEN` for absolute `tip_amount_band`
-# MAGIC - Choose among `%sql`, `spark.table`, `spark.sql`→DF, and DF→temp view
+# MAGIC - Query a Unity Catalog table directly with `%sql`
+# MAGIC - Load the same table as a DataFrame with `spark.table`
+# MAGIC - Run SQL with `spark.sql(...)` and continue with the DataFrame API
+# MAGIC - Expose a DataFrame to SQL with `createOrReplaceTempView`
+# MAGIC - Build absolute `tip_amount_band` with row-level `CASE WHEN` (≠ Module 6 `tip_band`)
+# MAGIC - Choose the right entry point for the task
 # MAGIC
-# MAGIC **Callback:** Module 2 `06 - Querying DataFrames with SQL` already covered
-# MAGIC temp views, `%sql`, and `spark.sql`. This notebook adds UC table paths and
-# MAGIC a when-to-choose habit.
+# MAGIC **Callback:** Module 2 `06 - Querying DataFrames with SQL` introduced
+# MAGIC `%sql`, `spark.sql`, and temp views. Here, we apply those patterns to
+# MAGIC Unity Catalog tables and compare the entry points side by side.
 # MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106). **No writes.**
-# MAGIC Aggregations start in `02 - SQL Joins, Aggregations, and Filtering`.
+# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` — **106 rows**
+# MAGIC
+# MAGIC **Writes:** None. This notebook is read-only.
 # MAGIC
 # MAGIC **Prerequisites:** Module 7–8 managed tables; Module 2 SQL intro.
 
@@ -26,7 +33,9 @@
 # MAGIC %md
 # MAGIC ## Setup — load `trip_enriched`
 # MAGIC
-# MAGIC Module 7 managed table: one row per `trip_id`, **106** rows.
+# MAGIC We'll use `rideshare_dev.processed.trip_enriched` throughout — **106** trips,
+# MAGIC one row per `trip_id`. Load it as a DataFrame now so it is ready when we
+# MAGIC switch to the DataFrame API.
 
 # COMMAND ----------
 
@@ -39,10 +48,13 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Direct SQL on a UC table
+# MAGIC ## 1. Direct SQL on a Unity Catalog table
 # MAGIC
-# MAGIC Glance at tip and borough for a few trips. `%sql` can name
-# MAGIC `rideshare_dev.processed.trip_enriched` directly — no temp view.
+# MAGIC Because `trip_enriched` is a Unity Catalog table, `%sql` can query its
+# MAGIC three-part name (`catalog.schema.table`) directly — no DataFrame or temp
+# MAGIC view:
+# MAGIC
+# MAGIC `rideshare_dev.processed.trip_enriched`
 
 # COMMAND ----------
 
@@ -54,11 +66,13 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- List tables in the processed schema
 # MAGIC SHOW TABLES IN rideshare_dev.processed
 
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- Inspect columns and data types
 # MAGIC DESCRIBE TABLE rideshare_dev.processed.trip_enriched
 
 # COMMAND ----------
@@ -66,7 +80,11 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 2. Same projection via DataFrame API
 # MAGIC
-# MAGIC Same table via the Setup DataFrame: `.select` → `.limit`.
+# MAGIC Return the same four columns through the Setup DataFrame. The data has not
+# MAGIC changed — only the API used to express the query has changed.
+# MAGIC
+# MAGIC SQL used `SELECT` and `LIMIT`; the DataFrame API uses `.select()` and
+# MAGIC `.limit()`.
 
 # COMMAND ----------
 
@@ -82,9 +100,13 @@ trip_enriched.select(
 # MAGIC %md
 # MAGIC ## 3. SQL → DataFrame bridge
 # MAGIC
-# MAGIC `spark.sql(...)` returns a DataFrame.
+# MAGIC `%sql` is convenient when the entire cell stays in SQL. Use `spark.sql(...)`
+# MAGIC when you want to write the query in SQL and continue with the result in
+# MAGIC Python — it returns a DataFrame.
 # MAGIC
-# MAGIC `WHERE tip_amount IS NOT NULL` → **104** rows.
+# MAGIC Keep only trips with a known `tip_amount`.
+# MAGIC
+# MAGIC **Expected:** **104** rows.
 
 # COMMAND ----------
 
@@ -102,20 +124,24 @@ known_tips.limit(5).show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Row-level `CASE WHEN` (absolute tip bands)
+# MAGIC ## 4. Row-level `CASE WHEN`
 # MAGIC
-# MAGIC Add `tip_amount_band` with `CASE WHEN` — still **106** rows. Absolute
-# MAGIC dollar bands (≠ Module 6 percent `tip_band`):
+# MAGIC We'll classify `tip_amount` into a new `tip_amount_band` column. This is a
+# MAGIC **row-level transformation**, so the dataset remains at **106** rows.
 # MAGIC
-# MAGIC | Condition | Band |
+# MAGIC These are absolute tip-amount bands, not the percentage-based `tip_band`
+# MAGIC used earlier in Module 6.
+# MAGIC
+# MAGIC | Condition | `tip_amount_band` |
 # MAGIC |---|---|
-# MAGIC | `tip_amount` IS NULL | `no_data` |
-# MAGIC | `= 0` | `zero` |
-# MAGIC | `<= 3` | `low` |
-# MAGIC | `<= 6` | `medium` |
-# MAGIC | else | `high` |
+# MAGIC | `tip_amount IS NULL` | `no_data` |
+# MAGIC | `tip_amount = 0` | `zero` |
+# MAGIC | `tip_amount <= 3` | `low` |
+# MAGIC | `tip_amount <= 6` | `medium` |
+# MAGIC | Otherwise | `high` |
 # MAGIC
-# MAGIC Expected: **zero 26 / low 40 / medium 20 / high 18 / no_data 2**.
+# MAGIC **Expected distribution:** `zero` **26** · `low` **40** · `medium` **20** ·
+# MAGIC `high` **18** · `no_data` **2**
 
 # COMMAND ----------
 
@@ -138,8 +164,10 @@ known_tips.limit(5).show()
 # MAGIC %md
 # MAGIC ## 5. DataFrame → SQL bridge
 # MAGIC
-# MAGIC Register a computed DataFrame with `createOrReplaceTempView` so `%sql` can
-# MAGIC use a name (Module 2 — `%sql` resolves names, not Python variables).
+# MAGIC Create the same `tip_amount_band` with `F.when(...)`, then register the
+# MAGIC DataFrame as the session temp view `trip_tip_band`. `%sql` can query that
+# MAGIC name even though the transform was built in PySpark (`%sql` resolves names,
+# MAGIC not Python variables).
 
 # COMMAND ----------
 
@@ -158,6 +186,7 @@ print("Temp view registered: trip_tip_band")
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- Query the temp view registered from the PySpark DataFrame
 # MAGIC SELECT trip_id, tip_amount, tip_amount_band
 # MAGIC FROM trip_tip_band
 # MAGIC LIMIT 20
@@ -167,35 +196,41 @@ print("Temp view registered: trip_tip_band")
 # MAGIC %md
 # MAGIC ## 6. When to choose
 # MAGIC
+# MAGIC Choose based on **where you write the logic and where the result needs to go
+# MAGIC next**. The APIs are not competing ways to access different data — they are
+# MAGIC different entry points into the same Spark workflow.
+# MAGIC
 # MAGIC | Entry point | Use when |
 # MAGIC |---|---|
-# MAGIC | Direct `%sql` on a UC table | Whole cell is SQL; table already has a catalog name |
-# MAGIC | `spark.table` → DataFrame API | PySpark transforms / reuse a loaded DF |
-# MAGIC | `spark.sql(...)` → DataFrame | Filter or project in SQL, then continue in Python |
-# MAGIC | DF → `createOrReplaceTempView` | Computed columns in PySpark need a SQL name |
+# MAGIC | Direct `%sql` | Whole cell is SQL; table already has a catalog name |
+# MAGIC | `spark.table` → DataFrame | Work with a catalog table in the DataFrame API |
+# MAGIC | `spark.sql(...)` → DataFrame | Write SQL, then continue with the result in Python |
+# MAGIC | DF → `createOrReplaceTempView` | Built in PySpark; need a SQL name |
 # MAGIC
-# MAGIC Pick one entry point per cell and stay consistent inside that cell.
+# MAGIC Choose the entry point deliberately, then keep the cell focused on that path.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Return Manhattan trips with a known tip, labeled with `tip_amount_band`.
+# MAGIC Return Manhattan trips that have a known tip and assign the same
+# MAGIC `tip_amount_band` used in Section 4.
 # MAGIC
-# MAGIC Requirements:
+# MAGIC ### Requirements
 # MAGIC
-# MAGIC - `WHERE pickup_borough = 'Manhattan'` and `tip_amount IS NOT NULL`
-# MAGIC - Same absolute `CASE` bands as Section 4
-# MAGIC - SQL only — no PySpark rewrite
-# MAGIC - One SQL comment: which entry point you would choose and why
+# MAGIC - Use SQL
+# MAGIC - Keep only `pickup_borough = 'Manhattan'`
+# MAGIC - Exclude rows where `tip_amount` is NULL
+# MAGIC - Reuse the Section 4 `CASE WHEN` bands
+# MAGIC - Add one SQL comment explaining why `%sql` is a good entry point here
 # MAGIC
-# MAGIC **Expected:** **43** rows.
+# MAGIC **Expected:** **43 rows**
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC -- I chose ... because ...
+# MAGIC -- %sql because ...
 # MAGIC SELECT
 # MAGIC   trip_id,
 # MAGIC   tip_amount,
@@ -213,8 +248,16 @@ print("Temp view registered: trip_tip_band")
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Four entry points: `%sql`, `spark.table`, `spark.sql`→DF, DF→temp view
-# MAGIC - Row-level `CASE WHEN` → `tip_amount_band` (106 rows; absolute ≠ Module 6 `tip_band`)
+# MAGIC The same Spark data can move between SQL and the DataFrame API without
+# MAGIC changing the underlying dataset.
 # MAGIC
-# MAGIC **Next:** `02 - SQL Joins, Aggregations, and Filtering` — JOIN aliases,
-# MAGIC first Module 9 `GROUP BY`, `HAVING`.
+# MAGIC - `%sql` → work directly in SQL
+# MAGIC - `spark.table(...)` → start from a catalog table in the DataFrame API
+# MAGIC - `spark.sql(...)` → write SQL and keep the result as a DataFrame
+# MAGIC - `createOrReplaceTempView(...)` → expose a DataFrame to SQL
+# MAGIC
+# MAGIC You also used SQL `CASE WHEN` for a row-level transformation without
+# MAGIC changing the dataset grain.
+# MAGIC
+# MAGIC **Next:** `02 - SQL Joins, Aggregations, and Filtering` adds SQL joins,
+# MAGIC `GROUP BY`, and `HAVING`.
