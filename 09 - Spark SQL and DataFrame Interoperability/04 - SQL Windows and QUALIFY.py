@@ -299,19 +299,16 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ## Exercise
 # MAGIC
-# MAGIC Top 2 zones per borough by **`trip_count`**, only zones with
-# MAGIC `trip_count >= 3`.
+# MAGIC Within each borough, which zones rank highest by **`trip_count`**?
+# MAGIC Keep only zones with at least **3** trips, then keep the Top **2**.
 # MAGIC
 # MAGIC | clause | job |
 # MAGIC |---|---|
-# MAGIC | `WHERE` | drop zones with `trip_count < 3` |
-# MAGIC | `QUALIFY` | keep `rn` 1 and 2 within each borough |
+# MAGIC | `WHERE trip_count >= 3` | remove low-volume zones first |
+# MAGIC | `ROW_NUMBER() ... ORDER BY trip_count DESC` | rank within each borough |
+# MAGIC | `QUALIFY ... <= 2` | keep `rn` 1 and 2 |
 # MAGIC
-# MAGIC Rank with:
-# MAGIC
-# MAGIC `ROW_NUMBER() OVER (PARTITION BY pickup_borough ORDER BY trip_count DESC)`
-# MAGIC
-# MAGIC **Expected:** **8 rows** (Staten Island removed by `WHERE`).
+# MAGIC **Expected:** **8 rows** (Staten Island is removed by `WHERE`).
 
 # COMMAND ----------
 
@@ -332,13 +329,21 @@ print(f"kpi_daily_trip_summary: {kpi_daily.count()} rows")  # expect 14
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC | topic | pattern |
+# MAGIC **Part 1 — rank zones**
+# MAGIC
+# MAGIC | step | pattern |
 # MAGIC |---|---|
-# MAGIC | Rank within borough | `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` |
-# MAGIC | Top-N in place | `QUALIFY ... <= N` |
-# MAGIC | Top-N portable | subquery + `WHERE rn <= N` |
+# MAGIC | Rank within a borough | `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` |
+# MAGIC | Keep Top-N in one query | `QUALIFY ... <= N` |
+# MAGIC | Same Top-N when you need `rn` later | subquery / CTE + `WHERE rn <= N` |
+# MAGIC
+# MAGIC **Part 2 — track distance**
+# MAGIC
+# MAGIC | step | pattern |
+# MAGIC |---|---|
 # MAGIC | Running total | windowed `SUM` + `ROWS` frame |
-# MAGIC | Day-over-day | `LAG` → `distance_change` → `CASE` direction |
+# MAGIC | Previous day | `LAG` → `distance_change` |
+# MAGIC | Label the change | `CASE` → `up` / `down` / `flat` / `n/a` |
 # MAGIC
 # MAGIC **Next:** `05 - CTEs and Parameterized SQL` — named query steps and safe
 # MAGIC SQL parameters.
