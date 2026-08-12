@@ -406,5 +406,5 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC - `HAVING` filters aggregated groups
 # MAGIC - `NOT EXISTS` finds rows that have no matching record
 # MAGIC
-# MAGIC **Next:** `03 - SQL Pivot, Unpivot, and Sampling` reshapes aggregated data
-# MAGIC between long and wide forms.
+# MAGIC **Next:** `03 - SQL Pivot, Unpivot, and Sampling` — `PIVOT` / `UNPIVOT`
+# MAGIC reshape and `TABLESAMPLE`.

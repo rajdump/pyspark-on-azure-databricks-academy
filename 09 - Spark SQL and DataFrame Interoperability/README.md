@@ -121,7 +121,7 @@ synthesis).
 |---|---|---|---|
 | 1 | Dual API Foundations and When to Choose | `trip_enriched` | UC `%sql` + `spark.table`; `spark.sql`→DF; row-level `CASE` → `tip_amount_band` (≠ Module 6 percent `tip_band`); DF→temp view; when-to-choose table. **No `GROUP BY`.** Locked bands: zero 26 / low 40 / medium 20 / high 18 / no_data 2. Exercise → **43** Manhattan known-tip rows |
 | 2 | SQL Joins, Aggregations, and Filtering | `trip_enriched`, `trip_driver_assignment` | Layered arc: projection → service `tier` CASE → `COALESCE` → JOIN (deliberate `AMBIGUOUS_REFERENCE` then fix) → first `GROUP BY` → `HAVING`. Side path: `NOT EXISTS` undriven (**6**). After JOIN: high 15 / standard 64 / other 21. Exercise: compound `HAVING` + undriven ids |
-| 3 | SQL Pivot, Unpivot, and Sampling | `trip_enriched` | Long baseline (**18** borough×service) → `PIVOT` wide → `COALESCE` zeros + SQL `TEMP VIEW` → `UNPIVOT` round-trip; brief non-deterministic `TABLESAMPLE`. Exercise: `payment_method` reshape by borough |
+| 3 | SQL Pivot, Unpivot, and Sampling | `trip_enriched` | Borough×service counts (**18**) → `PIVOT` service columns → `COALESCE` zeros + SQL `TEMP VIEW` → `UNPIVOT` back to rows; brief non-deterministic `TABLESAMPLE`. Exercise: `payment_method` reshape by borough |
 | 4 | SQL Windows and QUALIFY | `kpi_zone_performance`, `kpi_daily_trip_summary` | Arc A: `ROW_NUMBER` + `QUALIFY` Top-2 by tip (**9** rows) + subquery equivalent. Arc B: running distance + `LAG` + direction `CASE`. Exercise: Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows |
 | 5 | CTEs and Parameterized SQL | `trip_enriched` | Single CTE → multi-CTE tip-share → nested-subquery contrast → `:borough` params (anti f-string) → CTE + params. Exercise: borough daily tip as share of fleet daily |
 | 6 | End-to-End SQL Pipeline and Parity Inspection | all five tables | Rebuild daily / zone / driver KPIs via `spark.sql(...)`; `show_parity` displays counts + `exceptAll` (no assert). No exercise. Phase II synthesis → Module 10 |
@@ -155,10 +155,10 @@ Side path: `NOT EXISTS` undriven trips (+ one-line `LEFT ANTI JOIN` awareness).
 
 **03 — SQL Pivot, Unpivot, and Sampling**
 
-1. Long-form baseline
-2. `PIVOT` to wide
+1. Borough × service counts
+2. `PIVOT` service types into columns
 3. `COALESCE` zeros + SQL temp view
-4. `UNPIVOT` round-trip
+4. `UNPIVOT` columns back to rows
 5. `TABLESAMPLE`
 
 **04 — SQL Windows and QUALIFY**
