@@ -1,0 +1,186 @@
+# Workspace files and usage
+
+Author-only reference. This is **not** a learner notebook.
+
+This repo is a **course authoring workspace**, not a Spark application.
+Learner notebooks live in numbered module folders (`01`–`09` so far).
+Everything else supports authoring, the shared rideshare dataset, local
+tooling, and Databricks Git sync.
+
+There is no `src/` package and no `tests/` folder yet. Those are planned
+for later modules (13 and 16).
+
+## How the pieces fit together
+
+```text
+Author in Cursor
+  README.md + COURSE_MODULES.md     → what the course is
+  docs/standards + .cursor/         → how to write notebooks
+  docs/data + data/raw              → what data notebooks use
+  NN - Module/README.md             → that module's lesson plan
+        ↓
+  GitHub (source of truth)
+        ↓
+  Azure Databricks Git folder runs notebooks
+        ↓
+  docs/validation/                  → record what actually ran
+  vault/ + take_notes/              → private tracking
+```
+
+**If you are a learner:** start at root `README.md` → `COURSE_MODULES.md`
+→ a module `README.md` → its notebooks. You only need `data/raw` once you
+hit Module 5.
+
+**If you are authoring:** `AGENTS.md` → `docs/standards/` → module
+`README.md` → slash commands. Use `vault/` for personal tracking, not as
+the public course spec.
+
+## 1. Course source of truth (root)
+
+These are the canonical course docs. Status and roadmap live here, not in
+notebooks.
+
+| File | Usage |
+|---|---|
+| `README.md` | Learner-facing overview: who the course is for, DBR 17.3 LTS baseline, Git → Databricks workflow, where to start |
+| `COURSE_MODULES.md` | **Author-owned** 20-module roadmap: purpose, topics, prerequisites, production relevance, Complete / Started / Not Started. Agents must not update status here unless asked |
+| `AGENTS.md` | Pointer file for Cursor/agents: what the project is, where standards live, what not to auto-write |
+
+## 2. Shared dataset
+
+The same small rideshare dataset (`trip`, `trip_time`, `payment`,
+`zone_lookup`, plus nested `drivers`) threads through every module.
+
+### Schema and pipeline contracts
+
+| File | Usage |
+|---|---|
+| `docs/data/dataset-overview.md` | Canonical schemas, join keys, row counts, Volume paths, and how Modules 5–8 transform landing → curated → managed tables → KPIs. Notebooks should follow this, not invent schemas |
+
+### Physical files (`data/raw/`)
+
+Copied onto a Unity Catalog Volume in Module 5. Intentionally small
+(~100 rows) for fast iteration.
+
+| Path | Usage |
+|---|---|
+| `data/raw/csv/` | `trip.csv`, `trip_time.csv`, `payment.csv`, `zone_lookup.csv` plus **controlled-bad** files (`bad_trip_data.csv`, `bad_payment_data.csv`) for schema/quality teaching |
+| `data/raw/json/` | Same four tables as JSON (Module 5 JSON reads) |
+| `data/raw/parquet/` | Same four tables as Parquet (binary; Cursor ignores them via `.cursorignore`) |
+| `data/raw/avro/` | `payment.avro` (+ `.crc`) for Avro reads |
+| `data/raw/xml/` | `drivers.xml` — nested supplementary dataset used from Module 5/6 onward |
+
+## 3. Authoring standards (`docs/standards/`)
+
+These are the writing rules. Slash commands and Cursor rules **point
+here**; they do not duplicate the content.
+
+| File | Usage |
+|---|---|
+| `notebook-authoring-checklist.md` | Shared read list for `/new-lesson`, `/write-lesson`, `/validate-notebook` |
+| `notebook-writing.md` | Databricks source `.py` format: header, `# COMMAND ----------`, cell structure |
+| `teaching-guidelines.md` | Pedagogy: how to explain, what to show, what not to skip |
+| `coding-standards.md` | Python / PySpark conventions in notebooks |
+| `naming-conventions.md` | `NN - Descriptive Title` folders and notebooks |
+| `compute-validation-policy.md` | Which compute to use and the Standard → serverless validation order |
+| `permissions-and-governance.md` | Azure RBAC vs workspace permissions vs Unity Catalog privileges; “minimum privileges” pattern for module READMEs |
+
+## 4. Runtime validation evidence (`docs/validation/`)
+
+One Markdown file per completed module (`01`–`09`). Fill these **after**
+running notebooks in Azure Databricks (compute used, pass/partial, DBR
+notes). Agents must not write this automatically.
+
+## 5. Module design (not the `.py` notebooks)
+
+Each numbered folder has a `README.md` that owns **that module’s**
+objectives, notebook order, exercises, dataset notes, and privileges. It
+must not copy the full roadmap.
+
+| Path | Usage |
+|---|---|
+| `01` … `09 - …/README.md` | Detailed design + notebook navigation for each complete module |
+
+Module 7 also has approved build specs (not lesson text):
+
+| Path | Usage |
+|---|---|
+| `07 …/requirements/BRD.md` | Business requirements for `trip_enriched` and `trip_driver_assignment` |
+| `07 …/requirements/trip_enriched_mapping.md` | Column-level source-to-target mapping |
+| `07 …/requirements/trip_driver_assignment_mapping.md` | Same for the driver-assignment table |
+
+## 6. Cursor authoring automation (`.cursor/`)
+
+Used when writing course content in Cursor. Learners running notebooks
+in Databricks do not need these.
+
+### Slash commands (`.cursor/commands/`)
+
+| Command file | What it does |
+|---|---|
+| `new-lesson.md` | Scaffold a skeleton notebook from the module README |
+| `write-lesson.md` | Fill a skeleton into a full lesson against the standards |
+| `validate-notebook.md` | Authoring-quality review (not Databricks runtime) |
+| `review-module.md` | Whole-module completeness/consistency check |
+
+### Rules (`.cursor/rules/`)
+
+| File | When it applies |
+|---|---|
+| `learner-notebooks.mdc` | Editing `NN - */*.py` notebooks — load the checklist and dataset doc |
+| `course-authoring.mdc` | Editing root/module READMEs or `COURSE_MODULES.md` |
+| `notebook-command-output.mdc` | Keep slash-command replies short |
+
+`.cursorignore` keeps binary Parquet/Avro, `uv.lock`, and `.venv/` out of
+AI context.
+
+## 7. Local Python tooling (does **not** run Spark)
+
+Spark, Delta, and Unity Catalog run only in Azure Databricks.
+
+| File | Usage |
+|---|---|
+| `pyproject.toml` | Declares `uv` + `ruff` / `mypy` / `pytest` for local format/lint/type/non-Spark tests. Empty runtime `dependencies` |
+| `uv.lock` | Pinned versions from `uv sync` (generated; gitignored from AI context) |
+| `.editorconfig` | Indent, charset, newlines for editors |
+| `.gitignore` | Ignores `.venv`, caches, `.env`, `.databricks/`, editor junk |
+| `.env.example` | Template for optional `DATABRICKS_HOST` / `DATABRICKS_TOKEN` for CLI/Connect. Copy to gitignored `.env`; never put real secrets in the template |
+
+`pytest` is configured with `testpaths = ["tests"]`, but **`tests/` does
+not exist yet**.
+
+## 8. Author notes (not learner-facing)
+
+### Obsidian vault (`vault/`)
+
+Open **this folder** as the Obsidian vault, not the repo root. Course
+source of truth stays outside so Git/Databricks/Cursor paths stay stable.
+
+| File | Usage |
+|---|---|
+| `vault/README.md` | How to open the vault and what belongs there |
+| `vault/home.md` | Dashboard: current module, links into the repo |
+| `vault/progress.md` | Personal progress tracker (does not override `COURSE_MODULES.md`) |
+| `vault/decisions.md` | Decision log with links back to canonical docs |
+| `vault/.obsidian/` | Obsidian app settings for this vault |
+
+### Scratch notes (`take_notes/`)
+
+| File | Usage |
+|---|---|
+| `NB07_personal_notes.md` | Long-form personal walkthrough of Module 7 table-build logic |
+| `course-modules-review-issues.md` | Review log from the Phase III–V roadmap rewrite |
+| `root-readme-review-issues.md` | Review log for the root README |
+| `M5.txt` | Loose Module 5 topic reminders (row vs column formats, lakehouse, Avro vs Parquet) |
+| `Workspace Files and Usage.md` | This note — workspace file catalog, excluding learner notebooks |
+
+## 9. Generated / local / accidental (usually ignore)
+
+| Path | Usage |
+|---|---|
+| `.venv/`, `.ruff_cache/`, `.mypy_cache/`, `.pytest_cache/` | Local tool caches (gitignored) |
+| `.databricks/` | Databricks CLI / Asset Bundle local state (gitignored) |
+| `.vscode/` | Editor settings (gitignored) |
+| `.obsidian/` at **repo root** | Extra Obsidian config; the intended vault is `vault/` |
+| `Untitled.canvas` | Empty leftover canvas file |
+| `Workspace/Users/…/.assistant_instructions.md` | Databricks workspace / Git-folder artifact, not course content |
