@@ -290,14 +290,11 @@ manhattan_daily.show(14, truncate=False)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC Tip-share is borough tip ÷ fleet tip × 100.
+# MAGIC Two SQL patterns help when a query starts doing more than one thing:
 # MAGIC
-# MAGIC - A **CTE** names a step, such as tip per pickup borough
-# MAGIC - Two CTEs compare each borough with the fleet total
-# MAGIC - Nested subqueries can return the same share without those names
-# MAGIC - `:params` keep the SQL fixed; `args` supplies the borough
-# MAGIC - Prefer `:params` over an f-string that pastes the value into SQL
-# MAGIC - The same formula on **date**: borough daily ÷ fleet daily × 100
+# MAGIC - **CTEs** organize several SQL operations into clear, named steps.
+# MAGIC - **Named parameters** let the same SQL query run with different input
+# MAGIC   values without rewriting the query.
 # MAGIC
 # MAGIC **Next:** `06 - End-to-End SQL Pipeline and Parity Inspection` rebuilds
 # MAGIC the Module 8 KPI results in SQL and compares them with the existing
