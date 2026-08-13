@@ -231,6 +231,7 @@ daily_share_sql = """
 WITH borough_daily AS (
   SELECT
     trip_date,
+    max(pickup_borough) as pickup_borough,
     SUM(tip_amount) AS borough_tip
   FROM rideshare_dev.processed.trip_enriched
   WHERE pickup_borough = :borough
@@ -249,6 +250,7 @@ fleet_daily AS (
 )
 SELECT
   f.trip_date,
+  pickup_borough,
   b.borough_tip,
   f.fleet_tip,
   ROUND(100 * b.borough_tip / NULLIF(f.fleet_tip, 0), 1) AS tip_share_pct
