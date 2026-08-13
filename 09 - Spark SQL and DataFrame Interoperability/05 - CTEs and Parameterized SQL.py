@@ -200,26 +200,12 @@ for borough in boroughs:
 # MAGIC %md
 # MAGIC ## 5. CTE + params combined
 # MAGIC
-# MAGIC **For a selected borough, what share of that day's fleet tip came from
-# MAGIC the borough?**
+# MAGIC Same metric as section 2: borough tip ÷ fleet tip × 100, applied on
+# MAGIC date instead of pickup borough.
 # MAGIC
-# MAGIC Two daily CTEs join on `trip_date`:
-# MAGIC
-# MAGIC | name | meaning |
-# MAGIC |---|---|
-# MAGIC | `borough_daily` | tip for the selected borough on each date |
-# MAGIC | `fleet_daily` | tip across all boroughs on each date |
-# MAGIC | `tip_share_pct` | borough daily / fleet daily × 100 |
-# MAGIC
-# MAGIC Parameters:
-# MAGIC
-# MAGIC - `:borough` — which borough
-# MAGIC - `:min_tip` — keeps **individual trip rows** with
-# MAGIC   `COALESCE(tip_amount, 0) >= :min_tip` **before** `GROUP BY trip_date`
-# MAGIC   (not a filter on the daily total)
-# MAGIC
-# MAGIC With `:borough = 'Manhattan'` and `:min_tip = 0`, dated days are included.
-# MAGIC Trips **101–106** have no `trip_date` and drop out.
+# MAGIC The first CTE sums tip per `trip_date` for one pickup borough
+# MAGIC (`:borough`). The second CTE sums tip per date across all boroughs.
+# MAGIC Then divide: borough daily ÷ fleet daily × 100.
 # MAGIC
 # MAGIC **Expected:** **14 rows**. Share can be **100%** when all tip that day is
 # MAGIC in the borough.
