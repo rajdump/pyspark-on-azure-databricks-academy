@@ -3,13 +3,12 @@
 ## Purpose
 
 Express the same rideshare analytics in Spark SQL that Modules 7–8 already
-built in the DataFrame API — and prove the two APIs agree by inspection.
+built in the DataFrame API.
 
 **SQL-first.** No SQL→PySpark homework. Python `spark.table` setup appears in
 every notebook. DataFrame **transforms** appear only in Notebook **01**
 (SQL↔DF bridges). Notebook **05** uses Python solely to bind `:params` via
-`spark.sql(..., args=...)`. Notebook **06** adds the parity inspection
-helper. All other lesson cells are `%sql` or SQL text.
+`spark.sql(..., args=...)`. All other lesson cells are `%sql` or SQL text.
 
 Two habits run through the module:
 
@@ -20,7 +19,7 @@ Two habits run through the module:
 
 **No managed-table writes.** Read-only consumers of Module 7 and Module 8
 tables. Notebook **03** may create session temp views. Automated `assert` /
-pytest-style checks → Module 17; Notebook **06** displays diffs only.
+pytest-style checks → Module 17.
 
 Schemas, join keys, and KPI contracts:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md) and
@@ -41,8 +40,7 @@ By the end of this module, you'll be able to:
   totals / `LAG` on daily KPI grain
 - Compose multi-step logic with CTEs and safe named `:params` (not
   f-string SQL)
-- Rebuild Module 8 KPI contracts in SQL and **inspect** parity vs managed
-  tables (`exceptAll` diffs — no Python `assert`)
+- Rebuild Module 8 KPI contracts in Spark SQL (read-only; no writes)
 
 ## Prerequisites
 
@@ -70,10 +68,8 @@ Does **not** write managed tables or touch `practice/` / `curated/`.
 | Reads | Unity Catalog managed tables listed above |
 | Writes | **None** to managed tables — session temp views only (Notebook **03**) |
 
-Notebook **06** rebuilds the three KPI contracts in SQL and compares to the
-managed tables with a display-only `show_parity` helper. Expected result
-when formulas match: matching row counts and empty bidirectional
-`exceptAll` diffs.
+Notebook **06** rebuilds the three KPI contracts in SQL (read-only). It does
+not write tables or compare results with a validation helper.
 
 **Cleanup:** Module 5 **`99`** Level 4 drops these managed tables with the
 rest of `rideshare_dev`. This module creates nothing durable to tear down.
@@ -87,7 +83,7 @@ Python is allowed.
 
 **In scope:** dual-API entry points; SQL joins / aggs / `HAVING`;
 `PIVOT` / `UNPIVOT` / brief `TABLESAMPLE`; windows + `QUALIFY`; CTEs and
-named params; KPI parity **inspection**.
+named params; KPI rebuild in SQL.
 
 **Out of scope:**
 
@@ -101,8 +97,8 @@ named params; KPI parity **inspection**.
 ## Notebooks
 
 Six notebooks, in order. Notebooks **01–05** each end with a short SQL
-exercise. Notebook **06** has **no exercise** (parity inspection is the
-synthesis).
+exercise. Notebook **06** has **no exercise** (the three KPI rebuilds are
+the synthesis).
 
 **Ownership handoffs (do not re-teach across notebooks):**
 
@@ -115,7 +111,7 @@ synthesis).
 | `PIVOT` / `UNPIVOT` / `TABLESAMPLE` | **03** |
 | Window `OVER` / `QUALIFY` / running `SUM` / `LAG` | **04** |
 | CTEs + named `:params` | **05** |
-| KPI rebuild + parity inspection (no asserts) | **06** |
+| KPI rebuild in SQL (no writes) | **06** |
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
@@ -124,7 +120,7 @@ synthesis).
 | 3 | SQL Pivot, Unpivot, and Sampling | `trip_enriched` | Borough×service counts (**18**) → `PIVOT` service columns → `COALESCE` zeros + SQL `TEMP VIEW` → `UNPIVOT` back to rows; brief non-deterministic `TABLESAMPLE`. Exercise: `payment_method` reshape by borough |
 | 4 | SQL Windows and QUALIFY | `kpi_zone_performance`, `kpi_daily_trip_summary` | Part 1: `ROW_NUMBER` + `QUALIFY` Top-2 by tip (**9** rows) + subquery equivalent. Part 2: running distance + `LAG` + direction `CASE`. Exercise: Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows |
 | 5 | CTEs and Parameterized SQL | `trip_enriched` | Single CTE → multi-CTE tip-share → nested-subquery contrast → `:borough` params (anti f-string) → CTE + params. Exercise: borough daily tip as share of fleet daily |
-| 6 | End-to-End SQL Pipeline and Parity Inspection | all five tables | Rebuild daily / zone / driver KPIs via `spark.sql(...)`; `show_parity` displays counts + `exceptAll` (no assert). No exercise. Phase II synthesis → Module 10 |
+| 6 | End-to-End SQL Pipeline and Parity Inspection | `trip_enriched`, `trip_driver_assignment` | Rebuild daily / zone / driver KPIs in `%sql` (layered steps). No writes. No exercise. Phase II synthesis → Module 10 |
 
 ### Notebook section navigation
 
@@ -176,14 +172,13 @@ Side path: `NOT EXISTS` undriven trips (+ one-line `LEFT ANTI JOIN` awareness).
 
 **06 — End-to-End SQL Pipeline and Parity Inspection**
 
-- Setup + `show_parity` helper
-- KPI 1 daily (layered `spark.sql`)
-- KPI 2 zone (layered `spark.sql`)
-- KPI 3 driver (CTE + `DENSE_RANK`)
-- Takeaway (inspect here; automate in Module 17)
+- Setup (sources only)
+- Daily KPI (filter dated trips, then aggregate)
+- Zone KPI (zone grain, then tip % + averages)
+- Driver KPI (CTE agg, then `DENSE_RANK`)
+- Close
 
-Cell-type lock for **06:** KPI rebuild steps that feed `show_parity` use
-**Python** cells with `spark.sql(...)` so results are assignable DataFrames.
+KPI rebuilds are `%sql` cells.
 
 ## PySpark callback map
 
@@ -212,11 +207,11 @@ Module-local authoring gate (supplements `docs/standards/*.md`):
 - **Do not re-teach** Module 7/8 theory. One short callback is enough
 - **More MD only for net-new SQL:** dual-API when-to-choose; ambiguous
   column → aliases; `QUALIFY`; CTEs vs nested SQL; `:params` vs f-strings;
-  `UNPIVOT` vs DF `stack()`; parity inspection vs Module 17 asserts
+  `UNPIVOT` vs DF `stack()`
 - **Quality over volume:** tight prose, precise names, locked expected
   counts; no essay cells; no duplicate explanations across intro /
   section / summary
-- **No Python `assert`.** Diffs are displayed; automated tests → Module 17
+- **No Python `assert`.** Automated tests → Module 17
 
 ## Minimum privileges required
 

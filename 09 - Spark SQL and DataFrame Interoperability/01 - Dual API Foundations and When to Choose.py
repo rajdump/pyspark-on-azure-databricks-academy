@@ -214,9 +214,8 @@ print("Temp view registered: trip_tip_band")
 # MAGIC
 # MAGIC Both APIs can express equivalent Spark transformations.
 # MAGIC
-# MAGIC Module 9 proves that in `06 - End-to-End SQL Pipeline and Parity Inspection`:
-# MAGIC the KPI results are rebuilt in SQL and compared with the existing managed
-# MAGIC tables for matching row counts and empty `exceptAll` differences.
+# MAGIC `06 - End-to-End SQL Pipeline and Parity Inspection` rebuilds the
+# MAGIC Module 8 KPI contracts in Spark SQL.
 
 # COMMAND ----------
 

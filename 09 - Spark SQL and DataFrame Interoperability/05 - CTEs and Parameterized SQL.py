@@ -312,5 +312,4 @@ manhattan_daily.show(14, truncate=False)
 # MAGIC   values without rewriting the query.
 # MAGIC
 # MAGIC **Next:** `06 - End-to-End SQL Pipeline and Parity Inspection` rebuilds
-# MAGIC the Module 8 KPI results in SQL and compares them with the existing
-# MAGIC managed tables.
+# MAGIC the Module 8 KPI contracts in Spark SQL.
