@@ -360,12 +360,13 @@ Sources: [Module 08 README](../08%20-%20Aggregations%20and%20Window%20Functions/
 
 Source: [coding standards — Security and portability](../docs/standards/coding-standards.md#security-and-portability)
 
-> [!warning] Current inconsistency
-> `databricks.yml` contains a committed workspace host even though repository
-> standards prohibit committed workspace URLs. This requires a separate,
-> deliberate configuration fix; this vault setup does not change it.
+The former `databricks.yml` stub with a committed workspace host was deleted
+on 2026-08-13. Learners create `databricks.yml` from scratch in Module 18.
+See [[#D-021 — 20-module advanced roadmap]].
 
 ## Deferred and open decisions
+
+Module-number items below are **historical**. Current ownership is [[#D-021 — 20-module advanced roadmap]].
 
 - [x] Define Module 08 KPI column schemas in the Module 8 README (managed Delta tables).
 - [ ] Decide whether Modules 07–08 need serverless compatibility evidence.
@@ -376,10 +377,38 @@ Source: [coding standards — Security and portability](../docs/standards/coding
 - [ ] Define the testing strategy in Module 17.
 - [ ] Expand the Databricks bundle beyond its development stub in Module 15.
 
+## D-021 — 20-module advanced roadmap
+
+**Status:** Accepted for the roadmap on 2026-08-13. Phase III is a **working
+design**, not a notebook-authoring lock.
+
+[COURSE_MODULES](../COURSE_MODULES.md) is now a 20-module required path.
+This addendum supersedes later-phase *module numbers* in earlier entries
+(for example D-008 / D-018 “Module 12” for medallion implementation, and
+the deferred `src/` / testing / bundle bullets above). Those entries stay
+as written for history.
+
+Locked ownership:
+
+- **10** — Delta on existing tables; introductory `MERGE` syntax only
+- **11** — govern existing `landing` / `processed` only
+- **12** — paper-design medallion; create nothing
+- **13** — create `bronze` / `silver` / `gold`, a new landing volume, copy
+  repo `data/raw` there, introduce `src/`; do not reuse Module 5 objects
+- **14** — production incremental `MERGE`
+- **15** — required batch Lakeflow Pipelines (no streaming / Auto Loader)
+- **16** — testing (`pytest` local = pure Python; Spark DQ in Databricks)
+- **17** — performance / AQE depth
+- **18** — Jobs; create `databricks.yml` from scratch
+- **19** — observability
+- **20** — capstone; prerequisite cell is Module 19
+
+Direct prerequisites: `9 → 10 → … → 20`.
+
+Source: [COURSE_MODULES](../COURSE_MODULES.md)
+
 ## Known documentation conflicts
 
-- [Module 02 validation](../docs/validation/02%20-%20DataFrame%20Fundamentals.md)
-  omits Notebook 05 despite the module being marked Complete.
 - Module 07 personal notes ([[NB07_personal_notes]]) contain target columns
   that conflict with the approved mappings; the BRD and mapping documents
   prevail.

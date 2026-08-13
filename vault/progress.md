@@ -16,12 +16,12 @@ updated: 2026-08-13
 
 ## At a glance
 
-- **19 planned modules**
+- **20 planned modules**
 - **9 complete** — Modules 01–09
-- **10 not started** — Modules 10–19
+- **11 not started** — Modules 10–20
 - **51 Databricks source notebooks on disk**
-- **50 notebook entries with recorded runtime evidence**
-- **Current work:** Module 10 — Delta Lake
+- **51 notebook entries with recorded runtime evidence**
+- **Current work:** Module 10 — Delta Lake for Managed Tables
 
 ## Phase summary
 
@@ -29,16 +29,16 @@ updated: 2026-08-13
 |---|---:|---|
 | I — Language and Engine Foundations | 01–04 | Complete |
 | II — Core Data Engineering Skills | 05–09 | Complete |
-| III — Lakehouse and Governance | 10–12 | Not started (next: Module 10) |
-| IV — Production Batch Engineering | 13–15 | Not started |
-| V — Excellence and Delivery | 16–19 | Not started |
+| III — Lakehouse Design and Implementation | 10–13 | Not started (working design; next: Module 10) |
+| IV — Reliable Batch Pipelines | 14–15 | Not started |
+| V — Quality, Delivery, and Operations | 16–20 | Not started |
 
 ## Module tracker
 
 | Module | Roadmap | Files on disk | Runtime evidence |
 |---|---|---:|---|
 | [01 — Foundations](../01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/README.md) | Complete | 4 of 4 | 4 of 4 |
-| [02 — DataFrames](../02%20-%20DataFrame%20Fundamentals/README.md) | Complete | 6 of 6 | 5 of 6 |
+| [02 — DataFrames](../02%20-%20DataFrame%20Fundamentals/README.md) | Complete | 6 of 6 | 6 of 6 |
 | [03 — Cleaning and NULLs](../03%20-%20Data%20Cleaning,%20NULL%20Semantics,%20and%20Type%20Handling/README.md) | Complete | 4 of 4 | 4 of 4 |
 | [04 — Execution model](../04%20-%20Transformations,%20Actions,%20and%20Lazy%20Evaluation/README.md) | Complete | 4 of 4 | 4 of 4 |
 | [05 — I/O and schemas](../05%20-%20Reading,%20Writing,%20and%20Schemas/README.md) | Complete | 8 of 8 | 8 of 8 |
@@ -46,7 +46,7 @@ updated: 2026-08-13
 | [07 — Joins and set operations](../07%20-%20Joins%20and%20Set%20Operations/README.md) | Complete | 7 of 7 | 7 of 7 |
 | [08 — Aggregations and windows](../08%20-%20Aggregations%20and%20Window%20Functions/README.md) | Complete | 8 of 8 | 8 of 8 |
 | [09 — Spark SQL and DataFrame Interoperability](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md) | Complete | 6 of 6 | 6 of 6 |
-| 10–19 | Not started | 0 | 0 |
+| 10–20 | Not started | 0 | 0 |
 
 `05 - Reading, Writing, and Schemas/99 - Rideshare Project Cleanup and
 Reset.py` is included in Module 05's eight files.
@@ -63,9 +63,6 @@ Reset.py` is included in Module 05's eight files.
   - Module 02 Notebook 06: global temporary views
 - Module 04 Notebook 03 uses Dedicated all-purpose compute for the clearest
   partition and shuffle demonstration.
-- **Evidence gap:** Module 02 Notebook 05 exists and is fully authored, but
-  [Module 02 validation](../docs/validation/02%20-%20DataFrame%20Fundamentals.md)
-  has no matching runtime entry.
 
 ### Modules 05–06 — Landing and curated data
 
@@ -120,14 +117,15 @@ Column contracts:
 
 ## Current focus — Module 10
 
-**Next:** Module 10 — Delta Lake.
+**Next:** Module 10 — Delta Lake for Managed Tables.
 
 **Roadmap status** for Module 10 in [COURSE_MODULES](../COURSE_MODULES.md)
-is **Not Started**.
+is **Not Started**. Deepen Delta on existing managed tables; introductory
+`MERGE` syntax only. Production incremental `MERGE` is Module 14.
 
 ## Next sequence
 
-1. Author Module 10 — Delta Lake.
+1. Author Module 10 — Delta Lake for Managed Tables.
 2. Optionally run Module 07 and Module 08 serverless compatibility checks
    and record results in those modules' validation files.
 
@@ -135,13 +133,10 @@ is **Not Started**.
 
 ### High priority
 
-- [ ] Confirm or add the missing Module 02 Notebook 05 runtime record.
 - [ ] Reconcile [[NB07_personal_notes|NB07 personal notes]] with approved
   mappings. The personal note currently shows `surge_amount` in
   `trip_enriched` and time/payment fields in `trip_driver_assignment`; neither
   belongs to the signed-off targets.
-- [ ] Review `databricks.yml`: its committed workspace host conflicts with the
-  repository rule against committed workspace URLs.
 
 ### Lower priority
 
@@ -158,16 +153,20 @@ is **Not Started**.
 
 ## Deferred roadmap work
 
-- Module 10: Delta Lake
-- Module 11: govern existing Unity Catalog objects
-- Module 12: formal medallion architecture and fuller purpose-built tables
-- Module 13: reliable incremental batch processing
-- Module 14: Lakeflow Pipelines for batch
-- Module 15: Lakeflow Jobs and deployment
-- Module 16: performance and Spark internals
-- Module 17: tests and data quality
-- Module 18: observability and operations
-- Module 19: deployable capstone
+Phase III is a working design. Canonical rows:
+[COURSE_MODULES](../COURSE_MODULES.md). Ownership addendum: [[decisions#D-021 — 20-module advanced roadmap]].
+
+- Module 10: Delta Lake for Managed Tables (`MERGE` syntax only)
+- Module 11: govern existing `landing` / `processed` assets
+- Module 12: paper-design medallion (no objects created)
+- Module 13: full-refresh `bronze` / `silver` / `gold` plus `src/`
+- Module 14: production incremental `MERGE`
+- Module 15: required batch Lakeflow Pipelines
+- Module 16: testing, data quality, and code quality
+- Module 17: performance and Spark internals
+- Module 18: Lakeflow Jobs; create `databricks.yml` from scratch
+- Module 19: observability and production operations
+- Module 20: deployable capstone
 
 ## Related
 

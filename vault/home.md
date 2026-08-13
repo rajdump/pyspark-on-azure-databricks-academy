@@ -21,17 +21,17 @@ tags:
   current work
 - [[decisions|Course decisions]] — accepted architecture, authoring, data, and
   pedagogy choices
-- [COURSE_MODULES](../COURSE_MODULES.md) — canonical 19-module roadmap
+- [COURSE_MODULES](../COURSE_MODULES.md) — canonical 20-module roadmap
 - [README](../README.md) — learner-facing project overview
 - [Rideshare dataset and pipeline contracts](../docs/data/dataset-overview.md)
 
 ## Current snapshot
 
-- **Current module:** Module 10 — Delta Lake
-- **Roadmap state:** 9 complete, 10 not started
+- **Current module:** Module 10 — Delta Lake for Managed Tables
+- **Roadmap state:** 9 complete, 11 not started
 - **Last completed:** [Module 09 — Spark SQL and DataFrame Interoperability](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md)
   — all 6 notebooks validated on classic all-purpose Standard and serverless
-- **Next deliverable:** Module 10 Delta Lake authoring
+- **Next deliverable:** Module 10 Delta Lake for Managed Tables authoring
 - **Runtime baseline:** Databricks Runtime 17.3 LTS, Spark 4.0.0, Python 3.12
 - **Source of truth for status:** [COURSE_MODULES](../COURSE_MODULES.md)
 
@@ -56,11 +56,15 @@ See [[progress#Current focus — Module 10]] for the detailed handoff.
 
 ### Later phases
 
-- **Phase III, Modules 10–12:** Delta Lake, Unity Catalog governance,
-  medallion architecture
-- **Phase IV, Modules 13–15:** reliable batch ingestion, Lakeflow Pipelines,
-  jobs and deployment
-- **Phase V, Modules 16–19:** performance, testing, observability, capstone
+Phase III is a working design on the roadmap, not a notebook-authoring lock.
+See [COURSE_MODULES](../COURSE_MODULES.md).
+
+- **Phase III, Modules 10–13:** Delta on existing tables, govern
+  `landing` / `processed`, paper medallion, full-refresh medallion and `src/`
+- **Phase IV, Modules 14–15:** incremental `MERGE`, required batch Lakeflow
+  Pipelines
+- **Phase V, Modules 16–20:** testing, performance, jobs and `databricks.yml`,
+  observability, capstone
 
 Use [COURSE_MODULES](../COURSE_MODULES.md) for scope, prerequisites, production
 relevance, and author-owned status.
