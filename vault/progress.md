@@ -17,24 +17,19 @@ updated: 2026-08-13
 ## At a glance
 
 - **19 planned modules**
-- **8 complete** — Modules 01–08
-- **1 authored, awaiting runtime** — Module 09 (roadmap status still Not
-  Started in [COURSE_MODULES](../COURSE_MODULES.md))
+- **9 complete** — Modules 01–09
 - **10 not started** — Modules 10–19
 - **51 Databricks source notebooks on disk**
-- **44 notebook entries with recorded runtime evidence**
-- **Current work:** Module 09 — Spark SQL and DataFrame Interoperability
-  (6 notebooks authored; Cursor review clean; Azure Databricks runtime
-  validation pending)
+- **50 notebook entries with recorded runtime evidence**
+- **Current work:** Module 10 — Delta Lake
 
 ## Phase summary
 
 | Phase | Modules | Current state |
 |---|---:|---|
 | I — Language and Engine Foundations | 01–04 | Complete |
-| II — Core Data Engineering Skills | 05–08 | Complete |
-| II — Next module | 09 | Authored (awaiting runtime) |
-| III — Lakehouse and Governance | 10–12 | Not started |
+| II — Core Data Engineering Skills | 05–09 | Complete |
+| III — Lakehouse and Governance | 10–12 | Not started (next: Module 10) |
 | IV — Production Batch Engineering | 13–15 | Not started |
 | V — Excellence and Delivery | 16–19 | Not started |
 
@@ -50,7 +45,7 @@ updated: 2026-08-13
 | [06 — Built-ins and complex types](../06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives/README.md) | Complete | 4 of 4 | 4 of 4 |
 | [07 — Joins and set operations](../07%20-%20Joins%20and%20Set%20Operations/README.md) | Complete | 7 of 7 | 7 of 7 |
 | [08 — Aggregations and windows](../08%20-%20Aggregations%20and%20Window%20Functions/README.md) | Complete | 8 of 8 | 8 of 8 |
-| [09 — Spark SQL and DataFrame Interoperability](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md) | Not Started | 6 of 6 | 0 of 6 |
+| [09 — Spark SQL and DataFrame Interoperability](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md) | Complete | 6 of 6 | 6 of 6 |
 | 10–19 | Not started | 0 | 0 |
 
 `05 - Reading, Writing, and Schemas/99 - Rideshare Project Cleanup and
@@ -113,24 +108,28 @@ Requirements:
 Column contracts:
 [Module 8 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
 
-## Current focus — Module 09
+### Module 09 — Spark SQL and DataFrame Interoperability
 
-[Module 09 README](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md)
-and notebooks **01–06** are authored (SQL-first dual API, joins/aggs,
-pivot/unpivot, windows/`QUALIFY`, CTEs/params, SQL rebuild of Module 8
-KPIs in `06 - End-to-End SQL Pipeline`).
-Cursor authoring review is clean.
+- All six notebooks authored and validated on classic all-purpose Standard
+  and serverless (2026-08-13).
+- Evidence:
+  [Module 09 validation](../docs/validation/09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability.md)
+- Dedicated not required (Standard passed). No writes; notebooks **01–05**
+  have SQL exercises; **06** (`06 - End-to-End SQL Pipeline`) rebuilds the
+  Module 8 KPI contracts in Spark SQL (read-only).
 
-**Roadmap status** in [COURSE_MODULES](../COURSE_MODULES.md) remains
-**Not Started** until the author marks it after Azure Databricks runtime
-validation (and optional `docs/validation/` evidence).
+## Current focus — Module 10
+
+**Next:** Module 10 — Delta Lake.
+
+**Roadmap status** for Module 10 in [COURSE_MODULES](../COURSE_MODULES.md)
+is **Not Started**.
 
 ## Next sequence
 
-1. Run Module 09 notebooks **01–06** on classic all-purpose Standard in Azure
-   Databricks; record validation evidence when ready.
-2. Optionally run Module 08 serverless compatibility checks and record
-   results in the Module 08 validation file.
+1. Author Module 10 — Delta Lake.
+2. Optionally run Module 07 and Module 08 serverless compatibility checks
+   and record results in those modules' validation files.
 
 ## Documentation and consistency backlog
 
@@ -159,7 +158,6 @@ validation (and optional `docs/validation/` evidence).
 
 ## Deferred roadmap work
 
-- Module 09: Azure Databricks runtime validation + roadmap status (authored)
 - Module 10: Delta Lake
 - Module 11: govern existing Unity Catalog objects
 - Module 12: formal medallion architecture and fuller purpose-built tables

@@ -27,17 +27,15 @@ tags:
 
 ## Current snapshot
 
-- **Current module:** Module 09 — Spark SQL and DataFrame Interoperability
-  (6 notebooks authored; runtime validation pending)
-- **Roadmap state:** 8 complete, Module 09 authored (COURSE_MODULES still Not
-  Started), 10 not started
-- **Last completed:** [Module 08 — Aggregations and Window Functions](../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
-  — all 8 notebooks validated on classic all-purpose Standard
-- **Next deliverable:** Module 09 Azure Databricks runtime validation
+- **Current module:** Module 10 — Delta Lake
+- **Roadmap state:** 9 complete, 10 not started
+- **Last completed:** [Module 09 — Spark SQL and DataFrame Interoperability](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md)
+  — all 6 notebooks validated on classic all-purpose Standard and serverless
+- **Next deliverable:** Module 10 Delta Lake authoring
 - **Runtime baseline:** Databricks Runtime 17.3 LTS, Spark 4.0.0, Python 3.12
 - **Source of truth for status:** [COURSE_MODULES](../COURSE_MODULES.md)
 
-See [[progress#Current focus — Module 09]] for the detailed handoff.
+See [[progress#Current focus — Module 10]] for the detailed handoff.
 
 ## Course map
 
@@ -54,7 +52,7 @@ See [[progress#Current focus — Module 09]] for the detailed handoff.
 - [06 — Built-in Functions, Complex Types, and UDF Alternatives](../06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives/README.md) — complete
 - [07 — Joins and Set Operations](../07%20-%20Joins%20and%20Set%20Operations/README.md) — complete
 - [08 — Aggregations and Window Functions](../08%20-%20Aggregations%20and%20Window%20Functions/README.md) — complete
-- [09 — Spark SQL and DataFrame Interoperability](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md) — authored (runtime pending)
+- [09 — Spark SQL and DataFrame Interoperability](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md) — complete
 
 ### Later phases
 
@@ -141,6 +139,7 @@ and Unity Catalog behavior is validated only in Azure Databricks.
 - [Module 06](../docs/validation/06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives.md)
 - [Module 07](../docs/validation/07%20-%20Joins%20and%20Set%20Operations.md)
 - [Module 08](../docs/validation/08%20-%20Aggregations%20and%20Window%20Functions.md)
+- [Module 09](../docs/validation/09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability.md)
 
 ## Scope boundaries
 

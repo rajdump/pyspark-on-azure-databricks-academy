@@ -5,7 +5,7 @@ aliases:
 tags:
   - course/decisions
   - architecture
-updated: 2026-08-12
+updated: 2026-08-13
 ---
 
 # Course decisions
@@ -26,9 +26,9 @@ When documents disagree, use this order:
 6. `docs/validation/` for author-recorded runtime evidence
 7. Personal and temporary notes as context only
 
-This precedence explains why Module 08 is considered current when
-[COURSE_MODULES](../COURSE_MODULES.md) marks it Started, and why approved
-Module 07 mappings override conflicting personal notes.
+This precedence explains why [COURSE_MODULES](../COURSE_MODULES.md) is the
+status authority, and why approved Module 07 mappings override conflicting
+personal notes.
 
 ## D-001 — Course scope is batch data engineering
 
