@@ -1,15 +1,15 @@
 # PySpark on Azure Databricks Academy
 
-A job-focused PySpark data engineering course on Azure Databricks. It
-progresses from beginner Spark fundamentals to production batch data
-engineering, using a single connected rideshare dataset (`trip`, `trip_time`,
-`payment`, `zone_lookup`, plus supplementary `drivers`) as the running
-example throughout, and ends with a deployable batch data engineering
-project.
+A job-focused PySpark data engineering course on Azure Databricks, currently
+under active development. The course is designed to progress from beginner
+Spark fundamentals to production batch data engineering, using a single
+connected rideshare dataset (`trip`, `trip_time`, `payment`, `zone_lookup`,
+plus supplementary `drivers`) as the running example throughout, and to
+culminate in a deployable batch data engineering project.
 
-This course covers **batch data engineering only**. Streaming (Structured
-Streaming, Auto Loader, streaming tables/pipelines), machine learning, and
-general Azure infrastructure administration are out of scope.
+This course covers **batch data engineering only**. Structured Streaming,
+Auto Loader, streaming tables, machine learning, and general Azure
+infrastructure administration are out of scope.
 
 ## Who this is for
 
@@ -22,6 +22,10 @@ You do **not** need prior experience with:
 - Production data engineering
 - Local Databricks development/deployment workflows
 
+To complete the hands-on exercises, you need access to an Azure Databricks
+workspace and permission to use suitable compute. Module-specific environment
+and privilege requirements are documented in each module's `README.md`.
+
 Unfamiliar concepts are explained before they're used.
 
 ## Technical baseline
@@ -29,13 +33,13 @@ Unfamiliar concepts are explained before they're used.
 | Component | Version / Detail |
 |---|---|
 | Cloud platform | Microsoft Azure |
-| Platform | Azure Databricks, Premium tier (Unity Catalog + RBAC enabled) |
+| Platform | Azure Databricks, Premium tier |
 | Databricks Runtime | 17.3 LTS |
 | Apache Spark | 4.0.0 |
 | Python | 3.12 |
 | Scala runtime | 2.13 |
 | Primary language | Python with PySpark |
-| SQL | Databricks SQL / Spark SQL, where it serves the learning objective |
+| SQL | Spark SQL in Databricks notebooks (`%sql` and `spark.sql()`) |
 | Governance | Unity Catalog |
 | Version control | GitHub |
 | Notebook format | Databricks source `.py` notebooks |
@@ -63,10 +67,9 @@ workflow.
 
 ## Where to start
 
-- **Full roadmap:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — all 19 modules, their purpose, and status
+- **Full roadmap and current status:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — module purposes, topics, prerequisites, and planned progression
 - **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
-- **Authoring status (current):** Modules 1–9 are complete; next is **Module 10 — Delta Lake** — status source: [`COURSE_MODULES.md`](COURSE_MODULES.md)
-- **Before Module 5 (Azure requirements):** confirm personal Azure Databricks + ADLS setup, existing storage credential, required Unity Catalog create privileges, and Databricks Git folder access in [`05 - Reading, Writing, and Schemas/README.md`](05%20-%20Reading%2C%20Writing%2C%20and%20Schemas/README.md#before-notebook-01). Storage credential creation how-to is documented in course PDF materials (not in this repository).
+- **Before Module 5:** Review the [module-specific environment and privilege requirements](05%20-%20Reading%2C%20Writing%2C%20and%20Schemas/README.md#before-notebook-01).
 
 ## Repository conventions
 
@@ -76,14 +79,15 @@ workflow.
 - Dataset reference (schemas, join keys, physical layout): `docs/data/dataset-overview.md`
 - Author-facing runtime validation evidence: `docs/validation/`
 
-## Setup
+## Optional local authoring setup
 
-This repository uses [`uv`](https://docs.astral.sh/uv/) for local Python
-tooling (not for the Databricks runtime itself).
+Learners who run notebooks only in Azure Databricks do not need local Python
+tooling. For local authoring and non-Spark checks, this repository uses
+[`uv`](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync
 ```
 
-See `pyproject.toml` for the pinned dev dependencies (`ruff`, `mypy`,
-`pytest`).
+See `pyproject.toml` for the declared development tools (`ruff`, `mypy`,
+`pytest`); `uv.lock` records the resolved versions.
