@@ -60,8 +60,10 @@ already carry what this module needs.
 ## Paths and outputs
 
 Notebook **08** writes Unity Catalog managed Delta tables with
-`.mode("overwrite").saveAsTable(...)`. Module 9 reads them with
-`spark.table(...)` / SQL `FROM` and re-expresses the same logic.
+`.mode("overwrite").saveAsTable(...)`. Module 9 Notebook **04** reads the
+daily and zone tables. Notebook **06** (`06 - End-to-End SQL Pipeline`)
+rebuilds all three KPI contracts in Spark SQL from the source tables
+(read-only).
 
 | Table | Grain / rows | Source |
 |---|---|---|

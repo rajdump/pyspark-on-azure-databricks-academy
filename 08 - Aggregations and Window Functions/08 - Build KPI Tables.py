@@ -21,7 +21,9 @@
 # MAGIC - aggregate first, then rank
 # MAGIC
 # MAGIC Each result is written as a **Unity Catalog managed Delta table**. Module 9
-# MAGIC will read these tables and reproduce the same KPI logic using Spark SQL.
+# MAGIC `04 - SQL Windows and QUALIFY` reads the daily and zone tables.
+# MAGIC `06 - End-to-End SQL Pipeline` rebuilds the same KPI logic in Spark SQL
+# MAGIC (read-only — no writes).
 # MAGIC
 # MAGIC This is a **write-only notebook** — there is no exercise.
 
@@ -438,5 +440,5 @@ print(f"kpi_driver_productivity: {driver_out.count()} rows")  # expect 12
 # MAGIC The results are stored as **Unity Catalog managed Delta tables** using
 # MAGIC `saveAsTable()`.
 # MAGIC
-# MAGIC In **Module 9**, we will reproduce the same KPI calculations using Spark
-# MAGIC SQL and compare the SQL results with the DataFrame results.
+# MAGIC In **Module 9** `06 - End-to-End SQL Pipeline`, we rebuild the same KPI
+# MAGIC calculations in Spark SQL. That notebook does not write tables.

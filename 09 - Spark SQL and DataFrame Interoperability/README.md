@@ -52,7 +52,6 @@ Complete Module 8 notebooks **`01`–`08`**. You need:
 | `rideshare_dev.processed.trip_driver_assignment` | 100 — one per (`driver_id`, `trip_id`); trips 1–100; trips **101–106** have no driver | Module 7 **`07`** |
 | `rideshare_dev.processed.kpi_daily_trip_summary` | 14 — one per `trip_date` | Module 8 **`08`** |
 | `rideshare_dev.processed.kpi_zone_performance` | 20 — one per (`pickup_borough`, `pickup_zone`) | Module 8 **`08`** |
-| `rideshare_dev.processed.kpi_driver_productivity` | 12 — one per `driver_id` + `distance_dense_rank` | Module 8 **`08`** |
 
 Also recall: Module 2 `06 - Querying DataFrames with SQL` (temp views /
 `%sql` / `spark.sql`); Module 7 join patterns; Module 8 aggregates, pivot,
@@ -68,8 +67,9 @@ Does **not** write managed tables or touch `practice/` / `curated/`.
 | Reads | Unity Catalog managed tables listed above |
 | Writes | **None** to managed tables — session temp views only (Notebook **03**) |
 
-Notebook **06** rebuilds the three KPI contracts in SQL (read-only). It does
-not write tables or compare results with a validation helper.
+Notebook **06** (`06 - End-to-End SQL Pipeline`) rebuilds the three KPI
+contracts in Spark SQL from `trip_enriched` and `trip_driver_assignment`.
+Read-only — no writes.
 
 **Cleanup:** Module 5 **`99`** Level 4 drops these managed tables with the
 rest of `rideshare_dev`. This module creates nothing durable to tear down.
@@ -120,7 +120,7 @@ the synthesis).
 | 3 | SQL Pivot, Unpivot, and Sampling | `trip_enriched` | Borough×service counts (**18**) → `PIVOT` service columns → `COALESCE` zeros + SQL `TEMP VIEW` → `UNPIVOT` back to rows; brief non-deterministic `TABLESAMPLE`. Exercise: `payment_method` reshape by borough |
 | 4 | SQL Windows and QUALIFY | `kpi_zone_performance`, `kpi_daily_trip_summary` | Part 1: `ROW_NUMBER` + `QUALIFY` Top-2 by tip (**9** rows) + subquery equivalent. Part 2: running distance + `LAG` + direction `CASE`. Exercise: Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows |
 | 5 | CTEs and Parameterized SQL | `trip_enriched` | Single CTE → multi-CTE tip-share → nested-subquery contrast → `:borough` params (anti f-string) → CTE + params. Exercise: borough daily tip as share of fleet daily |
-| 6 | End-to-End SQL Pipeline and Parity Inspection | `trip_enriched`, `trip_driver_assignment` | Rebuild daily / zone / driver KPIs in `%sql` (layered steps). No writes. No exercise. Phase II synthesis → Module 10 |
+| 6 | End-to-End SQL Pipeline | `trip_enriched`, `trip_driver_assignment` | Rebuild daily / zone / driver KPIs in `%sql` (layered steps). No writes. No exercise. Phase II synthesis → Module 10 |
 
 ### Notebook section navigation
 
@@ -170,13 +170,13 @@ Side path: `NOT EXISTS` undriven trips (+ one-line `LEFT ANTI JOIN` awareness).
 4. Named parameters (`:borough`)
 5. CTE + params combined
 
-**06 — End-to-End SQL Pipeline and Parity Inspection**
+**06 — End-to-End SQL Pipeline**
 
-- Setup (sources only)
-- Daily KPI (filter dated trips, then aggregate)
-- Zone KPI (zone grain, then tip % + averages)
-- Driver KPI (CTE agg, then `DENSE_RANK`)
-- Close
+- Setup — load source tables
+- 1. What does daily trip activity look like? (dated trips, then aggregate)
+- 2. Which pickup zones generate the most business? (zone grain, then tip % + averages)
+- 3. Which drivers cover the most distance? (CTE agg, then `DENSE_RANK`)
+- Summary — Module 9
 
 KPI rebuilds are `%sql` cells.
 
@@ -224,6 +224,5 @@ Module-local authoring gate (supplements `docs/standards/*.md`):
     - `rideshare_dev.processed.trip_driver_assignment`
     - `rideshare_dev.processed.kpi_daily_trip_summary`
     - `rideshare_dev.processed.kpi_zone_performance`
-    - `rideshare_dev.processed.kpi_driver_productivity`
   - Session **`CREATE OR REPLACE TEMP VIEW`** is allowed (Notebook **03**);
     that is not schema/table DDL on `rideshare_dev.processed`

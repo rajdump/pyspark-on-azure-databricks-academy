@@ -346,8 +346,10 @@ table joins trips 1–100 only, so every column is fully populated.
 ### Module 8 — KPI outputs
 
 Unity Catalog managed Delta tables written by Module 8 Notebook **08** with
-`.mode("overwrite").saveAsTable(...)`. Module 9 reads all three as its
-primary KPI sources. Full column contracts:
+`.mode("overwrite").saveAsTable(...)`. Module 9 Notebook **04** reads the
+daily and zone tables. Notebook **06** (`06 - End-to-End SQL Pipeline`)
+rebuilds all three contracts in Spark SQL from the source tables
+(read-only). Full column contracts:
 [Module 8 README — Paths and outputs](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
 
 | Table | Grain / rows | Source table |

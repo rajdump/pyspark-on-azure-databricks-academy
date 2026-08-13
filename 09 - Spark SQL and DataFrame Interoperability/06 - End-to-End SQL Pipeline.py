@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 06 - End-to-End SQL Pipeline and Parity Inspection
+# MAGIC # 06 - End-to-End SQL Pipeline
 # MAGIC
 # MAGIC Module 8 `08 - Build KPI Tables` already built these three KPIs in the
 # MAGIC DataFrame API and wrote the managed tables. This notebook converts the
@@ -286,6 +286,6 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC | `03 - SQL Pivot, Unpivot, and Sampling` | Reshape + `TABLESAMPLE` |
 # MAGIC | `04 - SQL Windows and QUALIFY` | Ranking, running totals, `LAG` |
 # MAGIC | `05 - CTEs and Parameterized SQL` | Named steps + `:params` |
-# MAGIC | `06 - End-to-End SQL Pipeline and Parity Inspection` | KPI rebuild in SQL |
+# MAGIC | `06 - End-to-End SQL Pipeline` | KPI rebuild in SQL |
 # MAGIC
 # MAGIC **Next:** Module 10 — Delta Lake.

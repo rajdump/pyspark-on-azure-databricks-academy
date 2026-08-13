@@ -4,14 +4,14 @@ aliases:
 tags:
   - course/progress
   - status/started
-updated: 2026-08-12
+updated: 2026-08-13
 ---
 
 # Course progress
 
 > [!important] Status authority
 > [COURSE_MODULES](../COURSE_MODULES.md) is the author-owned source of truth.
-> This note summarizes the repository as inspected on **2026-08-12** and does
+> This note summarizes the repository as inspected on **2026-08-13** and does
 > not change roadmap or runtime-validation status.
 
 ## At a glance
@@ -117,7 +117,8 @@ Column contracts:
 
 [Module 09 README](../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md)
 and notebooks **01–06** are authored (SQL-first dual API, joins/aggs,
-pivot/unpivot, windows/`QUALIFY`, CTEs/params, KPI parity inspection).
+pivot/unpivot, windows/`QUALIFY`, CTEs/params, SQL rebuild of Module 8
+KPIs in `06 - End-to-End SQL Pipeline`).
 Cursor authoring review is clean.
 
 **Roadmap status** in [COURSE_MODULES](../COURSE_MODULES.md) remains

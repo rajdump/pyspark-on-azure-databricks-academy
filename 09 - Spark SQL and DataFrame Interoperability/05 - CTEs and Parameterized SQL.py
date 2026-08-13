@@ -313,5 +313,5 @@ manhattan_daily.show(14, truncate=False)
 # MAGIC - **Named parameters** let the same SQL query run with different input
 # MAGIC   values without rewriting the query.
 # MAGIC
-# MAGIC **Next:** `06 - End-to-End SQL Pipeline and Parity Inspection` rebuilds
+# MAGIC **Next:** `06 - End-to-End SQL Pipeline` rebuilds
 # MAGIC the Module 8 KPI contracts in Spark SQL.
