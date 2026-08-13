@@ -79,18 +79,6 @@ layers (Modules 12–13).
 **Module 11** explains governance (grants, ownership, credentials, least
 privilege) on those existing objects.
 
-## Runtime and scope
-
-**Runtime:** Spark **4.0.0** / DBR **17.3 LTS**.
-
-**In scope:** Hybrid I/O — schemas, readers/writers, and minimal reshape
-(rename, select, basic cast). Volume setup, format reads, explicit schemas,
-write patterns, Delta file write + managed `saveAsTable` preview.
-
-**Out of scope:** Deep transforms and **`explode()`** (Module 6); UC grants
-(Module 11); medallion layering (Modules 12–13); Delta ACID / `MERGE`
-(Module 10). Creating storage credentials (course PDF).
-
 ## Notebooks
 
 Seven content notebooks plus cleanup, in order. Each content notebook

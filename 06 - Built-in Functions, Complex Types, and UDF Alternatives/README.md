@@ -78,23 +78,6 @@ The `curated/` tier is created on first write. Schema names `landing` /
 (Level 2 clears Module 6 curated outputs). This module has no dedicated
 cleanup notebook.
 
-## Runtime and scope
-
-**Runtime:** Spark **4.0.0** / DBR **17.3 LTS**.
-
-**API:** Notebooks **01–03** use DataFrame methods and **`F.*`**. **`04`**
-contrasts built-ins with a Python UDF and briefly notes Pandas/Arrow UDFs.
-`F.expr` / `selectExpr` were taught in Module 2 and are not used here. Pure
-SQL and dual-API patterns belong in Module 9.
-
-**In scope:** built-in transforms, struct/array/`explode`, curated writes
-(above), built-in vs UDF decision guidance.
-
-**Out of scope:** joins / set ops (Module 7); aggregations / windows (Module 8);
-pure SQL / dual-API (Module 9); Delta ACID / `MERGE` (Module 10); UC grants
-(Module 11); reading
-`/Volumes/rideshare_dev/processed/output_files/practice/`.
-
 ## Notebooks
 
 Four notebooks, in order. Each ends with a short hands-on task that repeats the

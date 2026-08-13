@@ -108,22 +108,6 @@ NULL-affected pickup zones (contract): Financial District (104 base), Harlem
 `/Volumes/rideshare_dev/processed/output_files/curated/` Parquet only and
 does **not** remove KPI tables.
 
-## Runtime and scope
-
-**Runtime:** Spark **4.0.0** / DBR **17.3 LTS**.
-
-**API:** DataFrame `groupBy` / `agg`, `pivot`, and
-`pyspark.sql.window.Window` with `F.*` window functions.
-
-**In scope:** `groupBy` / `agg`, `pivot`, window functions, Top-N per group,
-sampling, and managed KPI `saveAsTable` writes.
-
-**Out of scope:** Spark SQL / `QUALIFY` (Module 9); Delta ACID / `MERGE`
-fundamentals (Module 10); incremental KPI refresh (Module 14); Unity Catalog
-grant administration (Module 11); shuffle tuning beyond a one-line
-`partitionBy` note in `05 - Window Functions Fundamentals.py` (Module 17);
-UDAFs — built-ins cover this module.
-
 ## Notebooks
 
 Each skill-building notebook ends with a short exercise. Two habits run

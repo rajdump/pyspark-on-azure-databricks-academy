@@ -84,24 +84,6 @@ managed tables. To reset Module 7 managed tables (**`trip_enriched`**,
 CASCADE` step drops every managed table in the catalog, current and future,
 with no per-table statement required.
 
-## Runtime and scope
-
-**Runtime:** Spark **4.0.0** / DBR **17.3 LTS**.
-
-**API:** DataFrame `join`, set ops, `F.broadcast`, `.explain()` — no Spark SQL
-dual-API (Module 9).
-
-**In scope:** grain / cardinality; join types and row-count correctness; key
-profiling; lookup joins and column naming; semi / anti joins; set ops;
-broadcast hint; managed-table writes in **07** with a short AQE note (no
-pedagogy re-teach in **07**).
-
-**Out of scope:** aggregations / windows pedagogy (Module 8) — except
-`02 - Silent Join Failures and Validation.py`'s narrow pre-join dedup
-(`Window` + `row_number`); CTEs / parameterized SQL (Module 9); Delta ACID /
-`MERGE` / time travel (Module 10); UC grants (Module 11); join-plan tuning
-beyond `F.broadcast` (Module 17).
-
 ## Notebooks
 
 Seven notebooks, in order. Two habits run through **01–06**: (1) know the

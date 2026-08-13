@@ -60,31 +60,6 @@ SQL from `trip_enriched` and `trip_driver_assignment`. Read-only — no writes.
 drops these managed tables with the rest of `rideshare_dev`. This module
 creates nothing durable to tear down.
 
-## Runtime and scope
-
-**Runtime:** Spark **4.0.0** / DBR **17.3 LTS**.
-
-**API:** Spark SQL first (`%sql` and `spark.sql`). **SQL-first.** No
-SQL→PySpark homework. Python `spark.table` setup appears in every notebook.
-DataFrame **transforms** appear only in `01 - Dual API Foundations and When
-to Choose.py` (SQL↔DF bridges). `05 - CTEs and Parameterized SQL.py` uses
-Python solely to bind `:params` via `spark.sql(..., args=...)`. All other
-lesson cells are `%sql` or SQL text. Automated `assert` / pytest-style
-checks → Module 16.
-
-**In scope:** dual-API entry points; SQL joins / aggs / `HAVING`;
-`PIVOT` / `UNPIVOT` / brief `TABLESAMPLE`; windows + `QUALIFY`; CTEs and
-named params; KPI rebuild in SQL.
-
-**Out of scope:**
-
-- SQL→PySpark homework rewrites
-- Python `assert` / automated tests (Module 16)
-- Delta ACID / `MERGE` / time travel (Module 10)
-- Unity Catalog grant administration (Module 11)
-- Re-teaching Module 7/8 theory — one short **callback** to the matching
-  PySpark notebook is enough
-
 ## Notebooks
 
 Six notebooks, in order. Two habits run through the module: (1) **pick the
