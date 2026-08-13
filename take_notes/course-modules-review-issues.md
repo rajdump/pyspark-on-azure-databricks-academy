@@ -57,6 +57,9 @@ for the roadmap, not a notebook-authoring lock.
   `processed` only; Module 12 designs `bronze` / `silver` / `gold` and a new
   landing location without creating them; Module 13 creates those objects
   and the full-refresh tables.
+- **Vault dashboard:** `vault/home.md` and `vault/progress.md` now follow
+  the 20-module map. Historical `vault/decisions.md` entries stay as
+  written; **D-021** records the new ownership.
 
 The former Module 2 validation-evidence item was removed after the author
 recorded successful all-purpose and serverless validation for Notebook 05.
@@ -86,6 +89,7 @@ Do not add module duration or effort estimates.
 
 - Phase III refinement before notebooks are authored
 - Medallion-create rules in `docs/standards/permissions-and-governance.md`
-- `vault/` author notes
 - Bronze / Silver / Gold column contracts
 - Module 10–20 folders, READMEs, notebooks, `src/`, and tests
+- Historical scratch notes (`NB07_personal_notes.md`,
+  `root-readme-review-issues.md`)

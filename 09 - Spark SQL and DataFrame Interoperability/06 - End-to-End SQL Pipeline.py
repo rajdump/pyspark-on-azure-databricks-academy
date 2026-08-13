@@ -288,4 +288,4 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC | `05 - CTEs and Parameterized SQL` | Named steps + `:params` |
 # MAGIC | `06 - End-to-End SQL Pipeline` | KPI rebuild in SQL |
 # MAGIC
-# MAGIC **Next:** Module 10 — Delta Lake.
+# MAGIC **Next:** Module 10 — Delta Lake for Managed Tables.

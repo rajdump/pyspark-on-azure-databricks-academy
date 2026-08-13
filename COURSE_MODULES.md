@@ -81,7 +81,7 @@ required batch Lakeflow Pipeline.
 | # | Module | Purpose | Major Topics | Prerequisites | Production Relevance | Final-Project Contribution | Status |
 |---|---|---|---|---|---|---|---|
 | 14 | Reliable Batch Ingestion and Incremental Processing | Make the Module 13 pipeline incremental and resilient | Production `MERGE` upserts; idempotency; deduplication; late-arriving data; backfills; batch state; quarantine | Module 13 | Ingestion reliability — a core production concern | Implements the project's incremental load logic | Not Started |
-| 15 | Lakeflow Declarative Pipelines for Batch | Re-express the required Bronze→Silver→Gold flow as a batch Lakeflow Pipeline | Lakeflow Pipelines on pipeline-managed compute; materialized views (batch only); no streaming or Auto Loader | Module 14 | A managed orchestration option for batch workloads | Required declarative pipeline variant of the project | Not Started |
+| 15 | Lakeflow Declarative Pipelines for Batch | Re-express the required Bronze→Silver→Gold flow as a batch Lakeflow Pipeline | Lakeflow Pipelines on pipeline-managed compute; materialized views (batch only); no streaming or Auto Loader | Module 14 | A managed orchestration path for batch workloads | Required declarative pipeline variant of the project | Not Started |
 
 ## Phase V — Quality, Delivery, and Operations (Modules 16–20)
 
