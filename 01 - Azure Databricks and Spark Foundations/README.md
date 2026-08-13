@@ -35,12 +35,12 @@ you just attached (e.g. Spark UI job/stage/task, or a tiny DataFrame inspect).
 
 | # | Notebook | Focus |
 |---|---|---|
-| 1 | Introduction to Azure Databricks and the Workspace | Workspace browser, notebook editor, compute attach; DBR / LTS (classic vs serverless gotcha) |
-| 2 | Apache Spark Architecture and PySpark | Why Spark distributes work; PySpark ↔ Spark; `SparkSession`; driver/executors (Diagram A); jobs → stages → tasks (Diagram B); `spark.range(...).count()` stand-in; Spark UI on classic all-purpose Standard |
-| 3 | Working with Notebooks | Cell run order and shared Python state; languages keep separate state; magics (`%md`, `%sql`, `%fs`, `%sh`); `%fs` vs `dbutils.fs` |
-| 4 | Your First DataFrame | Small rideshare DataFrame from Python rows (no explicit schema); `show` / `display` / `printSchema`; inferred schema fine for demos, not for production |
+| 01 | Introduction to Azure Databricks and the Workspace | Workspace browser, notebook editor, compute attach; DBR / LTS (classic vs serverless gotcha) |
+| 02 | Apache Spark Architecture and PySpark | Why Spark distributes work; PySpark ↔ Spark; `SparkSession`; driver/executors (Diagram A); jobs → stages → tasks (Diagram B); `spark.range(...).count()` stand-in; Spark UI on classic all-purpose Standard |
+| 03 | Working with Notebooks | Cell run order and shared Python state; languages keep separate state; magics (`%md`, `%sql`, `%fs`, `%sh`); `%fs` vs `dbutils.fs` |
+| 04 | Your First DataFrame | Small rideshare DataFrame from Python rows (no explicit schema); `show` / `display` / `printSchema`; inferred schema fine for demos, not for production |
 
 ## Minimum privileges required
 
-- Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
 - Unity Catalog: none — this module does not read or write governed data
+- Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here

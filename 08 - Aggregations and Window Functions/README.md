@@ -2,23 +2,8 @@
 
 ## Purpose
 
-Turn the Module 7 managed tables into analytics-ready summaries and KPI
-tables — without losing rows to NULL-skipping aggregates, mistaking output
-grain, or treating a window like a `groupBy`.
-
-Two habits run through the skill-building notebooks:
-
-1. **Name the output grain** before you write the aggregate — one row per *what*?
-2. **Verify with `count()`** after — especially on a new dataset or a new key
-
-Notebooks **01–04** use `groupBy` (fewer rows). **05–07** focus on windows,
-which preserve the rows of the DataFrame they receive. Notebook **06** may
-first aggregate to daily grain, then window over that. **01–07** do not write.
-Notebook **08** writes three managed Delta KPI tables for Module 9.
-
-Schemas, inherited NULLs, and group-key values:
-[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
-KPI column contracts live in this README (Paths and outputs).
+Produce analytics-ready summaries and KPI tables from the Module 7 managed
+tables.
 
 ## Learning objectives
 
@@ -33,8 +18,8 @@ By the end of this module, you'll be able to:
 - Control NULL sort placement with **`nullsFirst` / `nullsLast`**
 - Select **Top-N per group** (including tie-selection policy) and draw
   reproducible samples with **`sample`** / **`sampleBy`** / **`randomSplit`**
-- Apply the module patterns in Notebook **08** to write three managed `kpi_*`
-  tables for Module 9
+- Apply the module patterns in `08 - Build KPI Tables.py` to write three
+  managed `kpi_*` tables for Module 9
 
 ## Prerequisites
 
@@ -42,28 +27,34 @@ Complete Module 7 notebooks **`01`–`07`**. You need:
 
 | Asset | Rows / notes | Source |
 |---|---|---|
-| `rideshare_dev.processed.trip_enriched` | 106 — one per `trip_id`; 16 columns | Module 7 **`07`** |
-| `rideshare_dev.processed.trip_driver_assignment` | 100 — one per (`driver_id`, `trip_id`); 12 drivers, trips 1–100; 13 columns | Module 7 **`07`** |
+| `rideshare_dev.processed.trip_enriched` | 106 — one per `trip_id`; 16 columns | Module 7 `07 - Build Unified Curated Tables.py` |
+| `rideshare_dev.processed.trip_driver_assignment` | 100 — one per (`driver_id`, `trip_id`); 12 drivers, trips 1–100; 13 columns | Module 7 `07 - Build Unified Curated Tables.py` |
 
 `trip_enriched` is the primary source for Notebooks **01–07**.
 `trip_driver_assignment` appears where a **1:M** grain (many trips per driver)
-makes a point that trip grain cannot. Notebook **01** owns the shared setup
-description; later notebooks load without re-describing it.
+makes a point that trip grain cannot. `01 - GroupBy and Basic Aggregations.py`
+owns the shared setup description; later notebooks load without re-describing
+it.
 
 Also recall: Module 3 NULL / `F.coalesce`; Module 4 wide/`Exchange` stages;
-Module 7 Notebook **02** (`Window` + `row_number` dedup — revisited in **05**;
-Top-N reuses the pattern in **07**).
+Module 7 `02 - Silent Join Failures and Validation.py` (`Window` +
+`row_number` dedup — revisited in **05**; Top-N reuses the pattern in **07**).
 
-Does **not** read `practice/` or Module 6 `curated/` — the managed tables
-already carry what this module needs.
+Does **not** read `/Volumes/rideshare_dev/processed/output_files/practice/`
+or Module 6 `/Volumes/rideshare_dev/processed/output_files/curated/` — the
+managed tables already carry what this module needs.
 
 ## Paths and outputs
 
-Notebook **08** writes Unity Catalog managed Delta tables with
-`.mode("overwrite").saveAsTable(...)`. Module 9 Notebook **04** reads the
-daily and zone tables. Notebook **06** (`06 - End-to-End SQL Pipeline`)
-rebuilds all three KPI contracts in Spark SQL from the source tables
-(read-only).
+Schemas, inherited NULLs, and group-key values:
+[`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
+KPI column contracts live in this README.
+
+`08 - Build KPI Tables.py` writes Unity Catalog managed Delta tables with
+`.mode("overwrite").saveAsTable(...)`. Module 9
+`04 - SQL Windows and QUALIFY.py` reads the daily and zone tables. Module 9
+`06 - End-to-End SQL Pipeline.py` rebuilds all three KPI contracts in Spark
+SQL from the source tables (read-only).
 
 | Table | Grain / rows | Source |
 |---|---|---|
@@ -95,7 +86,7 @@ rebuilds all three KPI contracts in Spark SQL from the source tables
 | `tip_percent_of_base` | `when(sum(base_fare_amount) > 0, round(100 * sum(tip) / sum(base), 1)).otherwise(NULL)` — not avg of row percents |
 | `avg_distance_miles`, `avg_ride_duration_mins` | rounded avgs |
 
-NULL-affected pickup zones (verified): Financial District (104 base), Harlem
+NULL-affected pickup zones (contract): Financial District (104 base), Harlem
 (106 base/tip/distance — densest), Astoria (103 tip/distance), Williamsburg
 (105 distance only).
 
@@ -111,9 +102,11 @@ NULL-affected pickup zones (verified): Financial District (104 base), Harlem
 | `unique_service_types` | `sort_array(collect_set(service_type))` |
 | `distance_dense_rank` | after agg: `dense_rank` over fleet by `total_distance_miles` desc |
 
-**Cleanup:** Module 5 **`99`** Level 4 (catalog teardown) drops these managed
-tables with the rest of `rideshare_dev` — same as Module 7. Level 2 clears
-Module 6 `curated/` Parquet only and does **not** remove KPI tables.
+**Cleanup:** Module 5 `99 - Rideshare Project Cleanup and Reset.py` Level 4
+(catalog teardown) drops these managed tables with the rest of
+`rideshare_dev` — same as Module 7. Level 2 clears Module 6
+`/Volumes/rideshare_dev/processed/output_files/curated/` Parquet only and
+does **not** remove KPI tables.
 
 ## Runtime and scope
 
@@ -122,15 +115,25 @@ Module 6 `curated/` Parquet only and does **not** remove KPI tables.
 **API:** DataFrame `groupBy` / `agg`, `pivot`, and
 `pyspark.sql.window.Window` with `F.*` window functions.
 
+**In scope:** `groupBy` / `agg`, `pivot`, window functions, Top-N per group,
+sampling, and managed KPI `saveAsTable` writes.
+
 **Out of scope:** Spark SQL / `QUALIFY` (Module 9); Delta ACID / `MERGE`
 fundamentals (Module 10); incremental KPI refresh (Module 14); Unity Catalog
 grant administration (Module 11); shuffle tuning beyond a one-line
-`partitionBy` note in Notebook **05** (Module 17); UDAFs — built-ins cover
-this module.
+`partitionBy` note in `05 - Window Functions Fundamentals.py` (Module 17);
+UDAFs — built-ins cover this module.
 
 ## Notebooks
 
-Each skill-building notebook ends with a short exercise.
+Each skill-building notebook ends with a short exercise. Two habits run
+through **01–07**: (1) **name the output grain** before you write the
+aggregate — one row per *what*?; (2) **verify with `count()`** after —
+especially on a new dataset or a new key. Notebooks **01–04** use `groupBy`
+(fewer rows). **05–07** focus on windows, which preserve the rows of the
+DataFrame they receive. `06 - Running Totals and Lag and Lead.py` may first
+aggregate to daily grain, then window over that. **01–07** do not write.
+`08 - Build KPI Tables.py` writes three managed Delta KPI tables for Module 9.
 
 **Ownership handoffs (do not re-teach across notebooks):**
 
@@ -145,32 +148,22 @@ Each skill-building notebook ends with a short exercise.
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
-| 1 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column fails (window → **05**); three counts; `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` |
-| 2 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain; `WHERE` vs `HAVING`; exercise — borough + HAVING, then composite key |
-| 3 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set`; `avg` vs approximate p50 / p90; `countDistinct` |
-| 4 | Pivot | `trip_enriched` | `pivot` + explicit values |
-| 5 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking-API ties; Top-2 filter-after-rank preview → **07** |
-| 6 | Running Totals and lag/lead | `trip_enriched` | Default `RANGE` vs explicit `ROWS`; ordered `first_value` / `last_value`; daily running totals; `lag` / `lead` |
-| 7 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N per group (`row_number` + filter; extends **05** Top-2); Top-N selection policy (`row_number <= N` vs `rank <= N`, secondary sort); `nullsFirst` / `nullsLast` (standalone sort placement); `sample` / `sampleBy` / `randomSplit` |
-| 8 | Build KPI Tables | both managed tables | Write-only: three managed `kpi_*` Delta tables (`saveAsTable`) |
-
-## Markdown Quality Gate (Module 8)
-
-Module-local authoring gate (supplements `docs/standards/*.md`):
-
-- Begin each section with a concrete dataset example before theory
-- Keep introductions to motivation + a short roadmap
-- Notebooks **02+**: point to Notebook **01** or `dataset-overview.md` for shared
-  setup — do not repeat full schema tables
-- Before push, remove repeated statements across introduction, sections, and
-  summary
+| 01 | GroupBy and Basic Aggregations | `trip_enriched` | Output grain; `groupBy().agg()` + aliasing; bare non-key column fails (window → **05**); three counts; `sum`/`avg` skip NULLs + `F.coalesce`; exercise — per-`payment_method` |
+| 02 | Multi-column Keys, NULL Groups, and Filter Placement | `trip_enriched` | NULL key group vs `countDistinct`; composite grain; `WHERE` vs `HAVING`; exercise — borough + HAVING, then composite key |
+| 03 | Collections, Percentiles, and Distinct Counts | `trip_enriched`, `trip_driver_assignment` | `collect_list` / `collect_set`; `avg` vs approximate p50 / p90; `countDistinct` |
+| 04 | Pivot | `trip_enriched` | `pivot` + explicit values |
+| 05 | Window Functions Fundamentals | `trip_enriched`, `trip_driver_assignment` | `groupBy` vs `Window`; partition-only aggregates; ranking-API ties; Top-2 filter-after-rank preview → **07** |
+| 06 | Running Totals and Lag and Lead | `trip_enriched` | Default `RANGE` vs explicit `ROWS`; ordered `first_value` / `last_value`; daily running totals; `lag` / `lead` |
+| 07 | Top-N per Group and Sampling | `trip_enriched`, `trip_driver_assignment` | Top-N per group (`row_number` + filter; extends **05** Top-2); Top-N selection policy (`row_number <= N` vs `rank <= N`, secondary sort); `nullsFirst` / `nullsLast` (standalone sort placement); `sample` / `sampleBy` / `randomSplit` |
+| 08 | Build KPI Tables | both managed tables | Write-only: three managed `kpi_*` Delta tables (`saveAsTable`) |
 
 ## Minimum privileges required
 
-- Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
 - Unity Catalog (no catalog / external-location / volume DDL):
   - **`USE CATALOG`** on **`rideshare_dev`**
   - **`USE SCHEMA`** on **`rideshare_dev.processed`**
   - **`SELECT`** on **`rideshare_dev.processed.trip_enriched`** and
     **`rideshare_dev.processed.trip_driver_assignment`**
-  - **`CREATE TABLE`** on **`rideshare_dev.processed`** (Notebook **08** only)
+  - **`CREATE TABLE`** on **`rideshare_dev.processed`**
+    (`08 - Build KPI Tables.py` only)
+- Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
