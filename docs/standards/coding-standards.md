@@ -44,7 +44,7 @@ duplicate this content elsewhere. Shared read list:
   `SparkSession`/`DataFrame` as a parameter instead, so functions stay
   testable without a live cluster.
 - Pure, non-Spark-dependent logic is preferred where feasible, specifically
-  so it can be covered by local `pytest` tests (Module 17) without needing
+  so it can be covered by local `pytest` tests (Module 16) without needing
   Databricks Connect or a running cluster.
 
 ## Security and portability

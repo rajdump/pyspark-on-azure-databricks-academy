@@ -307,7 +307,7 @@ wide_df.explain()
 # MAGIC In this notebook, `groupBy()` created the shuffle. You already used
 # MAGIC `orderBy` as a transformation in Notebook 01 — now you know it can also
 # MAGIC trigger a wide stage. Full join and aggregation APIs come in later modules;
-# MAGIC deep shuffle and partition tuning wait for Module 16.
+# MAGIC deep shuffle and partition tuning wait for Module 17.
 # MAGIC
 # MAGIC > **Good to know:** These examples use `collect()` instead of `show()`.
 # MAGIC >
@@ -355,7 +355,7 @@ wide_df.explain()
 # MAGIC - **`collect()`** starts a **job**; stages run **tasks** across partitions
 # MAGIC - **Spark UI** — **Details for Query** confirms `Exchange` for the wide run
 # MAGIC - **Shuffle triggers** — `groupBy`, `orderBy`, `distinct`, `repartition`,
-# MAGIC   many joins; deep tuning is Module 16
+# MAGIC   many joins; deep tuning is Module 17
 # MAGIC
 # MAGIC Next up: **Common DataFrame Actions** — `first`, `head`, `take`, `tail`,
 # MAGIC `isEmpty`, and `toPandas`. Writing with `DataFrame.write` waits for

@@ -151,7 +151,7 @@ trip_enriched.select(
 # MAGIC **Performance Note:** The `groupBy` operation is considered a **wide**
 # MAGIC transformation, which involves an `Exchange` (shuffle) as outlined in
 # MAGIC Module 4. This means that rows with the same key need to be processed by the
-# MAGIC same executor. Tuning the shuffle process will be covered in Module 16.
+# MAGIC same executor. Tuning the shuffle process will be covered in Module 17.
 
 # COMMAND ----------
 

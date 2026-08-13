@@ -19,7 +19,7 @@ Two habits run through the module:
 
 **No managed-table writes.** Read-only consumers of Module 7 and Module 8
 tables. Notebook **03** may create session temp views. Automated `assert` /
-pytest-style checks → Module 17.
+pytest-style checks → Module 16.
 
 Schemas, join keys, and KPI contracts:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md) and
@@ -88,7 +88,7 @@ named params; KPI rebuild in SQL.
 **Out of scope:**
 
 - SQL→PySpark homework rewrites
-- Python `assert` / automated tests (Module 17)
+- Python `assert` / automated tests (Module 16)
 - Delta ACID / `MERGE` / time travel (Module 10)
 - Unity Catalog grant administration (Module 11)
 - Re-teaching Module 7/8 theory — one short **callback** to the matching
@@ -211,7 +211,7 @@ Module-local authoring gate (supplements `docs/standards/*.md`):
 - **Quality over volume:** tight prose, precise names, locked expected
   counts; no essay cells; no duplicate explanations across intro /
   section / summary
-- **No Python `assert`.** Automated tests → Module 17
+- **No Python `assert`.** Automated tests → Module 16
 
 ## Minimum privileges required
 

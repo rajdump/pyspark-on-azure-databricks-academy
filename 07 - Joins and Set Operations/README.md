@@ -105,7 +105,7 @@ pedagogy re-teach in **07**).
 **Out of scope:** aggregations / windows pedagogy (Module 8) — except Notebook
 **02**'s narrow pre-join dedup (`Window` + `row_number`); CTEs / parameterized
 SQL (Module 9); Delta ACID / `MERGE` / time travel (Module 10); UC grants
-(Module 11); join-plan tuning beyond `F.broadcast` (Module 16).
+(Module 11); join-plan tuning beyond `F.broadcast` (Module 17).
 
 ## Notebooks
 

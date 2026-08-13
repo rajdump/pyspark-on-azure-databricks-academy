@@ -159,4 +159,4 @@ the latest complete output.
 * **Open decisions:** Operational timing columns (`request_to_pickup_mins`,
   `driver_arrival_to_pickup_mins`) are intentionally excluded from both targets
   per the lean-table design. A full-column pipeline including all metrics will be
-  delivered separately as part of Module 12's medallion architecture exercise.
+  delivered separately as part of the Modules 12–13 medallion architecture exercise.

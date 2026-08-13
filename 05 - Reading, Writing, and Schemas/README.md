@@ -71,7 +71,7 @@ Complete these before running **`01 - Unity Catalog Volumes and Data Landing`**:
 
 Do **not** use shorthand `processed/` alone. `practice/` and `curated/` are
 created on first write — Notebook **01** does not pre-create them. Schema
-names `landing` / `processed` are not medallion layers (Module 12).
+names `landing` / `processed` are not medallion layers (Modules 12–13).
 
 Notebook **01** creates platform objects; **Module 11** explains governance
 (grants, ownership, credentials, least privilege) on those existing objects.

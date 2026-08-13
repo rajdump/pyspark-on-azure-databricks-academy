@@ -121,7 +121,7 @@ borough_avg_fare.orderBy("pickup_borough").show(truncate=False)
 # MAGIC every trip row in that borough.
 # MAGIC
 # MAGIC Spark may shuffle data to bring rows with the same partition key together.
-# MAGIC Module 16 covers shuffle behavior and window performance; this notebook
+# MAGIC Module 17 covers shuffle behavior and window performance; this notebook
 # MAGIC focuses on how windows work.
 
 # COMMAND ----------

@@ -122,10 +122,11 @@ Module 6 `curated/` Parquet only and does **not** remove KPI tables.
 **API:** DataFrame `groupBy` / `agg`, `pivot`, and
 `pyspark.sql.window.Window` with `F.*` window functions.
 
-**Out of scope:** Spark SQL / `QUALIFY` (Module 9); Delta ACID / `MERGE` /
-incremental KPI refresh (Modules 10 and 13); Unity Catalog grant administration
-(Module 11); shuffle tuning beyond a one-line `partitionBy` note in Notebook
-**05** (Module 16); UDAFs — built-ins cover this module.
+**Out of scope:** Spark SQL / `QUALIFY` (Module 9); Delta ACID / `MERGE`
+fundamentals (Module 10); incremental KPI refresh (Module 14); Unity Catalog
+grant administration (Module 11); shuffle tuning beyond a one-line
+`partitionBy` note in Notebook **05** (Module 17); UDAFs — built-ins cover
+this module.
 
 ## Notebooks
 

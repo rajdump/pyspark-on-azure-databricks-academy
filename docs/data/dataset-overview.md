@@ -8,7 +8,7 @@ Referenced by `.cursor/rules/learner-notebooks.mdc`, slash commands
 sequences and privileges live in that module's `README.md`.
 
 **Dataset size:** Intentionally small — 100 / 100 / 100 / 22 core rows — for
-fast iteration. Not designed for shuffle, spill, or skew at volume (Module 16
+fast iteration. Not designed for shuffle, spill, or skew at volume (Module 17
 uses it for plan-reading only).
 
 ## Contents
@@ -384,7 +384,7 @@ DataFrames in code — no Volume paths.
 
 | Term | Meaning |
 |---|---|
-| Schema `landing` / `processed` | Unity Catalog schemas under `rideshare_dev` — **not** medallion Bronze/Silver/Gold (Module 12) |
+| Schema `landing` / `processed` | Unity Catalog schemas under `rideshare_dev` — **not** medallion Bronze/Silver/Gold (Modules 12–13) |
 | Volume `source_files` / `output_files` | External volumes under those schemas |
 | Folder `practice/` / `curated/` | Directories inside `output_files` (created on first write) |
 

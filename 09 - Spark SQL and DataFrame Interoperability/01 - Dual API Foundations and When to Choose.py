@@ -210,7 +210,7 @@ print("Temp view registered: trip_tip_band")
 # MAGIC | Ad-hoc exploration; stakeholder collaboration | Dynamic columns; programmatic pipelines |
 # MAGIC | `QUALIFY`, CTEs, `PIVOT`/`UNPIVOT` (concise SQL) | Runtime logic (loops over columns) |
 # MAGIC | Quick validation against known contracts | Refactoring and IDE-assisted development |
-# MAGIC | Shared with analysts who do not write Python | Unit-testable transforms (Module 17) |
+# MAGIC | Shared with analysts who do not write Python | Unit-testable transforms (Module 16) |
 # MAGIC
 # MAGIC Both APIs can express equivalent Spark transformations.
 # MAGIC
