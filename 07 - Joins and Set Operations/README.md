@@ -71,14 +71,6 @@ defect. Full contract:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
 (Module 7 — `trip_enriched`).
 
-| Column(s) | NULL on `trip_id` | Rows | Cause |
-|---|---|---:|---|
-| `trip_date`, `hour_of_day` | 101–106 | 6 | Landing `trip_time` has only 100 rows — left join |
-| `payment_method`, `driver_payout_amount` | 106 | 1 | Curated `payment` has 105 rows — left join |
-| `base_fare_amount` | 104, 106 | 2 | Left join **plus** trip 104 negative fare rejected in Module 6 |
-| `tip_amount` | 103, 106 | 2 | Left join **plus** trip 103 `not_a_number` tip rejected in Module 6 |
-| `trip_distance_miles` | 103, 105, 106 | 3 | Module 6 positive-value rule |
-
 Driver assignment: no unexpected key gaps on trips 1–100 (every column fully
 populated).
 
