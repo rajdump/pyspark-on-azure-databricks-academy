@@ -273,6 +273,9 @@ manhattan_daily.show(14, truncate=False)
 # MAGIC - fleet daily tip
 # MAGIC - borough `tip_share_pct`
 # MAGIC
+# MAGIC **Hint:** Reuse the section 5 daily CTEs. Change only `:borough` in
+# MAGIC `args`.
+# MAGIC
 # MAGIC **Expected:** **14 dated rows**.
 
 # COMMAND ----------
@@ -287,13 +290,14 @@ manhattan_daily.show(14, truncate=False)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - A **CTE** gives an intermediate query result a name
-# MAGIC - Multiple CTEs build a calculation as a sequence of named steps
-# MAGIC - Nested subqueries can produce the same result, but keep the steps
-# MAGIC   inside the main query
-# MAGIC - Named `:params` keep the SQL text fixed while input values change
-# MAGIC - `spark.sql(..., args={...})` binds those values from Python
-# MAGIC - CTEs and parameters work together for reusable multi-step SQL
+# MAGIC Tip-share is borough tip ÷ fleet tip × 100.
+# MAGIC
+# MAGIC - A **CTE** names a step, such as tip per pickup borough
+# MAGIC - Two CTEs compare each borough with the fleet total
+# MAGIC - Nested subqueries can return the same share without those names
+# MAGIC - `:params` keep the SQL fixed; `args` supplies the borough
+# MAGIC - Prefer `:params` over an f-string that pastes the value into SQL
+# MAGIC - The same formula on **date**: borough daily ÷ fleet daily × 100
 # MAGIC
 # MAGIC **Next:** `06 - End-to-End SQL Pipeline and Parity Inspection` rebuilds
 # MAGIC the Module 8 KPI results in SQL and compares them with the existing
