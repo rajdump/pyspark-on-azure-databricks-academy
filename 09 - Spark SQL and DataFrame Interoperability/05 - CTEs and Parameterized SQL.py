@@ -1,18 +1,22 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 05 - CTEs and Parameterized SQL
 # MAGIC
-# MAGIC As SQL queries grow, nested logic can be hard to follow, and hard-coded
+# MAGIC As SQL queries grow and become more complex, nested logic can be hard to follow, and hard-coded
 # MAGIC values make the same query harder to reuse.
 # MAGIC
 # MAGIC In this notebook, we'll address both:
 # MAGIC
-# MAGIC - **Common table expressions (CTEs)** name each step of a multi-step query
-# MAGIC - **Named parameters** pass values into SQL without building the query
-# MAGIC   string by hand
+# MAGIC - **Common table expressions (CTEs):** organize SQL operations into cleaner multi-step queries.
+# MAGIC - **Named parameters:** allow you to reuse a query with different input values without rewriting the SQL query.
 # MAGIC
-# MAGIC We'll apply both to a tip-share calculation: how much of the fleet's
-# MAGIC total tip comes from a particular borough.
+# MAGIC We'll apply both to calculate tip-share:
+# MAGIC borough total tip ÷ fleet total tip × 100 = tip-share percentage
+# MAGIC per borough.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
