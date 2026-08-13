@@ -168,9 +168,9 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC Calculate tip-share for each pickup borough by reusing the same SQL
 # MAGIC and passing `:borough` — not by writing a new `WHERE` clause each time.
 # MAGIC
-# MAGIC `spark.sql(sql, args={"borough": "Manhattan"})` then the same string
-# MAGIC for Queens. Prefer `:params` over an f-string that pastes the value
-# MAGIC into the SQL.
+# MAGIC Pass each name from a short list into the same SQL:
+# MAGIC `spark.sql(sql, args={"borough": borough})`.
+# MAGIC Prefer `:params` over an f-string that pastes the value into the SQL.
 
 # COMMAND ----------
 
@@ -189,8 +189,11 @@ manhattan.show()
 
 # COMMAND ----------
 
-queens = spark.sql(borough_sql, args={"borough": "Queens"})  # noqa: F821
-queens.show()
+boroughs = ["Manhattan", "Queens"]
+
+for borough in boroughs:
+    result = spark.sql(borough_sql, args={"borough": borough})  # noqa: F821
+    result.show()
 
 # COMMAND ----------
 
