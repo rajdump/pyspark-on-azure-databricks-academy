@@ -40,7 +40,7 @@ switching examples. Full schema, join keys, and physical layout:
 ## Phase II — Core Data Engineering Skills (Modules 5–9)
 
 Land on UC Volumes → transform and write `curated/` outputs → join safely →
-aggregate and window into managed KPI tables → query bilingually and synthesize.
+aggregate and window into managed KPI tables → query in Spark SQL and synthesize.
 
 Module 5 has additional environment prerequisites beyond "Module 4" (personal
 Azure workspace/storage setup and UC create privileges). See
@@ -52,14 +52,14 @@ Azure workspace/storage setup and UC create privileges). See
 | 6 | Built-in Functions, Complex Types, and UDF Alternatives | Transform landing data with Spark built-ins, work with nested types, and write curated outputs — prefer built-ins over UDFs | Built-in `F.*` transforms; Volume path vs managed table; structs/arrays/`explode`; cleaned `curated/` outputs; built-in vs Python UDF (Pandas/Arrow note only) | Module 5 | Performant, idiomatic transformation logic | Implements cleaning, enrichment, and business rules | Complete |
 | 7 | Joins and Set Operations | Join and combine rideshare tables with predictable row counts and clear keys — no silent cardinality or key traps | Grain and cardinality; join types and silent failures; lookup joins, column cleanup, broadcast; semi/anti; set operations; read Module 6 `curated/` / write managed tables (`trip_enriched`, `trip_driver_assignment`); high-level AQE awareness | Module 6 | Multi-table integration — a core production pattern | Combines core tables (and flattened `drivers`) into unified managed tables | Complete |
 | 8 | Aggregations and Window Functions | Produce analytics-ready summaries and KPI tables | `groupBy` and aggregates (collections, percentiles, distinct counts); pivot; window functions (ranking, running totals, lag/lead); Top-N per group; sampling; managed Delta `kpi_*` tables (`saveAsTable`) | Module 7 | Analytics and reporting layers | Produces KPI/metric tables for the project | Complete |
-| 9 | Spark SQL and DataFrame Interoperability | Express and validate pipeline logic in both DataFrame and SQL APIs | Dual API patterns; SQL joins, windows, and `QUALIFY`; CTEs and params; end-to-end pipeline using Module 8 managed KPI tables and Module 7 managed tables | Module 8 | Supports SQL-first collaboration and dual-API validation | Enables SQL-based transforms and tests | Complete |
+| 9 | Spark SQL and DataFrame Interoperability | Re-express DataFrame-based rideshare analytics in Spark SQL and choose deliberate SQL–DataFrame interoperability patterns | Dual-API entry points; SQL joins and aggregations; `PIVOT`, `UNPIVOT`, and `TABLESAMPLE`; windows and `QUALIFY`; CTEs and named parameters; rebuilds Module 8 KPI outputs in Spark SQL from Module 7 managed tables | Module 8 | Supports SQL-first collaboration and dual-API validation | Enables SQL-based transforms and cross-API validation | Complete |
 
 ## Phase III — Lakehouse and Governance (Modules 10–12)
 
 | # | Module | Purpose | Major Topics | Prerequisites | Production Relevance | Final-Project Contribution | Status |
 |---|---|---|---|---|---|---|---|
-| 10 | Delta Lake | Adopt Delta Lake as the storage foundation | ACID tables, time travel, `MERGE`, schema evolution basics | Module 9 | Lakehouse storage foundation for all later modules | Backs the project's tables with Delta | Not Started |
-| 11 | Unity Catalog and Governed Data | Govern existing rideshare UC objects with least privilege | Managed vs external objects; grants and privileges; ownership; storage credentials; minimum-privilege design; governance boundaries (inspect existing `rideshare_dev` — do not recreate Module 5 setup) | Module 10 | Governance compliance — required in any real Databricks environment | Produces UC-governed data assets | Not Started |
+| 10 | Delta Lake | Deepen Delta Lake knowledge on managed tables learners already use | ACID tables, time travel, `MERGE`, schema evolution basics | Module 9 | Lakehouse storage foundation for all later modules | Applies Delta operations to existing project tables | Not Started |
+| 11 | Unity Catalog and Governed Data | Govern existing rideshare UC objects with least privilege | Managed vs external objects; grants and privileges; ownership; storage credentials; minimum-privilege design; governance boundaries (inspect existing `rideshare_dev` — do not recreate Module 5 setup) | Module 10 | Governance compliance — required in any real Databricks environment | Applies least-privilege governance to existing Unity Catalog assets | Not Started |
 | 12 | Lakehouse and Medallion Architecture | Structure a pipeline using the medallion pattern | Bronze/silver/gold layering, layered pipeline design | Module 11 | The standard lakehouse architecture pattern | Establishes the project's medallion structure | Not Started |
 
 ## Phase IV — Production Batch Engineering (Modules 13–15)
@@ -74,7 +74,7 @@ Azure workspace/storage setup and UC create privileges). See
 
 | # | Module | Purpose | Major Topics | Prerequisites | Production Relevance | Final-Project Contribution | Status |
 |---|---|---|---|---|---|---|---|
-| 16 | Performance and Spark Internals | Understand and tune Spark performance | Partitioning, shuffles, adaptive query execution, caching, Photon awareness | Module 15 | Cost and performance tuning | Applies an optimization pass to the project | Not Started |
-| 17 | Testing, Data Quality, and Code Quality | Build confidence in pipeline correctness | `pytest` for PySpark logic, data-quality checks, linting/typing gates | Module 16 | Reliability and maintainability | Adds the project's test suite and quality gates | Not Started |
+| 16 | Performance and Spark Internals | Understand and tune Spark performance | Partitioning, shuffles, AQE tuning and plan analysis beyond Module 7 awareness, caching, Photon awareness | Module 15 | Cost and performance tuning | Applies an optimization pass to the project | Not Started |
+| 17 | Testing, Data Quality, and Code Quality | Build confidence in pipeline correctness | `pytest` for pure Python helpers; Databricks-based data-quality checks; linting/typing gates | Module 16 | Reliability and maintainability | Adds the project's test suite and quality gates | Not Started |
 | 18 | Observability and Production Operations | Operate batch pipelines in production | Logging, job monitoring and alerts, run history, troubleshooting | Module 17 | Operational readiness | Adds monitoring/alerting to the project | Not Started |
 | 19 | End-to-End Deployable Batch Project | Integrate everything into one deployable pipeline | Capstone integration of all prior modules | Modules 1–18 | This module *is* the production capstone | The final project itself | Not Started |
