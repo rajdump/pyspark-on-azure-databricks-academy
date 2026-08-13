@@ -24,9 +24,7 @@ By the end of this module, you'll be able to:
   format under
   `/Volumes/rideshare_dev/processed/output_files/practice/` and create
   managed table **`rideshare_dev.processed.trip_time_preview`** with
-  **`saveAsTable`** (files vs managed tables; Module 6
-  `01 - Column Transforms with Built-in Functions.py` reuses this table for
-  path-vs-table API parity; deep Delta → Module 10; UC grants → Module 11)
+  **`saveAsTable`** (files vs managed tables)
 
 ## Prerequisites
 
@@ -67,7 +65,6 @@ Schemas, column names, Volume path rules, and the repo → Volume upload map:
 |---|---|
 | Reads | `/Volumes/rideshare_dev/landing/source_files/{dataset}/` |
 | Module 5 writes | `/Volumes/rideshare_dev/processed/output_files/practice/{output_name}/` |
-| Module 6+ writes | `/Volumes/rideshare_dev/processed/output_files/curated/{output_name}/` |
 
 Do **not** use shorthand `processed/` alone. The `practice/` and `curated/`
 tiers under `/Volumes/rideshare_dev/processed/output_files/` are created on

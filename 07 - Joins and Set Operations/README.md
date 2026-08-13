@@ -86,10 +86,8 @@ with no per-table statement required.
 
 ## Notebooks
 
-Seven notebooks, in order. Two habits run through **01–06**: (1) know the
-**grain** of each input before you join; (2) **predict → run → verify** on
-every join (also **profile** keys first). Notebooks **01–06** are
-skill-building only (**no write**) and each includes a short hands-on task.
+Seven notebooks, in order. Notebooks **01–06** are skill-building only
+(**no write**) and each includes a short hands-on task.
 `07 - Build Unified Curated Tables.py` is write-only (no practice, no
 profiling/validation cells): load, build both tables per mapping docs,
 `saveAsTable` overwrite, short AQE note. Key profiling and validation belong

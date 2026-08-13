@@ -110,25 +110,12 @@ does **not** remove KPI tables.
 
 ## Notebooks
 
-Each skill-building notebook ends with a short exercise. Two habits run
-through **01–07**: (1) **name the output grain** before you write the
-aggregate — one row per *what*?; (2) **verify with `count()`** after —
-especially on a new dataset or a new key. Notebooks **01–04** use `groupBy`
-(fewer rows). **05–07** focus on windows, which preserve the rows of the
-DataFrame they receive. `06 - Running Totals and Lag and Lead.py` may first
-aggregate to daily grain, then window over that. **01–07** do not write.
-`08 - Build KPI Tables.py` writes three managed Delta KPI tables for Module 9.
-
-**Ownership handoffs (do not re-teach across notebooks):**
-
-| Topic | Owner |
-|---|---|
-| Ranking-API ties (`row_number` vs `rank` vs `dense_rank`) | **05** |
-| Top-2 filter-after-rank preview | **05** (full Top-N → **07**) |
-| Frames, running totals, `first_value` / `last_value`, `lag` / `lead` | **06** |
-| Top-N per group; Top-N selection policy; sampling | **07** |
-| `nullsFirst` / `nullsLast` (ordered-window sort placement) | **07** (standalone; not only on Top-N) |
-| General NULL semantics | Module 3 and Notebooks **01–02** |
+Each skill-building notebook ends with a short exercise. Notebooks **01–04**
+use `groupBy` (fewer rows). **05–07** focus on windows, which preserve the
+rows of the DataFrame they receive. `06 - Running Totals and Lag and Lead.py`
+may first aggregate to daily grain, then window over that. **01–07** do not
+write. `08 - Build KPI Tables.py` writes three managed Delta KPI tables for
+Module 9.
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|

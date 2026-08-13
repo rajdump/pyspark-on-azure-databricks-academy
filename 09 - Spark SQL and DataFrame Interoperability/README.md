@@ -62,26 +62,9 @@ creates nothing durable to tear down.
 
 ## Notebooks
 
-Six notebooks, in order. Two habits run through the module: (1) **pick the
-entry point deliberately** — `%sql`, `spark.table`, `spark.sql`→DF, or
-DF→temp view — then stay consistent in that cell; (2) **layer the full
-statement** after Step 1 of a main arc; call out only what is new in each
-cell. Notebooks **01–05** each end with a short SQL exercise.
-`06 - End-to-End SQL Pipeline.py` has **no exercise** (the three KPI
-rebuilds are the synthesis).
-
-**Ownership handoffs (do not re-teach across notebooks):**
-
-| Topic | Owner |
-|---|---|
-| Dual entry + SQL↔DF bridges + when-to-choose | **01** |
-| Row-level `CASE WHEN` (`tip_amount_band`, absolute bands) | **01** (reuse in **02** tier / **04** delta / **06** tip %) |
-| First Module 9 `GROUP BY` / JOIN aliases / `HAVING` / `NOT EXISTS` | **02** |
-| `COALESCE` visible on raw 106; one-line honesty after JOIN (NULL tips undriven) | **02** |
-| `PIVOT` / `UNPIVOT` / `TABLESAMPLE` | **03** |
-| Window `OVER` / `QUALIFY` / running `SUM` / `LAG` | **04** |
-| CTEs + named `:params` | **05** |
-| KPI rebuild in SQL (no writes) | **06** |
+Six notebooks, in order. Notebooks **01–05** each end with a short SQL
+exercise. `06 - End-to-End SQL Pipeline.py` has **no exercise** (the three
+KPI rebuilds are the synthesis).
 
 | # | Notebook | Reads | Focus |
 |---|---|---|---|
@@ -91,64 +74,6 @@ rebuilds are the synthesis).
 | 04 | SQL Windows and QUALIFY | `kpi_zone_performance`, `kpi_daily_trip_summary` | Part 1: `ROW_NUMBER` + `QUALIFY` Top-2 by tip (**9** rows) + subquery equivalent. Part 2: running distance + `LAG` + direction `CASE`. Exercise: Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows |
 | 05 | CTEs and Parameterized SQL | `trip_enriched` | Single CTE → multi-CTE tip-share → nested-subquery contrast → `:borough` params (anti f-string) → CTE + params. Exercise: borough daily tip as share of fleet daily |
 | 06 | End-to-End SQL Pipeline | `trip_enriched`, `trip_driver_assignment` | Rebuild daily / zone / driver KPIs in `%sql` (layered steps). No writes. No exercise. Phase II synthesis; next is Module 10 (Phase III) |
-
-### Notebook section navigation
-
-Do not invent alternate arcs. Section titles below match the authored
-notebooks.
-
-**01 — Dual API Foundations and When to Choose**
-
-1. Direct SQL on a UC table (`LIMIT` / `SHOW TABLES` / `DESCRIBE TABLE`)
-2. Same projection via DataFrame API
-3. SQL → DataFrame bridge (`spark.sql` + light `IS NOT NULL`; no agg)
-4. Row-level `CASE WHEN` (`tip_amount_band`)
-5. DataFrame → SQL bridge (`F.when` + temp view)
-6. When to choose (decision table)
-
-**02 — SQL Joins, Aggregations, and Filtering**
-
-Main arc (one evolving query):
-
-1. Base projection (NULLs visible on 106)
-2. CASE → `tier`
-3. `COALESCE` while NULLs remain
-4. JOIN + ambiguous column (one intentional error, then fix → 100; one-line COALESCE honesty)
-5. First `GROUP BY` (`GROUP BY tier` alias; repeating `CASE` also works)
-6. `HAVING`
-
-Side path: `NOT EXISTS` undriven trips (+ one-line `LEFT ANTI JOIN` awareness).
-
-**03 — SQL Pivot, Unpivot, and Sampling**
-
-1. Borough × service counts
-2. `PIVOT` service types into columns
-3. `COALESCE` zeros + SQL temp view
-4. `UNPIVOT` columns back to rows
-5. `TABLESAMPLE`
-
-**04 — SQL Windows and QUALIFY**
-
-- Part 1 (zone KPI): rank → `QUALIFY` → subquery equivalent
-- Part 2 (daily KPI): running `SUM` → `LAG` → direction `CASE`
-
-**05 — CTEs and Parameterized SQL**
-
-1. Single CTE
-2. Multi-CTE composition
-3. Nested subquery contrast
-4. Named parameters (`:borough`)
-5. CTE + params combined
-
-**06 — End-to-End SQL Pipeline**
-
-- Setup — load source tables
-- 1. What does daily trip activity look like? (dated trips, then aggregate)
-- 2. Which pickup zones generate the most business? (zone grain, then tip % + averages)
-- 3. Which drivers cover the most distance? (CTE agg, then `DENSE_RANK`)
-- Summary — Module 9
-
-KPI rebuilds are `%sql` cells.
 
 ## Minimum privileges required
 
@@ -164,21 +89,3 @@ KPI rebuilds are `%sql` cells.
     (`03 - SQL Pivot, Unpivot, and Sampling.py`); that is not schema/table
     DDL on `rideshare_dev.processed`
 - Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
-
-## PySpark callback map
-
-When a SQL pattern is a re-expression, point back once — do not re-teach:
-
-| Module 9 topic | Point back to |
-|---|---|
-| Temp views / `%sql` / `spark.sql` | Module 2 `06 - Querying DataFrames with SQL.py` |
-| `F.when` / CASE-style columns | Module 2 `06 - Querying DataFrames with SQL.py` / Module 6 tip-band work (Module 9 uses **absolute** `tip_amount_band`) |
-| Joins | Module 7 managed-table consumers (esp. `07 - Build Unified Curated Tables.py`) |
-| `GROUP BY` / aggs / WHERE vs HAVING | Module 8 `01 - GroupBy and Basic Aggregations.py`, `02 - Multi-column Keys, NULL Groups, and Filter Placement.py` |
-| Pivot | Module 8 `04 - Pivot.py` |
-| Windows / Top-N / ranking | Module 8 `05 - Window Functions Fundamentals.py`–`07 - Top-N per Group and Sampling.py` |
-| Running totals / lag | Module 8 `06 - Running Totals and Lag and Lead.py` |
-| Sampling | Module 8 `07 - Top-N per Group and Sampling.py` |
-| KPI formulas / grains | Module 8 `08 - Build KPI Tables.py` + Module 8 README contracts |
-
-Refer by **real notebook titles** (never “Notebook 02” alone).
