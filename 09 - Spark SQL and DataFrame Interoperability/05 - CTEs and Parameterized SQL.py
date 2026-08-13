@@ -165,15 +165,12 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 # MAGIC %md
 # MAGIC ## 4. Named parameters (`:borough`)
 # MAGIC
-# MAGIC So far the SQL uses fixed values. To run the same query for another
-# MAGIC borough, do not rewrite the SQL or insert the value with an f-string.
+# MAGIC Calculate tip-share for each pickup borough by reusing the same SQL
+# MAGIC and passing `:borough` — not by writing a new `WHERE` clause each time.
 # MAGIC
-# MAGIC Place `:borough` in the SQL and pass the value with
-# MAGIC `spark.sql(..., args={...})`. The SQL text stays fixed; only the args
-# MAGIC dict changes.
-# MAGIC
-# MAGIC `f"... WHERE pickup_borough = '{borough}'"` builds a different string per
-# MAGIC value and is unsafe. Prefer `:params`.
+# MAGIC `spark.sql(sql, args={"borough": "Manhattan"})` then the same string
+# MAGIC for Queens. Prefer `:params` over an f-string that pastes the value
+# MAGIC into the SQL.
 
 # COMMAND ----------
 
