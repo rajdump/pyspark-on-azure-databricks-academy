@@ -176,12 +176,22 @@ print(f"trip_enriched: {trip_enriched.count()} rows")  # expect 106
 
 borough_sql = """
 SELECT
-  pickup_borough,
-  COUNT(*) AS trip_count,
-  ROUND(SUM(tip_amount), 2) AS total_tip
-FROM rideshare_dev.processed.trip_enriched
-WHERE pickup_borough = :borough
-GROUP BY pickup_borough
+  b.pickup_borough,
+  b.total_tip,
+  f.fleet_tip,
+  ROUND(100 * b.total_tip / NULLIF(f.fleet_tip, 0), 1) AS tip_share_pct
+FROM (
+  SELECT
+    pickup_borough,
+    SUM(tip_amount) AS total_tip
+  FROM rideshare_dev.processed.trip_enriched
+  WHERE pickup_borough = :borough
+  GROUP BY pickup_borough
+) AS b
+CROSS JOIN (
+  SELECT SUM(tip_amount) AS fleet_tip
+  FROM rideshare_dev.processed.trip_enriched
+) AS f
 """
 
 manhattan = spark.sql(borough_sql, args={"borough": "Manhattan"})  # noqa: F821
@@ -206,6 +216,11 @@ for borough in boroughs:
 # MAGIC The first CTE sums tip per `trip_date` for one pickup borough
 # MAGIC (`:borough`). The second CTE sums tip per date across all boroughs.
 # MAGIC Then divide: borough daily ÷ fleet daily × 100.
+# MAGIC
+# MAGIC Parameters:
+# MAGIC
+# MAGIC - `:borough` — which borough
+# MAGIC - `:min_tip >= 0`
 # MAGIC
 # MAGIC **Expected:** **14 rows**. Share can be **100%** when all tip that day is
 # MAGIC in the borough.
@@ -273,8 +288,8 @@ manhattan_daily.show(14, truncate=False)
 # MAGIC - fleet daily tip
 # MAGIC - borough `tip_share_pct`
 # MAGIC
-# MAGIC **Hint:** Reuse the section 5 daily CTEs. Change only `:borough` in
-# MAGIC `args`.
+# MAGIC **Hint:** Reuse section 5. Change `:borough` in `args`; keep `min_tip` at
+# MAGIC `0`.
 # MAGIC
 # MAGIC **Expected:** **14 dated rows**.
 
