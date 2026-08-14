@@ -353,7 +353,20 @@ Full column contracts:
 | Volumes | `landing.source_files`, `processed.output_files` |
 | External location | `el_rideshare_dev` |
 | Storage credential | Student-provided name in the config cell |
-| Preview managed table | `rideshare_dev.processed.trip_time_preview` |
+
+### Managed tables
+
+All six are Unity Catalog managed Delta in `rideshare_dev.processed`
+(`landing` has none).
+
+| Table | Module | Grain / rows |
+|---|---|---|
+| `rideshare_dev.processed.trip_time_preview` | 5 | Same as `trip_time` — **100** |
+| `rideshare_dev.processed.trip_enriched` | 7 | One row per curated `trip_id` — **106** |
+| `rideshare_dev.processed.trip_driver_assignment` | 7 | One row per (`driver_id`, `trip_id`) — **100** |
+| `rideshare_dev.processed.kpi_daily_trip_summary` | 8 | One row per `trip_date` — **14** |
+| `rideshare_dev.processed.kpi_zone_performance` | 8 | One row per (`pickup_borough`, `pickup_zone`) — **20** |
+| `rideshare_dev.processed.kpi_driver_productivity` | 8 | One row per `driver_id` — **12** |
 
 ### Glossary
 
