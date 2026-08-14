@@ -2,14 +2,7 @@
 
 Canonical source for the rideshare dataset: logical tables, schemas, join
 keys, and physical layout (source files + Unity Catalog Volume paths).
-Referenced by `.cursor/rules/learner-notebooks.mdc`, slash commands
-(`/new-lesson`, `/write-lesson`, `/validate-notebook`, `/review-module`), and
-`AGENTS.md` — do not duplicate this content elsewhere. Module notebook
-sequences and privileges live in that module's `README.md`.
-
-**Dataset size:** Intentionally small — 100 / 100 / 100 / 22 core rows — for
-fast iteration. Not designed for shuffle, spill, or skew at volume (Module 17
-uses it for plan-reading only).
+Module notebook sequences and privileges live in that module's `README.md`.
 
 ## Contents
 
@@ -61,7 +54,7 @@ notebooks. Module 6+ curated and managed tables are larger derivatives — see
 | `trip_date` | date |
 | `hour_of_day` | int |
 
-**Date range:** 100 trips span **2026-03-01 – 2026-03-14** (14 distinct dates; ~7 trips per date on average).
+**Date range:** 100 trips span **2026-03-01 – 2026-03-14** (14 distinct dates).
 
 ### `payment`
 
@@ -95,13 +88,9 @@ notebooks. Module 6+ curated and managed tables are larger derivatives — see
 **Zone coverage:** every `trip` pickup/dropoff (core rows **and** curated
 trips 101–106) uses `location_id` **1–20** only. `zone_lookup` rows **21**
 (`zone_name` = `Newark Airport`) and **22** (`Hoboken Terminal`) are
-intentionally unmatched so Module 7 can teach right/full-outer joins on
-real data. Both sit in `borough_name` = `New Jersey`.
+intentionally unmatched. Both sit in `borough_name` = `New Jersey`.
 
 ### Entity-relationship diagram
-
-Source entity-relationship diagram for the 4 core logical tables plus the
-supplementary `drivers` source file.
 
 ```mermaid
 erDiagram
@@ -154,16 +143,11 @@ erDiagram
     drivers     ||--o{  trip        : "1:N via trips_assigned"
 ```
 
-> `zone_lookup` connects to `trip` (**1:N**) for both `pickup_location_id` and `dropoff_location_id`.
-> `trip_time` and `payment` share a **1:1** relationship with `trip` on `trip_id`.
-> `drivers` is a supplementary XML source with a **1:N** nested array (`trips_assigned`) containing assigned `trip_id`s.
-
 ---
 
 ## Supplementary: `drivers` (nested XML)
 
-12 `<driver>` records — not a fifth core table. Landing path:
-`landing/source_files/drivers/`.
+12 `<driver>` records — not a fifth core table.
 
 | Field | Type |
 |---|---|
@@ -174,8 +158,9 @@ erDiagram
 | `trips_assigned` | repeated `trip_id` list |
 
 Module 6 Notebook **02** flattens this to `curated/drivers_flat/`
-(`name` → `driver_name`, `vehicle.*` exploded to columns,
-`explode` on `trips_assigned`). Joinable to `trip` on `trip_id` after flatten.
+(`name` → `driver_name`; `vehicle.make` / `model` / `year` / `body_type`
+projected to columns; `explode` on `trips_assigned`). Joinable to `trip`
+on `trip_id` after flatten.
 
 ---
 
@@ -203,9 +188,10 @@ DDL and ADLS teardown only.
 | `drivers` | XML | `data/raw/xml/drivers.xml` | `…/landing/source_files/drivers/` |
 | `payment` | Avro | `data/raw/avro/payment.avro` | `…/landing/source_files/payment/` |
 
-JSON is newline-delimited; Parquet preserves decimals. Other payment formats
-may exist under `data/raw/` for authoring; Module 5's primary `payment` read
-is Avro.
+Canonical `zone_lookup` JSON is newline-delimited. Extra CSV, JSON, and
+Parquet copies of the core tables exist under `data/raw/` for authoring;
+Module 5 lands **one** format per dataset (table above). `drivers` is XML
+only.
 
 #### Controlled-bad variants
 
@@ -221,11 +207,11 @@ the 100-row core contracts used by other source-reading notebooks).
 Both files keep the CSV header and all 100 original records.
 
 - **`bad_trip_data`:** appends trips 101–106, one duplicate of trip 101, and
-  one missing-key row → Module 6 rejects the missing key, `dropDuplicates` on
-  `trip_id`, cleans values → **106** curated trip rows.
+  one missing-key row. Module 6 rejects the missing key, `dropDuplicates` on
+  `trip_id`, and cleans values.
 - **`bad_payment_data`:** appends five uniquely keyed rows (101–105) plus one
-  missing-key row → Module 6 rejects the missing key, cleans values → **105**
-  curated payment rows (no payment for trip 106).
+  missing-key row (no payment for trip 106). Module 6 rejects the missing key
+  and cleans values.
 
 ### Module 6 — Curated outputs
 
@@ -237,10 +223,41 @@ Parquet under `/Volumes/rideshare_dev/processed/output_files/curated/{name}/`.
 | `curated/trip/` | One row per `trip_id` — **106** (from `bad_trip_data.csv`) | Notebook **03** |
 | `curated/payment/` | One row per `trip_id` — **105** (from `bad_payment_data.csv`; no row for trip 106) | Notebook **03** |
 
-`curated/trip/` and `curated/payment/` keep the core columns plus Module 6
-enrichment columns (e.g. `service_label`, `trip_distance_km`,
-`charge_before_tip`). Those enrichments stay in curated sources — they are
-**not** promoted into Module 7 managed tables (BRD).
+Module 6 enrichment columns stay in curated sources — they are **not**
+promoted into Module 7 managed tables (BRD).
+
+#### `curated/trip` schema
+
+| Column | Type |
+|---|---|
+| `trip_id` | bigint |
+| `service_type` | string |
+| `service_label` | string |
+| `pickup_location_id` | int |
+| `dropoff_location_id` | int |
+| `trip_distance_miles` | decimal(8,2) |
+| `trip_distance_km` | double |
+| `request_to_pickup_mins` | int |
+| `driver_arrival_to_pickup_mins` | int |
+| `request_to_driver_arrival_mins` | int |
+| `ride_duration_mins` | int |
+| `diff_ride_duration_wait_mins` | int |
+| `ride_duration_band` | string |
+
+#### `curated/payment` schema
+
+| Column | Type |
+|---|---|
+| `trip_id` | bigint |
+| `payment_method` | string |
+| `base_fare_amount` | decimal(10,2) |
+| `surge_amount` | decimal(10,2) |
+| `tax_amount` | decimal(10,2) |
+| `tip_amount` | decimal(10,2) |
+| `discount_amount` | decimal(10,2) |
+| `driver_payout_amount` | decimal(10,2) |
+| `charge_before_tip` | double |
+| `tip_percent_of_base` | double |
 
 #### `drivers_flat` schema
 
@@ -258,7 +275,6 @@ enrichment columns (e.g. `service_label`, `trip_distance_km`,
 ### Module 7 — Managed analytical tables
 
 Unity Catalog managed Delta tables written by Module 7 Notebook **07**.
-Modules 8–9 read these as their primary sources.
 
 Source-to-target mappings (joins / transforms):
 [`trip_enriched_mapping.md`](../../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_enriched_mapping.md),
@@ -272,7 +288,7 @@ Source-to-target mappings (joins / transforms):
 #### `trip_enriched`
 
 Built from `curated/trip` left-joined to landing `trip_time`,
-`curated/payment`, and pickup/dropoff `zone_lookup` (broadcast).
+`curated/payment`, and landing `zone_lookup` (broadcast).
 
 | Column | Type |
 |---|---|
@@ -303,9 +319,8 @@ Built from `curated/trip` left-joined to landing `trip_time`,
 `cash` 17, `corporate` 8, `unknown` 1, plus **1 NULL** for trip 106).
 `UNKNOWN` / `unknown` are string sentinels, **not** NULL.
 
-**Inherited NULLs** — teaching material for Modules 7–8, not a defect. Each
-measure has its own non-NULL count (join gaps **and** Module 6 value
-rejection).
+**Inherited NULLs.** Each measure has its own non-NULL count (join gaps
+**and** Module 6 value rejection).
 
 | Column(s) | NULL on `trip_id` | Rows | Cause |
 |---|---|---:|---|
@@ -316,7 +331,7 @@ rejection).
 | `trip_distance_miles` | 103, 105, 106 | 3 | Module 6 positive-value rule |
 
 `ride_duration_mins`, `service_type`, and the four zone columns have **no**
-NULLs (every trip matches `location_id` 1–20).
+NULLs.
 
 #### `trip_driver_assignment`
 
@@ -345,21 +360,19 @@ table joins trips 1–100 only, so every column is fully populated.
 
 ### Module 8 — KPI outputs
 
-Unity Catalog managed Delta tables written by Module 8 Notebook **08** with
-`.mode("overwrite").saveAsTable(...)`. Module 9 Notebook **04** reads the
-daily and zone tables. Notebook **06** (`06 - End-to-End SQL Pipeline`)
-rebuilds all three contracts in Spark SQL from the source tables
-(read-only). Full column contracts:
+Unity Catalog managed Delta tables written by Module 8 Notebook **08**.
+Full column contracts:
 [Module 8 README — Paths and outputs](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
 
 | Table | Grain / rows | Source table |
 |---|---|---|
-| `rideshare_dev.processed.kpi_daily_trip_summary` | One row per **`trip_date`** — **14** (NULL-`trip_date` trips 101–106 excluded; measure-NULL trips 103–106 are inside that undated set, so dated rows 1–100 are fully populated) | `trip_enriched` |
+| `rideshare_dev.processed.kpi_daily_trip_summary` | One row per **`trip_date`** — **14** (drops NULL-`trip_date` trips 101–106) | `trip_enriched` |
 | `rideshare_dev.processed.kpi_zone_performance` | One row per (**`pickup_borough`**, **`pickup_zone`**) — **20** | `trip_enriched` |
 | `rideshare_dev.processed.kpi_driver_productivity` | One row per **`driver_id`** — **12** | `trip_driver_assignment` |
 
 Cleared by Module 5 **`99`** Level 4 (catalog teardown), same as Module 7
 managed tables — not by Level 2 `curated/` cleanup.
+
 ---
 
 ## Unity Catalog platform reference
@@ -384,12 +397,9 @@ DataFrames in code — no Volume paths.
 
 | Term | Meaning |
 |---|---|
-| Schema `landing` / `processed` | Unity Catalog schemas under `rideshare_dev` — **not** medallion Bronze/Silver/Gold (Modules 12–13) |
+| Schema `landing` / `processed` | Unity Catalog schemas under `rideshare_dev` — **not** medallion Bronze/Silver/Gold |
 | Volume `source_files` / `output_files` | External volumes under those schemas |
 | Folder `practice/` / `curated/` | Directories inside `output_files` (created on first write) |
-
-Do not write "processed/" alone in notebooks — use the full Volume path or
-the `practice/` / `curated/` tier.
 
 ### Path patterns
 
@@ -403,11 +413,7 @@ the `practice/` / `curated/` tier.
 
 | Stage | Destination |
 |---|---|
-| Module 5 practice | `…/processed/output_files/practice/{output_name}/` |
+| Module 5 practice | `…/processed/output_files/practice/{output_name}/` (Module 5 only) |
 | Module 6 curated Parquet | `…/processed/output_files/curated/{output_name}/` |
 | Module 7 analytical tables | Unity Catalog managed tables (`saveAsTable`) — not Volume folders |
 | Module 8 KPI tables | Unity Catalog managed tables (`saveAsTable`) in `rideshare_dev.processed` (`kpi_*`) |
-
-Do not read `practice/` after Module 5. Later modules read landing,
-prior `curated/` outputs, Module 7 managed tables, and/or Module 8 KPI
-managed tables.
