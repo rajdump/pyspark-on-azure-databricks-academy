@@ -1,8 +1,9 @@
 # Dataset Overview — Rideshare
 
-Canonical source for the rideshare dataset: logical tables, schemas, join
-keys, and physical layout (source files + Unity Catalog Volume paths).
-Module notebook sequences and privileges live in that module's `README.md`.
+This file serves as the single source of truth for the rideshare data
+model. It defines catalogs, schemas, tables, volumes, data grains, join
+keys, NULL rules, and the locations of source files and Unity Catalog
+objects used throughout the course.
 
 ## Contents
 
@@ -22,8 +23,9 @@ Module notebook sequences and privileges live in that module's `README.md`.
 
 ### Summary
 
-100-row / 22-row **contracts** used by Modules 1–5 and by source-reading
-notebooks. Module 6+ curated and managed tables are larger derivatives — see
+100-row / 22-row **contracts**. Modules 1–4 use small hand-built DataFrames
+aligned with these schemas — not these files. File reads start in Module 5.
+Module 6+ curated and managed tables are larger derivatives — see
 [Module pipeline](#module-pipeline); they do not change these contracts.
 
 | Table | Rows | Role |
