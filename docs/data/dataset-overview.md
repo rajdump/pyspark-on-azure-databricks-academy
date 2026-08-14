@@ -85,10 +85,10 @@ notebooks. Module 6+ curated and managed tables are larger derivatives — see
 - `trip.pickup_location_id = zone_lookup.location_id`
 - `trip.dropoff_location_id = zone_lookup.location_id`
 
-**Zone coverage:** every `trip` pickup/dropoff (core rows **and** curated
-trips 101–106) uses `location_id` **1–20** only. `zone_lookup` rows **21**
-(`zone_name` = `Newark Airport`) and **22** (`Hoboken Terminal`) are
-intentionally unmatched. Both sit in `borough_name` = `New Jersey`.
+**Zone coverage:** every `trip` pickup/dropoff uses `location_id` **1–20**
+only. `zone_lookup` rows **21** (`zone_name` = `Newark Airport`) and **22**
+(`Hoboken Terminal`) are intentionally unmatched. Both sit in
+`borough_name` = `New Jersey`.
 
 ### Entity-relationship diagram
 
@@ -246,8 +246,8 @@ Parquet under `/Volumes/rideshare_dev/processed/output_files/curated/{name}/`.
 | `tip_amount` | decimal(10,2) |
 | `discount_amount` | decimal(10,2) |
 | `driver_payout_amount` | decimal(10,2) |
-| `charge_before_tip` | double |
-| `tip_percent_of_base` | double |
+| `charge_before_tip` | decimal(16,2) |
+| `tip_percent_of_base` | decimal(16,1) |
 
 #### `drivers_flat` schema
 
