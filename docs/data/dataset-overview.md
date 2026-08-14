@@ -157,11 +157,6 @@ erDiagram
 | `vehicle` | struct — `make`, `model`, `year`, `body_type` |
 | `trips_assigned` | repeated `trip_id` list |
 
-Module 6 Notebook **02** flattens this to `curated/drivers_flat/`
-(`name` → `driver_name`; `vehicle.make` / `model` / `year` / `body_type`
-projected to columns; `explode` on `trips_assigned`). Joinable to `trip`
-on `trip_id` after flatten.
-
 ---
 
 ## Module pipeline
@@ -207,24 +202,19 @@ the 100-row core contracts used by other source-reading notebooks).
 Both files keep the CSV header and all 100 original records.
 
 - **`bad_trip_data`:** appends trips 101–106, one duplicate of trip 101, and
-  one missing-key row. Module 6 rejects the missing key, `dropDuplicates` on
-  `trip_id`, and cleans values.
+  one missing-key row.
 - **`bad_payment_data`:** appends five uniquely keyed rows (101–105) plus one
-  missing-key row (no payment for trip 106). Module 6 rejects the missing key
-  and cleans values.
+  missing-key row (no payment for trip 106).
 
 ### Module 6 — Curated outputs
 
 Parquet under `/Volumes/rideshare_dev/processed/output_files/curated/{name}/`.
 
-| Output | Grain / rows | Produced by |
-|---|---|---|
-| `curated/drivers_flat/` | One row per (`driver_id`, `trip_id`); trips **1–100** | Notebook **02** |
-| `curated/trip/` | One row per `trip_id` — **106** (from `bad_trip_data.csv`) | Notebook **03** |
-| `curated/payment/` | One row per `trip_id` — **105** (from `bad_payment_data.csv`; no row for trip 106) | Notebook **03** |
-
-Module 6 enrichment columns stay in curated sources — they are **not**
-promoted into Module 7 managed tables (BRD).
+| Output | Grain / rows |
+|---|---|
+| `curated/drivers_flat/` | One row per (`driver_id`, `trip_id`); trips **1–100** |
+| `curated/trip/` | One row per `trip_id` — **106** (from `bad_trip_data.csv`) |
+| `curated/payment/` | One row per `trip_id` — **105** (from `bad_payment_data.csv`; no row for trip 106) |
 
 #### `curated/trip` schema
 
@@ -274,21 +264,12 @@ promoted into Module 7 managed tables (BRD).
 
 ### Module 7 — Managed analytical tables
 
-Unity Catalog managed Delta tables written by Module 7 Notebook **07**.
-
-Source-to-target mappings (joins / transforms):
-[`trip_enriched_mapping.md`](../../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_enriched_mapping.md),
-[`trip_driver_assignment_mapping.md`](../../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_driver_assignment_mapping.md).
-
 | Table | Grain / rows | Columns |
 |---|---|---:|
 | `rideshare_dev.processed.trip_enriched` | One row per curated `trip_id` — **106** | 16 |
 | `rideshare_dev.processed.trip_driver_assignment` | One row per (`driver_id`, `trip_id`) — **100** (trips 101–106 have no assignment) | 13 |
 
 #### `trip_enriched`
-
-Built from `curated/trip` left-joined to landing `trip_time`,
-`curated/payment`, and landing `zone_lookup` (broadcast).
 
 | Column | Type |
 |---|---|
@@ -309,18 +290,13 @@ Built from `curated/trip` left-joined to landing `trip_time`,
 | `dropoff_borough` | string |
 | `dropoff_zone` | string |
 
-**Not promoted:** operational timing (`request_to_pickup_mins`,
-`driver_arrival_to_pickup_mins`) and full payment breakdown (`surge_amount`,
-`tax_amount`, `discount_amount`) — remain in curated sources.
-
 **Normalized group-key values** (after Module 6): `service_type` is
-**uppercase** (`STANDARD` 55, `SHARED` 21, `PREMIUM` 16, `XL` 12,
-`UNKNOWN` 2). `payment_method` is **lowercase** (`card` 59, `wallet` 20,
-`cash` 17, `corporate` 8, `unknown` 1, plus **1 NULL** for trip 106).
+**uppercase** (`STANDARD`, `SHARED`, `PREMIUM`, `XL`, `UNKNOWN`).
+`payment_method` is **lowercase** (`card`, `wallet`, `cash`,
+`corporate`, `unknown`, plus **1 NULL** for trip 106).
 `UNKNOWN` / `unknown` are string sentinels, **not** NULL.
 
-**Inherited NULLs.** Each measure has its own non-NULL count (join gaps
-**and** Module 6 value rejection).
+**Inherited NULLs.**
 
 | Column(s) | NULL on `trip_id` | Rows | Cause |
 |---|---|---:|---|
@@ -334,10 +310,6 @@ Built from `curated/trip` left-joined to landing `trip_time`,
 NULLs.
 
 #### `trip_driver_assignment`
-
-Built from `curated/drivers_flat` left-joined to `curated/trip`. Time,
-payment, and zone-name attributes are **not** here — join `trip_enriched`
-on `trip_id` when needed.
 
 | Column | Type |
 |---|---|
@@ -355,12 +327,10 @@ on `trip_id` when needed.
 | `pickup_location_id` | int |
 | `dropoff_location_id` | int |
 
-**NULLs:** None. All Module 6 value rejections affect trips 101–106; this
-table joins trips 1–100 only, so every column is fully populated.
+**NULLs:** None.
 
 ### Module 8 — KPI outputs
 
-Unity Catalog managed Delta tables written by Module 8 Notebook **08**.
 Full column contracts:
 [Module 8 README — Paths and outputs](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
 
@@ -370,17 +340,9 @@ Full column contracts:
 | `rideshare_dev.processed.kpi_zone_performance` | One row per (**`pickup_borough`**, **`pickup_zone`**) — **20** | `trip_enriched` |
 | `rideshare_dev.processed.kpi_driver_productivity` | One row per **`driver_id`** — **12** | `trip_driver_assignment` |
 
-Cleared by Module 5 **`99`** Level 4 (catalog teardown), same as Module 7
-managed tables — not by Level 2 `curated/` cleanup.
-
 ---
 
 ## Unity Catalog platform reference
-
-Each student uses their own Azure storage and Databricks workspace. Course
-object names below are fixed; Azure account/container/credential values are
-set in the Notebook 01 / 99 config cell. Modules 1–4 use hand-built
-DataFrames in code — no Volume paths.
 
 ### UC objects
 
@@ -389,9 +351,9 @@ DataFrames in code — no Volume paths.
 | Catalog | `rideshare_dev` |
 | Schemas | `landing`, `processed` |
 | Volumes | `landing.source_files`, `processed.output_files` |
-| External location | `el_rideshare_dev` (Module 5 Notebook 01) |
+| External location | `el_rideshare_dev` |
 | Storage credential | Student-provided name in the config cell |
-| Preview managed table | `rideshare_dev.processed.trip_time_preview` (Module 5 Notebook **07**; Module 6 Notebook **01** reads it alongside landing `trip_time`) |
+| Preview managed table | `rideshare_dev.processed.trip_time_preview` |
 
 ### Glossary
 
