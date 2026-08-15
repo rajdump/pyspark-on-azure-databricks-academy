@@ -52,9 +52,9 @@ Every learner notebook follows this shape:
    learner practice it, before moving to the next. Avoid cramming unrelated
    concepts into one notebook — split into another numbered notebook
    instead.
-4. **Worked examples before exercises** — demonstrate the pattern with the
-   rideshare dataset, then give the learner a similar but not identical
-   task.
+4. **Worked examples before exercises** — per
+   @docs/standards/teaching-guidelines.md's Structure patterns: demonstrate
+   the pattern with the rideshare dataset before the learner attempts it.
 5. **Summary cell** — brief recap of what was covered and a pointer to the
    next notebook.
 
@@ -70,12 +70,8 @@ Every learner notebook follows this shape:
 
 ## What must never appear in a notebook
 
-- Access tokens, passwords, client secrets
-- Personal workspace URLs or cluster IDs
-- Personal catalog/schema names that reveal account-specific details
-- Hardcoded local machine paths
-
-These rules exist because this repository is authored as if already public.
+No secrets, personal identifiers, or hardcoded paths — see
+@docs/standards/coding-standards.md's Security and portability section.
 
 ## Minimum privileges
 
