@@ -95,6 +95,13 @@ Every learner notebook follows this shape:
   against the rideshare dataset before being used in an exercise.
 - Keep cells focused — one idea per cell — so a learner can run cells
   incrementally and see each step's effect with `display()`/`.show()`.
+- **Together (acceptable):** a short setup line, the transformation it
+  enables, and `display()` may share a cell when they serve one learning
+  point and total fewer than about 10 lines.
+- **Split (required):** separate reusable setup (imports/config), a lesson
+  transformation that needs an explanation cell above, or output that needs
+  its own discussion below. Borderline cases are reviewer judgment, not a
+  hard validation failure.
 - Comments explain *why*, not *what* the code already says.
 
 ### Output display convention
