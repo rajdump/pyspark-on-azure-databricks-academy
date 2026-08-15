@@ -42,3 +42,26 @@ you open, paste, or explicitly reference.
 - Keep one source of truth in `docs/standards/`; `.mdc`/commands only point there.
 
 **Workflow:** Cursor (author) → GitHub → Databricks Git folder (run/validate)
+
+## August 16th 2026
+
+### Understand `docs/standards/`
+
+Read the standards in this order:
+
+1. `notebook-authoring-checklist.md` — master workflow and loading map
+2. `readme-authoring.md` — module design before notebooks
+3. `teaching-guidelines.md` — how lessons should teach
+4. `notebook-writing.md` — notebook structure and cells
+5. `coding-standards.md` — Python/PySpark implementation rules
+6. `naming-conventions.md` — names for folders, files, and identifiers
+7. `permissions-and-governance.md` — access and privilege requirements
+8. `compute-validation-policy.md` — runtime testing and compute selection
+
+For each file, answer:
+
+- What does it own?
+- When is it loaded?
+- Which commands or rules consume it?
+- What does it explicitly not cover?
+- What practical behavior does it change?
