@@ -44,8 +44,15 @@ module), not when scaffolding structure alone:
 Recommended workflow:
 
 ```
-/new-lesson  →  /write-lesson  →  /validate-notebook  →  (fix if needed)  →  Azure Databricks runtime validation by author
+/new-lesson  →  /write-lesson  →  /validate-notebook  →  (fix if needed)
+→  commit and push to GitHub  →  pull into Databricks Git folder
+→  Azure runtime validation by author
 ```
+
+After `/validate-notebook` passes, the author manually commits and pushes to
+GitHub, then pulls into the Databricks Git folder before running Azure
+runtime validation. Notebook commands do not perform this repository
+handoff automatically.
 
 For a whole-module authoring check, run `/review-module` separately after
 its notebooks pass `/validate-notebook`.
@@ -77,12 +84,12 @@ Both conditions must be true:
 
 - The target module is `Started` in `COURSE_MODULES.md`.
 - Its `README.md` meets the design-complete definition in
-  @.cursor/rules/course-authoring.mdc.
+  @docs/standards/readme-authoring.md.
 
 ### Scaffold contents
 
 - Correct Databricks source format and section headings aligned to the
-  README navigation bullets.
+  topics/subtopics in the target module README's **Notebooks** table entry.
 - Objectives, prerequisites, setup placeholder, exercise placeholder,
   summary placeholder.
 - `# TODO` or empty code cells are acceptable; runnable lesson content is

@@ -40,8 +40,18 @@ rather than assuming prior exposure.
 - Use the shared rideshare dataset (`docs/data/dataset-overview.md`) for
   examples by default; only switch datasets when a topic genuinely requires
   it, and explain why.
-- Prefer DataFrame API and Spark SQL side by side where both are idiomatic,
-  so learners recognize both forms in the wild (Module 9 formalizes this).
+
+### DataFrame and SQL teaching policy
+
+Teach DataFrame-first by default. Show SQL only when SQL is a planned
+learning objective for that cell or section; the fact that both APIs are
+idiomatic is not enough to require both.
+
+Use side-by-side DataFrame and SQL examples only when comparing the two APIs
+is itself the learning objective, as in Module 2 Notebook 06 and Module 9.
+Module 9 formalizes systematic dual-API treatment as its core purpose. See
+@docs/standards/notebook-writing.md for how this policy determines which
+code cells a notebook includes.
 
 ## Production framing
 

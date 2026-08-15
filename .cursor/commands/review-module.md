@@ -11,9 +11,9 @@ apply its **Required reads**, **Additional reads** (when relevant), and
 Given a module folder (ask which one if not obvious from context), check:
 
 1. **README completeness** — the module's `README.md` meets the
-   design-complete definition in @.cursor/rules/course-authoring.mdc. It must
-   not duplicate the full course roadmap, global standards, or Cursor
-   instructions.
+   design-complete definition in
+   @docs/standards/readme-authoring.md. It must not duplicate the full course
+   roadmap, global standards, or Cursor instructions.
 2. **Naming** — folder and notebook names follow
    @docs/standards/naming-conventions.md exactly, including zero-padding
    and Title Case.

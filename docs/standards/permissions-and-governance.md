@@ -15,7 +15,7 @@ be explicit about which one applies.
 | System | Controls | Example |
 |---|---|---|
 | **Azure RBAC** | Access to Azure resources themselves (the Databricks workspace resource, the metastore's underlying storage account, networking) | "Contributor" role on the Azure resource group hosting the workspace |
-| **Databricks workspace permissions** | Access to objects inside the Databricks workspace UI/API (compute, jobs, notebooks, workspace folders) | `CAN USE` on a cluster, `CAN MANAGE` on a job |
+| **Databricks workspace permissions** | Access to objects inside the Databricks workspace UI/API (compute, jobs, notebooks, workspace folders) | `CAN ATTACH TO` on a cluster, `CAN MANAGE` on a job (`CAN USE` applies to cluster policies, not clusters) |
 | **Unity Catalog privileges** | Access to governed data objects (catalogs, schemas, tables, volumes) | `USE CATALOG`, `USE SCHEMA`, `SELECT` on a table |
 
 A learner can have full Databricks workspace access and still be unable to
@@ -86,7 +86,8 @@ objects.
   `docs/data/dataset-overview.md` for the rideshare course objects.
 - Module 5 Notebooks 01 and 99 use a Python **config cell** for Azure
   storage account, container, storage credential, and ADLS folder
-  (author defaults; learners overwrite). That is the Module 5
-  parameterization mechanism for Tier 1 Azure identifiers — not widgets.
-  Course UC object names (`rideshare_dev`, etc.) stay fixed per
-  dataset-overview.
+  (author defaults; learners overwrite). That config cell, rather than
+  widgets, is the Module 5 parameterization mechanism. Author defaults must
+  follow the **Permitted author defaults** boundary in
+  @docs/standards/coding-standards.md. Course UC object names
+  (`rideshare_dev`, etc.) stay fixed per dataset-overview.

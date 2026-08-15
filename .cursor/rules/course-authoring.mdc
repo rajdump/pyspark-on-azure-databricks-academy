@@ -12,18 +12,16 @@ Follow these standards before writing or editing:
 - @docs/standards/teaching-guidelines.md — pedagogy and explanation style
 - @docs/standards/naming-conventions.md — folder, file, and notebook
   naming rules to reference correctly
+- For module README edits,
+  @docs/standards/readme-authoring.md — structure and the design-complete
+  definition
 
 Ownership reminders:
 
 - `COURSE_MODULES.md` owns the full roadmap (module purpose, topics,
   prerequisites, production relevance, final-project contribution, status).
   It must never contain notebook sequences, exercises, or code.
-- A module's own `README.md` owns that module's detailed objectives,
-  Notebooks table, exercises, and minimum-privilege documentation
-  (see @docs/standards/permissions-and-governance.md for that pattern). It
-  must not duplicate the full course roadmap or global standards.
-- A module `README.md` design is complete only when it includes objectives,
-  prerequisites, an ordered Notebooks table, exercises, dataset notes, and
-  minimum privileges when applicable. Before changing a module to `Started`
-  (including reopening a `Complete` module), verify that definition; if the
-  design is incomplete, report the gaps and do not change the status.
+- A module's own `README.md` owns that module's detailed design. Follow
+  @docs/standards/readme-authoring.md for its required structure and
+  design-complete gate; report gaps instead of changing roadmap status when
+  that gate is not met.

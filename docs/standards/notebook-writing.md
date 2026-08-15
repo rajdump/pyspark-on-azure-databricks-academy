@@ -60,8 +60,12 @@ Every learner notebook follows this shape:
 
 ## Code cell conventions
 
-- Prefer the DataFrame API and `pyspark.sql.functions` (imported as `F`)
-  unless the notebook's explicit purpose is to teach Spark SQL (Module 9).
+- Implement the DataFrame and SQL teaching policy in
+  @docs/standards/teaching-guidelines.md: include DataFrame code cells by
+  default, and include SQL cells only when SQL is a planned learning
+  objective for that cell or section. Include side-by-side DataFrame and SQL
+  cells only when API comparison is the learning objective. Module 9
+  formalizes systematic dual-API treatment.
 - Show, don't just tell: every new API introduced gets a runnable example
   against the rideshare dataset before being used in an exercise.
 - Keep cells focused — one idea per cell — so a learner can run cells
@@ -70,8 +74,10 @@ Every learner notebook follows this shape:
 
 ## What must never appear in a notebook
 
-No secrets, personal identifiers, or hardcoded paths — see
-@docs/standards/coding-standards.md's Security and portability section.
+Apply the boundary defined by
+@docs/standards/coding-standards.md's **Security and portability** and
+**Permitted author defaults** sections. Banned values must never appear;
+safe author defaults and course-controlled paths remain permitted.
 
 ## Minimum privileges
 

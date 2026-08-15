@@ -58,11 +58,12 @@ they must identify a specific module unambiguously.
   the slash command name (e.g. `new-lesson.md` → `/new-lesson`,
   `write-lesson.md` → `/write-lesson`).
 
-## Python code (once `src/` is introduced)
+## Python identifiers
 
 Standard PEP 8 conventions: `snake_case` for modules, functions, and
-variables; `PascalCase` for classes. Full coding rules live in
-`coding-standards.md` — this file owns naming only.
+variables; `PascalCase` for classes; `UPPER_SNAKE_CASE` for constants. Full
+non-naming coding rules live in `coding-standards.md` — this file is the
+sole normative owner of identifier naming.
 
 ## Unity Catalog objects
 
