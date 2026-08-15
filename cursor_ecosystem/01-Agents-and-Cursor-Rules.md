@@ -40,76 +40,126 @@ Each part has a different job:
 
 - **Model** — reasons about the task and generates the result.
 - **Instructions** — tell the model what it should or should not do.
-- **Context** — gives the model the information available for the current task.
+- **Context** — gives the model the information it can use for the current task.
 - **Tools** — let the agent read, search, edit, and run commands.
 
-The important point is that **instructions** is a broad category.
+The important point is:
 
-Instructions can come from several places:
+> **Instructions and context describe different roles. They are not specific file types.**
 
-- your prompt
-- `AGENTS.md`
-- Cursor `.mdc` rules
-- commands or other instructions supplied by the agent environment
+### Instructions tell the model what to follow
 
-A **rule** is one source of instructions. For example, a Cursor `.mdc` rule can contain instructions about what the agent should do for a particular kind of work.
-
-A standards document is different in role. It is where detailed project rules, definitions, or conventions may live.
-
-For example:
+Instructions can come from different places:
 
 ```text
-coding-standards.md
-    → detailed coding rules
+Your prompt
+    → "Review this notebook and report issues only."
 
-naming-conventions.md
-    → detailed naming rules
+AGENTS.md
+    → "Use .py files for learner notebooks."
+
+.mdc rule
+    → "Follow the notebook-writing standard for this lesson."
 ```
 
-Those documents can still contain instructions. The difference is **how the model receives them**.
+These come from different sources, but they all tell the model **what it should follow**.
 
-A prompt, `AGENTS.md`, a rule, or a command may tell the agent to read or use a standards document. Once that document is read or supplied, its content becomes part of the **context** available to the model.
+A Cursor `.mdc` rule is therefore one source of instructions.
 
-So:
+```text
+.mdc rule
+    ↓
+contains instructions
+    ↓
+Cursor attaches the rule
+    ↓
+model receives those instructions
+```
+
+### Context gives the model information to work with
+
+Context is the information available to the model for the current task.
+
+It can include:
+
+- source code
+- README files
+- schemas
+- configuration files
+- standards documents
+- other project documentation
+
+For example, an `.mdc` rule may contain this instruction:
+
+```text
+Use coding-standards.md.
+```
+
+That instruction tells the agent **which document to use**.
+
+The agent then reads or receives `coding-standards.md`.
+
+```text
+.mdc rule
+    ↓
+"Use coding-standards.md"
+    ↓
+agent reads the document
+    ↓
+model can now see its contents
+```
+
+The standard itself may contain detailed rules such as:
+
+```text
+Use F.col(...) for column references.
+Avoid wildcard imports.
+```
+
+So there are two separate ideas:
+
+- `coding-standards.md` **stores the detailed rules**
+- once that file is read or supplied, the model can **use those rules as part of its context**
+
+In other words:
+
+> **Instructions tell the model what to follow. Context gives the model the information it needs to follow those instructions.**
+
+A rule can connect the two:
+
+```text
+Rule
+    ↓
+tells the agent what to do
+or which document to use
+    ↓
+required document is read
+    ↓
+document becomes available to the model
+    ↓
+model performs the task
+```
+
+So the simplest mental model is:
 
 ```text
 Instructions
-    → tell the model what to follow
+    → what the model should follow
 
 Rules
-    → one way to supply instructions
+    → one source of instructions
 
 Standards / project docs
-    → store detailed rules and knowledge
+    → where detailed project rules and information live
 
 Context
-    → what the model has available for the current task
+    → the information available to the model for the current task
+
+Tools
+    → what the agent can use to read, edit, search, and run
 ```
 
-The overall picture is:
-
-```text
-                     AI agent
-        ┌─────────────────────────────┐
-        │ instructions                │
-        │   ← your prompt             │
-        │   ← AGENTS.md               │
-        │   ← attached .mdc rules     │
-        │   ← commands                │
-        │                             │
-        │ context                     │
-        │   ← files / docs / schemas  │
-        │                             │
-        │ tools                       │
-        │   ← read / search / edit    │
-        │                             │
-        │        LLM model            │
-        └─────────────────────────────┘
-```
-
-Together, these let the model work with a repository.
-
-But the agent still needs to know **what this particular project expects**.
+Together, these allow the model to work with the repository **and follow the project's expectations**.
 
 ---
 
