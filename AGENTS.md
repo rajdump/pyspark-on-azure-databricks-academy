@@ -11,13 +11,12 @@ Databricks source `.py` notebooks, organized into numbered modules
 (`NN - Descriptive Title`). See `COURSE_MODULES.md` for the roadmap and use
 the target module's `README.md` for its detailed design.
 
-- Databricks Runtime 17.3 LTS — Spark 4.0.0, Python 3.12
-- Unity Catalog governs course tables, Volumes, object names, and privileges
-- Primary language: PySpark; SQL via Spark SQL (`%sql` / `spark.sql()`)
 - Notebook format: Databricks source `.py` (`# Databricks notebook source`
   header required) — never `.ipynb`
 - Batch data engineering only — no Structured Streaming, Auto Loader,
   streaming tables, or ML content
+- Full technical baseline (runtime, Spark/Python versions, governance,
+  languages): `README.md`
 
 ## Dataset
 

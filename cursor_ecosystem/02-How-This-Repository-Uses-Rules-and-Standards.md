@@ -108,14 +108,10 @@ For example:
 08 - Aggregations and Window Functions/06 - Running Totals and Lag and Lead.py
 ```
 
-When the rule attaches, it `@`-references:
-
-- `notebook-authoring-checklist.md`
-- `notebook-writing.md`
-- `teaching-guidelines.md`
-- `coding-standards.md`
-- `naming-conventions.md`
-- `dataset-overview.md`
+When the rule attaches, it `@`-references `notebook-authoring-checklist.md`,
+whose Required reads list names the six canonical standards (the
+checklist itself, `notebook-writing.md`, `teaching-guidelines.md`,
+`coding-standards.md`, `naming-conventions.md`, and `dataset-overview.md`).
 
 It also tells the agent to open the `README.md` from the same numbered module. That README is opened as part of the work; it is not in the rule's `@` reference list.
 
@@ -219,7 +215,11 @@ The user must explicitly invoke the workflow.
 
 Each command `@`-references `notebook-command-output.mdc` and `docs/standards/notebook-authoring-checklist.md`.
 
-`/validate-notebook` and `/review-module` also use `compute-validation-policy.md` and `permissions-and-governance.md` when relevant.
+`/validate-notebook` also uses `compute-validation-policy.md` and
+`permissions-and-governance.md` directly when relevant. `/review-module`
+uses `compute-validation-policy.md` directly, and reaches
+`permissions-and-governance.md` indirectly via `course-authoring.mdc`'s
+design-complete definition.
 
 ---
 
