@@ -70,6 +70,12 @@ following:
 
 ## Scaffold bar (`/new-lesson`)
 
+- Before scaffolding, verify the target module is `Started` in
+  `COURSE_MODULES.md`. If it is `Not Started` or `Complete`, stop; `/new-lesson`
+  never changes roadmap status.
+- The module `README.md` must include objectives, prerequisites, ordered
+  **Notebook navigation** with an entry for the target notebook, exercises,
+  dataset notes, and minimum privileges when applicable.
 - Correct Databricks source format and section headings aligned to the
   README navigation bullets.
 - Objectives, prerequisites, setup placeholder, exercise placeholder,

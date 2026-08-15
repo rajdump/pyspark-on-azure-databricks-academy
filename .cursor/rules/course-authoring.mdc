@@ -24,3 +24,8 @@ Ownership reminders:
   must not duplicate the full course roadmap or global standards.
 - Status changes in `COURSE_MODULES.md` are author-owned — draft them only
   when explicitly asked to, never as a side effect of an unrelated edit.
+- Before changing a module to `Started` (including reopening a `Complete`
+  module), verify its `README.md` includes objectives, prerequisites, ordered
+  notebook navigation, exercises, dataset notes, and minimum privileges when
+  applicable. If the design is incomplete, report the gaps and do not change
+  the status.

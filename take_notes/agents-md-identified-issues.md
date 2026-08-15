@@ -2,14 +2,15 @@
 
 ## Purpose of this document
 
-Author-private editing spec for the next pass on `AGENTS.md`. It is not
-course content and not a second `AGENTS.md`.
+Author-private audit and implementation record for the `AGENTS.md` cleanup.
+It is not course content and not a second `AGENTS.md`. Quotes labeled
+**Current state** and their line numbers capture the pre-fix, 72-line
+`AGENTS.md` snapshot; they are historical after the cleanup is applied.
 
-Use it to apply a scalpel: each issue has a location, a verbatim current
-quote, a concrete failure mode, and replacement text. Apply **P1 (1–7)
-first**, then **P2 (8–14)**. The [Target structure](#target-structure-after-fixes)
-table is the composition plan so per-issue replacements do not fight each
-other.
+Use it to understand the original issue, failure mode, reviewed resolution,
+and affected canonical files. The [Target structure](#target-structure-after-fixes)
+table is the composition model for `AGENTS.md`; lifecycle policy also requires
+the roadmap, checklist, and command/rule changes recorded under Issue 7.
 
 Do not treat this file as a source of truth for the course. Canonical
 rules stay in `README.md`, `COURSE_MODULES.md`, `docs/standards/`,
@@ -18,8 +19,9 @@ rules stay in `README.md`, `COURSE_MODULES.md`, `docs/standards/`,
 ## What AGENTS.md does in this project
 
 `AGENTS.md` is always-on agent context (Cursor injects it; Codex reads it
-before work). `.cursor/rules/*.mdc` are glob-scoped and do not always
-attach. Codex does not load `.mdc` files.
+before work). Each `.cursor/rules/*.mdc` file declares its own attachment
+behavior in frontmatter; this repository has two file-scoped rules and one
+relevance-scoped rule. Codex does not load `.mdc` files.
 
 Design principle: **navigate, don't duplicate.** Point at canonical docs.
 Keep only hard stops that must apply even when no glob matches.
@@ -48,7 +50,7 @@ When this file is wrong, agents fail in five ways:
 5. **Premature scaffolding** — create Module 10+ notebooks with no folder
    and no README.
 
-## Current state
+## Pre-fix snapshot
 
 - **File:** `AGENTS.md` (repo root), **72 lines**
 - **Verdict:** Good foundation — targeted changes needed
@@ -63,12 +65,12 @@ When this file is wrong, agents fail in five ways:
 
 | # | New heading | Absorbs from current | Purpose |
 |---|---|---|---|
-| 1 | **What this is** | "What this project is" + "Technical baseline" | One-sentence identity plus pins that affect codegen: DBR/Spark/Python, `.py` not `.ipynb`, batch-only, Spark SQL |
+| 1 | **What this is** | "What this project is" + "Technical baseline" | Identity plus codegen constraints: DBR/Spark/Python, Unity Catalog, `.py` not `.ipynb`, batch-only, Spark SQL |
 | 2 | **Dataset** | Dataset (unchanged role) | Table names + pointer to `docs/data/dataset-overview.md` |
 | 3 | **Workflow** | Workflow (unchanged role) | GitHub is remote SoT; local tools do not run Spark |
 | 4 | **Where to read** | "Where the real rules live" minus Cursor workflow and the seven-file catalog | Routing only: README, COURSE_MODULES, module README when it exists, checklist, dataset-overview |
-| 5 | **Do not write automatically** | "What Cursor should not do automatically" | Always-on hard stops: status, validation, Not Started |
-| 6 | **Cursor** | Cursor bits from "Where the real rules live" | Short last section: slash-command pointer; glob-scoped rules; optional `.mdc` names |
+| 5 | **Do not write automatically** | "What Cursor should not do automatically" | Global side-effect guards: status, supplied runtime evidence, module lifecycle |
+| 6 | **Cursor** | Cursor bits from "Where the real rules live" | Short last section: command pointer and frontmatter-defined rule attachment |
 
 ---
 
@@ -163,11 +165,12 @@ Do **not** write live Complete/Not Started counts into `AGENTS.md`.
 
 **Description:**
 
-Only two rules auto-attach on globs: `learner-notebooks.mdc` (numbered
-`*.py`) and `course-authoring.mdc` (READMEs / `COURSE_MODULES.md`).
-`notebook-command-output.mdc` has `alwaysApply: false` and **no globs** —
-it loads when a slash command `@`-mentions it. Codex does not read `.mdc`
-at all. "Load these automatically" overstates both Cursor and Codex.
+Two rules auto-attach on globs: `learner-notebooks.mdc` (numbered `*.py`)
+and `course-authoring.mdc` (READMEs / `COURSE_MODULES.md`).
+`notebook-command-output.mdc` has `alwaysApply: false`, a description, and
+no globs, so Cursor can attach it by relevance; slash commands also include
+it explicitly with `@`. Codex does not read `.mdc` at all. "Load these
+automatically" overstates both Cursor and Codex.
 
 **Project impact:**
 
@@ -181,8 +184,9 @@ Delete L56–57 from "Where the real rules live." Put this under **Cursor**
 (Issue 12):
 
 ```
-`.cursor/rules/` files are glob-scoped (not always-on). Open the standards
-they point at; do not assume those files are already in context.
+Each `.cursor/rules/*.mdc` file declares its attachment behavior in
+frontmatter. Do not assume a rule or the standards it references are already
+in context; open the required canonical files.
 ```
 
 Do **not** copy glob patterns from `.mdc` frontmatter.
@@ -307,21 +311,23 @@ The replacement must block invention and allow author-directed recording.
 
 **Resolution:**
 
-Replace L67–68 with:
+Replace L67–68 with wording that permits faithful recording but never agent
+inference:
 
 ```
-- Do not invent or auto-generate `docs/validation/` content — the author
-  records results after Azure Databricks runs.
+- Do not infer, fabricate, or independently mark runtime outcomes. Edit
+  `docs/validation/` only when the author explicitly asks using Azure
+  Databricks results or output they supplied.
 ```
 
 **Source of truth:** `docs/standards/compute-validation-policy.md:57-63`
 
 ---
 
-### Issue 7 — No guard against scaffolding Not Started modules without a README
+### Issue 7 — Define and enforce the module-start lifecycle
 
-**Category:** Gap
-**Priority:** P1 — nothing in always-on context stops Module 10+ notebooks with no design file
+**Category:** New policy decision (identified from a gap)
+**Priority:** P1 — scaffolding must not make roadmap status false
 **Location:** No line — missing
 
 **Current state:**
@@ -330,10 +336,12 @@ Replace L67–68 with:
 
 **Description:**
 
-Not Started means no learner notebooks yet; a module README is optional.
-Modules 10–20 have no folders. `/new-lesson` asks which module if context
-is unclear; plain chat ("write the next lesson") may not. AGENTS.md never
-says not to create those notebooks until a README exists.
+The status legend says Not Started has no learner notebooks and Started is
+actively authoring, but it did not define the transition. The reviewed policy
+is: complete the module README design, change status to Started through a
+separate explicit author request, then scaffold. Every `/new-lesson` requires
+Started; adding a notebook to a Complete module requires returning it to
+Started first.
 
 **Project impact:**
 
@@ -344,21 +352,27 @@ owns detailed design."
 
 **Resolution:**
 
-Add as a third bullet under **Do not write automatically**:
+This is a coordinated policy, not an `AGENTS.md`-only sentence:
 
 ```
-- Do not create notebooks for a Not Started module unless the author
-  explicitly asks and that module's `README.md` exists.
+- `COURSE_MODULES.md` defines the Not Started / Started / Complete lifecycle.
+- `notebook-authoring-checklist.md` owns scaffold prerequisites.
+- `course-authoring.mdc` validates README design before a requested Started
+  transition.
+- `/new-lesson` requires Started status, the module README, and the matching
+  Notebook navigation entry; it never changes status.
+- `AGENTS.md` keeps the short repository-wide lifecycle guard.
 ```
 
-**Source of truth:** `COURSE_MODULES.md:14`
+**Source of truth:** `COURSE_MODULES.md` status legend and
+`docs/standards/notebook-authoring-checklist.md` Scaffold bar
 
 ---
 
 ### Issue 8 — Full technical baseline recopied from README
 
 **Category:** Duplicates
-**Priority:** P2 — extra pins will drift; they do not stop wrong APIs
+**Priority:** P2 — non-codegen pins add drift risk in always-on context
 **Location:** `AGENTS.md` L14–22 (heading **Technical baseline** plus bullets)
 
 **Current state:**
@@ -376,17 +390,19 @@ Add as a third bullet under **Do not write automatically**:
 **Description:**
 
 This is the README version table in prose. DBR / Spark / Python, `.py` vs
-`.ipynb`, and batch-only change what code an agent generates. Premium
-tier, Scala 2.13, and "Unity Catalog enabled" do not. SQL wording is
-Issue 1; apply that fix inside this shortened list. Fold the remaining
-bullets into **What this is** and drop the **Technical baseline** heading.
+`.ipynb`, batch-only scope, and Unity Catalog change what code an agent
+generates. Unity Catalog affects Volume paths, three-part names, managed
+tables, and privileges. Premium tier and Scala 2.13 can remain in the root
+README. SQL wording is Issue 1; apply that fix inside this shortened list.
+Fold the retained bullets into **What this is** and drop the separate
+**Technical baseline** heading.
 
 **Project impact:**
 
 README later moves to a new LTS and AGENTS.md still says 17.3 — two
-sources. Premium/Scala/UC in always-on context burn tokens without
-changing notebook code. Keep pins that affect APIs; point at README for
-the full table (Issue 11).
+sources. Premium and Scala in always-on context add tokens without changing
+notebook code. Retain Unity Catalog because it affects generated code, and
+point at README for the full table (Issue 11).
 
 **Resolution:**
 
@@ -395,6 +411,7 @@ Delete the heading `## Technical baseline`. Merge into **What this is**
 
 ```
 - Databricks Runtime 17.3 LTS — Spark 4.0.0, Python 3.12
+- Unity Catalog governs course tables, Volumes, object names, and privileges
 - Primary language: PySpark; SQL via Spark SQL (`%sql` / `spark.sql()`)
 - Notebook format: Databricks source `.py` (`# Databricks notebook source`
   header required) — never `.ipynb`
@@ -402,8 +419,8 @@ Delete the heading `## Technical baseline`. Merge into **What this is**
   streaming tables, or ML content
 ```
 
-Drop Premium, Scala 2.13, and "Unity Catalog enabled." Full table:
-`README.md`.
+Drop Premium and Scala 2.13. Retain behavior-oriented Unity Catalog context.
+The full table remains in `README.md`.
 
 **Source of truth:** `README.md:31-45`
 
@@ -440,11 +457,11 @@ have, instead of reading the checklist.
 
 **Resolution:**
 
-Remove L57–62 from **Where the real rules live**. Under **Cursor** only:
+Remove L57–62 from **Where the real rules live**. Under **Cursor**, keep only
+the workflow location:
 
 ```
-Slash commands live in `.cursor/commands/`: `/new-lesson` → `/write-lesson` →
-`/validate-notebook`, then Azure Databricks runtime validation by the author.
+Lesson workflows live in `.cursor/commands/`.
 ```
 
 **Source of truth:** `docs/standards/notebook-authoring-checklist.md:41-45`
@@ -541,8 +558,8 @@ First bullet under **Where to read**:
 
 The header says tool-agnostic, then the same file embeds `/new-lesson` →
 `/write-lesson` as recommended workflow. Hard stops (format, batch-only,
-don't invent validation) belong in the main body. Cursor commands and
-glob-scoped rules belong in a last **Cursor** section.
+don't invent validation) belong in the main body. Cursor commands and the
+pointer to frontmatter-scoped rules belong in a last **Cursor** section.
 
 **Project impact:**
 
@@ -560,16 +577,16 @@ Always-on agent context. Canonical rules live in `docs/standards/`,
 them; it does not duplicate them.
 ```
 
-Add a final section (after applying Issues 3, 9, and optionally 13):
+Add a final section after applying Issues 3 and 9:
 
 ```
 ## Cursor
 
-Slash commands live in `.cursor/commands/`: `/new-lesson` → `/write-lesson` →
-`/validate-notebook`, then Azure Databricks runtime validation by the author.
+Lesson workflows live in `.cursor/commands/`.
 
-`.cursor/rules/` files are glob-scoped (not always-on). Open the standards
-they point at; do not assume those files are already in context.
+Each `.cursor/rules/*.mdc` file declares its own attachment behavior in
+frontmatter. Do not assume a rule or the standards it references are already
+in context; open the required canonical files.
 ```
 
 **Source of truth:** Design principle in current `AGENTS.md:1-5`; Cursor vs
@@ -577,11 +594,11 @@ they point at; do not assume those files are already in context.
 
 ---
 
-### Issue 13 — Three `.mdc` filenames not listed (optional)
+### Issue 13 — Optional `.mdc` filename catalog (rejected)
 
-**Category:** Gap
-**Priority:** P2 — optional; helps agents that never auto-attach Cursor rules
-**Location:** No line — missing (add under **Cursor** only)
+**Category:** Rejected optional optimization
+**Priority:** None — omission keeps always-on context smaller
+**Location:** Not applicable
 
 **Current state:**
 
@@ -589,33 +606,24 @@ they point at; do not assume those files are already in context.
 
 **Description:**
 
-Non-Cursor agents cannot discover `learner-notebooks.mdc`,
-`course-authoring.mdc`, and `notebook-command-output.mdc` unless they glob
-the directory. Naming the files is enough. Copying glob patterns will
-drift when frontmatter changes (Issue 3).
+Listing `learner-notebooks.mdc`, `course-authoring.mdc`, and
+`notebook-command-output.mdc` could improve discovery, but it would add a
+Cursor-specific catalog to always-on context. The `.cursor/rules/` pointer
+is sufficient; interested agents can inspect that directory.
 
 **Project impact:**
 
-Codex never opens `.cursor/rules/` and misses that notebook edits should
-follow the checklist. Listing names makes those files findable without
-duplicating globs.
+No required behavior depends on the filename list. `AGENTS.md` routes
+notebook work directly to the canonical checklist.
 
 **Resolution:**
 
-Optional extra lines at the end of **Cursor**:
+Do not add the filename catalog. It adds always-on detail for Cursor-specific
+files and can drift as rules are added or renamed. Point to `.cursor/rules/`
+and let each rule's frontmatter remain authoritative.
 
-```
-Rule files: `learner-notebooks.mdc`, `course-authoring.mdc`,
-`notebook-command-output.mdc`.
-```
-
-Skip this issue if the file is near the 80-line cap after P1–P2 required
-edits.
-
-**Source of truth:** `.cursor/rules/learner-notebooks.mdc`,
-`.cursor/rules/course-authoring.mdc`,
-`.cursor/rules/notebook-command-output.mdc` (filenames only; do not copy
-`globs:`)
+**Source of truth:** `.cursor/rules/` frontmatter and
+`docs/standards/notebook-authoring-checklist.md`
 
 ---
 
@@ -686,20 +694,22 @@ guide (keep small; default size cap).
 - After edits, every path in `AGENTS.md` must resolve (`README.md`,
   `COURSE_MODULES.md`, `docs/data/dataset-overview.md`,
   `docs/standards/notebook-authoring-checklist.md`, `docs/validation/`,
-  `.cursor/commands/`, `.cursor/rules/` names if Issue 13 is included).
+  `.cursor/commands/`, and `.cursor/rules/`).
 - Stay **≤ 80 lines** (always-on token budget as well as readability).
 - When a broad rule is not short enough for `AGENTS.md`, point to the
   canonical document; do not paste the full rule (Issue 14).
-- Do not copy `.mdc` glob patterns; they will drift.
-- Apply P1 (Issues 1–7) before P2 (8–14). Issues 1 and 8 both touch the
+- Do not copy `.mdc` glob patterns or filename catalogs; they will drift.
+- Compose P1 and P2 changes rather than applying overlapping line patches.
+  Issues 1 and 8 both touch the
   SQL bullet — use Issue 8's shortened list, which already includes the
   Issue 1 Spark SQL wording.
 - Issues 3, 9, 10, and 12 all touch L56–71 — compose them via the
   **Cursor** and **Do not write automatically** headings in the target
   structure, do not apply those four as independent overlapping patches.
-- Do not write runtime validation evidence or `COURSE_MODULES.md` status
-  as a side effect of this edit. This spec only changes `AGENTS.md` (and
-  this private note).
+- Do not change any module status value or runtime validation evidence as a
+  side effect of this cleanup. The reviewed scope also aligns
+  `COURSE_MODULES.md`, the notebook checklist, `course-authoring.mdc`,
+  `/new-lesson`, and the opening terminology in `/write-lesson`.
 
 ## References
 
@@ -708,4 +718,4 @@ guide (keep small; default size cap).
 | https://agents.md/ | AAIF / Linux Foundation format: Markdown, no required schema. Complements README. Nested files merge; closest wins; user prompt overrides. |
 | https://developers.openai.com/codex/guides/agents-md | Codex loads `AGENTS.md` before work; keep small; 32 KiB default cap; nested merge. |
 | https://developers.openai.com/codex/concepts/customization | Keep it small. Use AGENTS.md for every-time rules and routing. Repeatable workflows belong in skills/commands, not a large AGENTS.md. |
-| https://cursor.com/docs/rules | `AGENTS.md` is a Cursor rule type (plain Markdown, no globs). `.mdc` attaches via `alwaysApply` / `globs`. Reference files instead of copying. |
+| https://cursor.com/docs/rules | `AGENTS.md` is a Cursor rule type (plain Markdown, no globs). `.mdc` attachment is controlled by `alwaysApply`, `description`, and `globs`. Reference files instead of copying. |

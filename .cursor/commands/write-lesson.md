@@ -1,4 +1,4 @@
-Write the full runnable content for a learner notebook in the current module.
+Write the full runnable content for a specified target notebook.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 

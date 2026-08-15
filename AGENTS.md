@@ -1,21 +1,19 @@
 # AGENTS.md
 
-Concise, tool-agnostic project summary. Full standards live in
-`docs/standards/*.md` and `docs/data/*.md` — this file points to them, it
-does not duplicate them.
+Always-on agent context. Canonical project guidance lives in `README.md`,
+`COURSE_MODULES.md`, `docs/standards/`, and `docs/data/` — this file routes
+to those sources instead of duplicating them.
 
-## What this project is
+## What this is
 
 A batch-only PySpark data engineering course on Azure Databricks, authored as
 Databricks source `.py` notebooks, organized into numbered modules
-(`NN - Descriptive Title`). See `COURSE_MODULES.md` for the full roadmap and
-the current module's own `README.md` for detailed, in-progress design.
+(`NN - Descriptive Title`). See `COURSE_MODULES.md` for the roadmap and use
+the target module's `README.md` for its detailed design.
 
-## Technical baseline
-
-- Azure Databricks, Premium tier, Unity Catalog enabled
-- Databricks Runtime 17.3 LTS — Spark 4.0.0, Python 3.12, Scala 2.13
-- Primary language: PySpark; SQL via Databricks SQL / Spark SQL where relevant
+- Databricks Runtime 17.3 LTS — Spark 4.0.0, Python 3.12
+- Unity Catalog governs course tables, Volumes, object names, and privileges
+- Primary language: PySpark; SQL via Spark SQL (`%sql` / `spark.sql()`)
 - Notebook format: Databricks source `.py` (`# Databricks notebook source`
   header required) — never `.ipynb`
 - Batch data engineering only — no Structured Streaming, Auto Loader,
@@ -34,38 +32,31 @@ Databricks Git folder pulls and runs. Local tooling (`uv`, `ruff`, `mypy`,
 `pytest`) never executes Spark; all Spark/Delta/Unity Catalog behavior is
 validated in Azure Databricks.
 
-## Where the real rules live
+## Where to read
 
-Documentation layers (link down; do not duplicate content across tiers):
-
+- Learner overview and full technical baseline: `README.md`
 - Roadmap and status: `COURSE_MODULES.md`
-- Dataset schemas, join keys, and physical layout: `docs/data/dataset-overview.md`
-- Module design when authoring (notebook navigation, privileges): that module's `README.md`
+- Module design: the target module's `README.md`
+- Shared read list for notebook work:
+  `docs/standards/notebook-authoring-checklist.md`
+- Dataset contract: `docs/data/dataset-overview.md`
 - Process and pedagogy: `docs/standards/`
 
-- Coding standards: `docs/standards/coding-standards.md`
-- Notebook structure and formatting: `docs/standards/notebook-writing.md`
-- Naming conventions: `docs/standards/naming-conventions.md`
-- Teaching/pedagogy standards: `docs/standards/teaching-guidelines.md`
-- Compute selection and validation order: `docs/standards/compute-validation-policy.md`
-- Permissions and governance (Azure RBAC vs. workspace permissions vs. Unity
-  Catalog privileges): `docs/standards/permissions-and-governance.md`
-- Notebook authoring checklist (shared read list for slash commands):
-  `docs/standards/notebook-authoring-checklist.md`
+## Do not write automatically
 
-Scoped `.cursor/rules/*.mdc` files load these automatically for matching
-files. Slash commands (`/new-lesson`, `/write-lesson`, `/validate-notebook`,
-`/review-module`) reference the checklist and standards directly.
+- Do not update `COURSE_MODULES.md` status as a side effect; change it only
+  when the author explicitly asks.
+- Do not infer, fabricate, or independently mark runtime outcomes. Edit
+  `docs/validation/` only when the author explicitly asks using Azure
+  Databricks results or output they supplied.
+- Scaffold learner notebooks only while the target module is `Started` in
+  `COURSE_MODULES.md` and its required README design is complete. Status
+  changes are separate author-directed actions.
 
-Recommended notebook workflow: `/new-lesson` (skeleton) → `/write-lesson`
-(full content) → `/validate-notebook` (authoring check) → Azure Databricks
-runtime validation by the author.
+## Cursor
 
-## What Cursor should not do automatically
+Lesson workflows live in `.cursor/commands/`.
 
-- Never update `COURSE_MODULES.md` status — that is author-owned.
-- Never write runtime validation evidence in `docs/validation/` — that is
-  filled in by the author after running notebooks in Azure Databricks.
-- `/new-lesson`, `/write-lesson`, `/validate-notebook`, and `/review-module`
-  never write roadmap status or runtime validation evidence (`/write-lesson`
-  fills lesson content; `/new-lesson` scaffolds only).
+Each `.cursor/rules/*.mdc` file declares its own attachment behavior in
+frontmatter. Do not assume a rule or the standards it references are already
+in context; open the required canonical files.
