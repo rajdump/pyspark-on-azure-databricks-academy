@@ -26,7 +26,7 @@ The next file, [How This Repository Uses Rules and Standards](02-How-This-Reposi
 
 A language model can reason about a task and generate code or text.
 
-An **AI coding agent** adds the working environment around that model:
+An **AI coding agent** adds the environment needed to work with a repository:
 
 ```text
 AI coding agent
@@ -40,33 +40,53 @@ Each part has a different job:
 
 - **Model** — reasons about the task and generates the result.
 - **Instructions** — tell the model what it should or should not do.
-- **Context** — provides the files and project information available for the current request.
+- **Context** — gives the model the information available for the current task.
 - **Tools** — let the agent read, search, edit, and run commands.
 
-The important distinction is that **instructions** is a broad category.
+The important point is that **instructions** is a broad category.
 
 Instructions can come from several places:
 
-- what you type in chat
+- your prompt
 - `AGENTS.md`
 - Cursor `.mdc` rules
-- other instructions supplied by the agent environment
+- commands or other instructions supplied by the agent environment
 
-A **rule** is therefore not something separate from instructions. A rule is one place where project instructions can be written and delivered to the model.
+A **rule** is one source of instructions. For example, a Cursor `.mdc` rule can contain instructions about what the agent should do for a particular kind of work.
+
+A standards document is different in role. It is where detailed project rules, definitions, or conventions may live.
+
+For example:
 
 ```text
-.mdc rule
-    ↓ contains
-project instructions
-    ↓ attached by Cursor
-model
+coding-standards.md
+    → detailed coding rules
+
+naming-conventions.md
+    → detailed naming rules
 ```
 
-**Context** is different. It is the information the model can use while working on the current request, such as files, code, schemas, or documentation.
+Those documents can still contain instructions. The difference is **how the model receives them**.
 
-A standards document is not automatically another instruction layer. When the agent reads or receives that document, its contents become part of the context available to the model.
+A prompt, `AGENTS.md`, a rule, or a command may tell the agent to read or use a standards document. Once that document is read or supplied, its content becomes part of the **context** available to the model.
 
-So the overall picture is:
+So:
+
+```text
+Instructions
+    → tell the model what to follow
+
+Rules
+    → one way to supply instructions
+
+Standards / project docs
+    → store detailed rules and knowledge
+
+Context
+    → what the model has available for the current task
+```
+
+The overall picture is:
 
 ```text
                      AI agent
@@ -75,6 +95,7 @@ So the overall picture is:
         │   ← your prompt             │
         │   ← AGENTS.md               │
         │   ← attached .mdc rules     │
+        │   ← commands                │
         │                             │
         │ context                     │
         │   ← files / docs / schemas  │
@@ -102,7 +123,7 @@ Some instructions should be available broadly across the repository.
 
 Some are needed only for particular files or tasks.
 
-Detailed rules, definitions, schemas, and conventions may already live in dedicated project documents. Those documents should remain the source of truth instead of being copied into every instruction file.
+Detailed rules and definitions may already live in canonical project documents and should stay there as the source of truth.
 
 That gives each part a different role:
 
@@ -110,11 +131,11 @@ That gives each part a different role:
 | --- | --- |
 | Instructions that should apply broadly across the repository | `AGENTS.md` |
 | Additional instructions needed for particular work | Cursor `.mdc` rules |
-| Detailed project knowledge the agent may need to read | Canonical docs / standards |
+| Detailed project rules, definitions, and reference information | Canonical docs / standards |
 
-The first two are **instruction sources**.
+`AGENTS.md` and `.mdc` rules are **instruction sources**.
 
-The third is a **source of project knowledge** that becomes context when the agent reads or receives it.
+Canonical docs and standards are where detailed project information lives. When the agent reads or receives them, that content becomes part of the model's context.
 
 The goal is not to send every instruction and every document with every request.
 
@@ -166,23 +187,13 @@ Cursor handles this with **Project Rules** stored as `.mdc` files under:
 
 A rule contains instructions for a particular kind of work.
 
-When the rule is relevant, Cursor can **attach** it to the agent's context so those instructions are supplied to the model.
+When that rule is relevant, Cursor can **attach** it so those instructions are supplied to the model for the current task.
 
-```text
-.mdc rule
-    ↓
-contains project instructions
-    ↓
-Cursor attaches the rule when relevant
-    ↓
-instructions reach the model
-```
+A rule can also tell the agent to read or use another project document.
 
-A rule can also tell the agent to use another project document.
+For example, a rule may tell the agent to follow a coding standard or read a module-specific document before making changes.
 
-For example, a rule may say which standard or reference document should be read for the current task.
-
-That does not make the `.mdc` rule the owner of the detailed information. The detailed information should remain in its source document.
+The rule is not the owner of that detailed information. The source document still owns the detail; the rule helps the agent reach it when needed.
 
 There is also an important portability difference:
 
@@ -293,14 +304,16 @@ The user explicitly **invokes** a command when that workflow should run.
 
 A rule attaching does not invoke a command.
 
-The distinction is simple:
+Commands can also tell the agent which files, standards, or rules to use while performing the workflow.
+
+So:
 
 ```text
 rule
-    → supplies instructions
+    → supplies instructions for relevant work
 
 command
-    → starts a workflow
+    → starts a workflow and may tell the agent what to use
 ```
 
 The next file, [How This Repository Uses Rules and Standards](02-How-This-Repository-Uses-Rules-and-Standards.md), shows how this repository combines `AGENTS.md`, `.mdc` rules, project documents, and commands in real workflows.
