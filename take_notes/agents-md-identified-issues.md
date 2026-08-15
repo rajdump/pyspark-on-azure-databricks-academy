@@ -7,7 +7,7 @@ course content and not a second `AGENTS.md`.
 
 Use it to apply a scalpel: each issue has a location, a verbatim current
 quote, a concrete failure mode, and replacement text. Apply **P1 (1–7)
-first**, then **P2 (8–13)**. The [Target structure](#target-structure-after-fixes)
+first**, then **P2 (8–14)**. The [Target structure](#target-structure-after-fixes)
 table is the composition plan so per-issue replacements do not fight each
 other.
 
@@ -23,6 +23,17 @@ attach. Codex does not load `.mdc` files.
 
 Design principle: **navigate, don't duplicate.** Point at canonical docs.
 Keep only hard stops that must apply even when no glob matches.
+
+**Token / context optimization:** `AGENTS.md` is always-on — every line
+counts toward the model's context budget. Keep broad constraints short;
+put maintainable detail in canonical docs and route with pointers. Scoped
+`.mdc` rules and slash commands load additional standards only for
+matching work, not on every request. See
+`cursor_ecosystem/01-Agents-and-Cursor-Rules.md` (layers + decision tree).
+When a rule is broad but not short enough for `AGENTS.md`, keep a brief
+constraint or pointer in `AGENTS.md` and own the full detail in
+`docs/standards/` or `docs/data/` — do not copy long text into always-on
+context.
 
 When this file is wrong, agents fail in five ways:
 
@@ -64,7 +75,8 @@ When this file is wrong, agents fail in five ways:
 ## Issues
 
 P1 — Fix first (items 1–3 produce wrong files; items 4–7 are
-consistency/gaps). P2 — Cleanup after P1.
+consistency/gaps). P2 — Cleanup after P1 (includes token/context
+optimization — Issue 14).
 
 ### Issue 1 — Wrong product: "Databricks SQL" instead of Spark SQL in notebooks
 
@@ -607,6 +619,64 @@ edits.
 
 ---
 
+### Issue 14 — Token / context budget: short always-on text, canonical detail elsewhere
+
+**Category:** Cross-cutting cleanup
+**Priority:** P2 — apply while resolving Issues 4, 8, 9, and 11; not a
+separate line patch
+**Location:** Cross-cutting — `AGENTS.md` size, routing in **Where to
+read**, and alignment with `cursor_ecosystem/01-Agents-and-Cursor-Rules.md`
+
+**Current state:**
+
+> Navigate, don't duplicate is stated (L1–5 area) but token optimization
+> is not explicit. Several P2 issues remove duplication (Issues 4, 8, 9,
+> 10, 11) without naming the shared reason: always-on context is expensive.
+
+**Description:**
+
+Layered guidance is not only about correctness and single source of truth.
+It also limits what reaches the model on every request:
+
+- **`AGENTS.md`** — small always-on instruction surface; short constraints
+  or pointers, not full standards catalogs
+- **`.mdc` rules** — attach for particular files or tasks; `@`-reference or
+  route to standards when detail is needed
+- **Canonical docs** — own maintainable detail; contents become context
+  when read or `@`-referenced, not by default on every chat
+
+If a repository-wide rule needs more than a few lines, **do not expand
+`AGENTS.md`** — add or update the canonical document and keep a pointer
+in `AGENTS.md` (same pattern as naming conventions in File 01).
+
+**Project impact:**
+
+Duplicated standards in always-on context waste tokens and crowd out
+notebook code and task-specific context. Agents may follow stale copies
+instead of opening the canonical file. Fixes that only shorten prose
+without routing leave detail orphaned or repeated in `.mdc` rules.
+
+**Resolution:**
+
+While applying P2 edits:
+
+1. Prefer **pointer + canonical doc** over pasting detail into `AGENTS.md`.
+2. Keep **≤ 80 lines** (existing constraint) as a practical token guard.
+3. Do not duplicate checklist catalogs (Issue 4) or README version tables
+   (Issue 11) — both are token and drift risks.
+4. When adding a new broad rule, ask: *short enough for `AGENTS.md`?* If
+   not, canonical doc + one-line pointer.
+
+No new `AGENTS.md` section required unless a single sentence under
+**Where to read** helps authors (optional): e.g. keep this file small;
+detailed rules live in `docs/standards/` and `docs/data/`.
+
+**Source of truth:** `cursor_ecosystem/01-Agents-and-Cursor-Rules.md`
+(Why layers, `AGENTS.md` section, decision tree); OpenAI Codex AGENTS.md
+guide (keep small; default size cap).
+
+---
+
 ## Constraints for editing
 
 - Do not duplicate the checklist's file catalog (Issue 4). Point at
@@ -617,9 +687,11 @@ edits.
   `COURSE_MODULES.md`, `docs/data/dataset-overview.md`,
   `docs/standards/notebook-authoring-checklist.md`, `docs/validation/`,
   `.cursor/commands/`, `.cursor/rules/` names if Issue 13 is included).
-- Stay **≤ 80 lines**.
+- Stay **≤ 80 lines** (always-on token budget as well as readability).
+- When a broad rule is not short enough for `AGENTS.md`, point to the
+  canonical document; do not paste the full rule (Issue 14).
 - Do not copy `.mdc` glob patterns; they will drift.
-- Apply P1 (Issues 1–7) before P2 (8–13). Issues 1 and 8 both touch the
+- Apply P1 (Issues 1–7) before P2 (8–14). Issues 1 and 8 both touch the
   SQL bullet — use Issue 8's shortened list, which already includes the
   Issue 1 Spark SQL wording.
 - Issues 3, 9, 10, and 12 all touch L56–71 — compose them via the
