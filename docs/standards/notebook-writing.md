@@ -1,16 +1,19 @@
 # Notebook Writing Standards
 
-Canonical owner of all notebook structure and formatting rules. Referenced
-by `.cursor/rules/learner-notebooks.mdc` and the `/new-lesson`,
+Canonical owner of all notebook structure and formatting rules.
+
+Referenced by (directly or through the checklist):
+@docs/standards/notebook-authoring-checklist.md,
+`.cursor/rules/learner-notebooks.mdc`,
+@docs/standards/teaching-guidelines.md, and the `/new-lesson`,
 `/write-lesson`, `/validate-notebook`, and `/review-module` commands — do
-not duplicate this content elsewhere. Shared read list:
-@docs/standards/notebook-authoring-checklist.md.
+not duplicate this content elsewhere.
 
 ## Format
 
 All learner notebooks are **Databricks source-format `.py` files** — never
-`.ipynb`. This is fixed (see `README.md` for why); this document covers how
-to write within that format.
+`.ipynb`. This is fixed (see `README.md` for the technical baseline); this
+document covers how to write within that format.
 
 Required structure markers:
 
@@ -40,6 +43,16 @@ Required structure markers:
 - Never hand-edit cell boundaries in a way that breaks Databricks' ability
   to parse the file back into cells — always keep the exact marker syntax.
 
+### Markdown conventions
+
+- Use `###` only for distinct subtopics within an H2; do not use H4 or deeper.
+- Use `> **Note:**` for important asides and `> Warning:` for common
+  pitfalls, with at most one callout per section.
+- Use bold for UI elements and key terms on first introduction, italics for
+  variable references in prose, and never underline.
+- Use triple backticks plus `python`, `sql`, or `text`; use inline backticks
+  for column names, function names, and short expressions.
+
 ## Notebook-level structure
 
 Every learner notebook follows this shape:
@@ -58,8 +71,20 @@ Every learner notebook follows this shape:
 5. **Summary cell** — brief recap of what was covered and a pointer to the
    next notebook.
 
+### Notebook dependencies and execution state
+
+- Each notebook must run after executing only its own top setup/config cell.
+- Document persistent prerequisites such as tables or Volume files in the
+  objectives cell.
+- Never depend on variables, imports, or temporary views from another
+  notebook; re-establish all in-memory state locally.
+- Prior-notebook dependencies must use persistent tables or files, never
+  hidden session state.
+
 ## Code cell conventions
 
+- Follow the import conventions in
+  @docs/standards/coding-standards.md.
 - Implement the DataFrame and SQL teaching policy in
   @docs/standards/teaching-guidelines.md: include DataFrame code cells by
   default, and include SQL cells only when SQL is a planned learning
@@ -72,12 +97,20 @@ Every learner notebook follows this shape:
   incrementally and see each step's effect with `display()`/`.show()`.
 - Comments explain *why*, not *what* the code already says.
 
+### Output display convention
+
+- Prefer `display()` for DataFrames when visual table or chart output helps.
+- Use `.show()` to demonstrate truncation or when `display()` is unavailable.
+- Use `.printSchema()` when schema inspection is the learning objective.
+- Use `print()` only for scalars, strings, or other non-DataFrame output.
+
 ## What must never appear in a notebook
 
-Apply the boundary defined by
+No hardcoded local-machine or learner-specific paths. Fixed
+course-controlled Volume paths are permitted. For full path,
+parameterization, and banned-value rules, see
 @docs/standards/coding-standards.md's **Security and portability** and
-**Permitted author defaults** sections. Banned values must never appear;
-safe author defaults and course-controlled paths remain permitted.
+**Permitted author defaults** sections.
 
 ## Minimum privileges
 
@@ -85,3 +118,8 @@ If a notebook's examples require specific Unity Catalog privileges beyond
 what a default learner might have, the module's `README.md` documents them
 (see `permissions-and-governance.md` for the pattern) — this is not
 repeated inside the notebook itself.
+
+## Does not cover
+
+Code syntax standards (see `coding-standards.md`) or pedagogical approach
+(see `teaching-guidelines.md`).

@@ -2,9 +2,15 @@
 
 Canonical owner of the distinction between Azure RBAC, Databricks workspace
 permissions, and Unity Catalog privileges, plus the minimum-privilege
-documentation pattern used in module `README.md` files. Referenced by
-`.cursor/rules/course-authoring.mdc`, `/review-module`, and `/validate-notebook` — do not duplicate
-this content elsewhere.
+documentation pattern used in module `README.md` files.
+
+Referenced by (directly or through the checklist):
+@docs/standards/notebook-authoring-checklist.md,
+@docs/standards/notebook-writing.md,
+@docs/standards/compute-validation-policy.md,
+@docs/standards/readme-authoring.md, and the `/write-lesson`,
+`/validate-notebook`, and `/review-module` commands — do not duplicate this
+content elsewhere.
 
 ## Three distinct permission systems
 
@@ -79,7 +85,7 @@ genuinely necessary context. Module 5 lists CREATE privileges and Azure
 RBAC on the learner’s storage because Notebook 01 creates platform
 objects.
 
-## What this file does not cover
+## Does not cover
 
 - Compute selection/validation rules — see `compute-validation-policy.md`.
 - Actual catalog/schema/volume names — defined in

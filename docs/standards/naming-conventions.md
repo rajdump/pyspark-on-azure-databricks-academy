@@ -1,10 +1,14 @@
 # Naming Conventions
 
 Canonical owner of all folder, file, and object naming rules for this
-repository. Referenced by `.cursor/rules/course-authoring.mdc`, `/new-lesson`,
-`/write-lesson`, `/validate-notebook`, and `/review-module` — do not duplicate
-this content elsewhere. Shared read list:
-@docs/standards/notebook-authoring-checklist.md.
+repository.
+
+Referenced by (directly or through the checklist):
+@docs/standards/notebook-authoring-checklist.md,
+@docs/standards/coding-standards.md, `.cursor/rules/learner-notebooks.mdc`,
+`.cursor/rules/course-authoring.mdc`, and the `/new-lesson`,
+`/write-lesson`, `/validate-notebook`, and `/review-module` commands — do
+not duplicate this content elsewhere.
 
 ## Module folders
 
@@ -32,12 +36,12 @@ rules as folders.
 01 - Azure Databricks and Spark Foundations/
 ├── README.md
 ├── 01 - Introduction to Azure Databricks.py
-└── 02 - Apache Spark and PySpark.py
+└── 02 - Apache Spark Architecture and PySpark.py
 ```
 
 Always identify a notebook by **both** its module and its own title in
 prose, references, and validation records — never "Notebook 02" alone.
-Example: "`02 - Apache Spark and PySpark.py` in
+Example: "`02 - Apache Spark Architecture and PySpark.py` in
 `01 - Azure Databricks and Spark Foundations`".
 
 ## Internal documentation files
@@ -79,3 +83,7 @@ defined in `docs/data/dataset-overview.md` — use those for learner
 notebooks rather than inventing alternate names. Azure storage account,
 container, and storage credential names vary per learner and belong in the
 Module 5 config cell (not as alternate UC object names).
+
+## Does not cover
+
+Code style or formatting rules (see `coding-standards.md`).

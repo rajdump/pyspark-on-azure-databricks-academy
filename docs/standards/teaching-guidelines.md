@@ -1,10 +1,13 @@
 # Teaching Guidelines
 
-Canonical owner of all pedagogical and explanation standards. Referenced by
-`.cursor/rules/learner-notebooks.mdc`, `.cursor/rules/course-authoring.mdc`,
-`/new-lesson`, `/write-lesson`, `/validate-notebook`, and `/review-module`
-— do not duplicate this content elsewhere. Shared read list:
-@docs/standards/notebook-authoring-checklist.md.
+Canonical owner of all pedagogical and explanation standards.
+
+Referenced by (directly or through the checklist):
+@docs/standards/notebook-authoring-checklist.md,
+@docs/standards/notebook-writing.md, `.cursor/rules/learner-notebooks.mdc`,
+`.cursor/rules/course-authoring.mdc`, and the `/new-lesson`,
+`/write-lesson`, `/validate-notebook`, and `/review-module` commands — do
+not duplicate this content elsewhere.
 
 ## Audience assumptions
 
@@ -53,6 +56,15 @@ Module 9 formalizes systematic dual-API treatment as its core purpose. See
 @docs/standards/notebook-writing.md for how this policy determines which
 code cells a notebook includes.
 
+### Exercise design conventions
+
+- Put optional hints after the exercise cell, progressing from general to
+  specific.
+- Put solutions in a clearly marked cell after the exercise; collapse or
+  comment them out where the platform supports it.
+- State the expected output shape or row count in the prompt for self-checks.
+- Optional assertion cells after exercises are encouraged, not required.
+
 ## Production framing
 
 Every module should connect its concept back to why it matters in a real
@@ -69,3 +81,8 @@ Spark tour. Where relevant, name the production concern a topic addresses
 - `/new-lesson`-scaffolded content follows the **Scaffold bar** in
   @docs/standards/notebook-authoring-checklist.md; full lessons use
   `/write-lesson` and the **Full-lesson bar** there.
+
+## Does not cover
+
+Code formatting (see `coding-standards.md`) or notebook structural rules
+(see `notebook-writing.md`).

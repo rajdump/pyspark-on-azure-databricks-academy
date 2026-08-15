@@ -1,9 +1,14 @@
 # Compute Selection and Validation Policy
 
 Canonical owner of compute-selection, validation-order, and
-validation-record schema rules for every module. Referenced by
-`/validate-notebook`, `/review-module`, and module validation records — do
-not duplicate this content elsewhere.
+validation-record schema rules for every module.
+
+Referenced by (directly or through the checklist):
+@docs/standards/notebook-authoring-checklist.md,
+@docs/standards/coding-standards.md,
+@docs/standards/permissions-and-governance.md, `README.md`,
+the `/write-lesson`, `/validate-notebook`, and `/review-module` commands,
+and module validation records — do not duplicate this content elsewhere.
 
 ## Available compute
 
@@ -66,7 +71,7 @@ values:
 These fields are the canonical validation-record schema; validation records
 must not invent substitute fields or values.
 
-## What this policy does not cover
+## Does not cover
 
 - Runtime validation *evidence itself* — that's the module's
   `docs/validation/` file, filled in by the author after running notebooks

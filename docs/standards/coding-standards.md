@@ -2,12 +2,17 @@
 
 Canonical owner of Python coding rules other than identifier naming for this
 repository — notebook code today, `src/` code once it's introduced (Module
-13+). Identifier naming is owned by `naming-conventions.md`. Referenced by
-`.cursor/rules/learner-notebooks.mdc`, `/write-lesson`,
-`/validate-notebook`, and `/review-module` (and later
-`.cursor/rules/python-modules.mdc`) — do not duplicate this content
-elsewhere. Shared read list:
-@docs/standards/notebook-authoring-checklist.md.
+13+). Identifier naming is owned by `naming-conventions.md`.
+
+Referenced by (directly or through the checklist):
+@docs/standards/notebook-authoring-checklist.md,
+@docs/standards/notebook-writing.md,
+@docs/standards/teaching-guidelines.md,
+@docs/standards/naming-conventions.md,
+@docs/standards/permissions-and-governance.md,
+`.cursor/rules/learner-notebooks.mdc`, and the `/new-lesson`,
+`/write-lesson`, `/validate-notebook`, and `/review-module` commands — do
+not duplicate this content elsewhere.
 
 ## Style baseline
 
@@ -44,6 +49,16 @@ elsewhere. Shared read list:
 - Prefer chained, readable transformations over deeply nested expressions;
   break long chains across multiple `.withColumn()` calls or intermediate
   variables when it improves readability.
+
+### Error handling in teaching notebooks
+
+- Before an intentional failure, explain it in Markdown and add
+  `# Expected: <ErrorType>` on the failing line.
+- Treat a teaching `try`/`except` as a normal lesson whose objective is that
+  pattern.
+- Setup/config errors fail fast with a clear message; never silently swallow
+  them.
+- Never catch broad `Exception` unless that is the explicit lesson topic.
 
 ## Reusable code (`src/`, once introduced)
 
@@ -85,3 +100,8 @@ organization-specific catalog/schema names that reveal customer identity.
 non-Spark logic only. They do not execute Spark, Delta Lake, or Unity
 Catalog operations — that validation only happens in Azure Databricks (see
 `compute-validation-policy.md`).
+
+## Does not cover
+
+Identifier naming (see `naming-conventions.md`) or notebook structure (see
+`notebook-writing.md`).
