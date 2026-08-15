@@ -9,17 +9,9 @@ Before reviewing, read @docs/standards/notebook-authoring-checklist.md and
 apply its **Required reads**, **Additional reads** (when relevant), and
 **Full-lesson bar** as the review standard.
 
-Check the notebook against all checklist standards, and cite specific cells
-where it deviates:
-
-- Module `README.md` — every **Notebook navigation** bullet for this
-  notebook number is covered with a **runnable** demo (not prose-only)
-- @docs/standards/notebook-writing.md — structure, cell markers, format
-- @docs/standards/coding-standards.md — Python/PySpark code conventions
-- @docs/standards/naming-conventions.md — file/notebook naming
-- @docs/standards/teaching-guidelines.md — pedagogy and explanation style
-- @docs/data/dataset-overview.md — schema/column-name correctness for any
-  DataFrame or file-read example
+Check the notebook against the checklist's **Required reads** and
+**Full-lesson bar**, and cite specific cells where it deviates. Do not
+re-enumerate the canonical sources here.
 
 Also check for:
 
@@ -30,10 +22,6 @@ Also check for:
 - Missing "Minimum privileges required" section in the module README if the
   notebook uses Unity Catalog objects beyond default access (see
   @docs/standards/permissions-and-governance.md)
-
-Do not modify `COURSE_MODULES.md` or any file under `docs/validation/`,
-and do not mark anything as runtime-validated — only Azure Databricks
-execution can confirm that.
 
 If the notebook is still a skeleton (`TODO` placeholders, no runnable
 examples), report that the author should run `/write-lesson` first — do not

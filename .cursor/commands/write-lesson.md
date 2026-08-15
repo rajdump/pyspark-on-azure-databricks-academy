@@ -28,11 +28,8 @@ Steps:
    - Worked examples before the exercise; exercise uses a similar but not
      identical pattern.
    - Summary recap and pointer to the next notebook.
-6. Match @docs/standards/coding-standards.md (`F` imports, `# noqa: F821` on
-   `spark.createDataFrame`, line length, no `.collect()` on large data).
+6. PySpark code follows @docs/standards/coding-standards.md.
 7. Use column names and types from @docs/data/dataset-overview.md for any
    hand-built DataFrame.
 8. After writing, mentally self-check against the **Full-lesson bar** in
    the checklist — the author should run `/validate-notebook` next.
-
-Do not update `COURSE_MODULES.md` or any file under `docs/validation/`.

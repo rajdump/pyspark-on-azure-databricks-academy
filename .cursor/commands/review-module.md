@@ -4,13 +4,15 @@ writes roadmap status or validation evidence.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
+Before reviewing, read @docs/standards/notebook-authoring-checklist.md and
+apply its **Required reads**, **Additional reads** (when relevant), and
+**Full-lesson bar** as the review standard.
+
 Given a module folder (ask which one if not obvious from context), check:
 
-1. **README completeness** — the module's `README.md` has clear learning
-   objectives, prerequisites, ordered notebook navigation, exercises,
-   relevant datasets, and a "Minimum privileges required" section if
-   applicable (@docs/standards/permissions-and-governance.md). It must not
-   duplicate the full course roadmap, global standards, or Cursor
+1. **README completeness** — the module's `README.md` meets the
+   design-complete definition in @.cursor/rules/course-authoring.mdc. It must
+   not duplicate the full course roadmap, global standards, or Cursor
    instructions.
 2. **Naming** — folder and notebook names follow
    @docs/standards/naming-conventions.md exactly, including zero-padding
@@ -25,7 +27,3 @@ Given a module folder (ask which one if not obvious from context), check:
    @docs/data/dataset-overview.md.
 6. **No leaked evidence** — validation results, tokens, workspace URLs, or
    personal identifiers do not appear anywhere in the module folder.
-
-Do not update `COURSE_MODULES.md` status or create/edit anything under
-`docs/validation/` — those remain author-owned, filled in only after real
-Azure Databricks runtime validation.

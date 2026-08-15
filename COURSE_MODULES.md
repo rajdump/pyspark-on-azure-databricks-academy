@@ -15,11 +15,6 @@ design lives in a module's `README.md` when present; see the status legend.
 | Started | The module `README.md` design is complete and learner-notebook authoring is active |
 | Complete | Notebooks written, authoring-quality checked, and runtime-validated in Azure Databricks (see `docs/validation/`) |
 
-Before scaffolding any learner notebook, the module must be `Started` and its
-README design must be complete. Adding a notebook to a `Complete` module first
-requires a separate, author-directed status change back to `Started`. Lesson
-commands never change roadmap status.
-
 Prerequisites list direct dependencies. The course learning path is
 cumulative unless stated otherwise.
 

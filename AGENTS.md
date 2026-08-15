@@ -49,9 +49,8 @@ validated in Azure Databricks.
 - Do not infer, fabricate, or independently mark runtime outcomes. Edit
   `docs/validation/` only when the author explicitly asks using Azure
   Databricks results or output they supplied.
-- Scaffold learner notebooks only while the target module is `Started` in
-  `COURSE_MODULES.md` and its required README design is complete. Status
-  changes are separate author-directed actions.
+- Scaffold learner notebooks only when the **Readiness precondition** in
+  `docs/standards/notebook-authoring-checklist.md` is met.
 
 ## Cursor
 

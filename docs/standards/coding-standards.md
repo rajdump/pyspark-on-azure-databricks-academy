@@ -56,10 +56,8 @@ duplicate this content elsewhere. Shared read list:
 - Configuration (catalog names, paths, etc.) that legitimately varies by
   environment is parameterized (widgets, job parameters, or bundle
   variables — introduced progressively as those mechanisms are taught).
-  Module 5 Notebooks 01/99 use a Python config cell for Azure storage
-  account, container, storage credential, and ADLS folder (author defaults;
-  learners overwrite). Course UC object names stay fixed per
-  `docs/data/dataset-overview.md`.
+  See @docs/standards/permissions-and-governance.md for Module 5's Tier 1
+  Azure config-cell exception.
 
 ## Local tooling boundaries
 

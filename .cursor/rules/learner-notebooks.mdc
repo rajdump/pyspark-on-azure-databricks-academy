@@ -8,20 +8,8 @@ You are editing a learner-facing Databricks notebook (`.py` source format)
 in a numbered module folder.
 
 Follow @docs/standards/notebook-authoring-checklist.md — its **Required
-reads** and **Full-lesson bar** — before writing or editing any cell.
-
-In particular:
-
-- The `README.md` in the same numbered module folder as the notebook. Use
-  its **Notebook navigation** entry for this notebook's number/title as the
-  source of truth for topics, subtopics, and must-cover bullets. Do not
-  invent sections that are not listed there unless the author explicitly
-  asks.
-- @docs/standards/notebook-writing.md
-- @docs/standards/teaching-guidelines.md
-- @docs/standards/coding-standards.md
-- @docs/standards/naming-conventions.md
-- @docs/data/dataset-overview.md
+reads** and **Full-lesson bar** — before writing or editing any cell. Treat
+its **Required reads** as the canonical list; do not re-enumerate them here.
 
 For a full lesson from a skeleton, the author should use `/write-lesson`
 (not ad-hoc chat) so every standard loads consistently. After writing,
@@ -31,6 +19,5 @@ Do not duplicate the content of those files here — they are the canonical
 source. If something in a notebook conflicts with them, follow the
 standards files and the module README's notebook plan.
 
-Never write runtime validation evidence, or update `COURSE_MODULES.md`
-status, from within notebook edits — those are author-owned actions
-(`docs/validation/` and `COURSE_MODULES.md` respectively).
+Automatic-write restrictions are owned by the **Do not write automatically**
+section in @AGENTS.md.

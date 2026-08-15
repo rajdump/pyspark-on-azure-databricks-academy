@@ -13,17 +13,16 @@ Steps:
 2. Determine the next notebook number within that module folder by
    inspecting existing `NN - Title.py` files there (start at `01` if none
    exist).
-3. Read that module's `README.md`. Verify it includes objectives,
-   prerequisites, ordered **Notebook navigation**, exercises, dataset notes,
-   and minimum privileges when applicable. Use the navigation entry for the
-   next notebook number as the source of truth for its title, topics, and
-   subtopics. If the README or matching entry is missing, stop and report the
-   design gap.
-4. Read `COURSE_MODULES.md` and require the module's status to be `Started`.
-   If a `Not Started` module already contains a notebook, report the
-   roadmap/filesystem inconsistency. If the status is `Not Started` or
-   `Complete`, stop and request a separate author-directed status change;
-   never change status from this command.
+3. Read that module's `README.md` and apply the README-design condition in
+   the checklist's **Readiness precondition**. Use the **Notebook navigation**
+   entry for the next notebook number as the source of truth for its title,
+   topics, and subtopics. If the condition or matching entry is not met, stop
+   and report the design gap.
+4. Read `COURSE_MODULES.md` and apply the roadmap-status condition in the
+   checklist's **Readiness precondition**. If a `Not Started` module already
+   contains a notebook, report the roadmap/filesystem inconsistency. If the
+   condition is not met, stop and report it; any status change is a separate
+   author-directed action and must not be made by this command.
 5. Confirm the target notebook title follows
    @docs/standards/naming-conventions.md.
 6. Create the file as `NN - Title.py` inside the module folder, using the
@@ -38,8 +37,6 @@ Steps:
 8. If the notebook will use the shared dataset, note the correct table(s)
    and schema from @docs/data/dataset-overview.md in setup comments — do
    not invent column names.
-
-Do not update `COURSE_MODULES.md` or any file under `docs/validation/`.
 
 After scaffolding, tell the author: **Next step — `/write-lesson` on this
 notebook, then `/validate-notebook`.**
