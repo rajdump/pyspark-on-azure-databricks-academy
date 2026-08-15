@@ -53,23 +53,15 @@ The agent still needs to know **what this particular project expects**.
 
 ## Why project instructions need different layers
 
-A project has instructions that tell the agent how work should be done.
+A project may have many instructions the agent needs to follow.
 
-For example:
-
-- use an approved file format
-- follow the project's naming rules
-- avoid features that are out of scope
-- use the approved schema or source of truth
-- respect actions that are not allowed
-
-But these instructions do not all need to reach the agent in the same way.
+But those instructions do not all need to reach the agent in the same way.
 
 Some instructions should be available broadly across the repository.
 
-Some are useful only for particular files or tasks.
+Some are needed only for particular files or tasks.
 
-Detailed rules and definitions may already live in dedicated documents. Those documents should remain the source of truth instead of being copied into every instruction file.
+Detailed rules and definitions may already live in dedicated documents and should remain the source of truth instead of being copied into every instruction file.
 
 That gives each layer a different job:
 
@@ -120,7 +112,7 @@ Cursor handles this with **Project Rules** stored as `.mdc` files under:
 .cursor/rules/
 ```
 
-When a rule is relevant to the current work, Cursor can **attach** it to the Agent context.
+When a rule is relevant to the current work, Cursor can **attach** it to the agent's context.
 
 The attached rule can then:
 
@@ -162,9 +154,11 @@ Their combination produces four rule modes:
 | Cursor mode | `alwaysApply` | `description` | `globs` | When it attaches |
 | --- | ---: | --- | --- | --- |
 | **Always Apply** | `true` | ignored | ignored | Every Cursor Agent request |
-| **Apply to Specific Files** | `false` | optional | set | A matching path is in the Agent context |
+| **Apply to Specific Files** | `false` | optional | set | A matching path is in the agent's context |
 | **Apply Intelligently** | `false` | set | omitted | Cursor decides whether the description is relevant |
 | **Apply Manually** | `false` | omitted | omitted | The rule is explicitly referenced |
+
+**Always Apply** is for Cursor-specific instructions that must be available on every request. It should not be used to duplicate `AGENTS.md`.
 
 These four modes belong to Cursor `.mdc` rules.
 
@@ -178,7 +172,7 @@ A glob is a file-path pattern.
 
 A glob can attach a rule when a matching file is in the agent's context — not simply because the file is open in an editor tab.
 
-If the Agent context contains paths that match several rules, more than one rule can attach.
+If the agent's context contains paths that match several rules, more than one rule can attach.
 
 ### Apply Intelligently
 
