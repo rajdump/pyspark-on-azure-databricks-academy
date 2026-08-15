@@ -19,11 +19,11 @@ Ownership reminders:
   prerequisites, production relevance, final-project contribution, status).
   It must never contain notebook sequences, exercises, or code.
 - A module's own `README.md` owns that module's detailed objectives,
-  notebook navigation, exercises, and minimum-privilege documentation
+  Notebooks table, exercises, and minimum-privilege documentation
   (see @docs/standards/permissions-and-governance.md for that pattern). It
   must not duplicate the full course roadmap or global standards.
 - A module `README.md` design is complete only when it includes objectives,
-  prerequisites, ordered notebook navigation, exercises, dataset notes, and
+  prerequisites, an ordered Notebooks table, exercises, dataset notes, and
   minimum privileges when applicable. Before changing a module to `Started`
   (including reopening a `Complete` module), verify that definition; if the
   design is incomplete, report the gaps and do not change the status.

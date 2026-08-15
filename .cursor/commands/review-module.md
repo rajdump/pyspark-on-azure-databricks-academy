@@ -18,7 +18,7 @@ Given a module folder (ask which one if not obvious from context), check:
    @docs/standards/naming-conventions.md exactly, including zero-padding
    and Title Case.
 3. **Notebook sequence** — notebooks are numbered contiguously starting at
-   `01`, and the README's navigation list matches the actual files present.
+   `01`, and the README's Notebooks table matches the actual files present.
 4. **Standards compliance across all notebooks** — spot-check each notebook
    against @docs/standards/notebook-authoring-checklist.md (equivalent to
    running `/validate-notebook` on each one, including

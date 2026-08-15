@@ -12,8 +12,8 @@ instead.
 Before scaffolding, writing, or validating a learner notebook—or reviewing
 an entire module—read **all** of the following:
 
-1. The module's own `README.md` (e.g. `02 - …/README.md`) — use the
-   **Notebook navigation** entry for the target notebook number as the
+1. The module's own `README.md` (e.g. `02 - …/README.md`) — use its
+   **Notebooks** table entry for the target notebook number as the
    source of truth for topics and subtopics.
 2. @docs/standards/notebook-writing.md — structure, cell markers, format
 3. @docs/standards/teaching-guidelines.md — pedagogy and explanation style
@@ -57,7 +57,7 @@ following:
 These bars cover authoring quality only; runtime validation is separate
 (see `compute-validation-policy.md`).
 
-- Every bullet under that notebook's **Notebook navigation** entry in the
+- Every bullet under that notebook's **Notebooks** table entry in the
   module README has a **runnable** demonstration (not prose-only for
   gotchas or API comparisons).
 - Worked examples appear **before** the exercise; the exercise repeats

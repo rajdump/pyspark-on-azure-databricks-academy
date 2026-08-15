@@ -14,7 +14,7 @@ Steps:
    inspecting existing `NN - Title.py` files there (start at `01` if none
    exist).
 3. Read that module's `README.md` and apply the README-design condition in
-   the checklist's **Readiness precondition**. Use the **Notebook navigation**
+   the checklist's **Readiness precondition**. Use the **Notebooks** table
    entry for the next notebook number as the source of truth for its title,
    topics, and subtopics. If the condition or matching entry is not met, stop
    and report the design gap.

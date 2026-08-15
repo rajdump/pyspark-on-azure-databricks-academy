@@ -15,7 +15,7 @@ Steps:
    context, ask which module and notebook number (or file path).
 2. If the file does not exist, stop and tell the author to run `/new-lesson`
    first.
-3. Read the module's `README.md` — **Notebook navigation** entry for that
+3. Read the module's `README.md` — its **Notebooks** table entry for that
    notebook is the topic source of truth.
 4. Read one completed sibling notebook for voice and cell structure
    (e.g. the prior numbered notebook in the same module). If the target is
