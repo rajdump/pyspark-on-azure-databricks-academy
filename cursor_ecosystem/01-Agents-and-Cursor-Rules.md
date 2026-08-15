@@ -1,89 +1,135 @@
 # Agents and Cursor Rules
 
-A capable language model can write Python, SQL, Spark, and many other
-technologies. But it cannot know the decisions made inside a repository it has
-never seen.
+A capable language model may already know Python, SQL, Spark, and many other technologies.
 
-It does not know which file format the project requires, which features are
-out of scope, or where the source of truth lives. Without that knowledge, it
-can produce code that works in general but is wrong for the project.
+But it does not automatically know the decisions made by a specific project:
 
-That leads to the central question:
+- which formats to use
+- which features are in or out of scope
+- which names and schemas are authoritative
+- where the source of truth lives
+
+Without that project knowledge, the model can produce code that is technically correct but still wrong for the repository.
+
+That leads to the main question:
 
 > **How does the right project guidance reach an AI coding agent at the right time?**
 
+This file explains that mechanism. The next file, [How This Repository Uses Rules and Standards](02-How-This-Repository-Uses-Rules-and-Standards.md), shows how this repository implements it.
+
 ## What an AI coding agent needs
 
-A language model can reason about a task and generate a response. An **AI
-coding agent** surrounds that model with instructions, context, and tools.
+A language model can reason about a task and generate code or text.
 
-The model does the reasoning. Instructions tell it how to behave. Context
-supplies the files and information needed for the current request. Tools let
-the agent read, search, edit, and run commands.
+An **AI coding agent** adds the working environment around that model:
 
-The agent environment brings these parts together. To work correctly in a
-repository, it must also give the model the project's own guidance.
+```text
+AI coding agent
+    = model
+    + instructions
+    + context
+    + tools
+```
+
+Each part has a different job:
+
+- **Model** — reasons about the task and generates the result.
+- **Instructions** — tell the model how it should behave.
+- **Context** — provides the files and project information needed for the current request.
+- **Tools** — let the agent read, search, edit, and run commands.
+
+Together, these let the model work inside a repository.
+
+But the agent still needs one more thing: the project's own guidance.
 
 ## Why project guidance needs different layers
 
-Project guidance covers decisions a general model cannot know. These include
-the project's scope, naming conventions, approved formats, authoritative
-schemas or interfaces, and prohibited actions.
+Project guidance includes decisions a general model cannot know on its own: project scope, naming rules, approved formats, authoritative schemas, and actions that are not allowed.
 
-Sending all of that guidance with every request would create a new problem.
-Some instructions matter throughout the repository, while others matter only
-for a particular file or task. Detailed standards may also be too long to
-repeat in instruction files.
+But **not every instruction belongs in every request**.
 
-The guidance therefore has three different jobs:
+Some guidance should be available across the repository.
 
-- provide directions that apply across the repository
-- add directions needed only for the current work
-- preserve detailed knowledge in a single source of truth
+Some guidance is needed only for certain files or tasks.
+
+And detailed standards should remain in the documents that own them rather than being copied into instruction files.
+
+That gives us three different responsibilities:
+
+| Layer | Responsibility |
+| --- | --- |
+| `AGENTS.md` | Repository-level guidance and navigation |
+| Cursor `.mdc` rules | Add guidance when the current work needs it |
+| Canonical docs / standards | Own the detailed source of truth |
+
+The goal is not to give the agent every document on every request.
+
+The goal is to give it **the right guidance for the current work**.
+
+```text
+AGENTS.md → broad guidance
+.mdc       → relevant extra guidance
+standards  → detailed truth
+```
 
 ## `AGENTS.md` provides repository-level guidance
 
-Some instructions should be available wherever the agent works in the
-repository. `AGENTS.md` provides that repository-level guidance.
+Some guidance should remain available regardless of which file or task the agent is working on.
 
-It is a good place for broad constraints, working rules, important boundaries,
-and directions to authoritative documents. It should remain small enough to
-guide the agent without repeating those documents.
+That is the role of `AGENTS.md`.
 
-The principle is:
+It can hold:
+
+- important repository constraints
+- project-wide working rules
+- boundaries the agent must respect
+- pointers to authoritative documentation
+
+But `AGENTS.md` should stay small.
 
 > **Navigate, don't duplicate.**
 
-If a detailed standard is copied into several instruction files, the copies
-can drift apart. `AGENTS.md` should point to the document that owns the detail
-instead of becoming another version of it.
+If a detailed standard already has a source of truth, point the agent to that document instead of copying the same content into `AGENTS.md`.
+
+Otherwise, the copies can drift and eventually disagree.
 
 ## Cursor rules add context-specific guidance
 
-Some guidance is useful only for certain work. For example, test instructions
-help when the agent is editing tests. They are unnecessary when the agent is
-editing a configuration file.
+`AGENTS.md` handles guidance that should remain broadly available across the repository.
 
-Cursor can attach this extra guidance when it is relevant. The guidance lives
-in `.mdc` files under `.cursor/rules/`.
+But some guidance is needed only for certain files or tasks. Including that guidance in every request would add unnecessary context.
 
-An `.mdc` rule routes context to the agent. It does not become the owner of the
-detailed standard that it points to.
+Cursor handles this with **Project Rules** stored as `.mdc` files under:
 
 ```text
-Repository-level guidance → AGENTS.md
-Context-specific guidance → .mdc rules
-Detailed source of truth  → canonical docs / standards
+.cursor/rules/
 ```
 
-Cursor and standalone Codex do not use these files in the same way. Both read
-`AGENTS.md`, but standalone Codex does not interpret Cursor `.mdc` rules.
+A Cursor rule can **attach** additional guidance when the current work needs it.
 
-A hard constraint that must reach both environments must therefore not live
-only in an `.mdc` rule.
+This gives each layer a clear responsibility:
 
-Once a repository has several `.mdc` rules, Cursor needs a way to decide when
-each rule should attach.
+```text
+Repository-level guidance  →  AGENTS.md
+Context-specific guidance  →  .mdc rules
+Detailed source of truth   →  canonical docs / standards
+```
+
+An `.mdc` rule can bring relevant instructions into the Agent context and point the agent to the documents it needs.
+
+It should not become another copy of those documents.
+
+There is also an important portability difference:
+
+* `AGENTS.md` can guide both Cursor and standalone Codex.
+* `.mdc` rules are specific to Cursor.
+* Standalone Codex does not interpret `.cursor/rules/*.mdc`.
+
+Therefore, a hard project constraint that must apply outside Cursor should not live **only** in an `.mdc` rule.
+
+Once a repository has several `.mdc` rules, Cursor needs to answer the next question:
+
+> **When should each rule attach?**
 
 ## How Cursor decides when a rule applies
 
