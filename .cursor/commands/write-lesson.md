@@ -2,12 +2,16 @@ Write the full runnable content for a specified target notebook.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
-This command loads the same standards as `/validate-notebook`. Do not use
-normal chat as a substitute — read every file in the checklist before
-writing.
+This command loads the **Required reads** from the
+notebook-authoring-checklist. Do not use normal chat as a substitute — read
+every required file before writing.
 
 Before writing anything, read @docs/standards/notebook-authoring-checklist.md
 and follow its **Required reads** and **Full-lesson bar** sections in full.
+Also load @docs/standards/compute-validation-policy.md when the lesson
+involves cluster configuration, and
+@docs/standards/permissions-and-governance.md when it involves catalog or
+schema privileges.
 
 Steps:
 

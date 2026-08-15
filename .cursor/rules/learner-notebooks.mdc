@@ -7,9 +7,13 @@ alwaysApply: false
 You are editing a learner-facing Databricks notebook (`.py` source format)
 in a numbered module folder.
 
-Follow @docs/standards/notebook-authoring-checklist.md — its **Required
-reads** and **Full-lesson bar** — before writing or editing any cell. Treat
-its **Required reads** as the canonical list; do not re-enumerate them here.
+Follow the **Required reads** in
+@docs/standards/notebook-authoring-checklist.md before writing or editing any
+cell. If the active command is `/new-lesson`, or the notebook is still a
+scaffold with `TODO` placeholders and without full prose sections, apply the
+checklist's **Scaffold bar**. Otherwise, apply its **Full-lesson bar**. The
+checklist is the single source of truth for both bar definitions; do not
+re-enumerate them here.
 
 For a full lesson from a skeleton, the author should use `/write-lesson`
 (not ad-hoc chat) so every standard loads consistently. After writing,

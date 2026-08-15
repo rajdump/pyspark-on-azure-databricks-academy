@@ -1,7 +1,8 @@
 # Notebook Authoring Checklist
 
-Canonical owner of the **shared read list** for learner-notebook slash
-commands. Referenced by `.cursor/commands/new-lesson.md`,
+Canonical owner of the **shared read list**, **Scaffold bar**, and
+**Full-lesson bar** for learner-notebook slash commands. Referenced by
+`.cursor/commands/new-lesson.md`,
 `.cursor/commands/write-lesson.md`, `.cursor/commands/validate-notebook.md`,
 `.cursor/commands/review-module.md`, `.cursor/rules/learner-notebooks.mdc`,
 and `AGENTS.md` — do not duplicate this list elsewhere; point to this file
@@ -21,10 +22,10 @@ an entire module—read **all** of the following:
 5. @docs/standards/naming-conventions.md — folder and notebook naming
 6. @docs/data/dataset-overview.md — schemas, column names, join keys, physical layout
 
-## Additional reads (validate and review only)
+## Additional reads (when relevant)
 
-Read these when checking a notebook (or an entire module), not when
-scaffolding structure alone:
+Read these when writing or checking a full lesson (or reviewing an entire
+module), not when scaffolding structure alone:
 
 - @docs/standards/compute-validation-policy.md — when examples assume a
   specific compute type or access mode

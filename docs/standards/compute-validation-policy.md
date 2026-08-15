@@ -1,9 +1,9 @@
 # Compute Selection and Validation Policy
 
-Canonical owner of compute-selection and validation-order rules for every
-module. Referenced by `/validate-notebook`, `/review-module`, and the
-`docs/validation/NN - Module Title.md` template — do not duplicate this
-content elsewhere.
+Canonical owner of compute-selection, validation-order, and
+validation-record schema rules for every module. Referenced by
+`/validate-notebook`, `/review-module`, and module validation records — do
+not duplicate this content elsewhere.
 
 ## Available compute
 
@@ -49,10 +49,22 @@ objectives.
 
 ## Recording results
 
-For every compute environment relevant to a module, the module's
-`docs/validation/NN - Module Title.md` file records whether it was
-**selected, excluded, unsupported, or not applicable — and why**. See that
-file's template for the exact fields.
+Each module validation record uses these distinct fields and canonical
+values:
+
+- **Environment disposition** — `supported`, `unsupported`, or
+  `not applicable`. Record this for each compute environment and explain
+  why the disposition applies.
+- **Test result** — `passed`, `partial`, or `not tested`. This records what
+  was actually exercised; `not tested` belongs only in this field.
+- **Serverless compatibility** — `complete`, `partial`, `unsupported`, or
+  `not applicable`. Record this summary only from serverless test evidence,
+  or use `not applicable` when serverless genuinely does not apply. If
+  serverless has not been tested, record `not tested` as its test result and
+  leave compatibility unassigned until evidence exists.
+
+These fields are the canonical validation-record schema; validation records
+must not invent substitute fields or values.
 
 ## What this policy does not cover
 
