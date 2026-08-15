@@ -8,6 +8,7 @@ duplicate the full course roadmap, global standards, or Cursor instructions.
 
 - `AGENTS.md`
 - `.cursor/rules/course-authoring.mdc`
+- `.cursor/commands/write-module-readme.md`
 - `.cursor/commands/review-module.md`
 - `docs/standards/notebook-authoring-checklist.md`
 

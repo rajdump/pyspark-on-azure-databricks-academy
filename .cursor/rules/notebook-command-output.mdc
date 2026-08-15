@@ -1,12 +1,13 @@
 ---
-description: Minimal response format for /new-lesson, /write-lesson, /validate-notebook, /review-module
+description: Minimal response format for module and notebook authoring commands
 alwaysApply: false
 ---
 
-# Notebook slash-command responses
+# Module and notebook slash-command responses
 
-When finishing `/new-lesson`, `/write-lesson`, `/validate-notebook`, or
-`/review-module`, keep the **user-facing reply minimal**.
+When finishing `/write-module-readme`, `/new-lesson`, `/write-lesson`,
+`/validate-notebook`, or `/review-module`, keep the **user-facing reply
+minimal**.
 
 ## Do not include
 
@@ -14,6 +15,13 @@ When finishing `/new-lesson`, `/write-lesson`, `/validate-notebook`, or
 - Tables summarizing what already meets standards
 - Repeated standards text from docs
 - Full notebook or module recaps unless the author asked for them
+
+## `/write-module-readme`
+
+- Path of the module README created
+- One line: next steps → review the README, explicitly set the module to
+  `Started`, then run `/new-lesson`
+- Only mention blocking design gaps if creation could not be completed
 
 ## `/new-lesson`
 
