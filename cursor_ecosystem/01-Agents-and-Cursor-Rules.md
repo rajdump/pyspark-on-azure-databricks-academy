@@ -176,7 +176,7 @@ When `globs` is set, the rule uses **Apply to Specific Files**, even if a `descr
 
 A glob is a file-path pattern.
 
-The important point is that a glob matches a path in the **Agent context**, not simply a file that happens to be open in an editor tab.
+A glob can attach a rule when a matching file is in the agent's context — not simply because the file is open in an editor tab.
 
 If the Agent context contains paths that match several rules, more than one rule can attach.
 

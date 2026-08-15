@@ -164,7 +164,7 @@ Each of `/new-lesson`, `/write-lesson`, `/validate-notebook`, and
 ## Decision guide for this repository
 
 When this repository must choose a home for an instruction, use the modes
-in How Cursor decides when a rule applies in
+in How Cursor decides when a rule attaches in
 [Agents and Cursor Rules](01-Agents-and-Cursor-Rules.md). The choices
 already made here:
 
