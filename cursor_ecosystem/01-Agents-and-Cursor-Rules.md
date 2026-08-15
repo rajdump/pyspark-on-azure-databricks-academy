@@ -49,6 +49,10 @@ But knowing how to work with files and tools is not enough.
 
 The agent still needs to know **what this particular project expects**.
 
+Think of a skilled developer joining a new team. They already know how to code, but they still need the team's conventions, repo layout, and boundaries — including what not to change. An AI agent needs the same kind of project-specific guidance.
+
+Project instructions and rules do not replace the model's general knowledge. They direct that knowledge toward what this repository expects.
+
 ---
 
 ## Why project instructions need different layers
