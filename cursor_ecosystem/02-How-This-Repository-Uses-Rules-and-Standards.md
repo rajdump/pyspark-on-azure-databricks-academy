@@ -164,7 +164,7 @@ Each of `/new-lesson`, `/write-lesson`, `/validate-notebook`, and
 ## Decision guide for this repository
 
 When this repository must choose a home for an instruction, use the modes
-in Frontmatter and the four modes in
+in How Cursor decides when a rule applies in
 [Agents and Cursor Rules](01-Agents-and-Cursor-Rules.md). The choices
 already made here:
 
@@ -178,5 +178,5 @@ already made here:
   and the roadmap (`course-authoring.mdc`).
 
 Codex receives `AGENTS.md` but not `.mdc` rules or Cursor commands. See
-Cursor rules are contextual and Commands start workflows in
+Cursor rules add context-specific guidance and Commands start workflows in
 [Agents and Cursor Rules](01-Agents-and-Cursor-Rules.md).
