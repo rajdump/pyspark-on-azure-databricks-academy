@@ -169,23 +169,48 @@ A project may have many instructions the agent needs to follow.
 
 But those instructions do not all need to reach the model in the same way.
 
-Some instructions should be available broadly across the repository.
+Some constraints must apply broadly across the repository. Some instructions matter only for particular files or tasks. Detailed rules, definitions, and reference information may need a canonical document that can be maintained as the source of truth.
 
-Some are needed only for particular files or tasks.
-
-Detailed rules and definitions may already live in canonical project documents and should stay there as the source of truth.
-
-That gives each part a different role:
+That gives each layer a different role:
 
 | Need | Where it belongs |
 | --- | --- |
-| Instructions that should apply broadly across the repository | `AGENTS.md` |
-| Additional instructions needed for particular work | Cursor `.mdc` rules |
-| Detailed project rules, definitions, and reference information | Canonical docs / standards |
+| Short constraints and working rules that should apply broadly across the repository | `AGENTS.md` |
+| Additional instructions needed for particular files or kinds of work | Cursor `.mdc` rules |
+| Detailed rules, definitions, and reference information that need a canonical home | Project docs / standards |
 
 `AGENTS.md` and `.mdc` rules are **instruction sources**.
 
-Canonical docs and standards are where detailed project information lives. When the agent reads or receives them, that content becomes part of the model's context.
+They may contain instructions directly, or they may tell the agent which canonical document to use.
+
+Canonical docs and standards hold detailed project knowledge that should have one maintained source of truth. When the agent reads or receives those documents, their contents become part of the model's context.
+
+A useful way to decide where a new instruction belongs is:
+
+```text
+New instruction
+    ↓
+Must it apply broadly across the repository?
+    ├─ yes → AGENTS.md
+    │        Keep it short.
+    │        Point to a canonical document if more detail is needed.
+    │
+    └─ no
+        ↓
+Is it needed only for particular files or work?
+    ├─ yes → .mdc rule
+    │        Keep the scoped instruction there.
+    │        Point to a canonical document if the detail already lives elsewhere.
+    │
+    └─ no
+        ↓
+Is it detailed project knowledge that needs to be maintained?
+        └─ yes → canonical project document
+```
+
+The important distinction is between **owning the detail** and **routing the agent to it**.
+
+A canonical document should own detailed information that needs one maintained source of truth. `AGENTS.md` and `.mdc` rules should contain the instructions needed at their scope and point to that canonical information instead of copying it.
 
 The goal is not to send every instruction and every document with every request.
 
@@ -206,20 +231,40 @@ It can contain:
 - boundaries the agent must respect
 - pointers to authoritative project documents
 
-`AGENTS.md` should stay focused.
+For example, a short rule such as:
+
+```text
+Use Databricks source .py notebooks.
+Do not use .ipynb files.
+```
+
+can belong directly in `AGENTS.md` when that constraint should apply across the repository.
+
+But `AGENTS.md` should stay focused.
 
 > **Navigate, don't duplicate.**
 
-If a detailed rule already exists in another document, `AGENTS.md` should point the agent to that document instead of copying the same content.
+If a rule needs a longer explanation, detailed conventions, or several examples, that detail should usually have one canonical home. `AGENTS.md` can keep the short repository-level instruction and point the agent to the document that owns the full detail.
 
-For example, if detailed naming conventions already live in a naming-standard document, `AGENTS.md` can tell the agent to use that document rather than repeating all of its rules.
+For example:
 
-This keeps one source of truth for the detailed information and reduces the chance that multiple copies drift apart.
+```text
+Follow docs/standards/naming-conventions.md
+for project naming rules.
+```
 
-So `AGENTS.md` does two important things:
+The naming standard owns the detailed conventions. `AGENTS.md` makes sure the agent knows that those conventions govern repository work.
 
-1. supplies repository-level instructions
-2. tells the agent where deeper project information lives
+This avoids maintaining the same detailed rule in several places and reduces the chance that those copies drift apart.
+
+So `AGENTS.md` has two related responsibilities:
+
+1. supply concise repository-level constraints and working instructions
+2. route the agent to deeper project information when more detail is required
+
+In short:
+
+> **Keep broad constraints in `AGENTS.md`; keep detailed maintainable knowledge in its canonical document.**
 
 ---
 
