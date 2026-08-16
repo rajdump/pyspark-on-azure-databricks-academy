@@ -66,7 +66,7 @@ they must identify a specific module unambiguously.
 
 Standard PEP 8 conventions: `snake_case` for modules, functions, and
 variables; `PascalCase` for classes; `UPPER_SNAKE_CASE` for constants. Full
-non-naming coding rules live in @docs/standards/coding-standards.md. This
+non-naming coding rules live in `docs/standards/coding-standards.md`. This
 file remains the sole owner of identifier naming.
 
 ## Unity Catalog objects
@@ -86,6 +86,6 @@ standard.
 ## Does not cover
 
 - Code style, security, or committed-value rules — see
-  @docs/standards/coding-standards.md.
+  `docs/standards/coding-standards.md`.
 - The rideshare dataset's fixed object names and paths — see
-  @docs/data/dataset-overview.md.
+  `docs/data/dataset-overview.md`.

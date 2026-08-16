@@ -3,16 +3,15 @@
 This file is the canonical owner of Databricks notebook source format,
 notebook structure, cell boundaries, and output-display conventions.
 
-Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/teaching-guidelines.md`, and `/new-lesson`.
-`/write-lesson`, `/validate-notebook`, `/review-module`, and
+Direct consumers are `docs/standards/notebook-authoring-checklist.md` and
+`/new-lesson`. `/write-lesson`, `/validate-notebook`, `/review-module`, and
 `.cursor/rules/learner-notebooks.mdc` receive these rules through the
 checklist. Do not duplicate the notebook-format rules in those consumers.
 
 ## Format
 
 All learner notebooks are **Databricks source-format `.py` files** — never
-`.ipynb`. This is fixed (see @README.md for the technical baseline); this
+`.ipynb`. This is fixed (see `README.md` for the technical baseline); this
 document covers how to write within that format.
 
 Required structure markers:
@@ -115,15 +114,15 @@ path, parameterization, secret, and learner-specific-value restrictions.
 If a notebook's examples require specific Unity Catalog privileges beyond
 what a default learner might have, the module's `README.md` documents them
 (see the **Minimum-privilege documentation pattern** in
-@docs/standards/permissions-and-governance.md). Do not repeat the privilege
+`docs/standards/permissions-and-governance.md`). Do not repeat the privilege
 list inside the notebook.
 
 ## Does not cover
 
-- Code syntax and security — see @docs/standards/coding-standards.md.
+- Code syntax and security — see `docs/standards/coding-standards.md`.
 - Pedagogy and exercise design — see
-  @docs/standards/teaching-guidelines.md.
+  `docs/standards/teaching-guidelines.md`.
 - Minimum-privilege documentation — see
-  @docs/standards/permissions-and-governance.md.
+  `docs/standards/permissions-and-governance.md`.
 - Compute selection and runtime evidence — see
-  @docs/standards/compute-validation-policy.md.
+  `docs/standards/compute-validation-policy.md`.

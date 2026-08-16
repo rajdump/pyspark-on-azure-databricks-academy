@@ -67,13 +67,13 @@ module—report missing design elements rather than changing status.
 ## Does not cover
 
 - Course-wide purpose, sequence, production relevance, or module status —
-  see @COURSE_MODULES.md.
+  see `COURSE_MODULES.md`.
 - Notebook source format and cell structure — see
-  @docs/standards/notebook-writing.md.
+  `docs/standards/notebook-writing.md`.
 - Pedagogy and exercise design rules — see
-  @docs/standards/teaching-guidelines.md.
+  `docs/standards/teaching-guidelines.md`.
 - Code, security, and naming rules — see
-  @docs/standards/coding-standards.md and
-  @docs/standards/naming-conventions.md.
+  `docs/standards/coding-standards.md` and
+  `docs/standards/naming-conventions.md`.
 - Runtime validation and evidence — see
-  @docs/standards/compute-validation-policy.md.
+  `docs/standards/compute-validation-policy.md`.

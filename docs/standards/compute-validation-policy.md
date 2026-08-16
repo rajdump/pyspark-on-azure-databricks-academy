@@ -4,12 +4,10 @@ This file is the canonical owner of compute selection, validation order, and
 the validation-record schema for every module.
 
 Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/coding-standards.md`,
-`docs/standards/permissions-and-governance.md`, `README.md`,
-`/write-lesson`, `/validate-notebook`, `/review-module`, and module
-validation records. Other notebook workflows receive these rules through
-the checklist when compute guidance is relevant. Do not duplicate the
-compute or validation-record rules in those consumers.
+`README.md`, `/write-lesson`, `/validate-notebook`, `/review-module`, and
+module validation records. Other notebook workflows receive these rules
+through the checklist when compute guidance is relevant. Do not duplicate
+the compute or validation-record rules in those consumers.
 
 ## Available compute
 
@@ -81,4 +79,4 @@ compatibility value from authoring review alone.
   `/review-module` are authoring-quality checks in Cursor, not a substitute
   for this runtime validation.
 - Unity Catalog privilege requirements — see
-  @docs/standards/permissions-and-governance.md.
+  `docs/standards/permissions-and-governance.md`.

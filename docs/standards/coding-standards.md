@@ -5,12 +5,11 @@ than identifier naming. It applies to learner notebooks now and to reusable
 `src/` code after Module 13 introduces it.
 
 Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/notebook-writing.md`, `docs/standards/teaching-guidelines.md`,
-`docs/standards/naming-conventions.md`,
-`docs/standards/permissions-and-governance.md`, and `/write-lesson`.
-Other notebook commands and `.cursor/rules/learner-notebooks.mdc` receive
-these rules through the checklist. Do not duplicate the coding rules in
-those consumers.
+`docs/standards/notebook-writing.md`,
+`docs/standards/permissions-and-governance.md`, and `/write-lesson`. Other
+notebook commands and `.cursor/rules/learner-notebooks.mdc` receive these
+rules through the checklist. Do not duplicate the coding rules in those
+consumers.
 
 ## Style baseline
 
@@ -97,12 +96,12 @@ organization-specific catalog/schema names that reveal customer identity.
 `ruff`, `mypy`, and `pytest` run locally and check Python syntax, style, and
 non-Spark logic only. They do not execute Spark, Delta Lake, or Unity
 Catalog operations — that validation only happens in Azure Databricks (see
-@docs/standards/compute-validation-policy.md).
+`docs/standards/compute-validation-policy.md`).
 
 ## Does not cover
 
-- Identifier naming — see @docs/standards/naming-conventions.md.
+- Identifier naming — see `docs/standards/naming-conventions.md`.
 - Notebook structure and cell formatting — see
-  @docs/standards/notebook-writing.md.
+  `docs/standards/notebook-writing.md`.
 - Compute selection and runtime evidence — see
-  @docs/standards/compute-validation-policy.md.
+  `docs/standards/compute-validation-policy.md`.

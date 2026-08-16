@@ -5,8 +5,6 @@ Databricks workspace permissions, and Unity Catalog privileges. It also owns
 the minimum-privilege documentation pattern for module `README.md` files.
 
 Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/notebook-writing.md`,
-`docs/standards/compute-validation-policy.md`,
 `docs/standards/readme-authoring.md`, `/write-module-readme`,
 `/write-lesson`, and `/validate-notebook`. `/review-module` receives these
 rules through the checklist. Do not duplicate the permission rules in those
@@ -56,10 +54,11 @@ object-level grant looks correct.
 
 ### Module 5 parameterization
 
-`01 - Unity Catalog Volumes and Data Landing.py` in
-`05 - Reading, Writing, and Schemas` uses a Python setup/config cell for the
+`01 - Unity Catalog Volumes and Data Landing.py` and
+`99 - Rideshare Project Cleanup and Reset.py` in
+`05 - Reading, Writing, and Schemas` use a Python setup/config cell for the
 learner's Azure storage account, container, storage credential, and ADLS
-folder. It does not use widgets for those values. Committed defaults must
+folder. They do not use widgets for those values. Committed defaults must
 follow the **Permitted author defaults** section in
 @docs/standards/coding-standards.md. Fixed course Unity Catalog names, such
 as `rideshare_dev`, remain defined by @docs/data/dataset-overview.md.
@@ -99,9 +98,9 @@ RBAC on the learner's storage because
 ## Does not cover
 
 - Compute selection and validation rules — see
-  @docs/standards/compute-validation-policy.md.
+  `docs/standards/compute-validation-policy.md`.
 - Actual catalog/schema/volume names — defined in
-  @docs/data/dataset-overview.md for the rideshare course objects.
+  `docs/data/dataset-overview.md` for the rideshare course objects.
 - Security and safe committed defaults — see the **Security and
   portability** and **Permitted author defaults** sections in
-  @docs/standards/coding-standards.md.
+  `docs/standards/coding-standards.md`.

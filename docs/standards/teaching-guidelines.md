@@ -37,6 +37,8 @@ rather than assuming prior exposure.
 
 - Worked example first, exercise second — never ask a learner to attempt a
   pattern that hasn't been demonstrated.
+- Give every newly introduced API a runnable example against the shared
+  rideshare dataset before using it in an exercise.
 - Call out common mistakes and gotchas explicitly (e.g. NULL-handling
   surprises, lazy-evaluation timing) rather than letting learners discover
   them by accident.
@@ -55,7 +57,7 @@ is itself the learning objective, as in
 `06 - Querying DataFrames with SQL.py` in `02 - DataFrame Fundamentals`.
 **Module 9 — Spark SQL and DataFrame Interoperability** formalizes
 systematic dual-API treatment as its core purpose. See
-@docs/standards/notebook-writing.md for the structural code-cell rules that
+`docs/standards/notebook-writing.md` for the structural code-cell rules that
 implement this policy.
 
 ### Exercise design conventions
@@ -81,12 +83,12 @@ Spark tour. Where relevant, name the production concern a topic addresses
 - Module `README.md` files (learning objectives, prerequisites, guidance)
 - Learner notebooks (markdown cells, comments, exercise framing)
 - `/new-lesson`-scaffolded content follows the **Scaffold bar** in
-  @docs/standards/notebook-authoring-checklist.md; full lessons use
+  `docs/standards/notebook-authoring-checklist.md`; full lessons use
   `/write-lesson` and the **Full-lesson bar** there.
 
 ## Does not cover
 
 - Code formatting and security — see
-  @docs/standards/coding-standards.md.
+  `docs/standards/coding-standards.md`.
 - Notebook structure, source format, and cell boundaries — see
-  @docs/standards/notebook-writing.md.
+  `docs/standards/notebook-writing.md`.
