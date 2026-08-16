@@ -89,7 +89,9 @@ Spark tour. Where relevant, name the production concern a topic addresses
 - `/new-lesson`-scaffolded content follows the **Scaffold bar** in
   `docs/standards/notebook-authoring-checklist.md`; full lessons use
   `/write-lesson` and the **Full-lesson bar** and **Validation gate checks**
-  there; `/validate-notebook` applies the same bars read-only.
+  there; `/validate-notebook` applies the same bars read-only via the
+  **Validation manifest**; `/review-module` applies module-wide consistency
+  checks via the **Module-review manifest** and **Module-review bar**.
 
 ## Does not cover
 

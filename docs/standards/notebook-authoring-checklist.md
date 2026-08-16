@@ -19,7 +19,7 @@ bars and the command-specific read manifests. Direct readers are
 | `/new-lesson` | Create a scaffold only | Scaffold manifest and Scaffold bar |
 | `/write-lesson` | Turn a scaffold into a full runnable lesson | Full-lesson manifest, Full-lesson bar, and Validation gate checks |
 | `/validate-notebook` | Review one full lesson without editing it | Validation manifest, Full-lesson bar, and Validation gate checks |
-| `/review-module` | Review module-wide consistency without editing files | Module-review manifest and Full-lesson spot checks |
+| `/review-module` | Review module-wide consistency without editing files | Module-review manifest and Module-review bar |
 
 ## How to read a manifest
 
@@ -154,9 +154,8 @@ Read:
    `docs/standards/naming-conventions.md`.
 9. The sections selected by **Dataset scope**.
 
-Read each notebook far enough to check sequence, README coverage, consistent
-voice and structure, security, and dataset use. This is a module-level spot
-check, not a substitute for the Validation manifest on every notebook.
+Then apply the **Module-review bar** below. Module review is read-only
+and does not produce runtime evidence.
 
 ### Conditional reads
 
@@ -279,6 +278,35 @@ in Cursor — not runtime validation and not module-level review.
 
 Module-level sequence, naming, **Design-complete definition**, and folder-wide
 evidence checks belong to `/review-module`, not this list.
+
+## Module-review bar (`/review-module`)
+
+Apply after the **Module-review manifest** and applicable **Conditional
+reads**. This bar summarizes module-level checks; the linked standards still
+apply. A module passes `/review-module` only when all checks below pass:
+
+- **README design:** The module `README.md` meets the **Design-complete
+  definition** in `docs/standards/readme-authoring.md` and aligns with the
+  target module row in `COURSE_MODULES.md`. It must not duplicate the full
+  course roadmap, global standards, or Cursor instructions.
+- **Naming:** Folder and notebook names follow **Module folders** and
+  **Notebook files** in `docs/standards/naming-conventions.md`.
+- **Notebook sequence:** Every **Notebooks table** row has a matching
+  `NN - Title.py` file (including non-contiguous numbers such as `99` when
+  planned). No unplanned numbered `.py` files on disk (inverse of the
+  **Filesystem cross-check** in **Scaffold contents**).
+- **Notebook spot checks:** Read each notebook far enough to check voice,
+  structure, security, and dataset use per the manifest reads. This lighter
+  gate does not substitute for running `/validate-notebook` on every notebook.
+- **Dataset consistency:** Every DataFrame and file-read example matches the
+  **Dataset scope** contract.
+- **No leaked evidence:** Validation results, tokens, workspace URLs, or
+  personal identifiers do not appear anywhere in the module folder.
+- **No unfinished scaffolds:** No notebook is still a scaffold per
+  **Scaffold vs full lesson**; report that `/write-lesson` must run first.
+- **README minimum privileges:** When any notebook in the module uses Unity
+  Catalog objects beyond default learner access, the module `README.md`
+  documents them under **Minimum privileges required**.
 
 ## Workflow and validation boundary
 

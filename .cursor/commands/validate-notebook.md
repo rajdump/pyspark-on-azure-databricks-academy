@@ -21,18 +21,16 @@ Steps:
    report: only scaffolds → `/write-lesson`; no files → `/new-lesson`. If
    not obvious from open files or recent context, ask once which module
    and notebook number (or file path).
-2. If the file does not exist, stop and tell the author to run `/new-lesson`
-   first.
-3. Apply **Validation guards** in the **Validation manifest** — stop when a
-   guard fails.
-4. Match the filename to the module README's **Notebooks table** row per
+2. Apply **Validation guards** in the **Validation manifest** — stop when a
+   guard fails. Then load the **Validation manifest** and applicable
+   **Conditional reads**; compare voice and structure per Full-lesson
+   manifest item 8.
+3. Match the filename to the module README's **Notebooks table** row per
    `docs/standards/naming-conventions.md`; the **Focus cell** is the topic
    source of truth.
-5. Load the **Validation manifest** and applicable **Conditional reads**;
-   apply the completed-sibling rule from Full-lesson manifest item 8.
-6. Review the notebook against the **Full-lesson bar** and **Validation gate
+4. Review the notebook against the **Full-lesson bar** and **Validation gate
    checks**. Cite specific cells — `[file ~lines]` — for every issue.
-7. Reply **issues only** per the output rule. Do not edit files.
+5. Reply **issues only** per the output rule. Do not edit files.
 
 **Boundary.** Module-level sequence, naming, **Design-complete definition**,
 and folder-wide evidence checks belong to `/review-module`, not this command.

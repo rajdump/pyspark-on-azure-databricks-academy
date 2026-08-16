@@ -13,7 +13,7 @@ within those reads and the **Canonical sources** section in
 do not load the ad-hoc list below or a different command's manifest.
 
 When `/review-module` is active, follow the **Module-review manifest**,
-applicable **Conditional reads**, and Full-lesson spot checks in
+applicable **Conditional reads**, and **Module-review bar** in
 `docs/standards/notebook-authoring-checklist.md`; do not load the ad-hoc
 list below or a different command's manifest.
 
