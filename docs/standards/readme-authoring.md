@@ -1,8 +1,8 @@
 # Module README Authoring Standard
 
 This file is the canonical owner of module `README.md` structure and the
-design-complete definition. A module README owns detailed module design; it
-does not own the course roadmap, global standards, or Cursor workflows.
+design-complete definition. A module README owns that module's detailed
+design.
 
 Direct readers: `AGENTS.md`, `.cursor/rules/course-authoring.mdc`,
 `/write-module-readme`, and
@@ -11,29 +11,35 @@ Direct readers: `AGENTS.md`, `.cursor/rules/course-authoring.mdc`,
 
 ## Required structure
 
-A module README uses the module number and title from `COURSE_MODULES.md` as
-its H1 and includes:
+Use the roadmap number and title as the H1 in this form:
+`# Module N — Title` (not zero-padded).
+
+Align **Purpose** and **Prerequisites** with that `COURSE_MODULES.md` row.
+Do not copy **Production Relevance**, **Final-Project Contribution**, or
+**Status**. **Major Topics** inform the Notebooks table; do not paste them
+as a section.
+
+A module README must include:
 
 1. **Purpose** — the module's concise role in the course.
 2. **Learning objectives** — observable learner outcomes.
 3. **Prerequisites** — prior modules, concepts, tables, or setup required.
-4. **Dataset notes** — inputs, outputs, paths, schemas, and relevant data
-   dependencies. Use `## Dataset` when data inputs or contracts need
-   explanation. Use `## Paths and outputs` when the module reads or creates
-   persistent locations or objects. Use both when both concerns apply.
-5. **Notebooks** — an ordered table defining each notebook's title and
-   planned topics/subtopics.
-6. **Exercises** — the practice expected in each notebook, recorded in the
-   Notebooks table's Focus cell or in a dedicated section when module-level
-   detail is needed.
-7. **Minimum privileges required** — include when the module requires
-   specific privileges beyond basic workspace access, using the pattern in
+4. **Dataset** — inputs, outputs, paths, schemas, and dependencies.
+   Take table, column, path, and object names from
+   `docs/data/dataset-overview.md`; do not invent them. Use `## Dataset`
+   when data inputs or contracts need explanation. Use `## Paths and
+   outputs` when the module reads or creates persistent locations or
+   objects. Use both when both apply.
+5. **Notebooks** — the ordered table below. Record each notebook's
+   exercise in the Focus cell, or in a dedicated section when the
+   module needs extra detail.
+6. **Minimum privileges required** — follow **Minimum-privilege
+   documentation pattern** in
    `docs/standards/permissions-and-governance.md`.
 
 ## Notebooks table
 
-The table is ordered by zero-padded notebook number and uses these required
-columns:
+Order rows by zero-padded notebook number. Required columns:
 
 ```markdown
 | # | Notebook | Focus |
@@ -41,34 +47,30 @@ columns:
 | 01 | Descriptive Title | Planned topics/subtopics; exercise |
 ```
 
-Add a `Reads` column when input dependencies need to be explicit. Each row
-maps to one planned `NN - Descriptive Title.py` file. The Focus cell is the
-source of truth for the notebook's topics, subtopics, comparisons, gotchas,
-and exercise scope.
+Add a `Reads` column when input dependencies need to be explicit. Each
+row maps to one planned `NN - Descriptive Title.py` file. The Focus cell
+is the source of truth for topics, subtopics, comparisons, gotchas, and
+exercise scope.
 
 ## Design-complete definition
 
-A module README is design-complete only when all checks below pass:
+A module README is design-complete only when all of these pass:
 
 - Every applicable item in **Required structure** is present.
-- Every planned notebook has a numbered row with a final title, Focus scope,
-  and exercise expectation.
-- Inputs, dependencies, persistent paths, and outputs are specific enough
-  for scaffolding without invention.
-- Required privileges are documented when the module goes beyond basic
-  workspace access.
-- No `TODO` placeholder or unresolved material design decision remains.
-
-Before a module moves to `Started`—including when reopening a `Complete`
-module—report missing design elements rather than changing status.
+- Every planned notebook has a numbered row with a final title, Focus
+  scope, and exercise expectation.
+- Dataset facts are specific enough to scaffold a notebook; none are
+  invented.
+- No `TODO` placeholder or unresolved design choice remains.
 
 ## Does not cover
 
-- Course-wide purpose, sequence, production relevance, or module status —
-  see `COURSE_MODULES.md`.
+- Roadmap sequence, production relevance, final-project contribution, or
+  module status — see `COURSE_MODULES.md`.
+- How to create the module folder and README — see `/write-module-readme`.
 - Notebook source format and cell structure — see
   `docs/standards/notebook-writing.md`.
-- Pedagogy and exercise design rules — see
+- Pedagogy and how to write exercises in notebooks — see
   `docs/standards/teaching-guidelines.md`.
 - Code, security, and naming rules — see
   `docs/standards/coding-standards.md` and

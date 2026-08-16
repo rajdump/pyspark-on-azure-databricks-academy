@@ -4,8 +4,8 @@ This file is the canonical owner of pedagogy, explanation style, and
 exercise-design rules for learner-facing course content.
 
 Direct readers: `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/notebook-writing.md`, `.cursor/rules/course-authoring.mdc`,
-and `/write-module-readme`. Notebook commands and
+`docs/standards/notebook-writing.md`, and
+`.cursor/rules/course-authoring.mdc`. Notebook commands and
 `.cursor/rules/learner-notebooks.mdc` receive these rules through the
 checklist.
 
