@@ -88,7 +88,8 @@ Spark tour. Where relevant, name the production concern a topic addresses
 - Learner notebooks (markdown cells, comments, exercise framing)
 - `/new-lesson`-scaffolded content follows the **Scaffold bar** in
   `docs/standards/notebook-authoring-checklist.md`; full lessons use
-  `/write-lesson` and the **Full-lesson bar** there.
+  `/write-lesson` and the **Full-lesson bar** and **Validation gate checks**
+  there; `/validate-notebook` applies the same bars read-only.
 
 ## Does not cover
 

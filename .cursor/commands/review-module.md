@@ -16,8 +16,10 @@ Given a module folder (ask which one if not obvious from context), check:
    course roadmap, global standards, or Cursor instructions.
 2. **Naming** — folder and notebook names use exact zero-padding and Title
    Case.
-3. **Notebook sequence** — notebooks are numbered contiguously starting at
-   `01`, and the README's Notebooks table matches the actual files present.
+3. **Notebook sequence** — every row in the README's Notebooks table has a
+   matching `NN - Title.py` file (follow README order, including non-contiguous
+   numbers such as `99` when planned), and no unplanned numbered notebooks
+   exist on disk.
 4. **Standards compliance across all notebooks** — spot-check each notebook
    using the manifest. This lighter gate does not substitute for running
    `/validate-notebook` on every notebook.
@@ -25,6 +27,6 @@ Given a module folder (ask which one if not obvious from context), check:
    the manifest's scoped dataset contract.
 6. **No leaked evidence** — validation results, tokens, workspace URLs, or
    personal identifiers do not appear anywhere in the module folder.
-7. **No unfinished scaffolds** — if a notebook still has `TODO` placeholders
-   or no runnable examples, report that `/write-lesson` must run before the
-   module can pass review.
+7. **No unfinished scaffolds** — if a notebook is still a scaffold from
+   `/new-lesson` (no runnable teaching demonstrations), report that
+   `/write-lesson` must run before the module can pass review.

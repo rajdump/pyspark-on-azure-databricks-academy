@@ -3,7 +3,7 @@
 This file tells Cursor which sources to read for notebook work and what must
 be true at two stages:
 
-- The **Scaffold bar** defines a valid notebook skeleton.
+- The **Scaffold bar** defines a valid notebook scaffold.
 - The **Full-lesson bar** defines a complete lesson ready for authoring
   validation.
 
@@ -16,9 +16,9 @@ bars and the command-specific read manifests. Direct readers are
 
 | Command | Purpose | Apply from this checklist |
 |---|---|---|
-| `/new-lesson` | Create a skeleton only | Scaffold manifest and Scaffold bar |
-| `/write-lesson` | Turn a skeleton into a full runnable lesson | Full-lesson manifest and Full-lesson bar |
-| `/validate-notebook` | Review one full lesson without editing it | Validation manifest and Full-lesson bar |
+| `/new-lesson` | Create a scaffold only | Scaffold manifest and Scaffold bar |
+| `/write-lesson` | Turn a scaffold into a full runnable lesson | Full-lesson manifest, Full-lesson bar, and Validation gate checks |
+| `/validate-notebook` | Review one full lesson without editing it | Validation manifest, Full-lesson bar, and Validation gate checks |
 | `/review-module` | Review module-wide consistency without editing files | Module-review manifest and Full-lesson spot checks |
 
 ## How to read a manifest
@@ -101,8 +101,9 @@ Also apply **Conditional reads** below.
 ### Validation manifest (`/validate-notebook`)
 
 Read the Full-lesson manifest, including a completed sibling for voice
-comparison, then review the target notebook against the Full-lesson bar.
-Validation is read-only and does not produce runtime evidence.
+comparison, then review the target notebook against the **Full-lesson bar**
+and **Validation gate checks**. Validation is read-only and does not produce
+runtime evidence.
 
 ### Module-review manifest (`/review-module`)
 
@@ -154,35 +155,57 @@ Before creating a notebook, check both conditions:
   `docs/standards/readme-authoring.md`.
 
 If either check fails, `/new-lesson` stops and reports the gap. It does not
-create the notebook or change the module status.
+create the notebook or change the module status. When readiness fails because
+roadmap status is not `Started`, also check the module folder for existing
+`.py` files and report a `Not Started` plus stray-notebook inconsistency when
+present.
 
 ### Scaffold contents
 
-When readiness passes, the scaffold is valid only when all checks below pass:
+Determine the target notebook from the module README's **Notebooks table** in
+row order: select the **first row** whose `NN - Title.py` file does not yet
+exist (including non-contiguous numbers such as `99` when planned). Build the
+filename from that row's `#` and `Notebook` columns per
+`docs/standards/naming-conventions.md`. Stop without creating a file if every
+planned row already has a matching file, or if the target file already exists.
+
+When readiness passes and a target row is selected, the scaffold is valid only
+when all checks below pass:
 
 - **Format:** It uses the required Databricks source format.
 - **Planned structure:** Its section headings match the topics and subtopics
-  in the module README's Notebooks table Focus cell.
-- **Placeholders:** It includes objectives, prerequisites, setup, exercise,
-  and summary placeholders.
+  in that row's **Focus cell**.
+- **Placeholders:** It includes objectives, prerequisites, setup, summary,
+  and a next-notebook pointer placeholder. Include an exercise placeholder
+  only when the Focus cell plans an exercise or hands-on task; for
+  write-only, utility, or no-exercise notebooks, use ordered concept-section
+  placeholders per the Focus cell instead.
 - **Dataset setup:** If the notebook will use the shared dataset, setup
   comments name the correct tables and schema or path from
   `docs/data/dataset-overview.md` without inventing columns.
+- **Module 5 setup/cleanup:** When the target row is setup or cleanup,
+  include config placeholders per Scaffold manifest item 8 — do not invent
+  learner-specific values.
 - **No lesson content yet:** `# TODO` or empty code cells are acceptable.
   Runnable lesson content is not required until `/write-lesson`.
 
-## Full-lesson bar (`/write-lesson`)
+## Full-lesson bar (`/write-lesson`, `/validate-notebook`)
 
 This bar summarizes the final checks; the linked standards still apply. A
 lesson is ready for `/validate-notebook` only when its manifest and
 conditional reads are followed and all checks below pass:
 
-- **Planned coverage:** The module README's Notebooks table Focus cell is
-  fully implemented. Planned topics, subtopics, comparisons, and gotchas
-  have runnable demonstrations where behavior can be shown. The exercise
-  matches its planned scope.
-- **Teaching order:** Worked examples come before the exercise. The exercise
-  applies the demonstrated pattern to slightly different data.
+- **Planned coverage:** The module README's **Notebooks table Focus cell**
+  for the target row is fully implemented. Planned topics, subtopics,
+  comparisons, and gotchas have runnable demonstrations where behavior can
+  be shown. When the Focus cell plans an exercise or hands-on task, the
+  exercise matches that scope. Write-only, utility, or no-exercise notebooks
+  implement the Focus cell through ordered concept sections and writes
+  instead of a learner exercise.
+- **Teaching order:** Worked examples come before any exercise section. When
+  an exercise is planned, it applies the demonstrated pattern to slightly
+  different data. Write-only and utility notebooks follow ordered concept
+  sections per the Focus cell.
 - **Required course structure:** The notebook includes objectives, setup,
   incremental teaching cells, a summary, and a next-notebook pointer.
 - **Voice consistency (reviewer judgment):** The explanation style and
@@ -192,8 +215,36 @@ conditional reads are followed and all checks below pass:
   `docs/standards/coding-standards.md`, including its **Security and
   portability** and **Permitted author defaults** sections.
 
+`/write-lesson` self-check and `/validate-notebook` both apply this bar plus
+**Validation gate checks**.
+
 If a check fails, the notebook is not ready. Fix the gap and run
 `/validate-notebook` again.
+
+## Validation gate checks (`/write-lesson` self-check, `/validate-notebook`)
+
+Apply after the **Full-lesson bar**. These are per-notebook authoring checks
+in Cursor — not runtime validation and not module-level review.
+
+- **Security and personal values:** No hardcoded tokens, workspace URLs,
+  cluster IDs, or personal catalog/schema names anywhere in the notebook.
+- **Compute assumptions:** Compute-type or access-mode claims are documented
+  by the applicable conditional standard when the lesson assumes them.
+- **README minimum privileges:** When the notebook uses Unity Catalog objects
+  beyond default learner access, the module `README.md` documents them under
+  **Minimum privileges required**.
+- **Hidden session state:** The notebook runs after its own setup only — no
+  dependency on variables, imports, or temp views from another notebook's
+  session (see **Notebook dependencies and execution state** in
+  `docs/standards/notebook-writing.md`).
+- **Intentional failures:** Demonstrated failures use Markdown explanation
+  and `# Expected: <ErrorType>` on the failing line (see **Error handling
+  in teaching notebooks** in `docs/standards/coding-standards.md`).
+- **No leaked evidence:** Runtime validation results, tokens, workspace
+  URLs, or personal identifiers do not appear in notebook cells or comments.
+
+Module-level sequence, naming, README design-complete, and folder-wide
+evidence checks belong to `/review-module`, not this list.
 
 ## Workflow and validation boundary
 

@@ -33,9 +33,20 @@ minimal**.
 
 - Path edited
 - One line: next step → `/validate-notebook`, then Databricks runtime validation
-- Only mention blockers (missing skeleton, missing README bullet, etc.)
+- Only mention blockers (missing scaffold, missing Focus cell topic, etc.)
 
-## `/validate-notebook` and `/review-module`
+## `/validate-notebook`
+
+**Issues only.**
+
+- If nothing fails: one line — e.g. `No authoring issues found.` — then note
+  the author should run the notebook in Azure Databricks for runtime validation
+- If something fails: bullet list — `[file]` or `[file ~lines]` → what's wrong → specific fix
+- Group by topic only when there are many issues; never list passed checks
+- Mark non-blocking polish as `(optional)`; do not mix with blocking issues
+- Do not restate review checklist categories as Pass/Fail tables
+
+## `/review-module`
 
 **Issues only.**
 
