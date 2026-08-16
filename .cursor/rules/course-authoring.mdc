@@ -41,9 +41,9 @@ Ownership reminders:
   prerequisites, production relevance, final-project contribution,
   status).
 - A module's own `README.md` owns that module's detailed design. Follow
-  readme-authoring required structure and the design-complete gate. Do not
-  guess or invent concrete facts. Do not change roadmap status when that
-  gate is not met.
+  readme-authoring required structure and the **Design-complete definition**.
+  Do not guess or invent concrete facts. Do not change roadmap status when
+  that definition is not met.
 
 Automatic-write restrictions are owned by the **Do not write automatically**
 section in `AGENTS.md`.

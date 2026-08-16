@@ -45,6 +45,9 @@ sections needed by the target:
   XML)** in addition to the relevant core or pipeline section.
 - Modules 5–8: **Core data model** and the matching subsection under
   **Module pipeline**.
+- Modules 9+: **Core data model**, relevant subsections under **Module
+  pipeline** for consumed outputs, and **Unity Catalog platform reference**
+  when the lesson uses governed objects or Volume paths.
 - Any lesson that creates, names, grants access to, or reads a Unity Catalog
   object or Volume path: **Unity Catalog platform reference**.
 
@@ -133,7 +136,7 @@ check, not a substitute for the Validation manifest on every notebook.
 
 ### Conditional reads
 
-Except for the scoped Module 5 setup/cleanup exception in the Scaffold
+Except for the scoped Module 5 setup or cleanup exception in the Scaffold
 manifest, these do not apply to a structure-only scaffold:
 
 - Read the full `docs/standards/compute-validation-policy.md` when a full
@@ -150,9 +153,9 @@ manifest, these do not apply to a structure-only scaffold:
 Before creating a notebook, check both conditions:
 
 - **Roadmap status:** The target module is `Started` in `COURSE_MODULES.md`.
-- **README design:** The module `README.md` meets the design-complete
-  definition in
-  `docs/standards/readme-authoring.md`.
+  `Complete` blocks scaffolding until the author sets `Started` again.
+- **README design:** The module `README.md` meets the **Design-complete
+  definition** in `docs/standards/readme-authoring.md`.
 
 If either check fails, `/new-lesson` stops and reports the gap. It does not
 create the notebook or change the module status. When readiness fails because
@@ -164,10 +167,15 @@ present.
 
 Determine the target notebook from the module README's **Notebooks table** in
 row order: select the **first row** whose `NN - Title.py` file does not yet
-exist (including non-contiguous numbers such as `99` when planned). Build the
-filename from that row's `#` and `Notebook` columns per
-`docs/standards/naming-conventions.md`. Stop without creating a file if every
-planned row already has a matching file, or if the target file already exists.
+exist (including non-contiguous numbers such as `99` when planned). If the
+author names a specific notebook, use that row only when every prior row
+already has a file. Build the filename from that row's `#` and `Notebook`
+columns per `docs/standards/naming-conventions.md`. Stop without creating a
+file if every planned row already has a matching file, or if the named or
+selected target file already exists.
+
+- **Filesystem cross-check:** Report (do not block on) any numbered `.py`
+  files on disk that are not listed in the README Notebooks table.
 
 When readiness passes and a target row is selected, the scaffold is valid only
 when all checks below pass:
@@ -183,7 +191,7 @@ when all checks below pass:
 - **Dataset setup:** If the notebook will use the shared dataset, setup
   comments name the correct tables and schema or path from
   `docs/data/dataset-overview.md` without inventing columns.
-- **Module 5 setup/cleanup:** When the target row is setup or cleanup,
+- **Module 5 setup or cleanup:** When the target row is setup or cleanup,
   include config placeholders per Scaffold manifest item 8 — do not invent
   learner-specific values.
 - **No lesson content yet:** `# TODO` or empty code cells are acceptable.

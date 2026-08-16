@@ -7,7 +7,8 @@ design.
 Direct readers: `AGENTS.md`, `.cursor/rules/course-authoring.mdc`,
 `/write-module-readme`, and
 `docs/standards/notebook-authoring-checklist.md`. `/new-lesson` and
-`/review-module` receive the design-complete gate through the checklist.
+`/review-module` receive the **Design-complete definition** through the
+checklist.
 
 ## Canonical sources
 

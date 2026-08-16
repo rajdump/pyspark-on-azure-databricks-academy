@@ -36,7 +36,7 @@ validated in Azure Databricks.
 - Learner overview and full technical baseline: `README.md`
 - Roadmap and status: `COURSE_MODULES.md`
 - Module design: the target module's `README.md`
-- Module README structure and design-complete gate:
+- Module README structure and **Design-complete definition**:
   `docs/standards/readme-authoring.md`
 - Command-specific read manifests and acceptance bars for notebook work:
   `docs/standards/notebook-authoring-checklist.md`
