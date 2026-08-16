@@ -69,6 +69,10 @@ Worth covering later when the course addresses reusable agent workflows beyond P
 
 Worth covering later after learners understand the four attachment modes and need operational detail on when globs actually fire.
 
+This repository’s operational `@` / glob / backtick model lives in
+[02-How-This-Repository-Uses-Rules-and-Standards.md](02-How-This-Repository-Uses-Rules-and-Standards.md).
+Do not add a fifth routing architecture file.
+
 ---
 
 ## Rule reliability and troubleshooting

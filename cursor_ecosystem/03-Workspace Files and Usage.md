@@ -24,6 +24,7 @@ Author in Cursor
   Azure Databricks Git folder runs notebooks
         ↓
   docs/validation/                  → record what actually ran
+  cursor_ecosystem/                 → author notes on Cursor routing
   vault/ + take_notes/              → private tracking
 ```
 
@@ -31,9 +32,14 @@ Author in Cursor
 → a module `README.md` → its notebooks. You only need `data/raw` once you
 hit Module 5.
 
-**If you are authoring:** `AGENTS.md` → `docs/standards/` → module
-`README.md` → slash commands. Use `vault/` for personal tracking, not as
-the public course spec.
+**If you are authoring:** `AGENTS.md` → [02-How-This-Repository-Uses-Rules-and-Standards.md](02-How-This-Repository-Uses-Rules-and-Standards.md)
+for routing → `docs/standards/` → module `README.md` → slash commands.
+Use `vault/` for personal tracking, not as the public course spec.
+
+Author reading order: root `README.md` → `COURSE_MODULES.md` → target
+module `README.md` → this catalog as needed → `02` before notebook
+commands. Do not use a `docs/` file-role duplicate; this file is the
+workspace catalog.
 
 ## 1. Course source of truth (root)
 
@@ -82,8 +88,10 @@ here**; they do not duplicate the content.
 | `teaching-guidelines.md` | Pedagogy: how to explain, what to show, what not to skip |
 | `coding-standards.md` | Python / PySpark conventions in notebooks |
 | `naming-conventions.md` | `NN - Descriptive Title` folders and notebooks |
+| `readme-authoring.md` | Module README structure and design-complete definition |
 | `compute-validation-policy.md` | Which compute to use and the Standard → serverless validation order |
 | `permissions-and-governance.md` | Azure RBAC vs workspace permissions vs Unity Catalog privileges; “minimum privileges” pattern for module READMEs |
+| `standards-authoring.md` | Structure, language, and cross-reference conventions for standards; no lesson consumers |
 
 ## 4. Runtime validation evidence (`docs/validation/`)
 
@@ -118,19 +126,19 @@ in Databricks do not need these.
 
 | Command file | What it does |
 |---|---|
-| `write-module-readme.md` | Create a design-complete module README from the roadmap and canonical design sources |
-| `new-lesson.md` | Scaffold a skeleton notebook from the module README |
-| `write-lesson.md` | Fill a skeleton into a full lesson against the standards |
-| `validate-notebook.md` | Authoring-quality review (not Databricks runtime) |
-| `review-module.md` | Whole-module completeness/consistency check |
+| `write-module-readme.md` | Create a design-complete module README; own scoped reads, not the checklist |
+| `new-lesson.md` | Scaffold a skeleton notebook from the module README (Scaffold manifest) |
+| `write-lesson.md` | Fill a skeleton into a full lesson (Full-lesson manifest) |
+| `validate-notebook.md` | Authoring-quality review of one notebook (not Databricks runtime) |
+| `review-module.md` | Whole-module completeness/consistency check (lighter than per-notebook validation) |
 
 ### Rules (`.cursor/rules/`)
 
 | File | When it applies |
 |---|---|
-| `learner-notebooks.mdc` | Editing `NN - */*.py` notebooks — defer to the active manifest or route ad-hoc edits |
-| `course-authoring.mdc` | Editing root/module READMEs or `COURSE_MODULES.md` |
-| `notebook-command-output.mdc` | Keep slash-command replies short |
+| `learner-notebooks.mdc` | Glob `[0-9][0-9] - */*.py` — defer to the active command manifest, or route ad-hoc edits |
+| `course-authoring.mdc` | Glob on root `README.md`, `COURSE_MODULES.md`, and numbered module READMEs |
+| `notebook-command-output.mdc` | No glob (Apply Intelligently); `@`-included by all five commands to keep replies short |
 
 `.cursorignore` keeps binary Parquet/Avro, `uv.lock`, and `.venv/` out of
 AI context.
@@ -144,6 +152,7 @@ Spark, Delta, and Unity Catalog run only in Azure Databricks.
 | `pyproject.toml` | Declares `uv` + `ruff` / `mypy` / `pytest` for local format/lint/type/non-Spark tests. Empty runtime `dependencies` |
 | `uv.lock` | Pinned versions from `uv sync` (generated; gitignored from AI context) |
 | `.editorconfig` | Indent, charset, newlines for editors |
+| `.cursorignore` | Paths Cursor should keep out of AI context (binary Parquet/Avro, `uv.lock`, `.venv/`) |
 | `.gitignore` | Ignores `.venv`, caches, `.env`, `.databricks/`, editor junk |
 | `.env.example` | Template for optional `DATABRICKS_HOST` / `DATABRICKS_TOKEN` for CLI/Connect. Copy to gitignored `.env`; never put real secrets in the template |
 
@@ -151,6 +160,19 @@ Spark, Delta, and Unity Catalog run only in Azure Databricks.
 not exist yet**.
 
 ## 8. Author notes (not learner-facing)
+
+These folders are author-only. They are not learner notebooks and not
+normative standards.
+
+### Cursor ecosystem (`cursor_ecosystem/`)
+
+| File | Usage |
+|---|---|
+| [01-Agents-and-Cursor-Rules.md](01-Agents-and-Cursor-Rules.md) | General Cursor mechanism: agents, `AGENTS.md`, rule modes, commands |
+| [02-How-This-Repository-Uses-Rules-and-Standards.md](02-How-This-Repository-Uses-Rules-and-Standards.md) | Living routing model for this repo (paths A/B/C, `@` vs backtick) |
+| [03-Workspace Files and Usage.md](03-Workspace%20Files%20and%20Usage.md) | This catalog — what each workspace path is for |
+| [04-Markdown-Context-Routing-Optimization.md](04-Markdown-Context-Routing-Optimization.md) | Dated routing-optimization report (measurements, test log) |
+| [FUTURE-TOPICS.md](FUTURE-TOPICS.md) | Backlog of Cursor topics intentionally kept out of File 01 |
 
 ### Obsidian vault (`vault/`)
 
@@ -169,11 +191,7 @@ source of truth stays outside so Git/Databricks/Cursor paths stay stable.
 
 | File | Usage |
 |---|---|
-| `NB07_personal_notes.md` | Long-form personal walkthrough of Module 7 table-build logic |
-| `course-modules-review-issues.md` | Review log from the Phase III–V roadmap rewrite |
-| `root-readme-review-issues.md` | Review log for the root README |
-| `M5.txt` | Loose Module 5 topic reminders (row vs column formats, lakehouse, Avro vs Parquet) |
-| `Workspace Files and Usage.md` | This note — workspace file catalog, excluding learner notebooks |
+| `to_dos.md` | Personal author to-dos and notes |
 
 ## 9. Generated / local / accidental (usually ignore)
 

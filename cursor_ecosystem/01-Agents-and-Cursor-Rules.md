@@ -411,4 +411,9 @@ command
     → starts a workflow and may tell the agent what to use
 ```
 
-The next file, [How This Repository Uses Rules and Standards](02-How-This-Repository-Uses-Rules-and-Standards.md), shows how this repository combines `AGENTS.md`, `.mdc` rules, project documents, and commands in real workflows.
+The next files in this repository:
+
+- [How This Repository Uses Rules and Standards](02-How-This-Repository-Uses-Rules-and-Standards.md) — this repo’s routing model
+- [Workspace files and usage](03-Workspace%20Files%20and%20Usage.md) — workspace catalog
+- [Markdown Context Routing Optimization](04-Markdown-Context-Routing-Optimization.md) — dated optimization report
+

@@ -2,7 +2,7 @@
 
 [Agents and Cursor Rules](01-Agents-and-Cursor-Rules.md) explains the general mechanism behind `AGENTS.md`, Cursor rules, canonical documents, and commands.
 
-This file shows how this repository uses that mechanism.
+This file is the living routing model for **this repository**. Declared line-count measurements and test logs live in [Markdown Context Routing Optimization](04-Markdown-Context-Routing-Optimization.md).
 
 ---
 
@@ -15,29 +15,38 @@ The repository gives each layer one job:
 | `AGENTS.md` | Repository-wide constraints and boundaries |
 | `.cursor/rules/*.mdc` | Extra instructions for matching work |
 | `docs/standards/` and `docs/data/` | Detailed rules and reference information |
-| `.cursor/commands/` | Explicit lesson workflows |
+| `.cursor/commands/` | Explicit lesson and README workflows |
 
-The flow is:
+After `AGENTS.md`, three overlays may apply. They are siblings, not a fixed sequence:
 
 ```text
 USER REQUEST
     ↓
 AGENTS.md
-    ↓
-matching Cursor rule, when applicable
-    ↓
-required standards and project documents
+    ├── matching glob .mdc rule, when a matching path is in Agent context
+    ├── slash command, when the user invokes it (@-includes + tool-reads)
+    └── required standards and project documents (eager @ or tool-read)
     ↓
 agent performs the work
 ```
 
-A slash command adds another layer only when the user explicitly invokes that workflow.
+A slash command can run with no glob rule attached. `/new-lesson` often does that when no numbered `.py` file is in Agent context yet.
+
+---
+
+## Three routing paths
+
+| Path | Trigger | Routing authority |
+| --- | --- | --- |
+| A — Notebook commands | `/new-lesson`, `/write-lesson`, `/validate-notebook`, `/review-module` | Checklist manifests |
+| B — README command | `/write-module-readme` | Its own read list (independent of the checklist) |
+| C — Ad-hoc edit | No command; matching path in Agent context | `.mdc` glob rules → checklist or standalone list |
 
 ---
 
 ## `AGENTS.md` is the repository-wide contract
 
-The root `AGENTS.md` contains the constraints that should remain available across repository work.
+The root `AGENTS.md` contains the constraints that should remain available across repository work. Cursor and Codex agents use it. Databricks chat does not auto-load it.
 
 For this course, those include:
 
@@ -61,6 +70,8 @@ Two actions remain author-owned:
 
 Agents must not perform either action as a side effect of lesson work.
 
+A third gate also lives in `AGENTS.md`: scaffold learner notebooks only when the **Readiness precondition** in `docs/standards/notebook-authoring-checklist.md` is met.
+
 ---
 
 ## Standards own the detail
@@ -69,20 +80,22 @@ Detailed project rules live in `docs/standards/` and `docs/data/`.
 
 | File | Owns |
 | --- | --- |
-| `notebook-authoring-checklist.md` | Command-specific read manifests and notebook acceptance bars |
-| `notebook-writing.md` | Notebook structure and formatting |
-| `teaching-guidelines.md` | Pedagogy and explanation style |
-| `coding-standards.md` | Python and PySpark conventions |
-| `naming-conventions.md` | Folder, file, and notebook names |
-| `compute-validation-policy.md` | Compute selection and validation order |
-| `permissions-and-governance.md` | Azure RBAC, workspace permissions, Unity Catalog privileges, and minimum-privilege guidance |
-| `dataset-overview.md` | Schemas, join keys, and physical layout |
+| `docs/standards/notebook-authoring-checklist.md` | Command-specific read manifests and notebook acceptance bars |
+| `docs/standards/notebook-writing.md` | Notebook structure and formatting |
+| `docs/standards/teaching-guidelines.md` | Pedagogy and explanation style |
+| `docs/standards/coding-standards.md` | Python and PySpark conventions |
+| `docs/standards/naming-conventions.md` | Folder, file, and notebook names |
+| `docs/standards/readme-authoring.md` | Module README structure and design-complete definition |
+| `docs/standards/compute-validation-policy.md` | Compute selection and validation order |
+| `docs/standards/permissions-and-governance.md` | Azure RBAC, workspace permissions, Unity Catalog privileges, and minimum-privilege guidance |
+| `docs/standards/standards-authoring.md` | Meta-rules for writing standards; no lesson consumers |
+| `docs/data/dataset-overview.md` | Schemas, join keys, and physical layout |
 
 The Cursor rules and commands point to these documents instead of copying their detailed content.
 
-The checklist loads `compute-validation-policy.md` and
-`permissions-and-governance.md` only for workflows where their conditions
-apply.
+Dataset routing is **Dataset scope** in the checklist (and the same section rules on `/write-module-readme`). Agents tool-read named headings in `docs/data/dataset-overview.md`. They do not `@`-include that file whole.
+
+**Conditional reads** in the checklist load `compute-validation-policy.md` and `permissions-and-governance.md` for `/write-lesson`, `/validate-notebook`, and `/review-module` when those triggers apply. `/new-lesson` does not use that section. Module 5 setup/cleanup is Scaffold manifest item 8 (parameterization plus **Permitted author defaults**). `/write-module-readme` loads `permissions-and-governance.md` from its own list when the design needs privileges beyond basic workspace access.
 
 ---
 
@@ -110,14 +123,19 @@ For example:
 08 - Aggregations and Window Functions/06 - Running Totals and Lag and Lead.py
 ```
 
+The glob attaches when a matching path is in Agent context, not only when that file is the active editor tab.
+
 When the rule attaches during a slash command, it defers to that command's
 manifest in `notebook-authoring-checklist.md`. For an ad-hoc edit, it tells
-the agent to read the applicable scaffold or full-lesson manifest with read
-tools. This avoids eagerly loading every canonical standard for every
-notebook task.
+the agent to read the applicable Full-lesson manifest and bar, or the
+Scaffold manifest and **Scaffold contents** if the file is still a `TODO`
+skeleton. Apply the **Readiness precondition** only when creating a new
+notebook.
 
 The selected manifest also routes the agent to the target module README and
-the relevant canonical standards.
+the relevant canonical standards. Full-lesson work reads some standards as
+whole files (`notebook-writing.md`, `teaching-guidelines.md`,
+`coding-standards.md`); other sources stay heading-scoped.
 
 ### `course-authoring.mdc`
 
@@ -133,10 +151,15 @@ So it covers the repository root `README.md`, the roadmap, and numbered module R
 
 For example, `08 - Aggregations and Window Functions/README.md` matches. `vault/README.md` does not.
 
-For ad-hoc work, the rule routes the agent to `teaching-guidelines.md`,
-`naming-conventions.md`, and—when editing a module README—
-`readme-authoring.md`. During `/write-module-readme`, it defers to the
-command's scoped reads.
+For ad-hoc work (Path C), the rule routes the agent to the **whole**
+`teaching-guidelines.md` and `naming-conventions.md`. It also routes to
+`readme-authoring.md` only when editing a numbered module README. Root
+`README.md` and `COURSE_MODULES.md` do not load `readme-authoring.md`.
+
+During `/write-module-readme` (Path B), it defers to the command's scoped
+reads and must not add the ad-hoc list a second time. Root `README.md` in
+context can attach this rule during that command; the rule still defers.
+Path B reads named teaching and naming sections, not those whole files.
 
 ### `notebook-command-output.mdc`
 
@@ -165,6 +188,23 @@ Cursor may therefore attach both `learner-notebooks.mdc` and `course-authoring.m
 
 ---
 
+## How text gets into agent context
+
+| Mechanism | What it does |
+| --- | --- |
+| `AGENTS.md` | Always-on agent pointer (Cursor + Codex; not Databricks auto-load) |
+| Glob `.mdc` | Attaches when a matching path is in Agent context |
+| Apply Intelligently `.mdc` | May self-attach when the description matches; commands also `@`-include the output rule |
+| `@path` | Eager whole-file include (automatic, no agent choice) |
+| Backtick + read verb | Agent must tool-read the whole file or named headings |
+| Backtick, no read verb | Informational mention only (owner, consumer, or related file) |
+
+The surrounding sentence determines backtick meaning, not the location of the path. A backticked path with a read verb in a checklist manifest, command file, rule, or ad-hoc list is a read instruction. A backticked path that only names an owner is informational.
+
+Scoped reads are agent instructions, not mechanical enforcement. Cursor can still open a whole file.
+
+---
+
 ## What happens when editing a learner notebook
 
 Suppose this notebook is in the Agent context:
@@ -173,21 +213,23 @@ Suppose this notebook is in the Agent context:
 08 - Aggregations and Window Functions/06 - Running Totals and Lag and Lead.py
 ```
 
-The flow is:
+If a notebook command is active, `learner-notebooks.mdc` defers to that
+command's manifest. If no command is active, it uses the ad-hoc Full-lesson
+or Scaffold path.
 
 ```text
 AGENTS.md
     ↓
-learner-notebooks.mdc attaches
+learner-notebooks.mdc attaches (if a matching .py is in context)
     ↓
-agent reads the applicable command or ad-hoc manifest
+agent follows the active command manifest, or the ad-hoc checklist path
     ↓
-module README and scoped standards are opened
+module README and the manifest's standards are opened
     ↓
 agent performs the notebook work
 ```
 
-If no matching numbered `.py` file is in the Agent context, the notebook glob does not attach. `AGENTS.md` still applies.
+If no matching numbered `.py` file is in the Agent context, the notebook glob does not attach. `AGENTS.md` still applies. Creating the first notebook in an empty module can therefore run `/new-lesson` from the command and checklist alone.
 
 ---
 
@@ -200,7 +242,7 @@ AGENTS.md
     ↓
 course-authoring.mdc attaches
     ↓
-agent follows the command's scoped reads, or the ad-hoc list
+agent follows /write-module-readme's scoped reads, or the ad-hoc whole-file list
     ↓
 agent performs the documentation work
 ```
@@ -226,12 +268,31 @@ The user must explicitly invoke the workflow.
 All five commands `@`-reference `notebook-command-output.mdc`. The four
 notebook commands also `@`-reference
 `docs/standards/notebook-authoring-checklist.md`;
-`/write-module-readme` declares its own scoped reads.
+`/write-module-readme` `@`-references `docs/standards/readme-authoring.md`
+and declares its own scoped reads.
 
-The checklist's **Conditional reads** route `/write-lesson`,
-`/validate-notebook`, and `/review-module` to
-`compute-validation-policy.md` and `permissions-and-governance.md` when
-their triggers apply.
+### Path A — notebook commands (via the checklist)
+
+| Command | Apply |
+| --- | --- |
+| `/new-lesson` | Scaffold manifest + Scaffold bar. Does **not** use Conditional reads. |
+| `/write-lesson` | Full-lesson manifest + Conditional reads + Full-lesson bar |
+| `/validate-notebook` | Validation manifest + Conditional reads + Full-lesson bar |
+| `/review-module` | Module-review manifest + Conditional reads + Full-lesson spot checks |
+
+Manifest item lists stay in the checklist. Do not copy them here.
+
+Checklist consumers: those four commands, `learner-notebooks.mdc` (ad-hoc Path C), and `AGENTS.md` (pointer only).
+
+### Path B — `/write-module-readme` (independent of the checklist)
+
+| Always reads | Conditional |
+| --- | --- |
+| `@readme-authoring.md` (whole file) | Matching **Module pipeline** subsection — Modules 5–8 only |
+| Teaching-guidelines named sections: **Audience assumptions**, **Explanation style**, **Structure patterns**, **Exercise design conventions**, **Production framing** | **Supplementary: `drivers`** — only if the module uses nested driver data |
+| Naming-conventions: **Module folders** + **Notebook files** | **Unity Catalog platform reference** — only if the design creates, names, grants, or reads a UC object or Volume path |
+| `COURSE_MODULES.md` target row and table headings | `permissions-and-governance.md` — only if privileges go beyond basic workspace access |
+| **Core data model** | Earlier pipeline subsection — only if that contract is required and not repeated |
 
 ---
 
@@ -250,8 +311,11 @@ README and roadmap instructions
 Detailed rules and reference information
     → docs/standards/ and docs/data/
 
-Lesson workflows
-    → .cursor/commands/
+Notebook commands (Path A)
+    → .cursor/commands/ plus the checklist
+
+README command (Path B)
+    → /write-module-readme (own read list; not the checklist)
 ```
 
 This repository has no `alwaysApply: true` project rule and no Apply Manually project rule.

@@ -5,6 +5,7 @@ normative standard.
 
 ## Status
 
+- Living routing model: [02-How-This-Repository-Uses-Rules-and-Standards.md](02-How-This-Repository-Uses-Rules-and-Standards.md)
 - Structural routing implementation: complete in `f919c7e`
 - Safeguard follow-up: complete in the current working tree
 - Static routing assertions: 32 passed
