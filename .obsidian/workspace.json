@@ -11,10 +11,10 @@
             "id": "4aa3f24497b38af3",
             "type": "leaf",
             "state": {
-              "type": "empty",
+              "type": "graph",
               "state": {},
-              "icon": "lucide-file",
-              "title": "New tab"
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ]
@@ -163,12 +163,12 @@
               "title": "Outline"
             }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -181,8 +181,11 @@
       "bases:Create new base": false
     }
   },
-  "active": "4aa3f24497b38af3",
+  "active": "23ea3b16615d84a6",
   "lastOpenFiles": [
+    "2026-08-16.md",
+    "Untitled 1.canvas",
+    "docs/standards/notebook-authoring-checklist.md",
     "2026-08-11.md",
     "Untitled.canvas"
   ]
