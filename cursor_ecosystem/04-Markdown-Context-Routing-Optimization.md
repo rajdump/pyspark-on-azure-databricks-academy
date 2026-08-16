@@ -5,14 +5,16 @@ normative standard.
 
 ## Status
 
-- Structural routing implementation: complete
-- Static requirement-coverage review: complete
-- Behavioral scenario testing: pending
+- Structural routing implementation: complete in `f919c7e`
+- Safeguard follow-up: complete in the current working tree
+- Static routing assertions: 32 passed
+- Behavioral specification scenarios: 25 passed
+- Authenticated Cursor attachment/read-trace test: pending
 - Date: 2026-08-16
 
-The baseline is commit `48975a3`. The optimized state described here is the
-current uncommitted working tree based on that commit; record the resulting
-commit ID here after the changes are committed.
+The canonical baseline is `48975a3`, the parent of optimization commit
+`f919c7e`. The current measurements include the working-tree safeguard
+follow-up applied after that commit.
 
 ## Purpose
 
@@ -34,26 +36,37 @@ The estimates trace each command through:
 3. The notebook checklist or the command's independent routing.
 4. Required standards and canonical data documents.
 
-Each declared file is counted once. Scoped reads count only the named
-sections. Conditional compute and permissions files produce ranges because
-they do not apply to every target.
+Each declared file is counted once. Scoped reads count the named heading and
+its child headings, with overlapping ranges deduplicated. Dynamic module
+README rows, target notebooks, sibling notebooks, and roadmap rows are
+excluded because their size varies by target.
 
-These are line-based context estimates, not exact Cursor token counts.
-Cursor does not expose its internal context construction, tokenization, or
-deduplication behavior.
+The reproducible measures are source lines and characters. They are not
+Cursor token counts: Cursor does not expose its internal context
+construction, tokenization, deduplication, or pruning behavior.
 
 ## Estimated results
 
-| Command | Before | After | Estimated reduction |
-| --- | ---: | ---: | ---: |
-| `/new-lesson` | ~1,145 lines | ~630–740 lines | ~35–45% |
-| `/write-lesson` | ~1,060 lines | ~770–870 lines | ~18–27% |
-| `/validate-notebook` | ~1,050 lines | ~770–870 lines | ~17–27% |
-| `/review-module` | ~1,160 lines | ~810–900 lines | ~22–30% |
-| `/write-module-readme` | ~890 lines | ~430–630 lines | ~29–52% |
+| Command | Baseline lines | Core-profile lines | Baseline chars | Core-profile chars | Character change |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `/new-lesson` | 1,198 | 696 | 47,809 | 27,288 | -42.9% |
+| `/write-lesson` | 1,116 | 837 | 44,210 | 34,044 | -23.0% |
+| `/validate-notebook` | 1,105 | 835 | 43,551 | 33,925 | -22.1% |
+| `/review-module` | 1,213 | 879 | 48,259 | 35,817 | -25.8% |
+| `/write-module-readme` | 941 | 489 | 36,587 | 18,276 | -50.0% |
 
-Ranges vary by module, dataset sections, and whether compute or permission
-rules apply.
+The core profile uses the **Core data model** and excludes conditional
+compute and permissions reads. A Module 5 + Unity Catalog profile adds about
+91–105 scoped lines. Full conditional files add:
+
+| Conditional read | Lines | Characters |
+| --- | ---: | ---: |
+| `compute-validation-policy.md` | 80 | 3,726 |
+| `permissions-and-governance.md` | 105 | 5,012 |
+
+These results correct earlier comparisons that used a broader historical
+baseline. Against the canonical pre-optimization commit, every command's
+declared core profile is smaller, including `/review-module`.
 
 ## Changes made
 
@@ -71,7 +84,8 @@ objectives, naming, roadmap, README design, and dataset setup. It excludes
 coding standards because a scaffold contains no runnable lesson code.
 
 The Full-lesson and Validation manifests remain comprehensive for runnable
-lesson content. Compute and permissions remain conditional.
+lesson content. Their module README scope includes **Minimum privileges
+required** when present. Compute and permissions remain conditional.
 
 The Module-review manifest uses targeted sections for module-level
 consistency checks and remains lighter than validating every notebook.
@@ -100,6 +114,10 @@ safeguards remain local to their commands.
 supports ad-hoc notebook edits. `course-authoring.mdc` keeps standalone
 README routing for edits performed without a slash command.
 
+Expansion is allowed within the selected manifest's canonical sources when
+a scoped read is insufficient. It does not authorize loading another
+command's manifest.
+
 `/write-module-readme` remains independent of the notebook checklist. Its
 roadmap, teaching, naming, dataset, and permissions reads are now scoped to
 the module design being authored.
@@ -116,14 +134,18 @@ Static coverage confirms that the routing still reaches:
 - Dataset schema, path, join-key, and object-name contracts
 - Security and personal-value restrictions
 - Conditional compute and minimum-privilege rules
+- Module 5 setup/cleanup parameterization and safe author defaults
 - Module notebook sequence and leaked-evidence checks
+- Unfinished-scaffold, hidden-state, and intentional-error spot checks
 - Separation between Cursor authoring review and Databricks runtime evidence
 
-This is static coverage evidence. It does not yet prove runtime command
-behavior in deliberate edge cases.
+These safeguards passed static assertions and isolated specification
+scenarios. They do not prove Cursor's internal attachment behavior.
 
 ## Static verification completed
 
+- 32 ephemeral path, heading, manifest, inventory, boundary, and
+  forbidden-write assertions
 - `git diff --check`
 - IDE lint checks
 - File and section reference review
@@ -131,20 +153,36 @@ behavior in deliberate edge cases.
 - Confirmation that dataset, notebooks, roadmap, and validation evidence
   were not edited
 
-## Scenario testing still required
+## Behavioral specification testing completed
 
-Run the commands against deliberate cases before calling the behavioral
-validation complete:
+Twenty-five isolated scenarios passed:
 
-1. `/new-lesson` with an incomplete module README.
-2. `/new-lesson` for a `Not Started` module containing a stray notebook.
-3. `/write-lesson` with a missing scaffold and with no in-module sibling.
-4. `/validate-notebook` on a skeleton, a missing worked example, and a
-   personal-value leak.
-5. `/validate-notebook` on compute-specific and privilege-specific lessons.
-6. `/review-module` with a numbering gap, README/file mismatch, or leaked
-   validation evidence.
-7. `/write-module-readme` with a missing roadmap row and an unresolved
-   material design decision.
+- Scaffold/README routing: incomplete README, `Not Started` plus stray
+  notebook, Module 5 Notebook 99 parameterization, missing roadmap row, and
+  unresolved design.
+- Lesson writing/validation: missing scaffold and sibling fallback, skeleton
+  rejection, missing runnable demonstration, personal-value leak,
+  compute/privilege routing, teaching order, and runtime boundary.
+- Module review: numbering and README/file mismatches, leaked evidence,
+  unfinished scaffold, hidden state, intentional-error handling, dataset
+  mismatch, clean control, issues-only output, and lighter spot-check
+  boundary.
 
-Record scenario outcomes separately from Azure Databricks runtime evidence.
+Tests ran in a disposable worktree. Fixtures were removed, no commits were
+created, and course roadmap, dataset, validation evidence, and real learner
+notebooks remained unchanged.
+
+## Observed read behavior and remaining limitation
+
+The deterministic harness confirmed the intended decisions, but an
+authenticated headless Cursor CLI was unavailable. Two harness passes read
+some scoped standards in full during preflight; one respected the scoped
+reads. This does not establish how a real slash-command turn constructs
+context.
+
+Final empirical validation therefore requires fresh authenticated Cursor
+chats with controlled open files. Record which files and sections are read,
+whether glob rules attach, and whether scoped sources are systematically
+opened in full. Treat systematic whole-file expansion as an efficiency
+regression, not a correctness failure. Keep these results separate from
+Azure Databricks runtime evidence.

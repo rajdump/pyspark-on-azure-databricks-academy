@@ -133,7 +133,10 @@ So it covers the repository root `README.md`, the roadmap, and numbered module R
 
 For example, `08 - Aggregations and Window Functions/README.md` matches. `vault/README.md` does not.
 
-The rule `@`-references `teaching-guidelines.md` and `naming-conventions.md`. For module README work that needs the minimum-privilege pattern, it also points to `permissions-and-governance.md`.
+For ad-hoc work, the rule routes the agent to `teaching-guidelines.md`,
+`naming-conventions.md`, and—when editing a module README—
+`readme-authoring.md`. During `/write-module-readme`, it defers to the
+command's scoped reads.
 
 ### `notebook-command-output.mdc`
 
@@ -142,6 +145,7 @@ This rule has a description and no glob, so its mode is **Apply Intelligently**.
 Its description covers the response format for:
 
 ```text
+/write-module-readme
 /new-lesson
 /write-lesson
 /validate-notebook
@@ -150,7 +154,8 @@ Its description covers the response format for:
 
 Cursor may attach the rule when that description is relevant.
 
-All four commands also explicitly `@`-reference it. The `@` reference is explicit inclusion; it is not another rule mode.
+All five commands also explicitly `@`-reference it. The `@` reference is
+explicit inclusion; it is not another rule mode.
 
 ### When two glob rules match
 
@@ -212,18 +217,21 @@ The user must explicitly invoke the workflow.
 
 | Command | Purpose |
 | --- | --- |
+| `/write-module-readme` | Create a design-complete module README without inventing unresolved design decisions |
 | `/new-lesson` | Scaffold a skeleton notebook; do not write the full lesson |
 | `/write-lesson` | Use an existing skeleton and a sibling notebook for voice; write the full runnable lesson |
 | `/validate-notebook` | Report authoring issues only; do not write files |
 | `/review-module` | Review the whole module folder rather than one notebook |
 
-Each command `@`-references `notebook-command-output.mdc` and `docs/standards/notebook-authoring-checklist.md`.
+All five commands `@`-reference `notebook-command-output.mdc`. The four
+notebook commands also `@`-reference
+`docs/standards/notebook-authoring-checklist.md`;
+`/write-module-readme` declares its own scoped reads.
 
-`/validate-notebook` also uses `compute-validation-policy.md` and
-`permissions-and-governance.md` directly when relevant. `/review-module`
-uses `compute-validation-policy.md` directly, and reaches
-`permissions-and-governance.md` indirectly via `course-authoring.mdc`'s
-design-complete definition.
+The checklist's **Conditional reads** route `/write-lesson`,
+`/validate-notebook`, and `/review-module` to
+`compute-validation-policy.md` and `permissions-and-governance.md` when
+their triggers apply.
 
 ---
 

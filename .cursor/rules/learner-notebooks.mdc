@@ -8,13 +8,16 @@ You are editing a learner-facing Databricks notebook (`.py` source format)
 in a numbered module folder.
 
 When a notebook command is active, follow that command's manifest in
-`docs/standards/notebook-authoring-checklist.md`. Do not independently expand
-another manifest.
+`docs/standards/notebook-authoring-checklist.md`. Expand within that
+manifest's canonical sources when its scoped reads do not establish an
+answer, but do not load a different command's manifest.
 
 For an ad-hoc notebook edit with no active command, read the checklist and
 apply its **Full-lesson manifest** and **Full-lesson bar**. If the file is
 clearly still a scaffold with `TODO` placeholders and no runnable lesson
-code, apply the **Scaffold manifest** and **Scaffold bar** instead.
+code, apply the **Scaffold manifest** and **Scaffold contents** checks
+instead. Apply the **Readiness precondition** only when creating a new
+notebook.
 
 For a full lesson from a skeleton, the author should use `/write-lesson`
 (not ad-hoc chat) so every standard loads consistently. After writing,

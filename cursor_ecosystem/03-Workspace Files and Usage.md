@@ -118,6 +118,7 @@ in Databricks do not need these.
 
 | Command file | What it does |
 |---|---|
+| `write-module-readme.md` | Create a design-complete module README from the roadmap and canonical design sources |
 | `new-lesson.md` | Scaffold a skeleton notebook from the module README |
 | `write-lesson.md` | Fill a skeleton into a full lesson against the standards |
 | `validate-notebook.md` | Authoring-quality review (not Databricks runtime) |
@@ -127,7 +128,7 @@ in Databricks do not need these.
 
 | File | When it applies |
 |---|---|
-| `learner-notebooks.mdc` | Editing `NN - */*.py` notebooks — load the checklist and dataset doc |
+| `learner-notebooks.mdc` | Editing `NN - */*.py` notebooks — defer to the active manifest or route ad-hoc edits |
 | `course-authoring.mdc` | Editing root/module READMEs or `COURSE_MODULES.md` |
 | `notebook-command-output.mdc` | Keep slash-command replies short |
 

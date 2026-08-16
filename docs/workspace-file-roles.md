@@ -19,12 +19,14 @@ A reference map of every file and folder in the
 
 | File | Role |
 |------|------|
-| `notebook-authoring-checklist.md` | Readiness preconditions and authoring workflow for scaffolding learner notebooks |
+| `notebook-authoring-checklist.md` | Command-specific read manifests, readiness preconditions, and notebook acceptance bars |
 | `notebook-writing.md` | Narrative and pedagogical structure inside each notebook |
 | `coding-standards.md` | PySpark/Python style rules |
 | `naming-conventions.md` | `NN - Descriptive Title` module/notebook naming |
 | `compute-validation-policy.md` | How to select and validate compute per module |
 | `permissions-and-governance.md` | Unity Catalog privilege requirements |
+| `readme-authoring.md` | Module README structure and design-complete definition |
+| `standards-authoring.md` | Structure, language, and cross-reference conventions for standards |
 | `teaching-guidelines.md` | Pedagogical principles and tone |
 
 ---
@@ -72,7 +74,7 @@ Each module folder contains:
 | File | Role |
 |------|------|
 | `course-authoring.mdc` | Rule for general course authoring context |
-| `learner-notebooks.mdc` | Rule for learner notebook scaffolding |
+| `learner-notebooks.mdc` | Rule for command-manifest routing and ad-hoc learner notebook edits |
 | `notebook-command-output.mdc` | Rule for handling notebook command output |
 
 Each `.mdc` file declares its own attachment behavior in frontmatter.
@@ -81,6 +83,7 @@ Each `.mdc` file declares its own attachment behavior in frontmatter.
 
 | File | Role |
 |------|------|
+| `write-module-readme.md` | Slash command to create a design-complete module README |
 | `new-lesson.md` | Slash command to scaffold a new lesson |
 | `write-lesson.md` | Slash command to author lesson content |
 | `validate-notebook.md` | Slash command to validate a notebook |

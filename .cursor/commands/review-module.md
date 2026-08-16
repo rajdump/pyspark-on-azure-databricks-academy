@@ -11,7 +11,8 @@ Full-lesson spot checks.
 Given a module folder (ask which one if not obvious from context), check:
 
 1. **README completeness** — the module's `README.md` meets the
-   manifest's design-complete definition. It must not duplicate the full
+   **Design-complete definition** in
+   `docs/standards/readme-authoring.md`. It must not duplicate the full
    course roadmap, global standards, or Cursor instructions.
 2. **Naming** — folder and notebook names use exact zero-padding and Title
    Case.
@@ -24,3 +25,6 @@ Given a module folder (ask which one if not obvious from context), check:
    the manifest's scoped dataset contract.
 6. **No leaked evidence** — validation results, tokens, workspace URLs, or
    personal identifiers do not appear anywhere in the module folder.
+7. **No unfinished scaffolds** — if a notebook still has `TODO` placeholders
+   or no runnable examples, report that `/write-lesson` must run before the
+   module can pass review.

@@ -26,12 +26,14 @@ bars and the command-specific read manifests. Direct readers are
 - An `@path` means read the whole file.
 - A backticked path followed by named headings is a scoped read. Locate those
   headings with search/read tools and read only those sections. Cursor has no
-  section-level `@path` syntax.
+  section-level `@path` syntax. Do not preflight the whole file.
 - Read the target notebook when writing or validating it. Read the relevant
   notebooks in the target module when reviewing a module.
 - Never infer a missing schema, path, join key, course object name, or README
-  design decision from a scoped read. Expand to the canonical file or ask the
-  author when the named sections do not establish the answer.
+  design decision from a scoped read. Expand within the selected manifest's
+  canonical sources or ask the author when the named sections do not
+  establish the answer. Expand only as far as the missing fact requires, and
+  do not switch to a different command's manifest.
 
 ### Dataset scope
 
@@ -67,9 +69,14 @@ Read:
    `docs/standards/naming-conventions.md`.
 7. The sections selected by **Dataset scope** when the notebook uses course
    data or persistent course objects.
+8. For Module 5 setup or cleanup notebooks that configure learner-specific
+   storage, the **Module 5 parameterization** section in
+   `docs/standards/permissions-and-governance.md` and **Permitted author
+   defaults** in `docs/standards/coding-standards.md`.
 
 Coding standards are not part of this manifest because a scaffold contains
-no runnable lesson code.
+no runnable lesson code; item 8 is a scoped exception for safe setup
+placeholders.
 
 ### Full-lesson manifest (`/write-lesson`)
 
@@ -77,7 +84,7 @@ Read:
 
 1. The target module README's **Notebooks** row for the target and its
    **Prerequisites**, **Dataset**, and **Paths and outputs** sections when
-   present.
+   present, plus **Minimum privileges required** when present.
 2. The full `docs/standards/notebook-writing.md`.
 3. The full `docs/standards/teaching-guidelines.md`.
 4. The full `docs/standards/coding-standards.md`.
@@ -106,14 +113,15 @@ Read:
 3. The full `docs/standards/readme-authoring.md`.
 4. The **Module folders** and **Notebook files** sections in
    `docs/standards/naming-conventions.md`.
-5. The **Format**, **Notebook-level structure**, **Code cell conventions**,
-   **Output display convention**, and **What must never appear in a
-   notebook** sections in `docs/standards/notebook-writing.md`.
+5. The **Format**, **Notebook-level structure**, **Notebook dependencies and
+   execution state**, **Code cell conventions**, **Output display
+   convention**, and **What must never appear in a notebook** sections in
+   `docs/standards/notebook-writing.md`.
 6. The **Explanation style**, **Structure patterns**, and **Production
    framing** sections in `docs/standards/teaching-guidelines.md`.
-7. The **Style baseline**, **PySpark-specific conventions**, **Security and
-   portability**, and **Permitted author defaults** sections in
-   `docs/standards/coding-standards.md`.
+7. The **Style baseline**, **PySpark-specific conventions**, **Error handling
+   in teaching notebooks**, **Security and portability**, and **Permitted
+   author defaults** sections in `docs/standards/coding-standards.md`.
 8. The **Python identifiers** section in
    `docs/standards/naming-conventions.md`.
 9. The sections selected by **Dataset scope**.
@@ -124,7 +132,8 @@ check, not a substitute for the Validation manifest on every notebook.
 
 ### Conditional reads
 
-These do not apply to a structure-only scaffold:
+Except for the scoped Module 5 setup/cleanup exception in the Scaffold
+manifest, these do not apply to a structure-only scaffold:
 
 - Read the full `docs/standards/compute-validation-policy.md` when a full
   lesson or review assumes a compute type, access mode, cluster
