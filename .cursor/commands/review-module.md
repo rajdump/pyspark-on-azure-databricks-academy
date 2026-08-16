@@ -1,5 +1,5 @@
 Review an entire module folder for completeness and consistency. This is an
-authoring-quality check in Cursor, not runtime validation. Never edit files,
+authoring-quality review in Cursor, not runtime validation. Never edit files,
 change `COURSE_MODULES.md` status, or produce or edit runtime validation
 evidence in `docs/validation/`.
 
@@ -12,18 +12,16 @@ reads.
 
 Steps:
 
-1. Determine the target module folder (path, module number, or title). Prefer
-   the open module folder or a notebook path when obvious. If not obvious
-   from open files or recent context, ask once — do not guess from unrelated
-   context.
+1. Resolve the target module through **Command target selection**. If open
+   files or recent context do not establish one unique match, ask once.
 2. Load the **Module-review manifest** and applicable **Conditional reads**.
 3. Apply the **Module-review bar** in the checklist. Cite `[file]` or
    `[file ~lines]` for every issue.
 4. Reply **issues only** per the output rule. Do not edit files.
 
-**Boundary.** Per-notebook **Full-lesson bar** and **Validation gate checks**
-belong to `/validate-notebook`, not this command. Runtime validation belongs
-in Azure Databricks per `docs/standards/compute-validation-policy.md`.
+Follow the checklist's **Command boundaries**. Runtime validation belongs in
+Azure Databricks per `docs/standards/compute-validation-policy.md`.
 
-**Workflow note.** Run after each notebook in the module passes
-`/validate-notebook`; this command does not replace per-notebook validation.
+**Workflow note.** Run once after every planned notebook in the module passes
+`/validate-notebook`. Its notebook spot checks are intentionally lighter and
+do not replace per-notebook authoring-quality review.

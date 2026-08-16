@@ -9,30 +9,23 @@ as a substitute for the manifest reads.
 
 Steps:
 
-1. Determine the target notebook. If only the module is named, select the
-   first **Notebooks table** row whose `.py` file exists but is still a
-   scaffold per **Scaffold vs full lesson** in the checklist. If the author
-   names a specific notebook, use that row. If no scaffold exists, stop and
-   report: all full → run `/validate-notebook`; none exist → run
-   `/new-lesson`. If not obvious from open files or recent context, ask once
-   which module and notebook number (or file path).
-2. If the file does not exist, stop and tell the author to run `/new-lesson`
-   first.
-3. **Scaffold guard.** If the file is still a scaffold (per **Scaffold vs
-   full lesson**), continue. If it is already a full lesson, stop unless the
-   author explicitly asked to replace content. Exercise `# TODO` markers in
-   an otherwise complete lesson are expected — do not treat those as a
-   scaffold.
-4. Match the filename to the module README's **Notebooks table** row per
-   `docs/standards/naming-conventions.md`; the **Focus cell** is the topic
+1. Resolve the module and notebook through **Command target selection**. If
+   no scaffold exists, report: all planned files are full lessons →
+   `/validate-notebook`; no planned files exist → `/new-lesson`.
+2. Apply the target-selection and content-state guards. Stop on a missing
+   file, missing prior file, unfinished prior notebook, or already-full
+   target unless the author explicitly asked to replace that target.
+   Exercise `# TODO` markers in an otherwise complete lesson are expected.
+3. Match the filename to the module README's Notebooks table row per
+   `docs/standards/naming-conventions.md`; its **`Focus` entry** is the topic
    source of truth.
-5. Load the **Full-lesson manifest** and applicable **Conditional reads**;
-   apply the completed-sibling rule from manifest item 8.
-6. Replace scaffold content with a **full lesson** that satisfies the
+4. Read the sources selected by the **Full-lesson manifest** and applicable
+   **Conditional reads**, including the completed sibling from manifest
+   item 8.
+5. Replace scaffold content with a **full lesson** that satisfies the
    **Full-lesson bar**. Use only schema, path, and object details from the
    manifest's canonical sources. Never change `COURSE_MODULES.md` status or
    edit `docs/validation/` as part of this command.
-7. Self-check against the **Full-lesson bar** and **Validation gate checks**.
+6. Self-check against the **Full-lesson bar** and **Validation gate checks**.
 
-**Boundary.** Module-level sequence, naming, **Design-complete definition**,
-and folder-wide evidence checks belong to `/review-module`, not this command.
+Follow the checklist's **Command boundaries**.

@@ -60,7 +60,7 @@ Every learner notebook follows this shape:
 2. **Setup cell(s)** — imports, and reads of the shared dataset where
    relevant (see `docs/data/dataset-overview.md`).
 3. **Planned concept sections** — section order follows the module README's
-   Notebooks table Focus cell. Split unrelated concept paths into separate
+   Notebooks table `Focus` entry. Split unrelated concept paths into separate
    planned notebooks.
 4. **Examples and exercises** — their teaching order follows the
    **Structure patterns** section in

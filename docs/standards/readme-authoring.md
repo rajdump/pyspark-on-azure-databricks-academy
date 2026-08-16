@@ -36,7 +36,9 @@ as a section.
 A module README must include:
 
 1. **Purpose** — the module's concise role in the course.
-2. **Learning objectives** — observable learner outcomes.
+2. **Learning objectives** — observable learner outcomes written for the
+   audience and production framing in
+   `docs/standards/teaching-guidelines.md`.
 3. **Prerequisites** — prior modules, concepts, tables, or setup required.
 4. **Dataset** — inputs, outputs, paths, schemas, and dependencies.
    Every concrete fact must come from the canonical sources above.
@@ -44,8 +46,8 @@ A module README must include:
    contracts need explanation. Use `## Paths and outputs` when the
    module reads or creates persistent locations or objects. Use both
    when both apply.
-5. **Notebooks** — the ordered table below. Record each notebook's
-   exercise in the Focus cell, or in a dedicated section when the
+5. **Notebooks** — the ordered table below. Record each notebook's exercise
+   expectation in the `Focus` entry, or in a dedicated section when the
    module needs extra detail.
 6. **Minimum privileges required** — follow **Minimum-privilege
    documentation pattern** in
@@ -64,7 +66,7 @@ Order rows by zero-padded notebook number. Required columns:
 ```
 
 Add a `Reads` column when input dependencies need to be explicit. Each
-row maps to one planned `NN - Descriptive Title.py` file. The Focus cell
+row maps to one planned `NN - Descriptive Title.py` file. The `Focus` entry
 is the source of truth for topics, subtopics, comparisons, gotchas, and
 exercise scope.
 
@@ -73,8 +75,9 @@ exercise scope.
 A module README is design-complete only when all of these pass:
 
 - Every applicable item in **Required structure** is present.
-- Every planned notebook has a numbered row with a final title, Focus
-  scope, and exercise expectation.
+- Every planned notebook has a numbered row with a final title, `Focus`
+  scope, and exercise expectation. State explicitly when an exercise does
+  not apply to a setup, cleanup, utility, or write-only notebook.
 - Every concrete fact in the README comes from the canonical sources
   above. Do not guess or invent them.
 - No `TODO` placeholder remains.

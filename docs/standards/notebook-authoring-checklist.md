@@ -1,11 +1,11 @@
 # Notebook Authoring Checklist
 
-This file tells Cursor which sources to read for notebook work and what must
-be true at two stages:
+This file tells Cursor which sources to read for learner-notebook work and
+what must be true at two content stages:
 
 - The **Scaffold bar** defines a valid notebook scaffold.
-- The **Full-lesson bar** defines a complete lesson ready for authoring
-  validation.
+- The **Full-lesson bar** defines a runnable lesson ready for
+  authoring-quality review with `/validate-notebook`.
 
 A **bar** is a set of pass criteria. This file is the canonical owner of both
 bars and the command-specific read manifests. Direct readers are
@@ -17,9 +17,9 @@ bars and the command-specific read manifests. Direct readers are
 | Command | Purpose | Apply from this checklist |
 |---|---|---|
 | `/new-lesson` | Create a scaffold only | Scaffold manifest and Scaffold bar |
-| `/write-lesson` | Turn a scaffold into a full runnable lesson | Full-lesson manifest, Full-lesson bar, and Validation gate checks |
-| `/validate-notebook` | Review one full lesson without editing it | Validation manifest, Full-lesson bar, and Validation gate checks |
-| `/review-module` | Review module-wide consistency without editing files | Module-review manifest and Module-review bar |
+| `/write-lesson` | Turn a scaffold into a full runnable lesson | Full-lesson manifest, applicable Conditional reads, Full-lesson bar, and Validation gate checks |
+| `/validate-notebook` | Review one full lesson without editing it | Validation manifest, applicable Conditional reads, Full-lesson bar, and Validation gate checks |
+| `/review-module` | Review module-wide consistency without editing files | Module-review manifest, applicable Conditional reads, and Module-review bar |
 
 ## How to read a manifest
 
@@ -55,12 +55,45 @@ Expand to adjacent pipeline subsections when the target consumes an earlier
 module's derived output and its contract is not repeated in the matching
 subsection.
 
-### Scaffold vs full lesson
+### Artifact and content-state terminology
 
-- **Scaffold:** structure placeholders; no runnable teaching demonstrations;
-  empty or `# TODO` teaching cells only.
-- **Full lesson:** runnable teaching demonstrations for planned concepts;
-  exercise `# TODO` markers are allowed.
+- **Learner notebook:** the Databricks source `.py` artifact in a numbered
+  module folder.
+- **Scaffold:** a learner notebook in a structure-only state; it contains
+  placeholders and no runnable teaching demonstrations. Teaching cells are
+  empty or contain `# TODO`.
+- **Full lesson:** a learner notebook with runnable teaching demonstrations
+  for its planned concepts. Exercise `# TODO` markers are allowed.
+- **`Focus` entry:** the entry in a module README's Notebooks table that owns
+  the notebook's topics, subtopics, comparisons, gotchas, and exercise
+  expectation. This is not a Databricks notebook cell.
+
+Use **scaffold**, not *skeleton*. Use **authoring-quality review** for Cursor
+review and **runtime validation** for execution in Azure Databricks.
+
+### Command target selection
+
+- Resolve a module from an existing module path, its module number, or its
+  exact roadmap title. Do not use fuzzy or substring title matching. Stop and
+  ask when the input has no unique match.
+- An explicitly named notebook must map to exactly one Notebooks table row
+  by number, title, or full path. Stop on an unplanned or ambiguous target.
+- `/new-lesson` selects the first table row whose planned file is missing. An
+  explicit later row is allowed only when every prior row has a file.
+- `/write-lesson` selects the first table row whose file exists and is still
+  a scaffold. For an explicit target, the file must exist. Every prior
+  in-module row must have a file, and the immediately prior notebook must be
+  a full lesson.
+- `/validate-notebook` selects the last table row whose file exists and is a
+  full lesson. For an explicit target, the file must exist; the Validation
+  guards determine its content state. Every prior in-module row must have a
+  file, and the immediately prior notebook must be a full lesson.
+- `/review-module` resolves the module only; it does not select an individual
+  notebook.
+
+For Notebook 01, the Full-lesson and Validation manifests use the last
+numbered notebook of the previous module when it exists and is a full lesson.
+If that notebook is still a scaffold, stop and report the gap.
 
 ## Command read manifests
 
@@ -92,7 +125,7 @@ placeholders.
 
 Read:
 
-1. The target module README's full **Notebooks** table (for the target row,
+1. The target module README's full **Notebooks** table (including the target row,
    the next row when present, and per-row **Reads** when that column exists),
    plus **Prerequisites**, **Dataset**, and **Paths and outputs** when
    present, and **Minimum privileges required** when present.
@@ -105,28 +138,27 @@ Read:
    `docs/standards/naming-conventions.md`, plus **Unity Catalog objects**
    when the lesson names course objects.
 7. The sections selected by **Dataset scope**.
-8. One completed sibling notebook for voice and cell structure: prefer the
-   prior numbered notebook in the same module when that notebook is a
-   completed lesson (not a scaffold); if the prior in-module notebook is still
-   a scaffold, stop and tell the author to finish it first. For Notebook 01
-   with no prior sibling, read the last numbered notebook of the previous
-   module.
+8. One completed sibling notebook for voice and cell structure: use the
+   immediately prior in-module notebook after **Command target selection**
+   confirms that it exists and is a full lesson. For Notebook 01, read the
+   last numbered notebook of the previous module when one exists.
 
 Also apply **Conditional reads** below.
 
 ### Validation manifest (`/validate-notebook`)
 
-Read the Full-lesson manifest, including a completed sibling for voice
-comparison.
+Resolve the target through **Command target selection**, then read the
+Full-lesson manifest, including the completed sibling for voice comparison.
 
 **Validation guards** (stop before reviewing):
 
 - The target `.py` file exists; if not, tell the author to run `/new-lesson`.
-- The target is a **full lesson** per **Scaffold vs full lesson**; if still a
-  scaffold, tell the author to run `/write-lesson`. Exercise `# TODO` markers
-  in an otherwise complete lesson are expected.
-- Apply Full-lesson manifest item 8 for the completed sibling; if the prior
-  in-module notebook is still a scaffold, stop and report that gap.
+- The target is a **full lesson** per **Artifact and content-state
+  terminology**. If it is still a scaffold, tell the author to run
+  `/write-lesson`. Exercise `# TODO` markers in an otherwise complete lesson
+  are expected.
+- Command target selection confirmed that every prior in-module file exists
+  and that the immediately prior notebook is a full lesson.
 
 Then review the target notebook against the **Full-lesson bar** and
 **Validation gate checks**. Validation is read-only and does not produce
@@ -181,21 +213,20 @@ Before creating a notebook, check both conditions:
   definition** in `docs/standards/readme-authoring.md`.
 
 If either check fails, `/new-lesson` stops and reports the gap. It does not
-create the notebook or change the module status. When readiness fails because
-roadmap status is not `Started`, also check the module folder for existing
-`.py` files and report a `Not Started` plus stray-notebook inconsistency when
-present.
+create the notebook or change the module status. A missing or incomplete
+module design routes to `/write-module-readme`; the author still owns the
+roadmap status change. When roadmap status is not `Started`, also check the
+module folder for existing `.py` files and report a
+**roadmap/filesystem inconsistency** when present.
 
 ### Scaffold contents
 
-Determine the target notebook from the module README's **Notebooks table** in
-row order: select the **first row** whose `NN - Title.py` file does not yet
-exist (including non-contiguous numbers such as `99` when planned). If the
-author names a specific notebook, use that row only when every prior row
-already has a file. Build the filename from that row's `#` and `Notebook`
-columns per `docs/standards/naming-conventions.md`. Stop without creating a
-file if every planned row already has a matching file, or if the named or
-selected target file already exists.
+Select the target through **Command target selection** (including
+non-contiguous numbers such as `99` when planned). Build the filename from
+that row's `#` and `Notebook` columns per
+`docs/standards/naming-conventions.md`. Stop without creating a file if every
+planned row already has a matching file, or if the named or selected target
+file already exists.
 
 - **Filesystem cross-check:** Report (do not block on) any numbered `.py`
   files on disk that are not listed in the README Notebooks table.
@@ -205,12 +236,12 @@ when all checks below pass:
 
 - **Format:** It uses the required Databricks source format.
 - **Planned structure:** Its section headings match the topics and subtopics
-  in that row's **Focus cell**.
+  in that row's **`Focus` entry**.
 - **Placeholders:** It includes objectives, prerequisites, setup, summary,
   and a next-notebook pointer placeholder. Include an exercise placeholder
-  only when the Focus cell plans an exercise or hands-on task; for
+  only when the `Focus` entry plans an exercise or hands-on task; for
   write-only, utility, or no-exercise notebooks, use ordered concept-section
-  placeholders per the Focus cell instead.
+  placeholders per the `Focus` entry instead.
 - **Dataset setup:** If the notebook will use the shared dataset, setup
   comments name the correct tables and schema or path from
   `docs/data/dataset-overview.md` without inventing columns.
@@ -226,17 +257,17 @@ This bar summarizes the final checks; the linked standards still apply. A
 lesson is ready for `/validate-notebook` only when its manifest and
 conditional reads are followed and all checks below pass:
 
-- **Planned coverage:** The module README's **Notebooks table Focus cell**
+- **Planned coverage:** The module README's **Notebooks table `Focus` entry**
   for the target row is fully implemented. Planned topics, subtopics,
   comparisons, and gotchas have runnable demonstrations where behavior can
-  be shown. When the Focus cell plans an exercise or hands-on task, the
+  be shown. When the `Focus` entry plans an exercise or hands-on task, the
   exercise matches that scope. Write-only, utility, or no-exercise notebooks
-  implement the Focus cell through ordered concept sections and writes
+  implement the `Focus` entry through ordered concept sections and writes
   instead of a learner exercise.
 - **Teaching order:** Worked examples come before any exercise section. When
   an exercise is planned, it applies the demonstrated pattern to slightly
   different data. Write-only and utility notebooks follow ordered concept
-  sections per the Focus cell.
+  sections per the `Focus` entry.
 - **Required course structure:** The notebook includes objectives, setup,
   incremental teaching cells, a summary, and a next-notebook pointer.
 - **Voice consistency (reviewer judgment):** The explanation style and
@@ -303,22 +334,35 @@ apply. A module passes `/review-module` only when all checks below pass:
 - **No leaked evidence:** Validation results, tokens, workspace URLs, or
   personal identifiers do not appear anywhere in the module folder.
 - **No unfinished scaffolds:** No notebook is still a scaffold per
-  **Scaffold vs full lesson**; report that `/write-lesson` must run first.
+  **Artifact and content-state terminology**; report that `/write-lesson`
+  must run first.
 - **README minimum privileges:** When any notebook in the module uses Unity
   Catalog objects beyond default learner access, the module `README.md`
   documents them under **Minimum privileges required**.
+
+## Command boundaries
+
+- `/new-lesson` creates a scaffold only.
+- `/write-lesson` writes one full lesson and self-checks it; it does not
+  replace the independent `/validate-notebook` authoring-quality review.
+- `/validate-notebook` applies per-notebook authoring checks without editing.
+- `/review-module` applies the Module-review bar after all planned notebooks
+  pass `/validate-notebook`; it does not repeat each Full-lesson review.
+- Runtime validation and author-recorded evidence remain outside all four
+  commands.
 
 ## Workflow and validation boundary
 
 ```text
 /new-lesson → /write-lesson → /validate-notebook → fix and re-run if needed
+→ repeat for every planned notebook → /review-module
 → commit and push to GitHub → pull into the Databricks Git folder
-→ author validates the notebook in Azure Databricks
+→ author validates the notebooks in Azure Databricks
 ```
 
-After every notebook passes `/validate-notebook`, run `/review-module` as a
-separate, lighter check for cross-notebook consistency. It does not replace
-validating each notebook.
+Once every planned notebook passes `/validate-notebook`, run `/review-module`
+once as a separate, lighter check for cross-notebook consistency. It does not
+replace validating each notebook.
 
 The Scaffold and Full-lesson bars cover authoring quality only. Runtime
 validation is separate and follows

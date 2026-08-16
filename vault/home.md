@@ -112,11 +112,12 @@ flowchart LR
     V --> E[Author records evidence]
 ```
 
-1. `/new-lesson` — create a notebook skeleton
+1. `/new-lesson` — create a notebook scaffold
 2. `/write-lesson` — write the complete runnable lesson
 3. `/validate-notebook` — perform an authoring-quality review
-4. Run the notebook in Azure Databricks
-5. The author records results under `docs/validation/`
+4. Repeat for every planned notebook, then run `/review-module`
+5. Run the notebooks in Azure Databricks
+6. The author records results under `docs/validation/`
 
 Local `uv`, `ruff`, `mypy`, and `pytest` do not execute Spark. Spark, Delta,
 and Unity Catalog behavior is validated only in Azure Databricks.

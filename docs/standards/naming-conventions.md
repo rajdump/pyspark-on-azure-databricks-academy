@@ -35,7 +35,7 @@ rules as folders.
 ```
 01 - Azure Databricks and Spark Foundations/
 ├── README.md
-├── 01 - Introduction to Azure Databricks.py
+├── 01 - Introduction to Azure Databricks and the Workspace.py
 └── 02 - Apache Spark Architecture and PySpark.py
 ```
 

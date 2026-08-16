@@ -3,19 +3,22 @@
 Author-only architecture report. This is not a learner notebook or a
 normative standard.
 
-## Status
+## Historical snapshot status
+
+This report records the routing state measured on 2026-08-16. It is not a
+description of the current working tree after later workflow changes.
 
 - Living routing model: [02-How-This-Repository-Uses-Rules-and-Standards.md](02-How-This-Repository-Uses-Rules-and-Standards.md)
 - Structural routing implementation: complete in `f919c7e`
-- Safeguard follow-up: complete in the current working tree
+- Safeguard follow-up: complete in the measured working-tree snapshot
 - Static routing assertions: 32 passed
 - Behavioral specification scenarios: 25 passed
 - Authenticated Cursor attachment/read-trace test: pending
 - Date: 2026-08-16
 
 The canonical baseline is `48975a3`, the parent of optimization commit
-`f919c7e`. The current measurements include the working-tree safeguard
-follow-up applied after that commit.
+`f919c7e`. The measurements include the working-tree safeguard follow-up
+that existed when this snapshot was recorded.
 
 ## Purpose
 
@@ -131,7 +134,7 @@ Static coverage confirms that the routing still reaches:
 
 - Module `Started` status and design-complete README checks
 - Roadmap/filesystem inconsistency reporting
-- Skeleton-only and full-lesson boundaries
+- Scaffold-only and full-lesson boundaries
 - Worked-example and exercise ordering
 - Sibling-notebook voice and idiom comparison
 - Dataset schema, path, join-key, and object-name contracts
@@ -163,7 +166,7 @@ Twenty-five isolated scenarios passed:
 - Scaffold/README routing: incomplete README, `Not Started` plus stray
   notebook, Module 5 Notebook 99 parameterization, missing roadmap row, and
   unresolved design.
-- Lesson writing/validation: missing scaffold and sibling fallback, skeleton
+- Lesson writing/validation: missing scaffold and sibling fallback, scaffold
   rejection, missing runnable demonstration, personal-value leak,
   compute/privilege routing, teaching order, and runtime boundary.
 - Module review: numbering and README/file mismatches, leaked evidence,
@@ -173,7 +176,8 @@ Twenty-five isolated scenarios passed:
 
 Tests ran in a disposable worktree. Fixtures were removed, no commits were
 created, and course roadmap, dataset, validation evidence, and real learner
-notebooks remained unchanged.
+notebooks remained unchanged. No reusable verification harness from these
+tests is committed in this repository.
 
 ## Observed read behavior and remaining limitation
 

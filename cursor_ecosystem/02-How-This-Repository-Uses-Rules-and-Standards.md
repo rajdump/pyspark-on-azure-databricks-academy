@@ -93,7 +93,10 @@ Detailed project rules live in `docs/standards/` and `docs/data/`.
 
 The Cursor rules and commands point to these documents instead of copying their detailed content.
 
-Dataset routing is **Dataset scope** in the checklist (and the same section rules on `/write-module-readme`). Agents tool-read named headings in `docs/data/dataset-overview.md`. They do not `@`-include that file whole.
+Dataset routing for notebook commands is **Dataset scope** in the checklist.
+`/write-module-readme` selects the applicable dataset headings from its own
+read list. Agents tool-read named headings in `docs/data/dataset-overview.md`;
+they do not `@`-include that file whole.
 
 **Conditional reads** in the checklist load `compute-validation-policy.md` and `permissions-and-governance.md` for `/write-lesson`, `/validate-notebook`, and `/review-module` when those triggers apply. `/new-lesson` does not use that section. Module 5 setup/cleanup is Scaffold manifest item 8 (parameterization plus **Permitted author defaults**). `/write-module-readme` loads `permissions-and-governance.md` from its own list when the design needs privileges beyond basic workspace access.
 
@@ -128,8 +131,8 @@ The glob attaches when a matching path is in Agent context, not only when that f
 When the rule attaches during a slash command, it defers to that command's
 manifest in `notebook-authoring-checklist.md`. For an ad-hoc edit, it tells
 the agent to read the applicable Full-lesson manifest and bar, or the
-Scaffold manifest and **Scaffold contents** if the file is still a `TODO`
-skeleton. Apply the **Readiness precondition** only when creating a new
+Scaffold manifest and **Scaffold contents** if the file is still a
+scaffold. Apply the **Readiness precondition** only when creating a new
 notebook.
 
 The selected manifest also routes the agent to the target module README and
@@ -151,10 +154,12 @@ So it covers the repository root `README.md`, the roadmap, and numbered module R
 
 For example, `08 - Aggregations and Window Functions/README.md` matches. `vault/README.md` does not.
 
-For ad-hoc work (Path C), the rule routes the agent to the **whole**
-`teaching-guidelines.md` and `naming-conventions.md`. It also routes to
-`readme-authoring.md` only when editing a numbered module README. Root
-`README.md` and `COURSE_MODULES.md` do not load `readme-authoring.md`.
+For ad-hoc work (Path C), the rule routes numbered module READMEs to
+`readme-authoring.md` and its canonical sources. It loads the **Module
+folders** and **Notebook files** naming sections when needed, and the
+**Audience assumptions** and **Production framing** teaching sections when
+editing Learning objectives. Root `README.md` and `COURSE_MODULES.md` do not
+load `readme-authoring.md`.
 
 During `/write-module-readme` (Path B), it defers to the command's scoped
 reads and must not add the ad-hoc list a second time. Root `README.md` in
@@ -260,8 +265,8 @@ The user must explicitly invoke the workflow.
 | Command | Purpose |
 | --- | --- |
 | `/write-module-readme` | Create a design-complete module README without inventing unresolved design decisions |
-| `/new-lesson` | Scaffold a skeleton notebook; do not write the full lesson |
-| `/write-lesson` | Use an existing skeleton and a sibling notebook for voice; write the full runnable lesson |
+| `/new-lesson` | Create a notebook scaffold; do not write the full lesson |
+| `/write-lesson` | Use an existing scaffold and a sibling notebook for voice; write the full runnable lesson |
 | `/validate-notebook` | Report authoring issues only; do not write files |
 | `/review-module` | Review the whole module folder rather than one notebook |
 
@@ -276,9 +281,9 @@ and declares its own scoped reads.
 | Command | Apply |
 | --- | --- |
 | `/new-lesson` | Scaffold manifest + Scaffold bar. Does **not** use Conditional reads. |
-| `/write-lesson` | Full-lesson manifest + Conditional reads + Full-lesson bar |
-| `/validate-notebook` | Validation manifest + Conditional reads + Full-lesson bar |
-| `/review-module` | Module-review manifest + Conditional reads + Full-lesson spot checks |
+| `/write-lesson` | Full-lesson manifest + applicable Conditional reads + Full-lesson bar + Validation gate checks |
+| `/validate-notebook` | Validation manifest + applicable Conditional reads + Full-lesson bar + Validation gate checks |
+| `/review-module` | Module-review manifest + applicable Conditional reads + Module-review bar |
 
 Manifest item lists stay in the checklist. Do not copy them here.
 
@@ -288,11 +293,11 @@ Checklist consumers: those four commands, `learner-notebooks.mdc` (ad-hoc Path C
 
 | Always reads | Conditional |
 | --- | --- |
-| `@readme-authoring.md` (whole file) | Matching **Module pipeline** subsection — Modules 5–8 only |
-| Teaching-guidelines named sections: **Audience assumptions**, **Explanation style**, **Structure patterns**, **Exercise design conventions**, **Production framing** | **Supplementary: `drivers`** — only if the module uses nested driver data |
-| Naming-conventions: **Module folders** + **Notebook files** | **Unity Catalog platform reference** — only if the design creates, names, grants, or reads a UC object or Volume path |
-| `COURSE_MODULES.md` target row and table headings | `permissions-and-governance.md` — only if privileges go beyond basic workspace access |
-| **Core data model** | Earlier pipeline subsection — only if that contract is required and not repeated |
+| `@readme-authoring.md` (whole file) | `permissions-and-governance.md` — only if privileges go beyond basic workspace access |
+| Teaching-guidelines named sections: **Audience assumptions**, **Production framing** | |
+| Naming-conventions: **Module folders** + **Notebook files** | |
+| `COURSE_MODULES.md` target row and table headings | |
+| Applicable headings in `dataset-overview.md` | |
 
 ---
 

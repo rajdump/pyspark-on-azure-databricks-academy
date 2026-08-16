@@ -8,21 +8,15 @@ chat as a substitute for the manifest reads.
 
 Steps:
 
-1. Determine the target module folder (path, module number, or title). If
-   it's not obvious from open files or recent conversation, ask once — do
-   not guess from unrelated context.
+1. Resolve the target module through **Command target selection**. If open
+   files or recent conversation do not establish one unique match, ask once.
 2. Apply the checklist's **Readiness precondition**. If either check fails,
-   stop and report the gap; do not create a file. When status is not
-   `Started`, also report any stray `.py` files on disk as a
-   roadmap/filesystem inconsistency. Never change `COURSE_MODULES.md`
+   stop and report its prescribed remediation; do not create a file. Report
+   any `.py` files found when status is not `Started` as a
+   **roadmap/filesystem inconsistency**. Never change `COURSE_MODULES.md`
    status as part of this command.
-3. Select the notebook from the README **Notebooks table**: by default, the
-   first row in table order whose `NN - Title.py` file is missing. If the
-   author names a specific notebook, use that row only when every prior row
-   already has a file; otherwise stop and report the gap. Build the filename
-   from that row's `#` and `Notebook` columns per
-   `docs/standards/naming-conventions.md`. Stop if every planned row already
-   has a file, or if the named or selected target file already exists.
+3. Select and name the notebook through **Command target selection** and
+   **Scaffold contents**. Stop on any target-selection guard.
 4. Apply the **Filesystem cross-check** in **Scaffold contents** — report;
    do not block on mismatches.
 5. Create the correctly named Databricks source `.py` file and populate a

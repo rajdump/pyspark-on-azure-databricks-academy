@@ -55,7 +55,7 @@ validated in Azure Databricks.
 
 ## Cursor
 
-Lesson workflows live in `.cursor/commands/`.
+Module-design and lesson workflows live in `.cursor/commands/`.
 
 Each `.cursor/rules/*.mdc` file declares its own attachment behavior in
 frontmatter. Do not assume a rule or the standards it references are already

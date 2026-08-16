@@ -6,12 +6,16 @@ Before creating the module folder or README, read:
 
 - The column headings and the row for the named phase and module in `COURSE_MODULES.md`
 - @docs/standards/readme-authoring.md
+- **Audience assumptions** and **Production framing** in
+  `docs/standards/teaching-guidelines.md`
 - **Module folders** and **Notebook files** in
   `docs/standards/naming-conventions.md`
 - `docs/data/dataset-overview.md` — use only the headings that apply
   to this module
 - The full `docs/standards/permissions-and-governance.md` when the design
   requires privileges beyond basic workspace access
+
+Do not use prior chat as a substitute for these reads.
 
 Steps:
 

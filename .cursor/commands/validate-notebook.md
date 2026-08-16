@@ -13,28 +13,25 @@ as a substitute for the manifest reads.
 
 Steps:
 
-1. Determine the target notebook. Prefer the open module notebook when
-   obvious. If only the module is named, select the **last** **Notebooks
-   table** row whose `.py` file exists and is a **full lesson** per
-   **Scaffold vs full lesson** in the checklist. If the author names a
-   specific notebook, use that row. If no full lesson exists, stop and
-   report: only scaffolds → `/write-lesson`; no files → `/new-lesson`. If
-   not obvious from open files or recent context, ask once which module
-   and notebook number (or file path).
-2. Apply **Validation guards** in the **Validation manifest** — stop when a
-   guard fails. Then load the **Validation manifest** and applicable
-   **Conditional reads**; compare voice and structure per Full-lesson
-   manifest item 8.
+1. Resolve the module and notebook through **Command target selection**. If
+   no full lesson exists, report: only scaffolds → `/write-lesson`; no
+   planned files → `/new-lesson`.
+2. Read the **Validation manifest**, including the completed sibling selected
+   by Full-lesson manifest item 8, and then apply **Validation guards**. Stop
+   when a guard fails. If they pass, load applicable **Conditional reads**.
+   Compare voice and structure under **Voice consistency** in the
+   **Full-lesson bar**.
 3. Match the filename to the module README's **Notebooks table** row per
-   `docs/standards/naming-conventions.md`; the **Focus cell** is the topic
+   `docs/standards/naming-conventions.md`; the **`Focus` entry** is the topic
    source of truth.
 4. Review the notebook against the **Full-lesson bar** and **Validation gate
    checks**. Cite specific cells — `[file ~lines]` — for every issue.
 5. Reply **issues only** per the output rule. Do not edit files.
 
-**Boundary.** Module-level sequence, naming, **Design-complete definition**,
-and folder-wide evidence checks belong to `/review-module`, not this command.
+Follow the checklist's **Command boundaries**.
 
-**After a clean pass.** The author runs the notebook in Azure Databricks and
-records evidence per `docs/standards/compute-validation-policy.md`. This
-command does not perform runtime validation.
+**After a clean pass.** Continue with the next planned notebook. After the
+final planned notebook passes, run `/review-module`, then perform runtime
+validation in Azure Databricks and record evidence per
+`docs/standards/compute-validation-policy.md`. This command does not perform
+runtime validation.

@@ -127,8 +127,8 @@ in Databricks do not need these.
 | Command file | What it does |
 |---|---|
 | `write-module-readme.md` | Create a design-complete module README; own scoped reads, not the checklist |
-| `new-lesson.md` | Scaffold a skeleton notebook from the module README (Scaffold manifest) |
-| `write-lesson.md` | Fill a skeleton into a full lesson (Full-lesson manifest) |
+| `new-lesson.md` | Create a notebook scaffold from the module README (Scaffold manifest) |
+| `write-lesson.md` | Turn a scaffold into a full lesson (Full-lesson manifest) |
 | `validate-notebook.md` | Authoring-quality review of one notebook (not Databricks runtime) |
 | `review-module.md` | Whole-module completeness/consistency check (lighter than per-notebook validation) |
 
