@@ -1,14 +1,11 @@
-Create a numbered module folder and its design-complete `README.md`.
+Create a numbered module folder along with a design-complete `README.md`.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
-Before writing, read:
+Before creating the module folder or README, read:
 
-- The target module row and its table headings in `COURSE_MODULES.md`
+- The column headings and the row for the named phase and module in `COURSE_MODULES.md`
 - @docs/standards/readme-authoring.md
-- **Audience assumptions**, **Explanation style**, **Structure patterns**,
-  **Exercise design conventions**, and **Production framing** in
-  `docs/standards/teaching-guidelines.md`
 - **Module folders** and **Notebook files** in
   `docs/standards/naming-conventions.md`
 - `docs/data/dataset-overview.md`: **Core data model**; **Supplementary:
@@ -22,8 +19,12 @@ Before writing, read:
 
 Steps:
 
-1. Determine the target module number. If it is not explicit, ask the
-   author.
+1. Require the phase and module number from the user's invocation
+   (Phase ?, Module ?). If either is missing, reply with exactly
+   `Name the phase and module (Phase ?, Module ?).` and stop. Do
+   not infer from open files. Map the named phase number to the
+   matching Phase heading in `COURSE_MODULES.md`. If that phase
+   has no row for that module number, stop and report the gap.
 2. Use the matching roadmap row as the sole source
    for the module number, title, purpose, major topics, prerequisites,
    production relevance, final-project contribution, and current status.
