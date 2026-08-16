@@ -1,17 +1,30 @@
 # Notebook Authoring Checklist
 
-Canonical owner of the **shared read list**, **Scaffold bar**, and
-**Full-lesson bar** for learner-notebook slash commands. Referenced by
-`.cursor/commands/new-lesson.md`,
-`.cursor/commands/write-lesson.md`, `.cursor/commands/validate-notebook.md`,
-`.cursor/commands/review-module.md`, `.cursor/rules/learner-notebooks.mdc`,
-and `AGENTS.md` — do not duplicate this list elsewhere; point to this file
-instead.
+This file tells Cursor which sources to read for notebook work and what must
+be true at two stages:
+
+- The **Scaffold bar** defines a valid notebook skeleton.
+- The **Full-lesson bar** defines a complete lesson ready for authoring
+  validation.
+
+A **bar** is a set of pass criteria. This file is the canonical owner of both
+bars and the shared read list. The notebook commands,
+`.cursor/rules/learner-notebooks.mdc`, and `AGENTS.md` point here instead of
+copying these rules.
+
+## At a glance
+
+| Command | Purpose | Apply from this checklist |
+|---|---|---|
+| `/new-lesson` | Create a skeleton only | Required reads, scoped additions, Scaffold bar |
+| `/write-lesson` | Turn a skeleton into a full runnable lesson | Required reads, relevant Additional reads, Full-lesson bar |
+| `/validate-notebook` | Review one full lesson without editing it | Required reads, relevant Additional reads, Full-lesson bar |
+| `/review-module` | Review module-wide consistency without editing files | Required reads, scoped additions, relevant Additional reads, Full-lesson bar |
 
 ## Required reads (every notebook command)
 
-Before scaffolding, writing, or validating a learner notebook—or reviewing
-an entire module—read **all** of the following:
+Read every source below before scaffolding, writing, or checking a learner
+notebook, or reviewing a module:
 
 1. The module's own `README.md` (e.g. `02 - …/README.md`) — use its
    **Notebooks** table Focus cell for the target notebook number as the
@@ -25,7 +38,7 @@ an entire module—read **all** of the following:
 
 ### Scoped additions to Required reads
 
-For `/new-lesson` and `/review-module` only, also read:
+For `/new-lesson` and `/review-module`, also read:
 
 - @COURSE_MODULES.md — roadmap status and module-level scope
 - @docs/standards/readme-authoring.md — module README structure and the
@@ -33,82 +46,78 @@ For `/new-lesson` and `/review-module` only, also read:
 
 ## Additional reads (when relevant)
 
-Read these when writing or checking a full lesson (or reviewing an entire
-module), not when scaffolding structure alone:
+These do not apply to a structure-only scaffold. Read them when writing or
+checking a full lesson, or reviewing a module, under these conditions:
 
 - @docs/standards/compute-validation-policy.md — when examples assume a
   specific compute type or access mode
 - @docs/standards/permissions-and-governance.md — when examples use Unity
   Catalog objects beyond default learner access
 
-## Command roles
-
-| Command | Writes files? | Output depth |
-|---|---|---|
-| `/new-lesson` | Yes — creates `NN - Title.py` | **Skeleton only** (sections, objectives, exercise placeholder). No full lesson. |
-| `/write-lesson` | Yes — fills the target notebook | **Full runnable lesson** — meets the Full-lesson bar. |
-| `/validate-notebook` | No — review only | Issues list; fix gaps, then re-run. |
-| `/review-module` | No — review only | Module-wide issues list; fix gaps, then re-run. |
-
-Recommended workflow:
-
-```
-/new-lesson  →  /write-lesson  →  /validate-notebook  →  (fix if needed)
-→  commit and push to GitHub  →  pull into Databricks Git folder
-→  Azure runtime validation by author
-```
-
-After `/validate-notebook` passes, the author manually commits and pushes to
-GitHub, then pulls into the Databricks Git folder before running Azure
-runtime validation. Notebook commands do not perform this repository
-handoff automatically.
-
-For a whole-module authoring check, run `/review-module` separately after
-its notebooks pass `/validate-notebook`. Module review is a supplementary,
-lighter gate for cross-notebook consistency; it does not replace validating
-each notebook.
-
 ## Scaffold bar (`/new-lesson`)
 
 ### Readiness precondition
 
-Both conditions must be true:
+Before creating a notebook, check both conditions:
 
-- The target module is `Started` in `COURSE_MODULES.md`.
-- Its `README.md` meets the design-complete definition in
+- **Roadmap status:** The target module is `Started` in `COURSE_MODULES.md`.
+- **README design:** The module `README.md` meets the design-complete
+  definition in
   @docs/standards/readme-authoring.md.
+
+If either check fails, `/new-lesson` stops and reports the gap. It does not
+create the notebook or change the module status.
 
 ### Scaffold contents
 
-- Correct Databricks source format and section headings aligned to the
-  topics/subtopics in the target module README's **Notebooks** table entry.
-- Objectives, prerequisites, setup placeholder, exercise placeholder,
-  summary placeholder.
-- When the planned notebook uses the shared dataset, setup comments identify
-  the correct tables and schema or path from @docs/data/dataset-overview.md
-  without inventing columns.
-- `# TODO` or empty code cells are acceptable; runnable lesson content is
-  **not** required until `/write-lesson`.
+When readiness passes, the scaffold is valid only when all checks below pass:
+
+- **Format:** It uses the required Databricks source format.
+- **Planned structure:** Its section headings match the topics and subtopics
+  in the module README's Notebooks table Focus cell.
+- **Placeholders:** It includes objectives, prerequisites, setup, exercise,
+  and summary placeholders.
+- **Dataset setup:** If the notebook will use the shared dataset, setup
+  comments name the correct tables and schema or path from
+  @docs/data/dataset-overview.md without inventing columns.
+- **No lesson content yet:** `# TODO` or empty code cells are acceptable.
+  Runnable lesson content is not required until `/write-lesson`.
 
 ## Full-lesson bar (`/write-lesson`)
 
-This bar is a summary acceptance gate, not a complete restatement of the
-linked standards. A notebook is ready for `/validate-notebook` only when it
-satisfies every applicable requirement in the Required and Additional reads
-and all of the following:
+This bar summarizes the final checks; the linked standards still apply. A
+lesson is ready for `/validate-notebook` only when every applicable Required
+and Additional read is followed and all checks below pass:
 
-- The module README's **Notebooks** table Focus cell is fully implemented:
-  planned topics, subtopics, comparisons, and gotchas have **runnable**
-  demonstrations rather than prose alone where behavior can be shown, and
-  the exercise matches its planned scope.
-- Worked examples appear **before** the exercise; the exercise repeats
-  the demonstrated pattern on slightly different data.
-- Voice and structure match sibling notebooks in the same module (objectives
-  cell, setup, incremental cells, summary, next-notebook pointer).
-- Notebook code and authored content follow
+- **Planned coverage:** The module README's Notebooks table Focus cell is
+  fully implemented. Planned topics, subtopics, comparisons, and gotchas
+  have runnable demonstrations where behavior can be shown. The exercise
+  matches its planned scope.
+- **Teaching order:** Worked examples come before the exercise. The exercise
+  applies the demonstrated pattern to slightly different data.
+- **Course consistency:** The notebook follows the course voice and sibling
+  structure: objectives, setup, incremental teaching cells, summary, and a
+  next-notebook pointer.
+- **Code and safe values:** Notebook code and authored content follow
   @docs/standards/coding-standards.md, including its **Security and
   portability** and **Permitted author defaults** sections.
 
-The Scaffold and Full-lesson bars cover authoring quality only; runtime
-validation is separate (see
-@docs/standards/compute-validation-policy.md).
+If a check fails, the notebook is not ready. Fix the gap and run
+`/validate-notebook` again.
+
+## Workflow and validation boundary
+
+```text
+/new-lesson → /write-lesson → /validate-notebook → fix and re-run if needed
+→ commit and push to GitHub → pull into the Databricks Git folder
+→ author validates the notebook in Azure Databricks
+```
+
+After every notebook passes `/validate-notebook`, run `/review-module` as a
+separate, lighter check for cross-notebook consistency. It does not replace
+validating each notebook.
+
+The Scaffold and Full-lesson bars cover authoring quality only. Runtime
+validation is separate and follows
+@docs/standards/compute-validation-policy.md. Notebook commands do not
+commit, push, pull, run Databricks, or record runtime results.
