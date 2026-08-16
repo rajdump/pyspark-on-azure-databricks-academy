@@ -14,9 +14,9 @@ answer, but do not load a different command's manifest.
 
 For an ad-hoc notebook edit with no active command, read the checklist and
 apply its **Full-lesson manifest**, **Full-lesson bar**, and **Validation
-gate checks**. If the file is clearly still a scaffold with no runnable
-teaching demonstrations, apply the **Scaffold bar** (**Scaffold manifest**
-and **Scaffold contents**) instead. Apply the **Readiness precondition** only
+gate checks**. If the file is clearly still a scaffold per **Scaffold vs
+full lesson**, apply the **Scaffold bar** (**Scaffold manifest** and
+**Scaffold contents**) instead. Apply the **Readiness precondition** only
 when creating a new notebook.
 
 For a full lesson from a scaffold, the author should use `/write-lesson`

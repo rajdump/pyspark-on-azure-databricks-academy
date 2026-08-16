@@ -13,25 +13,29 @@ as a substitute for the manifest reads.
 
 Steps:
 
-1. Determine the target notebook. If not obvious from open files or recent
-   context, ask which module and notebook number (or file path).
-2. **Scaffold guard.** If the file is still a scaffold from `/new-lesson`
-   (placeholder structure with no runnable teaching demonstrations, or only
-   empty/`# TODO` teaching cells), stop and tell the author to run
-   `/write-lesson` first. Exercise `# TODO` markers in an otherwise complete
-   lesson are expected — do not reject those.
-3. Match the filename to the module README's **Notebooks table row**; the
-   **Focus cell** is the topic source of truth.
-4. Load the Validation manifest and applicable **Conditional reads**;
-   compare voice and structure to the manifest's completed sibling (prior
-   in-module notebook, or the previous module's last numbered notebook when
-   the target is `01`).
-5. Review the notebook against the **Full-lesson bar** and **Validation gate
+1. Determine the target notebook. Prefer the open module notebook when
+   obvious. If only the module is named, select the **last** **Notebooks
+   table** row whose `.py` file exists and is a **full lesson** per
+   **Scaffold vs full lesson** in the checklist. If the author names a
+   specific notebook, use that row. If no full lesson exists, stop and
+   report: only scaffolds → `/write-lesson`; no files → `/new-lesson`. If
+   not obvious from open files or recent context, ask once which module
+   and notebook number (or file path).
+2. If the file does not exist, stop and tell the author to run `/new-lesson`
+   first.
+3. Apply **Validation guards** in the **Validation manifest** — stop when a
+   guard fails.
+4. Match the filename to the module README's **Notebooks table** row per
+   `docs/standards/naming-conventions.md`; the **Focus cell** is the topic
+   source of truth.
+5. Load the **Validation manifest** and applicable **Conditional reads**;
+   apply the completed-sibling rule from Full-lesson manifest item 8.
+6. Review the notebook against the **Full-lesson bar** and **Validation gate
    checks**. Cite specific cells — `[file ~lines]` — for every issue.
-6. Reply **issues only** per the output rule. Do not edit files.
+7. Reply **issues only** per the output rule. Do not edit files.
 
-**Boundary.** Module-level sequence, naming, README design-complete, and
-folder-wide evidence checks belong to `/review-module`, not this command.
+**Boundary.** Module-level sequence, naming, **Design-complete definition**,
+and folder-wide evidence checks belong to `/review-module`, not this command.
 
 **After a clean pass.** The author runs the notebook in Azure Databricks and
 records evidence per `docs/standards/compute-validation-policy.md`. This

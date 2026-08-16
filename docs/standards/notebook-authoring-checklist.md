@@ -55,6 +55,13 @@ Expand to adjacent pipeline subsections when the target consumes an earlier
 module's derived output and its contract is not repeated in the matching
 subsection.
 
+### Scaffold vs full lesson
+
+- **Scaffold:** structure placeholders; no runnable teaching demonstrations;
+  empty or `# TODO` teaching cells only.
+- **Full lesson:** runnable teaching demonstrations for planned concepts;
+  exercise `# TODO` markers are allowed.
+
 ## Command read manifests
 
 ### Scaffold manifest (`/new-lesson`)
@@ -85,27 +92,44 @@ placeholders.
 
 Read:
 
-1. The target module README's **Notebooks** row for the target and its
-   **Prerequisites**, **Dataset**, and **Paths and outputs** sections when
-   present, plus **Minimum privileges required** when present.
-2. The full `docs/standards/notebook-writing.md`.
-3. The full `docs/standards/teaching-guidelines.md`.
-4. The full `docs/standards/coding-standards.md`.
-5. The **Python identifiers** section in
+1. The target module README's full **Notebooks** table (for the target row,
+   the next row when present, and per-row **Reads** when that column exists),
+   plus **Prerequisites**, **Dataset**, and **Paths and outputs** when
+   present, and **Minimum privileges required** when present.
+2. The target module row in `COURSE_MODULES.md` for **Production Relevance**
+   when applying production framing.
+3. The full `docs/standards/notebook-writing.md`.
+4. The full `docs/standards/teaching-guidelines.md`.
+5. The full `docs/standards/coding-standards.md`.
+6. The **Python identifiers** section in
    `docs/standards/naming-conventions.md`, plus **Unity Catalog objects**
    when the lesson names course objects.
-6. The sections selected by **Dataset scope**.
-7. One completed sibling notebook for voice and cell structure: prefer the
-   prior numbered notebook in the same module. For Notebook 01 with no prior
-   sibling, read the last numbered notebook of the previous module.
+7. The sections selected by **Dataset scope**.
+8. One completed sibling notebook for voice and cell structure: prefer the
+   prior numbered notebook in the same module when that notebook is a
+   completed lesson (not a scaffold); if the prior in-module notebook is still
+   a scaffold, stop and tell the author to finish it first. For Notebook 01
+   with no prior sibling, read the last numbered notebook of the previous
+   module.
 
 Also apply **Conditional reads** below.
 
 ### Validation manifest (`/validate-notebook`)
 
 Read the Full-lesson manifest, including a completed sibling for voice
-comparison, then review the target notebook against the **Full-lesson bar**
-and **Validation gate checks**. Validation is read-only and does not produce
+comparison.
+
+**Validation guards** (stop before reviewing):
+
+- The target `.py` file exists; if not, tell the author to run `/new-lesson`.
+- The target is a **full lesson** per **Scaffold vs full lesson**; if still a
+  scaffold, tell the author to run `/write-lesson`. Exercise `# TODO` markers
+  in an otherwise complete lesson are expected.
+- Apply Full-lesson manifest item 8 for the completed sibling; if the prior
+  in-module notebook is still a scaffold, stop and report that gap.
+
+Then review the target notebook against the **Full-lesson bar** and
+**Validation gate checks**. Validation is read-only and does not produce
 runtime evidence.
 
 ### Module-review manifest (`/review-module`)
@@ -218,7 +242,9 @@ conditional reads are followed and all checks below pass:
   incremental teaching cells, a summary, and a next-notebook pointer.
 - **Voice consistency (reviewer judgment):** The explanation style and
   progression are consistent with the teaching standard and completed
-  sibling notebooks. Borderline style differences are not blocking issues.
+  sibling notebooks. Match idiom drift where the sibling establishes a
+  pattern — for example `F.count` form, column aliasing style, and comment
+  patterns. Borderline style differences are not blocking issues.
 - **Code and safe values:** Notebook code and authored content follow
   `docs/standards/coding-standards.md`, including its **Security and
   portability** and **Permitted author defaults** sections.
@@ -251,7 +277,7 @@ in Cursor — not runtime validation and not module-level review.
 - **No leaked evidence:** Runtime validation results, tokens, workspace
   URLs, or personal identifiers do not appear in notebook cells or comments.
 
-Module-level sequence, naming, README design-complete, and folder-wide
+Module-level sequence, naming, **Design-complete definition**, and folder-wide
 evidence checks belong to `/review-module`, not this list.
 
 ## Workflow and validation boundary

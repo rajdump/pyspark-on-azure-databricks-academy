@@ -27,6 +27,6 @@ Given a module folder (ask which one if not obvious from context), check:
    the manifest's scoped dataset contract.
 6. **No leaked evidence** — validation results, tokens, workspace URLs, or
    personal identifiers do not appear anywhere in the module folder.
-7. **No unfinished scaffolds** — if a notebook is still a scaffold from
-   `/new-lesson` (no runnable teaching demonstrations), report that
-   `/write-lesson` must run before the module can pass review.
+7. **No unfinished scaffolds** — if a notebook is still a scaffold per
+   **Scaffold vs full lesson** in the checklist, report that `/write-lesson`
+   must run before the module can pass review.
