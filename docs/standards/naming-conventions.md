@@ -1,14 +1,14 @@
 # Naming Conventions
 
-Canonical owner of all folder, file, and object naming rules for this
-repository.
+This file is the canonical owner of folder, file, identifier, and Unity
+Catalog object naming rules for this repository.
 
-Referenced by (directly or through the checklist):
-@docs/standards/notebook-authoring-checklist.md,
-@docs/standards/coding-standards.md, `.cursor/rules/learner-notebooks.mdc`,
-`.cursor/rules/course-authoring.mdc`, and the `/new-lesson`,
-`/write-lesson`, `/validate-notebook`, and `/review-module` commands — do
-not duplicate this content elsewhere.
+Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
+`docs/standards/coding-standards.md`, `.cursor/rules/course-authoring.mdc`,
+and the `/new-lesson`, `/write-module-readme`, and `/review-module`
+commands. `/write-lesson`, `/validate-notebook`, and
+`.cursor/rules/learner-notebooks.mdc` receive these rules through the
+checklist. Do not duplicate the naming rules in those consumers.
 
 ## Module folders
 
@@ -66,24 +66,26 @@ they must identify a specific module unambiguously.
 
 Standard PEP 8 conventions: `snake_case` for modules, functions, and
 variables; `PascalCase` for classes; `UPPER_SNAKE_CASE` for constants. Full
-non-naming coding rules live in `coding-standards.md` — this file is the
-sole normative owner of identifier naming.
+non-naming coding rules live in @docs/standards/coding-standards.md. This
+file remains the sole owner of identifier naming.
 
 ## Unity Catalog objects
 
-Catalogs, schemas, tables, and volumes are created and named by the course
-author as each module needs them — no fixed names are prescribed here. When
-naming them, prefer clear, environment-aware patterns (e.g. separating a
-learning/dev catalog from anything resembling production) and avoid
-embedding personal identifiers. Do not commit real catalog or schema names
-to public-facing files if they reveal personal workspace details.
+For objects not defined by the course, prefer clear, environment-aware names
+that distinguish learning or development objects from production objects.
+Do not embed personal identifiers.
 
-Course catalog, schema, and volume names for the rideshare dataset are
-defined in `docs/data/dataset-overview.md` — use those for learner
-notebooks rather than inventing alternate names. Azure storage account,
-container, and storage credential names vary per learner and belong in the
-Module 5 config cell (not as alternate UC object names).
+The rideshare course's fixed catalog, schema, table, and volume names are
+defined in @docs/data/dataset-overview.md. Learner notebooks must use those
+names rather than inventing alternatives. Azure storage accounts,
+containers, and storage credentials vary per learner;
+`01 - Unity Catalog Volumes and Data Landing.py` in
+`05 - Reading, Writing, and Schemas` owns those inputs, not this naming
+standard.
 
 ## Does not cover
 
-Code style or formatting rules (see `coding-standards.md`).
+- Code style, security, or committed-value rules — see
+  @docs/standards/coding-standards.md.
+- The rideshare dataset's fixed object names and paths — see
+  @docs/data/dataset-overview.md.

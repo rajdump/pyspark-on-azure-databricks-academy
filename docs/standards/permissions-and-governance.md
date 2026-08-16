@@ -1,20 +1,21 @@
 # Permissions and Governance
 
-Canonical owner of the distinction between Azure RBAC, Databricks workspace
-permissions, and Unity Catalog privileges, plus the minimum-privilege
-documentation pattern used in module `README.md` files.
+This file is the canonical owner of the distinction between Azure RBAC,
+Databricks workspace permissions, and Unity Catalog privileges. It also owns
+the minimum-privilege documentation pattern for module `README.md` files.
 
-Referenced by (directly or through the checklist):
-@docs/standards/notebook-authoring-checklist.md,
-@docs/standards/notebook-writing.md,
-@docs/standards/compute-validation-policy.md,
-@docs/standards/readme-authoring.md, and the `/write-lesson`,
-`/validate-notebook`, and `/review-module` commands — do not duplicate this
-content elsewhere.
+Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
+`docs/standards/notebook-writing.md`,
+`docs/standards/compute-validation-policy.md`,
+`docs/standards/readme-authoring.md`, `/write-module-readme`,
+`/write-lesson`, and `/validate-notebook`. `/review-module` receives these
+rules through the checklist. Do not duplicate the permission rules in those
+consumers.
 
 ## Three distinct permission systems
 
-This course touches three separate, non-overlapping permission systems.
+This course touches three distinct, independently evaluated permission
+systems.
 Confusing them is a common source of "why can't I do this" errors — always
 be explicit about which one applies.
 
@@ -43,24 +44,33 @@ USE CATALOG <catalog>  -->  USE SCHEMA <schema>  -->  SELECT (or other object-le
 Missing any link in this chain produces an access error even if the final
 object-level grant looks correct.
 
-## Module 5 vs Module 11
+## Module 5 and Module 11 responsibilities
 
-- **Module 5** creates the rideshare catalog, external location, schemas,
-  and volumes in each learner’s own account (see that module’s README for
-  privileges and the config cell). Creating the storage credential itself
-  is documented outside this repository (course PDF).
-- **Module 11** governs those **existing** objects (managed vs external,
-  grants, ownership, credentials, least privilege) — it does not recreate
-  the Module 5 setup.
+- **Module 5 — Reading, Writing, and Schemas** creates the rideshare catalog,
+  external location, schemas, and volumes in each learner's own account.
+  Its README owns the required privileges and setup inputs. Creating the
+  storage credential itself is documented outside this repository.
+- **Module 11 — Unity Catalog and Data Governance** governs those existing
+  objects through grants, ownership, credentials, and least privilege. It
+  does not recreate the Module 5 setup.
 
-## The course author's role
+### Module 5 parameterization
 
-The course author can create and manage all Unity Catalog objects
-(catalogs, schemas, managed tables, external tables, volumes, external
-locations, storage credentials, grants) and is not blocked by any of this.
-Module 5’s supported path assumes learners can create catalogs and
-external locations in **their own** metastore. Learners without those
-privileges cannot complete Module 5 setup as written.
+`01 - Unity Catalog Volumes and Data Landing.py` in
+`05 - Reading, Writing, and Schemas` uses a Python setup/config cell for the
+learner's Azure storage account, container, storage credential, and ADLS
+folder. It does not use widgets for those values. Committed defaults must
+follow the **Permitted author defaults** section in
+@docs/standards/coding-standards.md. Fixed course Unity Catalog names, such
+as `rideshare_dev`, remain defined by @docs/data/dataset-overview.md.
+
+## Author and learner privilege assumptions
+
+The authoring baseline assumes the course author can create and manage the
+Unity Catalog objects used by the lessons. Module 5's supported learner path
+assumes learners can create catalogs and external locations in their own
+metastore. Learners without those privileges cannot complete Module 5 setup
+as written.
 
 ## Minimum-privilege documentation pattern
 
@@ -82,18 +92,16 @@ section, using this shape:
 Only list what that specific module's examples actually require — do not
 restate the full catalog/schema hierarchy at every level unless it's
 genuinely necessary context. Module 5 lists CREATE privileges and Azure
-RBAC on the learner’s storage because Notebook 01 creates platform
-objects.
+RBAC on the learner's storage because
+`01 - Unity Catalog Volumes and Data Landing.py` in
+`05 - Reading, Writing, and Schemas` creates platform objects.
 
 ## Does not cover
 
-- Compute selection/validation rules — see `compute-validation-policy.md`.
+- Compute selection and validation rules — see
+  @docs/standards/compute-validation-policy.md.
 - Actual catalog/schema/volume names — defined in
-  `docs/data/dataset-overview.md` for the rideshare course objects.
-- Module 5 Notebooks 01 and 99 use a Python **config cell** for Azure
-  storage account, container, storage credential, and ADLS folder
-  (author defaults; learners overwrite). That config cell, rather than
-  widgets, is the Module 5 parameterization mechanism. Author defaults must
-  follow the **Permitted author defaults** boundary in
-  @docs/standards/coding-standards.md. Course UC object names
-  (`rideshare_dev`, etc.) stay fixed per dataset-overview.
+  @docs/data/dataset-overview.md for the rideshare course objects.
+- Security and safe committed defaults — see the **Security and
+  portability** and **Permitted author defaults** sections in
+  @docs/standards/coding-standards.md.

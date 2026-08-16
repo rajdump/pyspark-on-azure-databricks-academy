@@ -1,18 +1,16 @@
 # Coding Standards
 
-Canonical owner of Python coding rules other than identifier naming for this
-repository — notebook code today, `src/` code once it's introduced (Module
-13+). Identifier naming is owned by `naming-conventions.md`.
+This file is the canonical owner of Python and PySpark coding rules other
+than identifier naming. It applies to learner notebooks now and to reusable
+`src/` code after Module 13 introduces it.
 
-Referenced by (directly or through the checklist):
-@docs/standards/notebook-authoring-checklist.md,
-@docs/standards/notebook-writing.md,
-@docs/standards/teaching-guidelines.md,
-@docs/standards/naming-conventions.md,
-@docs/standards/permissions-and-governance.md,
-`.cursor/rules/learner-notebooks.mdc`, and the `/new-lesson`,
-`/write-lesson`, `/validate-notebook`, and `/review-module` commands — do
-not duplicate this content elsewhere.
+Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
+`docs/standards/notebook-writing.md`, `docs/standards/teaching-guidelines.md`,
+`docs/standards/naming-conventions.md`,
+`docs/standards/permissions-and-governance.md`, and `/write-lesson`.
+Other notebook commands and `.cursor/rules/learner-notebooks.mdc` receive
+these rules through the checklist. Do not duplicate the coding rules in
+those consumers.
 
 ## Style baseline
 
@@ -28,21 +26,19 @@ not duplicate this content elsewhere.
 - Import functions as `from pyspark.sql import functions as F` and
   reference them as `F.col(...)`, `F.when(...)`, etc. — avoid
   `from pyspark.sql.functions import *`.
-- Prefer `F.col("name")` over bare string column references in
-  transformation chains once a notebook has introduced `col()` — bare
-  strings are fine in the earliest DataFrame-fundamentals material before
-  `col()` is taught.
-- Require `F.col()` for column expressions, transformations,
-  disambiguation, and chained `Column` operations. Bare strings are
-  permitted when a column reference is the sole argument to a documented
-  string-accepting API, including `groupBy()`, `orderBy()`,
-  `partitionBy()`, and aggregate functions such as `F.sum()`, `F.avg()`,
-  `F.count()`, `F.min()`, and `F.max()`. When the same column appears in
-  both a string-accepting API and a `Column` expression in one chain, prefer
-  one consistent reference style within that chain.
+- Use `F.col()` for column expressions, transformations, disambiguation, and
+  chained `Column` operations after the course introduces it. Earlier
+  DataFrame-fundamentals lessons may use bare strings before `col()` is
+  taught.
+- Bare strings remain permitted as the sole column argument to a documented
+  string-accepting API, including `groupBy()`, `orderBy()`, `partitionBy()`,
+  `F.sum()`, `F.avg()`, `F.count()`, `F.min()`, and `F.max()`. When one
+  chain uses both a string-accepting API and a `Column` expression, prefer
+  one consistent reference style where the APIs allow it.
 - Avoid UDFs when a built-in function achieves the same result — see
-  Module 6 for the built-in-functions-first philosophy. When a UDF truly is
-  necessary, explain why in a comment.
+  **Module 6 — Built-in Functions, Complex Types, and UDF Alternatives** for
+  the built-in-functions-first philosophy. When a UDF truly is necessary,
+  explain why in a comment.
 - Avoid `.collect()` / `.toPandas()` on data that isn't already known to be
   small; when used for teaching purposes on the small rideshare dataset,
   note that this pattern doesn't scale.
@@ -60,7 +56,7 @@ not duplicate this content elsewhere.
   them.
 - Never catch broad `Exception` unless that is the explicit lesson topic.
 
-## Reusable code (`src/`, once introduced)
+## Reusable code (`src/`, after Module 13)
 
 - Type hints on public function signatures.
 - Docstrings on any function whose purpose isn't obvious from its name and
@@ -69,8 +65,9 @@ not duplicate this content elsewhere.
   `SparkSession`/`DataFrame` as a parameter instead, so functions stay
   testable without a live cluster.
 - Pure, non-Spark-dependent logic is preferred where feasible, specifically
-  so it can be covered by local `pytest` tests (Module 16) without needing
-  Databricks Connect or a running cluster.
+  so it can be covered by local `pytest` tests in **Module 16 — Testing,
+  Data Quality, and Code Quality** without Databricks Connect or a running
+  cluster.
 
 ## Security and portability
 
@@ -78,9 +75,10 @@ not duplicate this content elsewhere.
   cluster IDs, or personal catalog/schema names — anywhere in code, comments,
   or docstrings. This repository is authored as if already public.
 - No hardcoded local machine paths.
-- Configuration (catalog names, paths, etc.) that legitimately varies by
-  environment is parameterized (widgets, job parameters, or bundle
-  variables — introduced progressively as those mechanisms are taught).
+- Configuration that legitimately varies by environment must use the
+  mechanism planned for that module, such as a setup/config cell, widgets,
+  job parameters, or bundle variables. Do not introduce a mechanism before
+  the course teaches it.
 
 ### Permitted author defaults
 
@@ -99,9 +97,12 @@ organization-specific catalog/schema names that reveal customer identity.
 `ruff`, `mypy`, and `pytest` run locally and check Python syntax, style, and
 non-Spark logic only. They do not execute Spark, Delta Lake, or Unity
 Catalog operations — that validation only happens in Azure Databricks (see
-`compute-validation-policy.md`).
+@docs/standards/compute-validation-policy.md).
 
 ## Does not cover
 
-Identifier naming (see `naming-conventions.md`) or notebook structure (see
-`notebook-writing.md`).
+- Identifier naming — see @docs/standards/naming-conventions.md.
+- Notebook structure and cell formatting — see
+  @docs/standards/notebook-writing.md.
+- Compute selection and runtime evidence — see
+  @docs/standards/compute-validation-policy.md.

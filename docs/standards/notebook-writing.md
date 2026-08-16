@@ -1,18 +1,18 @@
 # Notebook Writing Standards
 
-Canonical owner of all notebook structure and formatting rules.
+This file is the canonical owner of Databricks notebook source format,
+notebook structure, cell boundaries, and output-display conventions.
 
-Referenced by (directly or through the checklist):
-@docs/standards/notebook-authoring-checklist.md,
-`.cursor/rules/learner-notebooks.mdc`,
-@docs/standards/teaching-guidelines.md, and the `/new-lesson`,
-`/write-lesson`, `/validate-notebook`, and `/review-module` commands — do
-not duplicate this content elsewhere.
+Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
+`docs/standards/teaching-guidelines.md`, and `/new-lesson`.
+`/write-lesson`, `/validate-notebook`, `/review-module`, and
+`.cursor/rules/learner-notebooks.mdc` receive these rules through the
+checklist. Do not duplicate the notebook-format rules in those consumers.
 
 ## Format
 
 All learner notebooks are **Databricks source-format `.py` files** — never
-`.ipynb`. This is fixed (see `README.md` for the technical baseline); this
+`.ipynb`. This is fixed (see @README.md for the technical baseline); this
 document covers how to write within that format.
 
 Required structure markers:
@@ -46,7 +46,7 @@ Required structure markers:
 ### Markdown conventions
 
 - Use `###` only for distinct subtopics within an H2; do not use H4 or deeper.
-- Use `> **Note:**` for important asides and `> Warning:` for common
+- Use `> **Note:**` for important asides and `> **Warning:**` for common
   pitfalls, with at most one callout per section.
 - Use bold for UI elements and key terms on first introduction, italics for
   variable references in prose, and never underline.
@@ -60,14 +60,13 @@ Every learner notebook follows this shape:
 1. **Title + objectives cell** — what the learner will be able to do after
    this notebook, and which prior notebooks it assumes.
 2. **Setup cell(s)** — imports, and reads of the shared dataset where
-   relevant (see `docs/data/dataset-overview.md`).
-3. **One concept path per notebook** — introduce a concept, show it, let the
-   learner practice it, before moving to the next. Avoid cramming unrelated
-   concepts into one notebook — split into another numbered notebook
-   instead.
-4. **Worked examples before exercises** — per
-   @docs/standards/teaching-guidelines.md's Structure patterns: demonstrate
-   the pattern with the rideshare dataset before the learner attempts it.
+   relevant (see @docs/data/dataset-overview.md).
+3. **Planned concept sections** — section order follows the module README's
+   Notebooks table Focus cell. Split unrelated concept paths into separate
+   planned notebooks.
+4. **Examples and exercises** — their teaching order follows the
+   **Structure patterns** section in
+   @docs/standards/teaching-guidelines.md.
 5. **Summary cell** — brief recap of what was covered and a pointer to the
    next notebook.
 
@@ -85,14 +84,8 @@ Every learner notebook follows this shape:
 
 - Follow the import conventions in
   @docs/standards/coding-standards.md.
-- Implement the DataFrame and SQL teaching policy in
-  @docs/standards/teaching-guidelines.md: include DataFrame code cells by
-  default, and include SQL cells only when SQL is a planned learning
-  objective for that cell or section. Include side-by-side DataFrame and SQL
-  cells only when API comparison is the learning objective. Module 9
-  formalizes systematic dual-API treatment.
-- Show, don't just tell: every new API introduced gets a runnable example
-  against the rideshare dataset before being used in an exercise.
+- Select DataFrame, SQL, and comparison cells using the **DataFrame and SQL
+  teaching policy** in @docs/standards/teaching-guidelines.md.
 - Keep cells focused — one idea per cell — so a learner can run cells
   incrementally and see each step's effect with `display()`/`.show()`.
 - **Together (acceptable):** a short setup line, the transformation it
@@ -113,20 +106,24 @@ Every learner notebook follows this shape:
 
 ## What must never appear in a notebook
 
-No hardcoded local-machine or learner-specific paths. Fixed
-course-controlled Volume paths are permitted. For full path,
-parameterization, and banned-value rules, see
-@docs/standards/coding-standards.md's **Security and portability** and
-**Permitted author defaults** sections.
+Apply the **Security and portability** and **Permitted author defaults**
+sections in @docs/standards/coding-standards.md. That standard owns all
+path, parameterization, secret, and learner-specific-value restrictions.
 
 ## Minimum privileges
 
 If a notebook's examples require specific Unity Catalog privileges beyond
 what a default learner might have, the module's `README.md` documents them
-(see `permissions-and-governance.md` for the pattern) — this is not
-repeated inside the notebook itself.
+(see the **Minimum-privilege documentation pattern** in
+@docs/standards/permissions-and-governance.md). Do not repeat the privilege
+list inside the notebook.
 
 ## Does not cover
 
-Code syntax standards (see `coding-standards.md`) or pedagogical approach
-(see `teaching-guidelines.md`).
+- Code syntax and security — see @docs/standards/coding-standards.md.
+- Pedagogy and exercise design — see
+  @docs/standards/teaching-guidelines.md.
+- Minimum-privilege documentation — see
+  @docs/standards/permissions-and-governance.md.
+- Compute selection and runtime evidence — see
+  @docs/standards/compute-validation-policy.md.

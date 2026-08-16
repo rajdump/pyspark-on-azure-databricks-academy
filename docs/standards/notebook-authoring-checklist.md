@@ -8,9 +8,10 @@ be true at two stages:
   validation.
 
 A **bar** is a set of pass criteria. This file is the canonical owner of both
-bars and the shared read list. The notebook commands,
-`.cursor/rules/learner-notebooks.mdc`, and `AGENTS.md` point here instead of
-copying these rules.
+bars and the shared read list. Direct consumers are `/new-lesson`,
+`/write-lesson`, `/validate-notebook`, `/review-module`,
+`.cursor/rules/learner-notebooks.mdc`, and `AGENTS.md`. They point here
+instead of copying these rules.
 
 ## At a glance
 
@@ -26,7 +27,7 @@ copying these rules.
 Read every source below before scaffolding, writing, or checking a learner
 notebook, or reviewing a module:
 
-1. The module's own `README.md` (e.g. `02 - …/README.md`) — use its
+1. The module's own `NN - Descriptive Title/README.md` — use its
    **Notebooks** table Focus cell for the target notebook number as the
    source of truth for planned topics, subtopics, comparisons, gotchas, and
    exercise scope.
@@ -95,9 +96,11 @@ and Additional read is followed and all checks below pass:
   matches its planned scope.
 - **Teaching order:** Worked examples come before the exercise. The exercise
   applies the demonstrated pattern to slightly different data.
-- **Course consistency:** The notebook follows the course voice and sibling
-  structure: objectives, setup, incremental teaching cells, summary, and a
-  next-notebook pointer.
+- **Required course structure:** The notebook includes objectives, setup,
+  incremental teaching cells, a summary, and a next-notebook pointer.
+- **Voice consistency (reviewer judgment):** The explanation style and
+  progression are consistent with the teaching standard and completed
+  sibling notebooks. Borderline style differences are not blocking issues.
 - **Code and safe values:** Notebook code and authored content follow
   @docs/standards/coding-standards.md, including its **Security and
   portability** and **Permitted author defaults** sections.

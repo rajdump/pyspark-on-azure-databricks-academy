@@ -1,21 +1,22 @@
 # Compute Selection and Validation Policy
 
-Canonical owner of compute-selection, validation-order, and
-validation-record schema rules for every module.
+This file is the canonical owner of compute selection, validation order, and
+the validation-record schema for every module.
 
-Referenced by (directly or through the checklist):
-@docs/standards/notebook-authoring-checklist.md,
-@docs/standards/coding-standards.md,
-@docs/standards/permissions-and-governance.md, `README.md`,
-the `/write-lesson`, `/validate-notebook`, and `/review-module` commands,
-and module validation records — do not duplicate this content elsewhere.
+Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
+`docs/standards/coding-standards.md`,
+`docs/standards/permissions-and-governance.md`, `README.md`,
+`/write-lesson`, `/validate-notebook`, `/review-module`, and module
+validation records. Other notebook workflows receive these rules through
+the checklist when compute guidance is relevant. Do not duplicate the
+compute or validation-record rules in those consumers.
 
 ## Available compute
 
-Classic all-purpose (Standard and Dedicated access modes), jobs compute, and
-serverless compute. **There is no single course-wide compute type** —
-compute is selected per module based on its APIs, workload, and learning
-objectives.
+The course may use classic all-purpose compute (Standard or Dedicated access
+mode), jobs compute, and serverless compute. **There is no single
+course-wide compute type**. Select compute per module based on its APIs,
+workload, and learning objectives.
 
 ## Notebook validation baseline
 
@@ -57,11 +58,11 @@ objectives.
 Each module validation record uses these distinct fields and canonical
 values:
 
-- **Environment disposition** — `supported`, `unsupported`, or
-  `not applicable`. Record this for each compute environment and explain
-  why the disposition applies.
-- **Test result** — `passed`, `partial`, or `not tested`. This records what
-  was actually exercised; `not tested` belongs only in this field.
+- **Environment disposition** — the course's support decision for that
+  compute environment: `supported`, `unsupported`, or `not applicable`.
+  Explain the verified constraint or applicability decision behind it.
+- **Test result** — what the author actually exercised: `passed`, `partial`,
+  or `not tested`. The value `not tested` belongs only in this field.
 - **Serverless compatibility** — `complete`, `partial`, `unsupported`, or
   `not applicable`. Record this summary only from serverless test evidence,
   or use `not applicable` when serverless genuinely does not apply. If
@@ -69,7 +70,8 @@ values:
   leave compatibility unassigned until evidence exists.
 
 These fields are the canonical validation-record schema; validation records
-must not invent substitute fields or values.
+must not invent substitute fields or values. Never infer a result or
+compatibility value from authoring review alone.
 
 ## Does not cover
 
@@ -79,4 +81,4 @@ must not invent substitute fields or values.
   `/review-module` are authoring-quality checks in Cursor, not a substitute
   for this runtime validation.
 - Unity Catalog privilege requirements — see
-  `permissions-and-governance.md`.
+  @docs/standards/permissions-and-governance.md.

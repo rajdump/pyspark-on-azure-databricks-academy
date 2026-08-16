@@ -1,13 +1,13 @@
 # Teaching Guidelines
 
-Canonical owner of all pedagogical and explanation standards.
+This file is the canonical owner of pedagogy, explanation style, and
+exercise-design rules for learner-facing course content.
 
-Referenced by (directly or through the checklist):
-@docs/standards/notebook-authoring-checklist.md,
-@docs/standards/notebook-writing.md, `.cursor/rules/learner-notebooks.mdc`,
-`.cursor/rules/course-authoring.mdc`, and the `/new-lesson`,
-`/write-lesson`, `/validate-notebook`, and `/review-module` commands — do
-not duplicate this content elsewhere.
+Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
+`docs/standards/notebook-writing.md`, `.cursor/rules/course-authoring.mdc`,
+and `/write-module-readme`. Notebook commands and
+`.cursor/rules/learner-notebooks.mdc` receive these rules through the
+checklist. Do not duplicate the pedagogy rules in those consumers.
 
 ## Audience assumptions
 
@@ -40,7 +40,7 @@ rather than assuming prior exposure.
 - Call out common mistakes and gotchas explicitly (e.g. NULL-handling
   surprises, lazy-evaluation timing) rather than letting learners discover
   them by accident.
-- Use the shared rideshare dataset (`docs/data/dataset-overview.md`) for
+- Use the shared rideshare dataset (@docs/data/dataset-overview.md) for
   examples by default; only switch datasets when a topic genuinely requires
   it, and explain why.
 
@@ -51,10 +51,12 @@ learning objective for that cell or section; the fact that both APIs are
 idiomatic is not enough to require both.
 
 Use side-by-side DataFrame and SQL examples only when comparing the two APIs
-is itself the learning objective, as in Module 2 Notebook 06 and Module 9.
-Module 9 formalizes systematic dual-API treatment as its core purpose. See
-@docs/standards/notebook-writing.md for how this policy determines which
-code cells a notebook includes.
+is itself the learning objective, as in
+`06 - Querying DataFrames with SQL.py` in `02 - DataFrame Fundamentals`.
+**Module 9 — Spark SQL and DataFrame Interoperability** formalizes
+systematic dual-API treatment as its core purpose. See
+@docs/standards/notebook-writing.md for the structural code-cell rules that
+implement this policy.
 
 ### Exercise design conventions
 
@@ -72,7 +74,7 @@ batch data engineering job — this is a job-focused course, not an academic
 Spark tour. Where relevant, name the production concern a topic addresses
 (reliability, idempotency, governance, performance, etc.) using the
 "Production Relevance" language already established for that module in
-`COURSE_MODULES.md`.
+@COURSE_MODULES.md.
 
 ## Where this applies
 
@@ -84,5 +86,7 @@ Spark tour. Where relevant, name the production concern a topic addresses
 
 ## Does not cover
 
-Code formatting (see `coding-standards.md`) or notebook structural rules
-(see `notebook-writing.md`).
+- Code formatting and security — see
+  @docs/standards/coding-standards.md.
+- Notebook structure, source format, and cell boundaries — see
+  @docs/standards/notebook-writing.md.
