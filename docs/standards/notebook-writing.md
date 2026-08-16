@@ -3,10 +3,9 @@
 This file is the canonical owner of Databricks notebook source format,
 notebook structure, cell boundaries, and output-display conventions.
 
-Direct consumers are `docs/standards/notebook-authoring-checklist.md` and
-`/new-lesson`. `/write-lesson`, `/validate-notebook`, `/review-module`, and
-`.cursor/rules/learner-notebooks.mdc` receive these rules through the
-checklist. Do not duplicate the notebook-format rules in those consumers.
+Direct reader: `docs/standards/notebook-authoring-checklist.md`. Notebook
+commands and `.cursor/rules/learner-notebooks.mdc` receive these rules
+through the checklist.
 
 ## Format
 
@@ -59,13 +58,13 @@ Every learner notebook follows this shape:
 1. **Title + objectives cell** — what the learner will be able to do after
    this notebook, and which prior notebooks it assumes.
 2. **Setup cell(s)** — imports, and reads of the shared dataset where
-   relevant (see @docs/data/dataset-overview.md).
+   relevant (see `docs/data/dataset-overview.md`).
 3. **Planned concept sections** — section order follows the module README's
    Notebooks table Focus cell. Split unrelated concept paths into separate
    planned notebooks.
 4. **Examples and exercises** — their teaching order follows the
    **Structure patterns** section in
-   @docs/standards/teaching-guidelines.md.
+   `docs/standards/teaching-guidelines.md`.
 5. **Summary cell** — brief recap of what was covered and a pointer to the
    next notebook.
 
@@ -81,10 +80,9 @@ Every learner notebook follows this shape:
 
 ## Code cell conventions
 
-- Follow the import conventions in
-  @docs/standards/coding-standards.md.
+- Follow the import conventions in `docs/standards/coding-standards.md`.
 - Select DataFrame, SQL, and comparison cells using the **DataFrame and SQL
-  teaching policy** in @docs/standards/teaching-guidelines.md.
+  teaching policy** in `docs/standards/teaching-guidelines.md`.
 - Keep cells focused — one idea per cell — so a learner can run cells
   incrementally and see each step's effect with `display()`/`.show()`.
 - **Together (acceptable):** a short setup line, the transformation it
@@ -106,7 +104,7 @@ Every learner notebook follows this shape:
 ## What must never appear in a notebook
 
 Apply the **Security and portability** and **Permitted author defaults**
-sections in @docs/standards/coding-standards.md. That standard owns all
+sections in `docs/standards/coding-standards.md`. That standard owns all
 path, parameterization, secret, and learner-specific-value restrictions.
 
 ## Minimum privileges

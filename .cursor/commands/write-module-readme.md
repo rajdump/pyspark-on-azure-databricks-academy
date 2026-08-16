@@ -2,24 +2,31 @@ Create a numbered module folder and its design-complete `README.md`.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
-Before writing anything, read `COURSE_MODULES.md` and
-@docs/standards/readme-authoring.md. Also read:
+Before writing, read:
 
-- @docs/standards/teaching-guidelines.md
-- @docs/standards/naming-conventions.md
-- @docs/data/dataset-overview.md
-- @docs/standards/permissions-and-governance.md
+- The target module row and its table headings in `COURSE_MODULES.md`
+- @docs/standards/readme-authoring.md
+- **Audience assumptions**, **Explanation style**, **Structure patterns**,
+  **Exercise design conventions**, and **Production framing** in
+  `docs/standards/teaching-guidelines.md`
+- **Module folders** and **Notebook files** in
+  `docs/standards/naming-conventions.md`
+- **Core data model**, the target's matching **Module pipeline** subsection,
+  and **Unity Catalog platform reference** when applicable in
+  `docs/data/dataset-overview.md`
+- The full `docs/standards/permissions-and-governance.md` when the design
+  requires privileges beyond basic workspace access
 
 Steps:
 
 1. Determine the target module number. If it is not explicit, ask the
    author.
-2. Find that module's row in `COURSE_MODULES.md`. Use it as the sole source
+2. Use the matching roadmap row as the sole source
    for the module number, title, purpose, major topics, prerequisites,
    production relevance, final-project contribution, and current status.
    If no matching row exists, stop and report the gap.
 3. Derive the exact zero-padded folder name as `NN - Module Title` and
-   validate it against @docs/standards/naming-conventions.md.
+   validate it against the naming section.
 4. Inspect the target path without changing it. If `README.md` already
    exists, stop rather than overwriting it. An existing empty folder is
    acceptable.
@@ -29,12 +36,9 @@ Steps:
    design decision, ask the author before creating anything; do not invent
    details or leave `TODO` placeholders.
 6. Once the design is complete, create the module folder if needed and write
-   its `README.md` following @docs/standards/readme-authoring.md. Keep
+   its `README.md` following the README standard. Keep
    roadmap-level facts aligned with `COURSE_MODULES.md` without copying the
    full roadmap entry.
 7. Do not create learner notebooks, change `COURSE_MODULES.md` status, or
    write runtime validation evidence. Those are separate author-directed
    actions.
-
-After creation, tell the author to review the README, explicitly change the
-module status to `Started`, and then run `/new-lesson`.

@@ -69,7 +69,7 @@ Detailed project rules live in `docs/standards/` and `docs/data/`.
 
 | File | Owns |
 | --- | --- |
-| `notebook-authoring-checklist.md` | Shared read list for notebook work |
+| `notebook-authoring-checklist.md` | Command-specific read manifests and notebook acceptance bars |
 | `notebook-writing.md` | Notebook structure and formatting |
 | `teaching-guidelines.md` | Pedagogy and explanation style |
 | `coding-standards.md` | Python and PySpark conventions |
@@ -80,7 +80,9 @@ Detailed project rules live in `docs/standards/` and `docs/data/`.
 
 The Cursor rules and commands point to these documents instead of copying their detailed content.
 
-`compute-validation-policy.md` and `permissions-and-governance.md` are additional reads for `/validate-notebook` and `/review-module` when relevant. They are not part of `learner-notebooks.mdc`'s normal `@` reference list.
+The checklist loads `compute-validation-policy.md` and
+`permissions-and-governance.md` only for workflows where their conditions
+apply.
 
 ---
 
@@ -108,12 +110,14 @@ For example:
 08 - Aggregations and Window Functions/06 - Running Totals and Lag and Lead.py
 ```
 
-When the rule attaches, it `@`-references `notebook-authoring-checklist.md`,
-whose Required reads list names the six canonical standards (the
-checklist itself, `notebook-writing.md`, `teaching-guidelines.md`,
-`coding-standards.md`, `naming-conventions.md`, and `dataset-overview.md`).
+When the rule attaches during a slash command, it defers to that command's
+manifest in `notebook-authoring-checklist.md`. For an ad-hoc edit, it tells
+the agent to read the applicable scaffold or full-lesson manifest with read
+tools. This avoids eagerly loading every canonical standard for every
+notebook task.
 
-It also tells the agent to open the `README.md` from the same numbered module. That README is opened as part of the work; it is not in the rule's `@` reference list.
+The selected manifest also routes the agent to the target module README and
+the relevant canonical standards.
 
 ### `course-authoring.mdc`
 

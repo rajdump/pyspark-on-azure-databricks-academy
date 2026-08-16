@@ -3,11 +3,9 @@
 This file is the canonical owner of compute selection, validation order, and
 the validation-record schema for every module.
 
-Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
-`README.md`, `/write-lesson`, `/validate-notebook`, `/review-module`, and
-module validation records. Other notebook workflows receive these rules
-through the checklist when compute guidance is relevant. Do not duplicate
-the compute or validation-record rules in those consumers.
+Direct readers: `docs/standards/notebook-authoring-checklist.md`, `README.md`,
+and module validation records. Notebook commands receive this policy through
+the checklist when compute guidance is relevant.
 
 ## Available compute
 

@@ -7,13 +7,16 @@ alwaysApply: false
 You are editing a course-level or module-level README, or the course
 roadmap.
 
-Follow these standards before writing or editing:
+When `/write-module-readme` is active, follow its declared reads and do not
+expand the standalone list below a second time.
 
-- @docs/standards/teaching-guidelines.md — pedagogy and explanation style
-- @docs/standards/naming-conventions.md — folder, file, and notebook
+For ad-hoc edits with no active command, read:
+
+- `docs/standards/teaching-guidelines.md` — pedagogy and explanation style
+- `docs/standards/naming-conventions.md` — folder, file, and notebook
   naming rules to reference correctly
 - For module README edits,
-  @docs/standards/readme-authoring.md — structure and the design-complete
+  `docs/standards/readme-authoring.md` — structure and the design-complete
   definition
 
 Ownership reminders:
@@ -22,6 +25,5 @@ Ownership reminders:
   prerequisites, production relevance, final-project contribution, status).
   It must never contain notebook sequences, exercises, or code.
 - A module's own `README.md` owns that module's detailed design. Follow
-  @docs/standards/readme-authoring.md for its required structure and
-  design-complete gate; report gaps instead of changing roadmap status when
-  that gate is not met.
+  the README standard's required structure and design-complete gate; report
+  gaps instead of changing roadmap status when that gate is not met.

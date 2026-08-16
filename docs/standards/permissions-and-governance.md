@@ -4,11 +4,10 @@ This file is the canonical owner of the distinction between Azure RBAC,
 Databricks workspace permissions, and Unity Catalog privileges. It also owns
 the minimum-privilege documentation pattern for module `README.md` files.
 
-Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/readme-authoring.md`, `/write-module-readme`,
-`/write-lesson`, and `/validate-notebook`. `/review-module` receives these
-rules through the checklist. Do not duplicate the permission rules in those
-consumers.
+Direct readers: `docs/standards/notebook-authoring-checklist.md`,
+`docs/standards/readme-authoring.md`, and `/write-module-readme`. Notebook
+commands receive these rules through the checklist when permission guidance
+is relevant.
 
 ## Three distinct permission systems
 
@@ -60,8 +59,8 @@ object-level grant looks correct.
 learner's Azure storage account, container, storage credential, and ADLS
 folder. They do not use widgets for those values. Committed defaults must
 follow the **Permitted author defaults** section in
-@docs/standards/coding-standards.md. Fixed course Unity Catalog names, such
-as `rideshare_dev`, remain defined by @docs/data/dataset-overview.md.
+`docs/standards/coding-standards.md`. Fixed course Unity Catalog names, such
+as `rideshare_dev`, remain defined by `docs/data/dataset-overview.md`.
 
 ## Author and learner privilege assumptions
 

@@ -46,11 +46,16 @@ workflows, add an **At a glance** section near the top.
 
 ## References
 
-- Use `@path` when an agent must read another file to perform the current
-  task.
+- Use `@path` when the current prompt or rule must eagerly include another
+  whole file.
+- For conditional routing, use a backticked path and explicitly say whether
+  to read the whole file or named sections. The agent must locate and read
+  the selected content with search/read tools; do not use `@path` for every
+  branch of a manifest.
 - Use a backticked path when identifying a consumer, owner, or related file
   for information only.
-- Name the relevant section when a reference targets only part of a file.
+- For a scoped read, name the exact headings. Cursor has no section-level
+  `@path` syntax.
 - Confirm referenced files and section headings exist.
 
 ## Ownership and duplication

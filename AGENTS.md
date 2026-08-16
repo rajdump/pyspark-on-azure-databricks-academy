@@ -38,7 +38,7 @@ validated in Azure Databricks.
 - Module design: the target module's `README.md`
 - Module README structure and design-complete gate:
   `docs/standards/readme-authoring.md`
-- Shared read list for notebook work:
+- Command-specific read manifests and acceptance bars for notebook work:
   `docs/standards/notebook-authoring-checklist.md`
 - Dataset contract: `docs/data/dataset-overview.md`
 - Process and pedagogy: `docs/standards/`

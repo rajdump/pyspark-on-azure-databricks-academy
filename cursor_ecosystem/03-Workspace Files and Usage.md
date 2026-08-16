@@ -77,7 +77,7 @@ here**; they do not duplicate the content.
 
 | File | Usage |
 |---|---|
-| `notebook-authoring-checklist.md` | Shared read list for `/new-lesson`, `/write-lesson`, `/validate-notebook` |
+| `notebook-authoring-checklist.md` | Per-command reads and acceptance bars for notebook authoring and review |
 | `notebook-writing.md` | Databricks source `.py` format: header, `# COMMAND ----------`, cell structure |
 | `teaching-guidelines.md` | Pedagogy: how to explain, what to show, what not to skip |
 | `coding-standards.md` | Python / PySpark conventions in notebooks |

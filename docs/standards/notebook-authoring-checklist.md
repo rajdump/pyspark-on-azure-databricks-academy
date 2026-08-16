@@ -8,52 +8,130 @@ be true at two stages:
   validation.
 
 A **bar** is a set of pass criteria. This file is the canonical owner of both
-bars and the shared read list. Direct consumers are `/new-lesson`,
-`/write-lesson`, `/validate-notebook`, `/review-module`,
-`.cursor/rules/learner-notebooks.mdc`, and `AGENTS.md`. They point here
-instead of copying these rules.
+bars and the command-specific read manifests. Direct readers are
+`/new-lesson`, `/write-lesson`, `/validate-notebook`, `/review-module`,
+`.cursor/rules/learner-notebooks.mdc`, and `AGENTS.md`.
 
 ## At a glance
 
 | Command | Purpose | Apply from this checklist |
 |---|---|---|
-| `/new-lesson` | Create a skeleton only | Required reads, scoped additions, Scaffold bar |
-| `/write-lesson` | Turn a skeleton into a full runnable lesson | Required reads, relevant Additional reads, Full-lesson bar |
-| `/validate-notebook` | Review one full lesson without editing it | Required reads, relevant Additional reads, Full-lesson bar |
-| `/review-module` | Review module-wide consistency without editing files | Required reads, scoped additions, relevant Additional reads, Full-lesson bar |
+| `/new-lesson` | Create a skeleton only | Scaffold manifest and Scaffold bar |
+| `/write-lesson` | Turn a skeleton into a full runnable lesson | Full-lesson manifest and Full-lesson bar |
+| `/validate-notebook` | Review one full lesson without editing it | Validation manifest and Full-lesson bar |
+| `/review-module` | Review module-wide consistency without editing files | Module-review manifest and Full-lesson spot checks |
 
-## Required reads (every notebook command)
+## How to read a manifest
 
-Read every source below before scaffolding, writing, or checking a learner
-notebook, or reviewing a module:
+- An `@path` means read the whole file.
+- A backticked path followed by named headings is a scoped read. Locate those
+  headings with search/read tools and read only those sections. Cursor has no
+  section-level `@path` syntax.
+- Read the target notebook when writing or validating it. Read the relevant
+  notebooks in the target module when reviewing a module.
+- Never infer a missing schema, path, join key, course object name, or README
+  design decision from a scoped read. Expand to the canonical file or ask the
+  author when the named sections do not establish the answer.
 
-1. The module's own `NN - Descriptive Title/README.md` — use its
-   **Notebooks** table Focus cell for the target notebook number as the
-   source of truth for planned topics, subtopics, comparisons, gotchas, and
-   exercise scope.
-2. @docs/standards/notebook-writing.md — structure, cell markers, format
-3. @docs/standards/teaching-guidelines.md — pedagogy and explanation style
-4. @docs/standards/coding-standards.md — Python/PySpark conventions
-5. @docs/standards/naming-conventions.md — folder and notebook naming
-6. @docs/data/dataset-overview.md — schemas, column names, join keys, physical layout
+### Dataset scope
 
-### Scoped additions to Required reads
+Use `docs/data/dataset-overview.md` as one canonical file, but read only the
+sections needed by the target:
 
-For `/new-lesson` and `/review-module`, also read:
+- Modules 1–4: **Core data model**.
+- A lesson that uses nested driver data: **Supplementary: `drivers` (nested
+  XML)** in addition to the relevant core or pipeline section.
+- Modules 5–8: **Core data model** and the matching subsection under
+  **Module pipeline**.
+- Any lesson that creates, names, grants access to, or reads a Unity Catalog
+  object or Volume path: **Unity Catalog platform reference**.
 
-- @COURSE_MODULES.md — roadmap status and module-level scope
-- @docs/standards/readme-authoring.md — module README structure and the
-  design-complete definition
+Expand to adjacent pipeline subsections when the target consumes an earlier
+module's derived output and its contract is not repeated in the matching
+subsection.
 
-## Additional reads (when relevant)
+## Command read manifests
 
-These do not apply to a structure-only scaffold. Read them when writing or
-checking a full lesson, or reviewing a module, under these conditions:
+### Scaffold manifest (`/new-lesson`)
 
-- @docs/standards/compute-validation-policy.md — when examples assume a
-  specific compute type or access mode
-- @docs/standards/permissions-and-governance.md — when examples use Unity
-  Catalog objects beyond default learner access
+Read:
+
+1. The target module's full `README.md`.
+2. The target module row and its table headings in `COURSE_MODULES.md`.
+3. The full `docs/standards/readme-authoring.md`.
+4. The **Format** and **Notebook-level structure** sections in
+   `docs/standards/notebook-writing.md`.
+5. The **Audience assumptions** and **Explanation style** sections in
+   `docs/standards/teaching-guidelines.md`.
+6. The **Notebook files** section in
+   `docs/standards/naming-conventions.md`.
+7. The sections selected by **Dataset scope** when the notebook uses course
+   data or persistent course objects.
+
+Coding standards are not part of this manifest because a scaffold contains
+no runnable lesson code.
+
+### Full-lesson manifest (`/write-lesson`)
+
+Read:
+
+1. The target module README's **Notebooks** row for the target and its
+   **Prerequisites**, **Dataset**, and **Paths and outputs** sections when
+   present.
+2. The full `docs/standards/notebook-writing.md`.
+3. The full `docs/standards/teaching-guidelines.md`.
+4. The full `docs/standards/coding-standards.md`.
+5. The **Python identifiers** section in
+   `docs/standards/naming-conventions.md`, plus **Unity Catalog objects**
+   when the lesson names course objects.
+6. The sections selected by **Dataset scope**.
+7. One completed sibling notebook for voice and cell structure: prefer the
+   prior numbered notebook in the same module. For Notebook 01 with no prior
+   sibling, read the last numbered notebook of the previous module.
+
+Also apply **Conditional reads** below.
+
+### Validation manifest (`/validate-notebook`)
+
+Read the Full-lesson manifest, including a completed sibling for voice
+comparison, then review the target notebook against the Full-lesson bar.
+Validation is read-only and does not produce runtime evidence.
+
+### Module-review manifest (`/review-module`)
+
+Read:
+
+1. The target module's full `README.md`.
+2. The target module row and its table headings in `COURSE_MODULES.md`.
+3. The full `docs/standards/readme-authoring.md`.
+4. The **Module folders** and **Notebook files** sections in
+   `docs/standards/naming-conventions.md`.
+5. The **Format**, **Notebook-level structure**, **Code cell conventions**,
+   **Output display convention**, and **What must never appear in a
+   notebook** sections in `docs/standards/notebook-writing.md`.
+6. The **Explanation style**, **Structure patterns**, and **Production
+   framing** sections in `docs/standards/teaching-guidelines.md`.
+7. The **Style baseline**, **PySpark-specific conventions**, **Security and
+   portability**, and **Permitted author defaults** sections in
+   `docs/standards/coding-standards.md`.
+8. The **Python identifiers** section in
+   `docs/standards/naming-conventions.md`.
+9. The sections selected by **Dataset scope**.
+
+Read each notebook far enough to check sequence, README coverage, consistent
+voice and structure, security, and dataset use. This is a module-level spot
+check, not a substitute for the Validation manifest on every notebook.
+
+### Conditional reads
+
+These do not apply to a structure-only scaffold:
+
+- Read the full `docs/standards/compute-validation-policy.md` when a full
+  lesson or review assumes a compute type, access mode, cluster
+  configuration, job, or pipeline.
+- Read the full `docs/standards/permissions-and-governance.md` when a full
+  lesson or review uses Unity Catalog objects beyond default learner access
+  or must verify a module README's minimum-privilege section.
 
 ## Scaffold bar (`/new-lesson`)
 
@@ -64,7 +142,7 @@ Before creating a notebook, check both conditions:
 - **Roadmap status:** The target module is `Started` in `COURSE_MODULES.md`.
 - **README design:** The module `README.md` meets the design-complete
   definition in
-  @docs/standards/readme-authoring.md.
+  `docs/standards/readme-authoring.md`.
 
 If either check fails, `/new-lesson` stops and reports the gap. It does not
 create the notebook or change the module status.
@@ -80,15 +158,15 @@ When readiness passes, the scaffold is valid only when all checks below pass:
   and summary placeholders.
 - **Dataset setup:** If the notebook will use the shared dataset, setup
   comments name the correct tables and schema or path from
-  @docs/data/dataset-overview.md without inventing columns.
+  `docs/data/dataset-overview.md` without inventing columns.
 - **No lesson content yet:** `# TODO` or empty code cells are acceptable.
   Runnable lesson content is not required until `/write-lesson`.
 
 ## Full-lesson bar (`/write-lesson`)
 
 This bar summarizes the final checks; the linked standards still apply. A
-lesson is ready for `/validate-notebook` only when every applicable Required
-and Additional read is followed and all checks below pass:
+lesson is ready for `/validate-notebook` only when its manifest and
+conditional reads are followed and all checks below pass:
 
 - **Planned coverage:** The module README's Notebooks table Focus cell is
   fully implemented. Planned topics, subtopics, comparisons, and gotchas
@@ -102,7 +180,7 @@ and Additional read is followed and all checks below pass:
   progression are consistent with the teaching standard and completed
   sibling notebooks. Borderline style differences are not blocking issues.
 - **Code and safe values:** Notebook code and authored content follow
-  @docs/standards/coding-standards.md, including its **Security and
+  `docs/standards/coding-standards.md`, including its **Security and
   portability** and **Permitted author defaults** sections.
 
 If a check fails, the notebook is not ready. Fix the gap and run
@@ -122,5 +200,5 @@ validating each notebook.
 
 The Scaffold and Full-lesson bars cover authoring quality only. Runtime
 validation is separate and follows
-@docs/standards/compute-validation-policy.md. Notebook commands do not
+`docs/standards/compute-validation-policy.md`. Notebook commands do not
 commit, push, pull, run Databricks, or record runtime results.

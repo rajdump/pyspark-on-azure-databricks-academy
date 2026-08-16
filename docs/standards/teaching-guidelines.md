@@ -3,11 +3,11 @@
 This file is the canonical owner of pedagogy, explanation style, and
 exercise-design rules for learner-facing course content.
 
-Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
+Direct readers: `docs/standards/notebook-authoring-checklist.md`,
 `docs/standards/notebook-writing.md`, `.cursor/rules/course-authoring.mdc`,
 and `/write-module-readme`. Notebook commands and
 `.cursor/rules/learner-notebooks.mdc` receive these rules through the
-checklist. Do not duplicate the pedagogy rules in those consumers.
+checklist.
 
 ## Audience assumptions
 
@@ -42,7 +42,7 @@ rather than assuming prior exposure.
 - Call out common mistakes and gotchas explicitly (e.g. NULL-handling
   surprises, lazy-evaluation timing) rather than letting learners discover
   them by accident.
-- Use the shared rideshare dataset (@docs/data/dataset-overview.md) for
+- Use the shared rideshare dataset (`docs/data/dataset-overview.md`) for
   examples by default; only switch datasets when a topic genuinely requires
   it, and explain why.
 
@@ -76,7 +76,7 @@ batch data engineering job — this is a job-focused course, not an academic
 Spark tour. Where relevant, name the production concern a topic addresses
 (reliability, idempotency, governance, performance, etc.) using the
 "Production Relevance" language already established for that module in
-@COURSE_MODULES.md.
+`COURSE_MODULES.md`.
 
 ## Where this applies
 

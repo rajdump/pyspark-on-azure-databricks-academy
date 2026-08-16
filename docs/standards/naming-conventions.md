@@ -3,12 +3,11 @@
 This file is the canonical owner of folder, file, identifier, and Unity
 Catalog object naming rules for this repository.
 
-Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
+Direct readers: `docs/standards/notebook-authoring-checklist.md`,
 `docs/standards/coding-standards.md`, `.cursor/rules/course-authoring.mdc`,
-and the `/new-lesson`, `/write-module-readme`, and `/review-module`
-commands. `/write-lesson`, `/validate-notebook`, and
-`.cursor/rules/learner-notebooks.mdc` receive these rules through the
-checklist. Do not duplicate the naming rules in those consumers.
+and `/write-module-readme`. Notebook commands other than
+`/write-module-readme`, plus `.cursor/rules/learner-notebooks.mdc`, receive
+these rules through the checklist.
 
 ## Module folders
 
@@ -76,7 +75,7 @@ that distinguish learning or development objects from production objects.
 Do not embed personal identifiers.
 
 The rideshare course's fixed catalog, schema, table, and volume names are
-defined in @docs/data/dataset-overview.md. Learner notebooks must use those
+defined in `docs/data/dataset-overview.md`. Learner notebooks must use those
 names rather than inventing alternatives. Azure storage accounts,
 containers, and storage credentials vary per learner;
 `01 - Unity Catalog Volumes and Data Landing.py` in

@@ -4,16 +4,14 @@ This file is the canonical owner of module `README.md` structure and the
 design-complete definition. A module README owns detailed module design; it
 does not own the course roadmap, global standards, or Cursor workflows.
 
-Direct consumers are `AGENTS.md`, `.cursor/rules/course-authoring.mdc`,
-`.cursor/commands/write-module-readme.md`,
-`.cursor/commands/review-module.md`, and
-`docs/standards/notebook-authoring-checklist.md`. `/new-lesson` receives the
-design-complete gate through the checklist. Do not duplicate the README
-structure or gate in those consumers.
+Direct readers: `AGENTS.md`, `.cursor/rules/course-authoring.mdc`,
+`/write-module-readme`, and
+`docs/standards/notebook-authoring-checklist.md`. `/new-lesson` and
+`/review-module` receive the design-complete gate through the checklist.
 
 ## Required structure
 
-A module README uses the module number and title from @COURSE_MODULES.md as
+A module README uses the module number and title from `COURSE_MODULES.md` as
 its H1 and includes:
 
 1. **Purpose** — the module's concise role in the course.
@@ -30,7 +28,7 @@ its H1 and includes:
    detail is needed.
 7. **Minimum privileges required** — include when the module requires
    specific privileges beyond basic workspace access, using the pattern in
-   @docs/standards/permissions-and-governance.md.
+   `docs/standards/permissions-and-governance.md`.
 
 ## Notebooks table
 

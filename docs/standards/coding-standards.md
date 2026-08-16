@@ -4,12 +4,11 @@ This file is the canonical owner of Python and PySpark coding rules other
 than identifier naming. It applies to learner notebooks now and to reusable
 `src/` code after Module 13 introduces it.
 
-Direct consumers are `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/notebook-writing.md`,
-`docs/standards/permissions-and-governance.md`, and `/write-lesson`. Other
-notebook commands and `.cursor/rules/learner-notebooks.mdc` receive these
-rules through the checklist. Do not duplicate the coding rules in those
-consumers.
+Direct readers: `docs/standards/notebook-authoring-checklist.md`,
+`docs/standards/notebook-writing.md`, and
+`docs/standards/permissions-and-governance.md`. Notebook commands and
+`.cursor/rules/learner-notebooks.mdc` receive these rules through the
+checklist.
 
 ## Style baseline
 
@@ -18,7 +17,7 @@ consumers.
   `ruff check .` before pushing.
 - Line length: 100 characters (matches the `ruff` config).
 - For Python identifier naming (`snake_case`, `PascalCase`, constants), see
-  @docs/standards/naming-conventions.md.
+  `docs/standards/naming-conventions.md`.
 
 ## PySpark-specific conventions
 
