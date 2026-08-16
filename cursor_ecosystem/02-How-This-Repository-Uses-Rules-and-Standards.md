@@ -94,7 +94,7 @@ The repository has three `.mdc` rules:
 | --- | --- | --- |
 | `learner-notebooks.mdc` | Apply to Specific Files | Numbered learner `.py` notebooks |
 | `course-authoring.mdc` | Apply to Specific Files | Root README, roadmap, and numbered module READMEs |
-| `notebook-command-output.mdc` | Apply Intelligently | Response format for the four lesson commands |
+| `notebook-command-output.mdc` | Apply Intelligently | Response format for the five authoring commands |
 
 ### `learner-notebooks.mdc`
 
@@ -180,9 +180,9 @@ AGENTS.md
     ↓
 learner-notebooks.mdc attaches
     ↓
-notebook standards are included
+agent reads the applicable command or ad-hoc manifest
     ↓
-module README is opened
+module README and scoped standards are opened
     ↓
 agent performs the notebook work
 ```
@@ -200,7 +200,7 @@ AGENTS.md
     ↓
 course-authoring.mdc attaches
     ↓
-authoring standards are included
+agent follows the command's scoped reads, or the ad-hoc list
     ↓
 agent performs the documentation work
 ```

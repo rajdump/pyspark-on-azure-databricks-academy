@@ -119,8 +119,10 @@ a scoped read is insufficient. It does not authorize loading another
 command's manifest.
 
 `/write-module-readme` remains independent of the notebook checklist. Its
-roadmap, teaching, naming, dataset, and permissions reads are now scoped to
-the module design being authored.
+roadmap, teaching, naming, dataset, and permissions reads are scoped to the
+module design being authored. Dataset reads follow the same section rules as
+the checklist's **Dataset scope**: Modules 1–4 stay on **Core data model**;
+pipeline subsections apply only to Modules 5–8.
 
 ## Safeguards retained
 

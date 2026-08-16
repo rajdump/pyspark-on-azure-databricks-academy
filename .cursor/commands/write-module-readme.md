@@ -11,9 +11,12 @@ Before writing, read:
   `docs/standards/teaching-guidelines.md`
 - **Module folders** and **Notebook files** in
   `docs/standards/naming-conventions.md`
-- **Core data model**, the target's matching **Module pipeline** subsection,
-  and **Unity Catalog platform reference** when applicable in
-  `docs/data/dataset-overview.md`
+- `docs/data/dataset-overview.md`: **Core data model**; **Supplementary:
+  `drivers` (nested XML)** when the module uses nested driver data; the
+  matching **Module pipeline** subsection for Modules 5–8; **Unity Catalog
+  platform reference** when the design creates, names, grants access to, or
+  reads a Unity Catalog object or Volume path. Expand to an earlier pipeline
+  subsection only when that contract is required and not repeated.
 - The full `docs/standards/permissions-and-governance.md` when the design
   requires privileges beyond basic workspace access
 
