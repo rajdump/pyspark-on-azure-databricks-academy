@@ -4,8 +4,9 @@ This file is the canonical owner of folder, file, identifier, and Unity
 Catalog object naming rules for this repository.
 
 Direct readers: `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/coding-standards.md`, `.cursor/rules/course-authoring.mdc`,
-and `/write-module-readme`. Notebook commands other than
+`docs/standards/coding-standards.md`, `.cursor/rules/course-authoring.mdc`
+(**Module folders** and **Notebook files** only), and `/write-module-readme`.
+Notebook commands other than
 `/write-module-readme`, plus `.cursor/rules/learner-notebooks.mdc`, receive
 these rules through the checklist.
 

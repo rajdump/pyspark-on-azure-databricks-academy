@@ -7,23 +7,43 @@ alwaysApply: false
 You are editing a course-level or module-level README, or the course
 roadmap.
 
-When `/write-module-readme` is active, follow its declared reads and do not
-expand the standalone list below a second time.
+When `/write-module-readme` is active, follow its declared reads. Expand
+within those reads and the **Canonical sources** section in
+`docs/standards/readme-authoring.md` when a scoped read is insufficient;
+do not load the ad-hoc list below or a different command's manifest.
 
-For ad-hoc edits with no active command, read:
+When `/review-module` is active, follow the **Module-review manifest**,
+applicable **Conditional reads**, and Full-lesson spot checks in
+`docs/standards/notebook-authoring-checklist.md`; do not load the ad-hoc
+list below or a different command's manifest.
 
-- `docs/standards/teaching-guidelines.md` — pedagogy and explanation style
-- `docs/standards/naming-conventions.md` — folder, file, and notebook
-  naming rules to reference correctly
-- For module README edits,
-  `docs/standards/readme-authoring.md` — structure and the design-complete
-  definition
+For ad-hoc edits with no active command:
+
+- **`COURSE_MODULES.md`** — roadmap ownership only (below). Do not add
+  notebook sequences, exercises, or code.
+- **Root `README.md`** — edit in place; keep sections aligned with the
+  existing root `README.md` structure. Do not load readme-authoring.
+- **Numbered module `README.md`** — read
+  `docs/standards/readme-authoring.md` and the **Canonical sources** it
+  names. For folder or notebook naming, read **Module folders** and
+  **Notebook files** in `docs/standards/naming-conventions.md`. When
+  editing **Learning objectives**, also read **Audience assumptions**
+  and **Production framing** in `docs/standards/teaching-guidelines.md`.
+  readme-authoring and the matching `COURSE_MODULES.md` row are canonical;
+  if the README conflicts with them, follow those sources.
+
+For new module design, the author should use `/write-module-readme` (not
+ad-hoc chat) so reads and stop conditions load consistently.
 
 Ownership reminders:
 
 - `COURSE_MODULES.md` owns the full roadmap (module purpose, topics,
-  prerequisites, production relevance, final-project contribution, status).
-  It must never contain notebook sequences, exercises, or code.
+  prerequisites, production relevance, final-project contribution,
+  status).
 - A module's own `README.md` owns that module's detailed design. Follow
-  the README standard's required structure and design-complete gate; report
-  gaps instead of changing roadmap status when that gate is not met.
+  readme-authoring required structure and the design-complete gate. Do not
+  guess or invent concrete facts. Do not change roadmap status when that
+  gate is not met.
+
+Automatic-write restrictions are owned by the **Do not write automatically**
+section in `AGENTS.md`.

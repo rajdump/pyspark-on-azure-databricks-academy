@@ -9,6 +9,19 @@ Direct readers: `AGENTS.md`, `.cursor/rules/course-authoring.mdc`,
 `docs/standards/notebook-authoring-checklist.md`. `/new-lesson` and
 `/review-module` receive the design-complete gate through the checklist.
 
+## Canonical sources
+
+Concrete facts in a module README — table names, columns, paths, object
+names, and privileges — must come from:
+
+- That module's row in `COURSE_MODULES.md`
+- Applicable headings in `docs/data/dataset-overview.md`
+- `docs/standards/permissions-and-governance.md` when the module
+  requires privileges beyond basic workspace access
+
+Do not guess or invent them. Derive learning objectives and the
+Notebooks table from that row's Purpose and Major Topics.
+
 ## Required structure
 
 Use the roadmap number and title as the H1 in this form:
@@ -25,17 +38,19 @@ A module README must include:
 2. **Learning objectives** — observable learner outcomes.
 3. **Prerequisites** — prior modules, concepts, tables, or setup required.
 4. **Dataset** — inputs, outputs, paths, schemas, and dependencies.
-   Take table, column, path, and object names from
-   `docs/data/dataset-overview.md`; do not invent them. Use `## Dataset`
-   when data inputs or contracts need explanation. Use `## Paths and
-   outputs` when the module reads or creates persistent locations or
-   objects. Use both when both apply.
+   Every concrete fact must come from the canonical sources above.
+   Do not guess or invent them. Use `## Dataset` when data inputs or
+   contracts need explanation. Use `## Paths and outputs` when the
+   module reads or creates persistent locations or objects. Use both
+   when both apply.
 5. **Notebooks** — the ordered table below. Record each notebook's
    exercise in the Focus cell, or in a dedicated section when the
    module needs extra detail.
 6. **Minimum privileges required** — follow **Minimum-privilege
    documentation pattern** in
-   `docs/standards/permissions-and-governance.md`.
+   `docs/standards/permissions-and-governance.md`. List only what
+   that module's examples require. Do not guess or invent object names
+   or grants.
 
 ## Notebooks table
 
@@ -59,9 +74,9 @@ A module README is design-complete only when all of these pass:
 - Every applicable item in **Required structure** is present.
 - Every planned notebook has a numbered row with a final title, Focus
   scope, and exercise expectation.
-- Dataset facts are specific enough to scaffold a notebook; none are
-  invented.
-- No `TODO` placeholder or unresolved design choice remains.
+- Every concrete fact in the README comes from the canonical sources
+  above. Do not guess or invent them.
+- No `TODO` placeholder remains.
 
 ## Does not cover
 

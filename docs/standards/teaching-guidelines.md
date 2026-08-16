@@ -5,7 +5,9 @@ exercise-design rules for learner-facing course content.
 
 Direct readers: `docs/standards/notebook-authoring-checklist.md`,
 `docs/standards/notebook-writing.md`, and
-`.cursor/rules/course-authoring.mdc`. Notebook commands and
+`.cursor/rules/course-authoring.mdc` (scoped: **Audience assumptions**
+and **Production framing** when editing module README Learning
+objectives). Notebook commands and
 `.cursor/rules/learner-notebooks.mdc` receive these rules through the
 checklist.
 
@@ -80,7 +82,9 @@ Spark tour. Where relevant, name the production concern a topic addresses
 
 ## Where this applies
 
-- Module `README.md` files (learning objectives, prerequisites, guidance)
+- Module `README.md` **Learning objectives** (tone and production framing
+  only; structure and concrete facts — see
+  `docs/standards/readme-authoring.md`)
 - Learner notebooks (markdown cells, comments, exercise framing)
 - `/new-lesson`-scaffolded content follows the **Scaffold bar** in
   `docs/standards/notebook-authoring-checklist.md`; full lessons use
