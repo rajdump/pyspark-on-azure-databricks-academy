@@ -15,18 +15,10 @@ summarizes and links; the canonical files remain authoritative.
 
 ## Source precedence
 
-When documents disagree, use this order:
+The precedence order is owned by [AGENTS](../AGENTS.md) — see its **Read for
+facts** section. Do not maintain a second copy here.
 
-1. [COURSE_MODULES](../COURSE_MODULES.md) for module roadmap and status
-2. The module `README.md` for lesson sequence, scope, outputs, and privileges
-3. Approved BRDs and mappings for signed-off business contracts
-4. [dataset overview](../docs/data/dataset-overview.md) for dataset schemas,
-   keys, paths, and pipeline contracts
-5. `docs/standards/` for repository-wide authoring policy
-6. `docs/validation/` for author-recorded runtime evidence
-7. Personal and temporary notes as context only
-
-This precedence explains why [COURSE_MODULES](../COURSE_MODULES.md) is the
+That precedence explains why [COURSE_MODULES](../COURSE_MODULES.md) is the
 status authority, and why approved Module 07 mappings override conflicting
 personal notes.
 
@@ -99,7 +91,7 @@ Sources: [README — Development workflow](../README.md#development-workflow),
 | [dataset overview](../docs/data/dataset-overview.md) | Dataset schemas, join keys, physical paths, pipeline contracts |
 | `docs/standards/` | Shared coding, notebook, teaching, naming, compute, and permission policy |
 | `docs/validation/` | Author-recorded Azure runtime evidence |
-| [AGENTS](../AGENTS.md) | Concise index pointing to canonical documents |
+| [AGENTS](../AGENTS.md) | Repository-wide agent constraints, author-only writes, source precedence, and pointers to the canonical documents |
 
 Cursor commands must not update roadmap status or runtime evidence
 automatically.

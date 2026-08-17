@@ -48,13 +48,17 @@ A slash command can run with no glob rule attached. `/new-lesson` often does tha
 
 The root `AGENTS.md` contains the constraints that should remain available across repository work. Cursor and Codex agents use it. Databricks chat does not auto-load it.
 
-For this course, those include:
+It has five sections, ordered by what an agent needs first:
 
-- batch-only PySpark data engineering
-- Databricks source `.py` notebooks, never `.ipynb`
-- no Structured Streaming, Auto Loader, streaming tables, or ML content
+| Section | Role |
+| --- | --- |
+| **Hard constraints** | Batch-only scope, Databricks source `.py` notebooks and never `.ipynb`, no local Spark execution, and no invented facts |
+| **Author-only writes** | The three writes an agent must not perform unsolicited |
+| **Read for facts** | The numbered source-precedence chain |
+| **Authoring workflows** | The five slash commands, plus the rule to load standards on demand |
+| **Local checks** | `uv`, `ruff`, and `mypy` commands, and which pre-existing findings to leave alone |
 
-`AGENTS.md` also points to the documents that own deeper information:
+`AGENTS.md` states each constraint once and points to the documents that own deeper information:
 
 | Need | Source of truth |
 | --- | --- |
@@ -62,6 +66,11 @@ For this course, those include:
 | Module-specific design | the module's `README.md` |
 | Schemas, join keys, and physical layout | `docs/data/dataset-overview.md` |
 | Detailed authoring and engineering rules | `docs/standards/` |
+| Learner overview and technical baseline | root `README.md` |
+
+Deeper facts are not copied into `AGENTS.md`. It names the dataset document rather than listing tables, and names the root `README.md` rather than restating the runtime baseline or the Git-to-Databricks workflow.
+
+**Read for facts** is the canonical home of source precedence. `vault/decisions.md` points to it instead of keeping a second copy, since `vault/` is itself context-only in that chain.
 
 Two actions remain author-owned:
 
@@ -71,6 +80,8 @@ Two actions remain author-owned:
 Agents must not perform either action as a side effect of lesson work.
 
 A third gate also lives in `AGENTS.md`: scaffold learner notebooks only when the **Readiness precondition** in `docs/standards/notebook-authoring-checklist.md` is met.
+
+The `.mdc` rules point at the **Author-only writes** heading by name, so that heading text must not be renamed without updating `learner-notebooks.mdc` and `course-authoring.mdc`.
 
 ---
 

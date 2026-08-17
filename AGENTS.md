@@ -1,80 +1,81 @@
 # AGENTS.md
 
-Always-on agent context for this repository. States constraints, where
-authoritative documents live, and what requires explicit author approval.
-
-## Repository constraints
-
-Non-negotiable scope and format rules for all work in this repo.
-
 A batch-only PySpark data engineering course on Azure Databricks, organized
-into numbered modules (`NN - Descriptive Title`). See `COURSE_MODULES.md` for
-the roadmap and the target module's `README.md` for its detailed design.
+into numbered module folders (`NN - Descriptive Title`). Authored locally in
+Cursor, pushed to GitHub, then pulled into an Azure Databricks Git folder to
+run.
 
-- Notebook format: Databricks source `.py` (`# Databricks notebook source`
-  header required) — never `.ipynb`
-- Batch data engineering only — no Structured Streaming, Auto Loader,
-  streaming tables, or ML content
-- Shared rideshare dataset (`trip`, `trip_time`, `payment`, `zone_lookup`,
-  plus supplementary nested `drivers`) threads through every module — schemas,
-  join keys, and physical layout: `docs/data/dataset-overview.md`
-- Full technical baseline (runtime, Spark/Python versions, governance,
-  languages): `README.md`
+## Hard constraints
 
-## Authoring and validation workflow
-
-How content is authored locally and validated in Azure Databricks.
-
-Local authoring in Cursor -> push to GitHub (source of truth) -> Azure
-Databricks Git folder pulls and runs. Local tooling (`uv`, `ruff`, `mypy`,
-`pytest`) never executes Spark; all Spark/Delta/Unity Catalog behavior is
-validated in Azure Databricks.
-
-## Authoritative documents and precedence
-
-Where to read facts; use the numbered order when sources disagree (details:
-`vault/decisions.md` — Source precedence):
-
-1. `COURSE_MODULES.md` — roadmap and status
-2. Target module `README.md` — lesson design
-   (`docs/standards/readme-authoring.md` for structure and
-   **Design-complete definition**)
-3. Approved BRDs/mappings under a module's `requirements/` (when present)
-4. `docs/data/dataset-overview.md` — schemas, paths, contracts
-5. `docs/standards/` — authoring policy and pedagogy; command read manifests
-   and acceptance bars: `docs/standards/notebook-authoring-checklist.md`
-6. `docs/validation/` — author-supplied runtime evidence only
-7. `vault/`, `take_notes/`, and personal notes — context only, not
-   authoritative
-
-`README.md` — learner overview and technical baseline (outside the conflict
-chain above).
+- Learner notebooks are Databricks source `.py` files whose first line is
+  `# Databricks notebook source`. Never `.ipynb`.
+- Batch data engineering only. Never add Structured Streaming, Auto Loader,
+  streaming tables, or ML content.
+- Never execute Spark, Delta, or Unity Catalog locally. All runtime behavior
+  is validated in Azure Databricks.
+- Never invent a table name, column, path, grant, or row count. Take it from
+  a **Read for facts** source, or ask the author.
 
 ## Author-only writes
 
-Do not perform these updates unless the author explicitly requests them.
+Do not perform these unless the author explicitly asks:
 
-- Do not update `COURSE_MODULES.md` status as a side effect; change it only
-  when the author explicitly asks.
-- Do not infer, fabricate, or independently mark runtime outcomes. Edit
-  `docs/validation/` only when the author explicitly asks using Azure
-  Databricks results or output they supplied.
-- Do not guess or invent table names, columns, paths, grants, or row counts
-  in module READMEs or notebooks; derive them from canonical sources or ask
-  the author.
-- Scaffold learner notebooks only when the **Readiness precondition** in
+- Changing module status in `COURSE_MODULES.md`, including as a side effect
+  of lesson work.
+- Editing `docs/validation/`, which records only Azure Databricks output the
+  author supplied. Never infer or mark a runtime outcome.
+- Scaffolding a new learner notebook before the **Readiness precondition** in
   `docs/standards/notebook-authoring-checklist.md` is met.
 
-## Cursor authoring tools
+## Read for facts
 
-Prefer slash commands; load standards on demand — do not assume they are in
-context.
+Read these for course facts. When they disagree, the earlier source wins.
 
-Module-design and lesson workflows live in `.cursor/commands/`. For module
-README and learner-notebook work, prefer the slash commands there
-(`/write-module-readme`, `/new-lesson`, `/write-lesson`, `/validate-notebook`,
-`/review-module`) so read manifests and stop conditions load consistently.
+1. `COURSE_MODULES.md` — roadmap and module status
+2. `NN - Descriptive Title/README.md` — that module's lesson design; read
+   `docs/standards/readme-authoring.md` for its required structure and the
+   **Design-complete definition**
+3. `NN - Descriptive Title/requirements/` — approved BRDs and mappings, when
+   present
+4. `docs/data/dataset-overview.md` — dataset schemas, join keys, paths, and
+   pipeline contracts
+5. `docs/standards/` — authoring policy and pedagogy; read
+   `docs/standards/notebook-authoring-checklist.md` for command read
+   manifests and acceptance bars
+6. `docs/validation/` — recorded runtime evidence
+7. `vault/`, `take_notes/`, and dated root notes — context only
 
-Each `.cursor/rules/*.mdc` file declares its own attachment behavior in
-frontmatter. Do not assume a rule or the standards it references are already
-in context; open the required canonical files.
+Outside that chain, the root `README.md` owns the learner overview and the
+technical baseline (runtime, Spark and Python versions, governance,
+languages).
+
+## Authoring workflows
+
+Prefer these slash commands in `.cursor/commands/` over ad-hoc chat so read
+manifests and stop conditions load consistently:
+
+| Task | Command |
+|---|---|
+| Design a module | `/write-module-readme` |
+| Create a notebook scaffold | `/new-lesson` |
+| Write a full lesson | `/write-lesson` |
+| Gate authoring quality | `/validate-notebook` |
+| Review a whole module | `/review-module` |
+
+Load standards on demand. Never assume a standard or a `.cursor/rules/*.mdc`
+rule is already in context.
+
+## Local checks
+
+```bash
+uv sync
+uv run ruff check .
+uv run mypy .
+```
+
+Both report expected pre-existing findings in learner notebooks:
+Databricks-injected `spark`, `dbutils`, and `display` read as undefined,
+`# MAGIC` prose exceeds the line length, and per-cell imports trip
+import-position rules. Never "fix" those, and never add a `SparkSession` to a
+learner notebook. Act only on findings in lines you added. `pytest` is
+configured but no `tests/` directory exists.
