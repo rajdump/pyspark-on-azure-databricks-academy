@@ -1,32 +1,11 @@
 # Dataset Overview — Rideshare
 
-This file serves as the single source of truth for the rideshare data
-model. It defines catalogs, schemas, tables, volumes, data grains, join
-keys, NULL rules, and the locations of source files and Unity Catalog
-objects used throughout the course.
-
-It states contracts rather than explaining them. For a plain-English tour of
-the model, the pipeline story, and why row counts and NULLs change, see
-[`dataset-guide.md`](dataset-guide.md); that guide is explanatory only and
-never overrides this file.
-
-## Contents
-
-- [Core data model](#core-data-model)
-  - [Join keys](#join-keys)
-- [Supplementary: `drivers`](#supplementary-drivers-nested-xml)
-- [Module pipeline](#module-pipeline)
-  - [Module 5 — Landing](#module-5--landing)
-  - [Module 6 — Curated outputs](#module-6--curated-outputs)
-  - [Module 7 — Managed analytical tables](#module-7--managed-analytical-tables)
-  - [Module 8 — KPI outputs](#module-8--kpi-outputs)
-- [Unity Catalog platform reference](#unity-catalog-platform-reference)
+This file is the single source of truth for the rideshare data model. It states
+contracts rather than explaining them.
 
 ---
 
 ## Core data model
-
-### Summary
 
 100-row / 22-row **contracts**. Modules 1–4 use small hand-built DataFrames
 aligned with these schemas — not these files. File reads start in Module 5.
@@ -42,48 +21,48 @@ Module 6+ curated and managed tables are larger derivatives — see
 
 ### `trip`
 
-| Column | Type |
-|---|---|
-| `trip_id` | bigint |
-| `service_type` | string |
-| `pickup_location_id` | int |
-| `dropoff_location_id` | int |
-| `trip_distance_miles` | decimal(8,2) |
-| `request_to_pickup_mins` | int |
-| `ride_duration_mins` | int |
-| `driver_arrival_to_pickup_mins` | int |
+```text
+trip_id bigint
+service_type string
+pickup_location_id int
+dropoff_location_id int
+trip_distance_miles decimal(8,2)
+request_to_pickup_mins int
+ride_duration_mins int
+driver_arrival_to_pickup_mins int
+```
 
 ### `trip_time`
 
-| Column | Type |
-|---|---|
-| `trip_id` | bigint |
-| `trip_date` | date |
-| `hour_of_day` | int |
+```text
+trip_id bigint
+trip_date date
+hour_of_day int
+```
 
 **Date range:** 100 trips span **2026-03-01 – 2026-03-14** (14 distinct dates).
 
 ### `payment`
 
-| Column | Type |
-|---|---|
-| `trip_id` | bigint |
-| `payment_method` | string |
-| `base_fare_amount` | decimal(10,2) |
-| `surge_amount` | decimal(10,2) |
-| `tax_amount` | decimal(10,2) |
-| `tip_amount` | decimal(10,2) |
-| `discount_amount` | decimal(10,2) |
-| `driver_payout_amount` | decimal(10,2) |
+```text
+trip_id bigint
+payment_method string
+base_fare_amount decimal(10,2)
+surge_amount decimal(10,2)
+tax_amount decimal(10,2)
+tip_amount decimal(10,2)
+discount_amount decimal(10,2)
+driver_payout_amount decimal(10,2)
+```
 
 ### `zone_lookup`
 
-| Column | Type |
-|---|---|
-| `location_id` | int |
-| `borough_name` | string |
-| `zone_name` | string |
-| `service_zone` | string |
+```text
+location_id int
+borough_name string
+zone_name string
+service_zone string
+```
 
 ### Join keys
 
@@ -108,13 +87,13 @@ only. `zone_lookup` rows **21** (`zone_name` = `Newark Airport`) and **22**
 
 12 `<driver>` records — not a fifth core table.
 
-| Field | Type |
-|---|---|
-| `driver_id` | string, e.g. `D001` |
-| `name` | string |
-| `license_number` | string |
-| `vehicle` | struct — `make`, `model`, `year`, `body_type` |
-| `trips_assigned` | repeated `trip_id` list |
+```text
+driver_id       string, e.g. D001
+name            string
+license_number  string
+vehicle         struct — make, model, year, body_type
+trips_assigned  repeated trip_id list
+```
 
 ---
 
@@ -177,49 +156,44 @@ Parquet under `/Volumes/rideshare_dev/processed/output_files/curated/{name}/`.
 
 #### `curated/trip` schema
 
-| Column | Type |
-|---|---|
-| `trip_id` | bigint |
-| `service_type` | string |
-| `service_label` | string |
-| `pickup_location_id` | int |
-| `dropoff_location_id` | int |
-| `trip_distance_miles` | decimal(8,2) |
-| `trip_distance_km` | double |
-| `request_to_pickup_mins` | int |
-| `driver_arrival_to_pickup_mins` | int |
-| `request_to_driver_arrival_mins` | int |
-| `ride_duration_mins` | int |
-| `diff_ride_duration_wait_mins` | int |
-| `ride_duration_band` | string |
+```text
+trip_id bigint
+service_type string
+service_label string
+pickup_location_id int
+dropoff_location_id int
+trip_distance_miles decimal(8,2)
+trip_distance_km double
+request_to_pickup_mins int
+driver_arrival_to_pickup_mins int
+request_to_driver_arrival_mins int
+ride_duration_mins int
+diff_ride_duration_wait_mins int
+ride_duration_band string
+```
 
 #### `curated/payment` schema
 
-| Column | Type |
-|---|---|
-| `trip_id` | bigint |
-| `payment_method` | string |
-| `base_fare_amount` | decimal(10,2) |
-| `surge_amount` | decimal(10,2) |
-| `tax_amount` | decimal(10,2) |
-| `tip_amount` | decimal(10,2) |
-| `discount_amount` | decimal(10,2) |
-| `driver_payout_amount` | decimal(10,2) |
-| `charge_before_tip` | decimal(16,2) |
-| `tip_percent_of_base` | decimal(16,1) |
+Parent: **`payment`**. All 8 inherited columns are unchanged and come first, in
+`payment` order, followed by:
+
+```text
+charge_before_tip decimal(16,2)
+tip_percent_of_base decimal(16,1)
+```
 
 #### `drivers_flat` schema
 
-| Column | Type |
-|---|---|
-| `driver_id` | string |
-| `driver_name` | string |
-| `license_number` | string |
-| `vehicle_make` | string |
-| `vehicle_model` | string |
-| `vehicle_year` | long |
-| `vehicle_body_type` | string |
-| `trip_id` | bigint |
+```text
+driver_id string
+driver_name string
+license_number string
+vehicle_make string
+vehicle_model string
+vehicle_year long
+vehicle_body_type string
+trip_id bigint
+```
 
 ### Module 7 — Managed analytical tables
 
@@ -230,24 +204,24 @@ Parquet under `/Volumes/rideshare_dev/processed/output_files/curated/{name}/`.
 
 #### `trip_enriched`
 
-| Column | Type |
-|---|---|
-| `trip_id` | bigint |
-| `service_type` | string |
-| `pickup_location_id` | int |
-| `dropoff_location_id` | int |
-| `trip_distance_miles` | decimal(8,2) |
-| `ride_duration_mins` | int |
-| `trip_date` | date |
-| `hour_of_day` | int |
-| `payment_method` | string |
-| `base_fare_amount` | decimal(10,2) |
-| `tip_amount` | decimal(10,2) |
-| `driver_payout_amount` | decimal(10,2) |
-| `pickup_borough` | string |
-| `pickup_zone` | string |
-| `dropoff_borough` | string |
-| `dropoff_zone` | string |
+```text
+trip_id bigint
+service_type string
+pickup_location_id int
+dropoff_location_id int
+trip_distance_miles decimal(8,2)
+ride_duration_mins int
+trip_date date
+hour_of_day int
+payment_method string
+base_fare_amount decimal(10,2)
+tip_amount decimal(10,2)
+driver_payout_amount decimal(10,2)
+pickup_borough string
+pickup_zone string
+dropoff_borough string
+dropoff_zone string
+```
 
 **Normalized group-key values** (after Module 6): `service_type` is
 **uppercase** (`STANDARD`, `SHARED`, `PREMIUM`, `XL`, `UNKNOWN`).
@@ -270,21 +244,16 @@ NULLs.
 
 #### `trip_driver_assignment`
 
-| Column | Type |
-|---|---|
-| `driver_id` | string |
-| `driver_name` | string |
-| `license_number` | string |
-| `vehicle_make` | string |
-| `vehicle_model` | string |
-| `vehicle_year` | long |
-| `vehicle_body_type` | string |
-| `trip_id` | bigint |
-| `service_type` | string |
-| `trip_distance_miles` | decimal(8,2) |
-| `ride_duration_mins` | int |
-| `pickup_location_id` | int |
-| `dropoff_location_id` | int |
+Parent: **`drivers_flat`**. All 8 inherited columns are unchanged and come first,
+in `drivers_flat` order, followed by:
+
+```text
+service_type string
+trip_distance_miles decimal(8,2)
+ride_duration_mins int
+pickup_location_id int
+dropoff_location_id int
+```
 
 **NULLs:** None.
 
@@ -309,9 +278,12 @@ Full column contracts:
 |---|---|
 | Catalog | `rideshare_dev` |
 | Schemas | `landing`, `processed` |
-| Volumes | `landing.source_files`, `processed.output_files` |
+| Volumes (both external) | `landing.source_files`, `processed.output_files` |
 | External location | `el_rideshare_dev` |
 | Storage credential | Student-provided name in the config cell |
+
+`landing` and `processed` are Unity Catalog schemas under `rideshare_dev` —
+**not** medallion Bronze/Silver/Gold.
 
 ### Managed tables
 
@@ -327,14 +299,6 @@ All six are Unity Catalog managed Delta in `rideshare_dev.processed`
 | `rideshare_dev.processed.kpi_zone_performance` | 8 | One row per (`pickup_borough`, `pickup_zone`) — **20** |
 | `rideshare_dev.processed.kpi_driver_productivity` | 8 | One row per `driver_id` — **12** |
 
-### Glossary
-
-| Term | Meaning |
-|---|---|
-| Schema `landing` / `processed` | Unity Catalog schemas under `rideshare_dev` — **not** medallion Bronze/Silver/Gold |
-| Volume `source_files` / `output_files` | External volumes under those schemas |
-| Folder `practice/` / `curated/` | Directories inside `output_files` (created on first write) |
-
 ### Path patterns
 
 ```text
@@ -342,6 +306,9 @@ All six are Unity Catalog managed Delta in `rideshare_dev.processed`
 /Volumes/rideshare_dev/processed/output_files/practice/{output_name}/
 /Volumes/rideshare_dev/processed/output_files/curated/{output_name}/
 ```
+
+`practice/` and `curated/` are directories inside `output_files`, created on
+first write.
 
 **Write rules:**
 
