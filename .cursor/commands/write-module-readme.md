@@ -15,8 +15,6 @@ Before creating the module folder or README, read:
 - The full `docs/standards/permissions-and-governance.md` when the design
   requires privileges beyond basic workspace access
 
-Do not use prior chat as a substitute for these reads.
-
 Steps:
 
 1. **Target.** The user must name `Phase ?, Module ?` as digits
@@ -43,5 +41,5 @@ Steps:
 6. **Write.** Create the folder if needed and write a design-complete
    `README.md` per `docs/standards/readme-authoring.md`.
 
-Do not create learner notebooks, change `COURSE_MODULES.md` status,
-or write runtime validation evidence.
+Do not create learner notebooks. Automatic-write restrictions are owned by
+the **Author-only writes** section in `AGENTS.md`.

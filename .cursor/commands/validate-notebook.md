@@ -1,15 +1,14 @@
 Review the currently open (or specified) notebook for authoring-quality
 issues. This is a Cursor-side, **read-only** check — not a substitute for
-running the notebook in Azure Databricks. Never edit the notebook, change
-`COURSE_MODULES.md` status, or produce or edit runtime validation evidence
-in `docs/validation/`.
+running the notebook in Azure Databricks. Never edit the notebook.
+Automatic-write restrictions are owned by the **Author-only writes** section
+in `AGENTS.md`.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
 Before reviewing, read @docs/standards/notebook-authoring-checklist.md and
 apply its **Validation manifest**, applicable **Conditional reads**,
-**Full-lesson bar**, and **Validation gate checks**. Do not use prior chat
-as a substitute for the manifest reads.
+**Full-lesson bar**, and **Validation gate checks**.
 
 Steps:
 

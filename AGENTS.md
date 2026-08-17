@@ -63,7 +63,9 @@ manifests and stop conditions load consistently:
 | Review a whole module | `/review-module` |
 
 Load standards on demand. Never assume a standard or a `.cursor/rules/*.mdc`
-rule is already in context.
+rule is already in context. Prior chat is never a substitute for a required
+read: when a command or rule names a manifest or canonical source, read it
+in the current session even if it appeared earlier in conversation.
 
 ## Local checks
 

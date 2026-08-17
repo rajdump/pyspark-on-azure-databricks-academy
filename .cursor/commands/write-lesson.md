@@ -4,8 +4,7 @@ Response format: @.cursor/rules/notebook-command-output.mdc
 
 Before writing anything, read @docs/standards/notebook-authoring-checklist.md
 and follow its **Full-lesson manifest**, applicable **Conditional reads**,
-**Full-lesson bar**, and **Validation gate checks**. Do not use prior chat
-as a substitute for the manifest reads.
+**Full-lesson bar**, and **Validation gate checks**.
 
 Steps:
 
@@ -24,8 +23,8 @@ Steps:
    item 8.
 5. Replace scaffold content with a **full lesson** that satisfies the
    **Full-lesson bar**. Use only schema, path, and object details from the
-   manifest's canonical sources. Never change `COURSE_MODULES.md` status or
-   edit `docs/validation/` as part of this command.
+   manifest's canonical sources. Automatic-write restrictions are owned by
+   the **Author-only writes** section in `AGENTS.md`.
 6. Self-check against the **Full-lesson bar** and **Validation gate checks**.
 
 Follow the checklist's **Command boundaries**.

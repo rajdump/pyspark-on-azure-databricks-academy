@@ -55,7 +55,7 @@ It has five sections, ordered by what an agent needs first:
 | **Hard constraints** | Batch-only scope, Databricks source `.py` notebooks and never `.ipynb`, no local Spark execution, and no invented facts |
 | **Author-only writes** | The three writes an agent must not perform unsolicited |
 | **Read for facts** | The numbered source-precedence chain |
-| **Authoring workflows** | The five slash commands, plus the rule to load standards on demand |
+| **Authoring workflows** | The five slash commands, plus the rules to load standards on demand and to never let prior chat replace a required read |
 | **Local checks** | `uv`, `ruff`, and `mypy` commands, and which pre-existing findings to leave alone |
 
 `AGENTS.md` states each constraint once and points to the documents that own deeper information:
@@ -81,7 +81,7 @@ Agents must not perform either action as a side effect of lesson work.
 
 A third gate also lives in `AGENTS.md`: scaffold learner notebooks only when the **Readiness precondition** in `docs/standards/notebook-authoring-checklist.md` is met.
 
-The `.mdc` rules point at the **Author-only writes** heading by name, so that heading text must not be renamed without updating `learner-notebooks.mdc` and `course-authoring.mdc`.
+The `.mdc` rules and all five commands point at the **Author-only writes** heading by name, so that heading text must not be renamed without updating `learner-notebooks.mdc`, `course-authoring.mdc`, and the five files in `.cursor/commands/`. `scripts/check_doc_references.py` fails when a pointer like that stops resolving.
 
 ---
 

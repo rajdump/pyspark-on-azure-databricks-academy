@@ -152,6 +152,7 @@ Spark, Delta, and Unity Catalog run only in Azure Databricks.
 |---|---|
 | `pyproject.toml` | Declares `uv` + `ruff` / `mypy` / `pytest` for local format/lint/type/non-Spark tests. Empty runtime `dependencies` |
 | `uv.lock` | Pinned versions from `uv sync` (generated; gitignored from AI context) |
+| `scripts/check_doc_references.py` | Checks that the named-section pointers and file paths inside `.cursor/commands/` and `.cursor/rules/` still resolve. Standard library only: `python3 scripts/check_doc_references.py` |
 | `.editorconfig` | Indent, charset, newlines for editors |
 | `.cursorignore` | Paths Cursor should keep out of AI context (binary Parquet/Avro, `uv.lock`, `.venv/`) |
 | `.gitignore` | Ignores `.venv`, caches, `.env`, `.databricks/`, editor junk |

@@ -1,14 +1,13 @@
 Review an entire module folder for completeness and consistency. This is an
-authoring-quality review in Cursor, not runtime validation. Never edit files,
-change `COURSE_MODULES.md` status, or produce or edit runtime validation
-evidence in `docs/validation/`.
+authoring-quality review in Cursor, not runtime validation. Never edit files.
+Automatic-write restrictions are owned by the **Author-only writes** section
+in `AGENTS.md`.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
 Before reviewing, read @docs/standards/notebook-authoring-checklist.md and
 apply its **Module-review manifest**, applicable **Conditional reads**, and
-**Module-review bar**. Do not use prior chat as a substitute for the manifest
-reads.
+**Module-review bar**.
 
 Steps:
 
