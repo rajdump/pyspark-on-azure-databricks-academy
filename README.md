@@ -3,9 +3,9 @@
 A job-focused PySpark data engineering course on Azure Databricks, currently
 under active development. The course is designed to progress from beginner
 Spark fundamentals to production batch data engineering, using a single
-connected rideshare dataset (`trip`, `trip_time`, `payment`, `zone_lookup`,
-plus supplementary `drivers`) as the running example throughout, and to
-culminate in a deployable batch data engineering project.
+connected [rideshare dataset](docs/data/dataset-overview.md) as the running
+example throughout, and to culminate in a deployable batch data engineering
+project.
 
 This course covers **batch data engineering only**. Structured Streaming,
 Auto Loader, streaming tables, machine learning, and general Azure
@@ -45,11 +45,25 @@ Unfamiliar concepts are explained before they're used.
 | Notebook format | Databricks source `.py` notebooks |
 
 Compute is selected per module (classic all-purpose Standard/Dedicated, jobs
-compute, or serverless) based on that module's APIs and learning objectives —
-see `docs/standards/compute-validation-policy.md` for the selection and
-validation-order rules.
+compute, or serverless) based on that module's APIs and learning objectives.
+Each module's `README.md` states what that module needs.
 
-## Development workflow
+## Where to start
+
+The course runs in five phases, from Spark and Databricks foundations to a
+deployable batch capstone — see the [phase list](COURSE_MODULES.md#phases).
+
+- **Full roadmap and current status:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — module purposes, topics, prerequisites, and planned progression
+- **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
+- **Before Module 5:** Review the [module-specific environment and privilege requirements](05%20-%20Reading%2C%20Writing%2C%20and%20Schemas/README.md#before-notebook-01).
+
+## For course authors
+
+Everything below is for authoring and maintaining this course — learners can
+stop here. Agent-facing constraints, author-only writes, and source
+precedence live in [`AGENTS.md`](AGENTS.md).
+
+### Development workflow
 
 ```
 Local laptop (Cursor)  -->  GitHub  -->  Azure Databricks Git folder
@@ -60,26 +74,22 @@ Local laptop (Cursor)  -->  GitHub  -->  Azure Databricks Git folder
 3. Azure Databricks pulls the approved version via a Git folder.
 4. Run and validate in Azure Databricks; record results in `docs/validation/`.
 
-Local tooling (`uv`, `ruff`, `mypy`, `pytest`) handles formatting, linting,
-and non-Spark checks. Spark, Delta Lake, and Unity Catalog execution only
-happens in Azure Databricks — local Spark execution is not part of this
-workflow.
+Local tooling handles formatting, linting, and non-Spark checks only. Spark,
+Delta Lake, and Unity Catalog execution happens exclusively in Azure
+Databricks; [`AGENTS.md`](AGENTS.md) states that as a hard constraint for
+agents.
 
-## Where to start
-
-- **Full roadmap and current status:** [`COURSE_MODULES.md`](COURSE_MODULES.md) — module purposes, topics, prerequisites, and planned progression
-- **Start here (learners):** [`01 - Azure Databricks and Spark Foundations`](01%20-%20Azure%20Databricks%20and%20Spark%20Foundations/)
-- **Before Module 5:** Review the [module-specific environment and privilege requirements](05%20-%20Reading%2C%20Writing%2C%20and%20Schemas/README.md#before-notebook-01).
-
-## Repository conventions
+### Repository conventions
 
 - Module folders and notebooks: `NN - Descriptive Title` — see
   `docs/standards/naming-conventions.md`
 - Coding and notebook-writing standards: `docs/standards/`
+- Compute selection and validation order:
+  `docs/standards/compute-validation-policy.md`
 - Dataset reference (schemas, join keys, physical layout): `docs/data/dataset-overview.md`
 - Author-facing runtime validation evidence: `docs/validation/`
 
-## Optional local authoring setup
+### Local authoring setup
 
 Learners who run notebooks only in Azure Databricks do not need local Python
 tooling. For local authoring and non-Spark checks, this repository uses
@@ -89,5 +99,6 @@ tooling. For local authoring and non-Spark checks, this repository uses
 uv sync
 ```
 
-See `pyproject.toml` for the declared development tools (`ruff`, `mypy`,
-`pytest`); `uv.lock` records the resolved versions.
+`pyproject.toml` declares `ruff` and `mypy`, which are usable now, plus
+`pytest` for the test suite Module 16 introduces — no `tests/` directory
+exists yet. `uv.lock` records the resolved versions.
