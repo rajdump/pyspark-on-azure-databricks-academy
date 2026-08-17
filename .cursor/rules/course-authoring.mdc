@@ -45,5 +45,5 @@ Ownership reminders:
   Do not guess or invent concrete facts. Do not change roadmap status when
   that definition is not met.
 
-Automatic-write restrictions are owned by the **Do not write automatically**
-section in `AGENTS.md`.
+Automatic-write restrictions are owned by the **Author-only writes** section
+in `AGENTS.md`.

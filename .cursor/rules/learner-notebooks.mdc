@@ -26,5 +26,5 @@ For a full lesson from a scaffold, the author should use `/write-lesson`
 The checklist and linked standards are canonical. If a notebook conflicts
 with them, follow those sources and the module README's notebook plan.
 
-Automatic-write restrictions are owned by the **Do not write automatically**
-section in `AGENTS.md`.
+Automatic-write restrictions are owned by the **Author-only writes** section
+in `AGENTS.md`.
