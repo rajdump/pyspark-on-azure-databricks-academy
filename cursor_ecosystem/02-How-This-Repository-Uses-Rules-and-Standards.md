@@ -109,6 +109,13 @@ Dataset routing for notebook commands is **Dataset scope** in the checklist.
 read list. Agents tool-read named headings in `docs/data/dataset-overview.md`;
 they do not `@`-include that file whole.
 
+`docs/data/dataset-guide.md` is the human-facing companion to that contract.
+It explains the model, the pipeline story, and why row counts and NULLs
+change, but it owns no facts and belongs in no read manifest. Learner-facing
+links such as the root `README.md` intro point there; every agent, rule,
+command, standard, module README, and notebook reference stays on
+`dataset-overview.md`.
+
 **Conditional reads** in the checklist load `compute-validation-policy.md` and `permissions-and-governance.md` for `/write-lesson`, `/validate-notebook`, and `/review-module` when those triggers apply. `/new-lesson` does not use that section. Module 5 setup/cleanup is Scaffold manifest item 8 (parameterization plus **Permitted author defaults**). `/write-module-readme` loads `permissions-and-governance.md` from its own list when the design needs privileges beyond basic workspace access.
 
 ---

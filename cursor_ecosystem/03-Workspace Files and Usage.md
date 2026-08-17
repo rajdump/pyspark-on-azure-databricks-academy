@@ -62,6 +62,7 @@ The same small rideshare dataset (`trip`, `trip_time`, `payment`,
 | File | Usage |
 |---|---|
 | `docs/data/dataset-overview.md` | Canonical schemas, join keys, row counts, Volume paths, and how Modules 5–8 transform landing → curated → managed tables → KPIs. Notebooks should follow this, not invent schemas |
+| `docs/data/dataset-guide.md` | Human-facing explanation of the same model: relationships, keys-only ER diagram, pipeline story, why row counts and NULLs change. Explanatory only — owns no facts and appears in no read manifest |
 
 ### Physical files (`data/raw/`)
 

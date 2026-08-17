@@ -5,10 +5,15 @@ model. It defines catalogs, schemas, tables, volumes, data grains, join
 keys, NULL rules, and the locations of source files and Unity Catalog
 objects used throughout the course.
 
+It states contracts rather than explaining them. For a plain-English tour of
+the model, the pipeline story, and why row counts and NULLs change, see
+[`dataset-guide.md`](dataset-guide.md); that guide is explanatory only and
+never overrides this file.
+
 ## Contents
 
 - [Core data model](#core-data-model)
-  - [Entity-relationship diagram](#entity-relationship-diagram)
+  - [Join keys](#join-keys)
 - [Supplementary: `drivers`](#supplementary-drivers-nested-xml)
 - [Module pipeline](#module-pipeline)
   - [Module 5 — Landing](#module-5--landing)
@@ -87,63 +92,15 @@ Module 6+ curated and managed tables are larger derivatives — see
 - `trip.pickup_location_id = zone_lookup.location_id`
 - `trip.dropoff_location_id = zone_lookup.location_id`
 
+Supplementary (not a core table): each element of `drivers.trips_assigned`
+equals a `trip.trip_id`, so `drivers` is 1:N to `trip` once the repeated list
+is exploded — see
+[Supplementary: `drivers`](#supplementary-drivers-nested-xml).
+
 **Zone coverage:** every `trip` pickup/dropoff uses `location_id` **1–20**
 only. `zone_lookup` rows **21** (`zone_name` = `Newark Airport`) and **22**
 (`Hoboken Terminal`) are intentionally unmatched. Both sit in
 `borough_name` = `New Jersey`.
-
-### Entity-relationship diagram
-
-```mermaid
-erDiagram
-    trip {
-        bigint  trip_id                      PK
-        string  service_type
-        int     pickup_location_id           FK
-        int     dropoff_location_id          FK
-        decimal trip_distance_miles
-        int     request_to_pickup_mins
-        int     ride_duration_mins
-        int     driver_arrival_to_pickup_mins
-    }
-
-    trip_time {
-        bigint  trip_id     PK
-        date    trip_date
-        int     hour_of_day
-    }
-
-    payment {
-        bigint  trip_id              PK
-        string  payment_method
-        decimal base_fare_amount
-        decimal surge_amount
-        decimal tax_amount
-        decimal tip_amount
-        decimal discount_amount
-        decimal driver_payout_amount
-    }
-
-    zone_lookup {
-        int    location_id  PK
-        string borough_name
-        string zone_name
-        string service_zone
-    }
-
-    drivers {
-        string driver_id       PK
-        string name
-        string license_number
-        struct vehicle
-        list   trips_assigned
-    }
-
-    zone_lookup ||--o{  trip        : "1:N on pickup_location_id & dropoff_location_id"
-    trip        ||--||  trip_time   : "1:1 on trip_id"
-    trip        ||--||  payment     : "1:1 on trip_id"
-    drivers     ||--o{  trip        : "1:N via trips_assigned"
-```
 
 ---
 

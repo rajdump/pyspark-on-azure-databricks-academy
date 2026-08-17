@@ -3,7 +3,7 @@
 A job-focused PySpark data engineering course on Azure Databricks, currently
 under active development. The course is designed to progress from beginner
 Spark fundamentals to production batch data engineering, using a single
-connected [rideshare dataset](docs/data/dataset-overview.md) as the running
+connected [rideshare dataset](docs/data/dataset-guide.md) as the running
 example throughout, and to culminate in a deployable batch data engineering
 project.
 
