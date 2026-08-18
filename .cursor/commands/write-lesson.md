@@ -2,30 +2,44 @@ Write the full runnable content for a specified target notebook.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
-Before writing anything, read @docs/standards/notebook-authoring-checklist.md
-and follow its [[Full-lesson manifest]], applicable [[Conditional reads]],
-[[Full-lesson bar]], and [[Validation gate checks]].
+Reads:
+- `docs/standards/notebook-authoring-checklist.md`
+  - [[Full-lesson manifest]], [[Command target selection]],
+    [[Full-lesson bar]], [[Validation gate checks]], [[Command boundaries]]
+  - [[Conditional reads]], only those that apply to the target
+- `docs/standards/readme-authoring.md`
+  - [[Notebooks table]]
+- `docs/standards/naming-conventions.md`
+  - [[Notebook files]]
+
+Target: the module and notebook, resolved through
+[[Command target selection]]. If no scaffold exists, report: all planned files
+are full lessons → `/validate-notebook`; no planned files exist →
+`/new-lesson`.
+
+Guards — stop before proceeding when:
+- the target file is missing, the prior planned file is missing, or the prior
+  notebook is unfinished → report which one
+- the target is already a full lesson → stop unless the author explicitly
+  asked to replace it; exercise `# TODO` markers in an otherwise complete
+  lesson do not make it unfinished
 
 Steps:
+1. Match the filename to its row in the module README's [[Notebooks table]],
+   per [[Notebook files]]. That row's [[Focus entry]] is the topic source of
+   truth.
+2. Read the sources selected by the [[Full-lesson manifest]] and any
+   applicable [[Conditional reads]], including the completed sibling from
+   manifest item 8.
+3. Replace the scaffold content with a full lesson, using only the schema,
+   path, and object details found in the manifest's canonical sources.
 
-1. Resolve the module and notebook through [[Command target selection]]. If
-   no scaffold exists, report: all planned files are full lessons →
-   `/validate-notebook`; no planned files exist → `/new-lesson`.
-2. Apply the target-selection and content-state guards. Stop on a missing
-   file, missing prior file, unfinished prior notebook, or already-full
-   target unless the author explicitly asked to replace that target.
-   Exercise `# TODO` markers in an otherwise complete lesson are expected.
-3. Match the filename to the module README's [[Notebooks table]] row in
-   `docs/standards/readme-authoring.md`, per
-   `docs/standards/naming-conventions.md`; its [[Focus entry]] is the topic
-   source of truth.
-4. Read the sources selected by the [[Full-lesson manifest]] and applicable
-   [[Conditional reads]], including the completed sibling from manifest
-   item 8.
-5. Replace scaffold content with a **full lesson** that satisfies the
-   [[Full-lesson bar]]. Use only schema, path, and object details from the
-   manifest's canonical sources. Automatic-write restrictions are owned by
-   the [[Author-only writes]] section in `AGENTS.md`.
-6. Self-check against the [[Full-lesson bar]] and [[Validation gate checks]].
+Verify: the lesson satisfies the [[Full-lesson bar]] and
+[[Validation gate checks]].
 
-Follow the checklist's [[Command boundaries]].
+Boundaries:
+- Automatic-write restrictions: `AGENTS.md`, [[Author-only writes]].
+- This command does not perform the authoring-quality review or runtime
+  validation.
+
+Next: `/validate-notebook`.

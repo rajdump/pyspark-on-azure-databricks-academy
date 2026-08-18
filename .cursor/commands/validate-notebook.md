@@ -1,37 +1,42 @@
-Review the currently open (or specified) notebook for authoring-quality
-issues. This is a Cursor-side, **read-only** check — not a substitute for
-running the notebook in Azure Databricks. Never edit the notebook.
-Automatic-write restrictions are owned by the [[Author-only writes]] section
-in `AGENTS.md`.
+Review the currently open (or specified) notebook for authoring-quality issues.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
-Before reviewing, read @docs/standards/notebook-authoring-checklist.md and
-apply its [[Validation manifest]], applicable [[Conditional reads]],
-[[Full-lesson bar]], and [[Validation gate checks]].
+Reads:
+- `docs/standards/notebook-authoring-checklist.md`
+  - [[Validation manifest]], [[Validation guards]], [[Command target selection]]
+  - [[Full-lesson manifest]], [[Full-lesson bar]], [[Validation gate checks]],
+    [[Command boundaries]]
+  - [[Conditional reads]], only those that apply to the target
+- `docs/standards/readme-authoring.md`
+  - [[Notebooks table]]
+- `docs/standards/naming-conventions.md`
+  - [[Notebook files]]
+
+Target: the module and notebook, resolved through
+[[Command target selection]]. If no full lesson exists, report: only scaffolds
+→ `/write-lesson`; no planned files → `/new-lesson`.
+
+Guards — stop before proceeding when:
+- a [[Validation guards]] check fails → report which one
 
 Steps:
+1. Read the [[Validation manifest]], including the completed sibling selected
+   by [[Full-lesson manifest]] item 8, then load any applicable
+   [[Conditional reads]].
+2. Match the filename to its row in the module README's [[Notebooks table]],
+   per [[Notebook files]]. That row's [[Focus entry]] is the topic source of
+   truth.
+3. Review the notebook against the [[Full-lesson bar]], including
+   [[Voice consistency]], and the [[Validation gate checks]].
 
-1. Resolve the module and notebook through [[Command target selection]]. If
-   no full lesson exists, report: only scaffolds → `/write-lesson`; no
-   planned files → `/new-lesson`.
-2. Read the [[Validation manifest]], including the completed sibling selected
-   by Full-lesson manifest item 8, and then apply [[Validation guards]]. Stop
-   when a guard fails. If they pass, load applicable [[Conditional reads]].
-   Compare voice and structure under [[Voice consistency]] in the
-   [[Full-lesson bar]].
-3. Match the filename to the module README's [[Notebooks table]] row in
-   `docs/standards/readme-authoring.md`, per
-   `docs/standards/naming-conventions.md`; the [[Focus entry]] is the topic
-   source of truth.
-4. Review the notebook against the [[Full-lesson bar]] and [[Validation gate
-   checks]]. Cite specific cells — `[file ~lines]` — for every issue.
-5. Reply **issues only** per the output rule. Do not edit files.
+Verify: the reply is issues only, and every issue cites `[file ~lines]`.
 
-Follow the checklist's [[Command boundaries]].
+Boundaries:
+- Automatic-write restrictions: `AGENTS.md`, [[Author-only writes]].
+- This is a Cursor-side, read-only check. Never edit the notebook.
+- This command does not perform runtime validation in Azure Databricks.
 
-**After a clean pass.** Continue with the next planned notebook. After the
-final planned notebook passes, run `/review-module`, then perform runtime
-validation in Azure Databricks and record evidence per
-`docs/standards/compute-validation-policy.md`. This command does not perform
-runtime validation.
+Next: the next planned notebook. After the final one passes, `/review-module`,
+then runtime validation in Azure Databricks with evidence recorded per
+`docs/standards/compute-validation-policy.md`.

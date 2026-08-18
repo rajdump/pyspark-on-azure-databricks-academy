@@ -1,26 +1,32 @@
-Review an entire module folder for completeness and consistency. This is an
-authoring-quality review in Cursor, not runtime validation. Never edit files.
-Automatic-write restrictions are owned by the [[Author-only writes]] section
-in `AGENTS.md`.
+Review an entire module folder for completeness and consistency.
 
 Response format: @.cursor/rules/notebook-command-output.mdc
 
-Before reviewing, read @docs/standards/notebook-authoring-checklist.md and
-apply its [[Module-review manifest]], applicable [[Conditional reads]], and
-[[Module-review bar]].
+Reads:
+- `docs/standards/notebook-authoring-checklist.md`
+  - [[Module-review manifest]], [[Module-review bar]],
+    [[Command target selection]], [[Command boundaries]]
+  - [[Conditional reads]], only those that apply to the target
+
+Target: the module to review, resolved through [[Command target selection]].
+If open files or recent context do not establish one unique match, ask once.
+
+Guards: none after target resolution.
 
 Steps:
+1. Load the [[Module-review manifest]] and any applicable
+   [[Conditional reads]].
+2. Apply the [[Module-review bar]] to the module.
 
-1. Resolve the target module through [[Command target selection]]. If open
-   files or recent context do not establish one unique match, ask once.
-2. Load the [[Module-review manifest]] and applicable [[Conditional reads]].
-3. Apply the [[Module-review bar]] in the checklist. Cite `[file]` or
-   `[file ~lines]` for every issue.
-4. Reply **issues only** per the output rule. Do not edit files.
+Verify: the reply is issues only, and every issue cites `[file]` or
+`[file ~lines]`.
 
-Follow the checklist's [[Command boundaries]]. Runtime validation belongs in
-Azure Databricks per `docs/standards/compute-validation-policy.md`.
+Boundaries:
+- Automatic-write restrictions: `AGENTS.md`, [[Author-only writes]].
+- This is an authoring-quality review in Cursor. Never edit files.
+- This command does not perform runtime validation, which belongs in Azure
+  Databricks per `docs/standards/compute-validation-policy.md`.
+- Its notebook spot checks are intentionally lighter and do not replace
+  per-notebook authoring-quality review.
 
-**Workflow note.** Run once after every planned notebook in the module passes
-`/validate-notebook`. Its notebook spot checks are intentionally lighter and
-do not replace per-notebook authoring-quality review.
+Next: runtime validation in Azure Databricks.

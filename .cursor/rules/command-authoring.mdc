@@ -1,0 +1,10 @@
+---
+description: Structure for Cursor slash-command files
+globs: [".cursor/commands/*.md"]
+alwaysApply: false
+---
+
+You are editing a Cursor slash command in `.cursor/commands/`.
+
+Read `docs/standards/command-authoring.md` and follow its [[Required blocks]]
+in the order that file defines.

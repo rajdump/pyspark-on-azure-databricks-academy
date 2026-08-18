@@ -90,4 +90,5 @@ Before accepting a standard, confirm:
 ## Does not cover
 
 - The domain rules inside each standard; those remain owned by that file.
-- Cursor command or `.mdc` structure; audit those under their own owners.
+- Cursor command structure — see `docs/standards/command-authoring.md`.
+- `.mdc` rule structure, which has no owner here.
