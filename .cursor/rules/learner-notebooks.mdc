@@ -13,11 +13,11 @@ manifest's canonical sources when its scoped reads do not establish an
 answer, but do not load a different command's manifest.
 
 For an ad-hoc notebook edit with no active command, read the checklist and
-apply its **Full-lesson manifest**, applicable **Conditional reads**,
-**Full-lesson bar**, and **Validation gate checks**. If the file is clearly
-still a scaffold per **Artifact and content-state terminology**, apply the
-**Scaffold bar** (**Scaffold manifest** and **Scaffold contents**) instead.
-Apply the **Readiness precondition** only when creating a new notebook.
+apply its [[Full-lesson manifest]], applicable [[Conditional reads]],
+[[Full-lesson bar]], and [[Validation gate checks]]. If the file is clearly
+still a scaffold per [[Artifact and content-state terminology]], apply the
+[[Scaffold bar]] ([[Scaffold manifest]] and [[Scaffold contents]]) instead.
+Apply the [[Readiness precondition]] only when creating a new notebook.
 
 For a full lesson from a scaffold, the author should use `/write-lesson`
 (not ad-hoc chat) so every standard loads consistently. After writing,
@@ -26,5 +26,5 @@ For a full lesson from a scaffold, the author should use `/write-lesson`
 The checklist and linked standards are canonical. If a notebook conflicts
 with them, follow those sources and the module README's notebook plan.
 
-Automatic-write restrictions are owned by the **Author-only writes** section
+Automatic-write restrictions are owned by the [[Author-only writes]] section
 in `AGENTS.md`.

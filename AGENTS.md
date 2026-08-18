@@ -14,7 +14,7 @@ run.
 - Never execute Spark, Delta, or Unity Catalog locally. All runtime behavior
   is validated in Azure Databricks.
 - Never invent a table name, column, path, grant, or row count. Take it from
-  a **Read for facts** source, or ask the author.
+  a [[#Read for facts]] source, or ask the author.
 
 ## Author-only writes
 
@@ -24,7 +24,7 @@ Do not perform these unless the author explicitly asks:
   of lesson work.
 - Editing `docs/validation/`, which records only Azure Databricks output the
   author supplied. Never infer or mark a runtime outcome.
-- Scaffolding a new learner notebook before the **Readiness precondition** in
+- Scaffolding a new learner notebook before the [[Readiness precondition]] in
   `docs/standards/notebook-authoring-checklist.md` is met.
 
 ## Read for facts
@@ -34,7 +34,7 @@ Read these for course facts. When they disagree, the earlier source wins.
 1. `COURSE_MODULES.md` — roadmap and module status
 2. `NN - Descriptive Title/README.md` — that module's lesson design; read
    `docs/standards/readme-authoring.md` for its required structure and the
-   **Design-complete definition**
+   [[Design-complete definition]]
 3. `NN - Descriptive Title/requirements/` — approved BRDs and mappings, when
    present
 4. `docs/data/dataset-overview.md` — dataset schemas, join keys, paths, and

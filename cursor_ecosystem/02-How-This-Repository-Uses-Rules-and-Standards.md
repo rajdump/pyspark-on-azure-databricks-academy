@@ -81,7 +81,20 @@ Agents must not perform either action as a side effect of lesson work.
 
 A third gate also lives in `AGENTS.md`: scaffold learner notebooks only when the **Readiness precondition** in `docs/standards/notebook-authoring-checklist.md` is met.
 
-The `.mdc` rules and all five commands point at the **Author-only writes** heading by name, so that heading text must not be renamed without updating `learner-notebooks.mdc`, `course-authoring.mdc`, and the five files in `.cursor/commands/`. `scripts/check_doc_references.py` fails when a pointer like that stops resolving.
+### Cross-file section references
+
+The `.mdc` rules, the five commands, and `AGENTS.md` name another document's section explicitly:
+
+| Form | Use |
+| --- | --- |
+| `[[Author-only writes]]` | the usual case |
+| `[[readme-authoring#Learning objectives]]` | when a bare name would match two documents |
+| `[[#Read for facts]]` | a heading in the same file |
+| `[[file#Name\|label]]` | alias form, when the prose needs its own wording |
+
+A bare name resolves only against the documents that file already names with `@path` or a backticked path, so a reference cannot point somewhere the reader was never told to read. It resolves to a heading whenever one exists anywhere; a bold label in the target counts only for names that are headings nowhere.
+
+Ordinary `**bold**` is emphasis and is never a reference. Because references are matched by name, renaming a heading breaks every file pointing at it — `Author-only writes` alone is referenced by `learner-notebooks.mdc`, `course-authoring.mdc`, and all five commands. `scripts/check_doc_references.py` fails until those are updated, and also verifies every file path written in those files.
 
 ---
 

@@ -6,9 +6,9 @@ Before creating the module folder or README, read:
 
 - The column headings and the row for the named phase and module in `COURSE_MODULES.md`
 - @docs/standards/readme-authoring.md
-- **Audience assumptions** and **Production framing** in
+- [[Audience assumptions]] and [[Production framing]] in
   `docs/standards/teaching-guidelines.md`
-- **Module folders** and **Notebook files** in
+- [[Module folders]] and [[Notebook files]] in
   `docs/standards/naming-conventions.md`
 - `docs/data/dataset-overview.md` — use only the headings that apply
   to this module
@@ -28,7 +28,7 @@ Steps:
    report the gap. Take number, title, and the other row fields from
    that row only.
 3. **Folder name.** Build the module folder name from that row's
-   title, using **Module folders** in
+   title, using [[Module folders]] in
    `docs/standards/naming-conventions.md`.
 4. **Existing README.** Look at that path without creating it. If
    `README.md` is already there, stop. Do not overwrite it. An empty
@@ -42,4 +42,4 @@ Steps:
    `README.md` per `docs/standards/readme-authoring.md`.
 
 Do not create learner notebooks. Automatic-write restrictions are owned by
-the **Author-only writes** section in `AGENTS.md`.
+the [[Author-only writes]] section in `AGENTS.md`.

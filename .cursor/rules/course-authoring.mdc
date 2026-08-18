@@ -8,12 +8,12 @@ You are editing a course-level or module-level README, or the course
 roadmap.
 
 When `/write-module-readme` is active, follow its declared reads. Expand
-within those reads and the **Canonical sources** section in
+within those reads and the [[Canonical sources]] section in
 `docs/standards/readme-authoring.md` when a scoped read is insufficient;
 do not load the ad-hoc list below or a different command's manifest.
 
-When `/review-module` is active, follow the **Module-review manifest**,
-applicable **Conditional reads**, and **Module-review bar** in
+When `/review-module` is active, follow the [[Module-review manifest]],
+applicable [[Conditional reads]], and [[Module-review bar]] in
 `docs/standards/notebook-authoring-checklist.md`; do not load the ad-hoc
 list below or a different command's manifest.
 
@@ -24,11 +24,12 @@ For ad-hoc edits with no active command:
 - **Root `README.md`** — edit in place; keep sections aligned with the
   existing root `README.md` structure. Do not load readme-authoring.
 - **Numbered module `README.md`** — read
-  `docs/standards/readme-authoring.md` and the **Canonical sources** it
-  names. For folder or notebook naming, read **Module folders** and
-  **Notebook files** in `docs/standards/naming-conventions.md`. When
-  editing **Learning objectives**, also read **Audience assumptions**
-  and **Production framing** in `docs/standards/teaching-guidelines.md`.
+  `docs/standards/readme-authoring.md` and the [[Canonical sources]] it
+  names. For folder or notebook naming, read [[Module folders]] and
+  [[Notebook files]] in `docs/standards/naming-conventions.md`. When
+  editing [[readme-authoring#Learning objectives|Learning objectives]],
+  also read [[Audience assumptions]] and [[Production framing]] in
+  `docs/standards/teaching-guidelines.md`.
   readme-authoring and the matching `COURSE_MODULES.md` row are canonical;
   if the README conflicts with them, follow those sources.
 
@@ -41,9 +42,9 @@ Ownership reminders:
   prerequisites, production relevance, final-project contribution,
   status).
 - A module's own `README.md` owns that module's detailed design. Follow
-  readme-authoring required structure and the **Design-complete definition**.
+  readme-authoring required structure and the [[Design-complete definition]].
   Do not guess or invent concrete facts. Do not change roadmap status when
   that definition is not met.
 
-Automatic-write restrictions are owned by the **Author-only writes** section
+Automatic-write restrictions are owned by the [[Author-only writes]] section
 in `AGENTS.md`.

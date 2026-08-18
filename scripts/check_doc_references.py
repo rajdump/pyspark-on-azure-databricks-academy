@@ -8,8 +8,8 @@ Two kinds of reference are checked, and nothing else:
 
 A section reference resolves only against the documents the same file already
 names, so a reference cannot quietly point at a section living somewhere the
-file never tells the reader to read. Ordinary **bold** text is emphasis, not a
-reference; the single temporary exception is the migration guard below.
+file never tells the reader to read. Ordinary **bold** text is emphasis and is
+never treated as a reference.
 
 Reference forms:
 
@@ -41,13 +41,6 @@ SOURCE_GLOBS: tuple[str, ...] = (
 # Documents a reference may resolve into.
 TARGET_GLOBS: tuple[str, ...] = ("docs/standards/*.md", "docs/data/*.md")
 TARGET_FILES: tuple[str, ...] = ("AGENTS.md", "COURSE_MODULES.md", "README.md")
-
-# TEMPORARY. Bold used to mean "section pointer". Until the migration to
-# [[...]] is verified clean, a bold span matching a real heading is almost
-# certainly a reference someone forgot to convert. Delete this flag,
-# migration_violations(), its call in check_repo(), and its self-tests once
-# the migration is done.
-MIGRATION_GUARD = True
 
 # .mdc must precede .md so the longer extension wins. The optional leading dot
 # keeps dot-directories such as .cursor/ visible.
@@ -215,20 +208,6 @@ def check_source(
     return failures, notes
 
 
-def migration_violations(name: str, text: str, all_headings: set[str]) -> list[str]:
-    """TEMPORARY. Flag bold spans that look like unconverted section pointers."""
-    lines = text.splitlines()
-    violations: list[str] = []
-    for raw in sorted(set(BOLD_RE.findall(flatten(strip_fences(text))))):
-        if normalize(raw) in all_headings:
-            line = find_line(lines, f"**{raw}**", raw)
-            violations.append(
-                f"{name}:{line}: bold **{raw}** matches a section heading; "
-                "convert it to [[...]] (temporary migration guard)"
-            )
-    return violations
-
-
 def repo_paths(root: Path) -> set[str]:
     """Every tracked-looking file path, relative to the repository root."""
     paths: set[str] = set()
@@ -269,7 +248,6 @@ def check_repo(root: Path) -> tuple[list[str], list[str], int]:
     """Check every source document. Returns failures, notes, and files checked."""
     index = index_targets(root)
     known_paths = repo_paths(root)
-    all_headings = {name for names in index.headings.values() for name in names}
 
     sources: list[Path] = []
     for pattern in SOURCE_GLOBS:
@@ -283,8 +261,6 @@ def check_repo(root: Path) -> tuple[list[str], list[str], int]:
         file_failures, file_notes = check_source(rel, text, index, known_paths)
         failures.extend(file_failures)
         notes.extend(file_notes)
-        if MIGRATION_GUARD:
-            failures.extend(migration_violations(rel, text, all_headings))
 
     return sorted(failures), sorted(notes), len(sources)
 
@@ -413,14 +389,6 @@ def self_test() -> list[str]:
     located, _ = check("Read `docs/a.md`.\n\nLine two.\n\n[[No such section]]\n")
     if not located or not located[0].startswith("fixture:5:"):
         problems.append(f"a failure must cite the right line, got {located}")
-
-    guard_hit = migration_violations("fixture", "See **Alpha section** now.\n", {"alpha section"})
-    if len(guard_hit) != 1 or "migration guard" not in guard_hit[0]:
-        problems.append(f"the guard must flag a bold heading name, got {guard_hit}")
-
-    guard_miss = migration_violations("fixture", "This is **read-only** text.\n", {"alpha section"})
-    if guard_miss:
-        problems.append(f"the guard must ignore ordinary bold, got {guard_miss}")
 
     return [f"self-test: {p}" for p in problems]
 
