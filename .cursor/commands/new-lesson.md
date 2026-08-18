@@ -16,7 +16,7 @@ Guards — stop before proceeding when:
 - either [[Readiness precondition]] check fails → report its prescribed
   remediation and create no file; when roadmap status is not `Started`, also
   report any numbered `.py` files in the module folder as a
-  [[roadmap/filesystem inconsistency]]
+  roadmap/filesystem inconsistency
 - a target-selection guard in [[Scaffold contents]] trips → stop without
   creating a file
 
