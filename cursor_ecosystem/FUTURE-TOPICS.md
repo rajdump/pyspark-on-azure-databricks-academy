@@ -85,27 +85,6 @@ Do not add a fifth routing architecture file.
 
 Worth covering later as a troubleshooting reference, not as part of the first-pass mental model.
 
-### Rule attachment smoke test (operational)
-
-Filesystem check (automated): `python3 scripts/verify_rule_globs.py` — confirms each
-`.mdc` glob matches the paths it should on disk. Does **not** prove Cursor Agent
-attaches the rule.
-
-IDE check (manual, ~2 minutes):
-
-1. **Customize → Rules** — confirm `command-authoring.mdc` is **Apply to Specific
-   Files** with `.cursor/commands/*.md`.
-2. New Agent chat → run `/new-lesson` (or edit `.cursor/commands/new-lesson.md`).
-3. In the chat context / attached-rules list, look for `command-authoring` or
-   *Structure for Cursor slash-command files*.
-4. **Negative control:** new chat, edit only `README.md` — rule should not attach.
-5. **Positive control:** `@`-reference a numbered learner `.py` — `learner-notebooks`
-   should attach.
-
-If the IDE check fails but `verify_rule_globs.py` passes, try `globs` as a plain
-string (`globs: .cursor/commands/*.md`) per Cursor docs, then
-`globs: **/.cursor/commands/*.md`.
-
 ---
 
 ## Complete Cursor instruction hierarchy
