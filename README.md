@@ -83,6 +83,7 @@ agents.
 
 - Module folders and notebooks: `NN - Descriptive Title` — see
   `docs/standards/naming-conventions.md`
+- Slash commands (`.cursor/commands/`): `docs/standards/command-authoring.md`
 - Coding and notebook-writing standards: `docs/standards/`
 - Compute selection and validation order:
   `docs/standards/compute-validation-policy.md`
@@ -102,3 +103,19 @@ uv sync
 `pyproject.toml` declares `ruff` and `mypy`, which are usable now, plus
 `pytest` for the test suite Module 16 introduces — no `tests/` directory
 exists yet. `uv.lock` records the resolved versions.
+
+```bash
+uv run ruff check .
+uv run mypy .
+python3 scripts/check_doc_references.py
+```
+
+`ruff` and `mypy` cover Python code. Run
+`scripts/check_doc_references.py` after editing any file in
+`.cursor/commands/`, `.cursor/rules/`, or `AGENTS.md`. It verifies that
+every `[[Section name]]` pointer and every `` `path` `` or `@path` written
+in those files still resolves — so renaming a heading in a standard or
+moving a file breaks the build instead of failing silently at runtime. It
+does not check command block structure; see
+`docs/standards/command-authoring.md` for that. `0 unresolved` means pass.
+The script uses only the Python standard library.

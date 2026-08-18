@@ -1,6 +1,6 @@
 ---
 description: Structure for Cursor slash-command files
-globs: [".cursor/commands/*.md"]
+globs: .cursor/commands/*.md
 alwaysApply: false
 ---
 

@@ -133,10 +133,17 @@ in Databricks do not need these.
 | `validate-notebook.md` | Authoring-quality review of one notebook (not Databricks runtime) |
 | `review-module.md` | Whole-module completeness/consistency check (lighter than per-notebook validation) |
 
+Every command file follows `docs/standards/command-authoring.md` (fixed block
+order, scoped reads, guards, verify, boundaries). When you edit a command
+with Cursor AI, `.cursor/rules/command-authoring.mdc` should attach and
+route the agent to that standard. For manual edits, read the standard first,
+then run `python3 scripts/check_doc_references.py`.
+
 ### Rules (`.cursor/rules/`)
 
 | File | When it applies |
 |---|---|
+| `command-authoring.mdc` | Glob `.cursor/commands/*.md` — read `docs/standards/command-authoring.md` |
 | `learner-notebooks.mdc` | Glob `[0-9][0-9] - */*.py` — defer to the active command manifest, or route ad-hoc edits |
 | `course-authoring.mdc` | Glob on root `README.md`, `COURSE_MODULES.md`, and numbered module READMEs |
 | `notebook-command-output.mdc` | No glob (Apply Intelligently); `@`-included by all five commands to keep replies short |
@@ -152,7 +159,7 @@ Spark, Delta, and Unity Catalog run only in Azure Databricks.
 |---|---|
 | `pyproject.toml` | Declares `uv` + `ruff` / `mypy` / `pytest` for local format/lint/type/non-Spark tests. Empty runtime `dependencies` |
 | `uv.lock` | Pinned versions from `uv sync` (generated; gitignored from AI context) |
-| `scripts/check_doc_references.py` | Checks that the `[[Section name]]` references and file paths inside `.cursor/commands/`, `.cursor/rules/`, and `AGENTS.md` still resolve. Standard library only: `python3 scripts/check_doc_references.py` |
+| `scripts/check_doc_references.py` | After editing `.cursor/commands/`, `.cursor/rules/`, or `AGENTS.md`, run `python3 scripts/check_doc_references.py`. It fails when a `[[Section name]]` pointer or a `` `path` `` / `@path` no longer resolves — for example, after renaming a heading in `docs/standards/` or moving a referenced file. Scans those sources only; does not check command block structure (`docs/standards/command-authoring.md` owns that). Standard library only; `0 unresolved` means pass. |
 | `.editorconfig` | Indent, charset, newlines for editors |
 | `.cursorignore` | Paths Cursor should keep out of AI context (binary Parquet/Avro, `uv.lock`, `.venv/`) |
 | `.gitignore` | Ignores `.venv`, caches, `.env`, `.databricks/`, editor junk |

@@ -135,13 +135,26 @@ command, standard, module README, and notebook reference stays on
 
 ## Cursor rules used by this repository
 
-The repository has three `.mdc` rules:
+The repository has four `.mdc` rules:
 
 | Rule | Mode | Used for |
 | --- | --- | --- |
+| `command-authoring.mdc` | Apply to Specific Files | `.cursor/commands/*.md` — routes to `docs/standards/command-authoring.md` |
 | `learner-notebooks.mdc` | Apply to Specific Files | Numbered learner `.py` notebooks |
 | `course-authoring.mdc` | Apply to Specific Files | Root README, roadmap, and numbered module READMEs |
 | `notebook-command-output.mdc` | Apply Intelligently | Response format for the five authoring commands |
+
+### `command-authoring.mdc`
+
+This rule matches:
+
+```text
+.cursor/commands/*.md
+```
+
+When a command file is in Agent context, the rule tells the agent to read
+`docs/standards/command-authoring.md` and follow its required block order.
+It does not apply to manual edits with no AI.
 
 ### `learner-notebooks.mdc`
 
@@ -301,11 +314,17 @@ The user must explicitly invoke the workflow.
 | `/validate-notebook` | Report authoring issues only; do not write files |
 | `/review-module` | Review the whole module folder rather than one notebook |
 
-All five commands `@`-reference `notebook-command-output.mdc`. The four
-notebook commands also `@`-reference
-`docs/standards/notebook-authoring-checklist.md`;
-`/write-module-readme` `@`-references `docs/standards/readme-authoring.md`
-and declares its own scoped reads.
+All five commands `@`-reference `notebook-command-output.mdc`. Command
+structure is owned by `docs/standards/command-authoring.md`; when editing
+a command file with Cursor AI, `command-authoring.mdc` routes the agent
+there.
+
+The four notebook commands declare scoped reads from
+`docs/standards/notebook-authoring-checklist.md` (named manifest, bar, and
+guard sections), not a whole-file `@`. `/write-module-readme`
+`@`-references `docs/standards/readme-authoring.md` because every section
+governs its output, and declares its own scoped reads for roadmap, dataset,
+naming, and teaching sources.
 
 ### Path A — notebook commands (via the checklist)
 
@@ -322,13 +341,14 @@ Checklist consumers: those four commands, `learner-notebooks.mdc` (ad-hoc Path C
 
 ### Path B — `/write-module-readme` (independent of the checklist)
 
-| Always reads | Conditional |
+| Source | Sections |
 | --- | --- |
-| `@readme-authoring.md` (whole file) | `permissions-and-governance.md` — only if privileges go beyond basic workspace access |
-| Teaching-guidelines named sections: **Audience assumptions**, **Production framing** | |
-| Naming-conventions: **Module folders** + **Notebook files** | |
-| `COURSE_MODULES.md` target row and table headings | |
-| Applicable headings in `dataset-overview.md` | |
+| `COURSE_MODULES.md` | `Phase N` heading, column headings, target module row |
+| `docs/standards/teaching-guidelines.md` | Audience assumptions, Production framing |
+| `docs/standards/naming-conventions.md` | Module folders, Notebook files |
+| `docs/data/dataset-overview.md` | Applicable headings only |
+| `docs/standards/permissions-and-governance.md` | Whole file — only when privileges go beyond basic workspace access |
+| `@docs/standards/readme-authoring.md` | Whole file — every section governs the README this command writes |
 
 ---
 
