@@ -10,7 +10,7 @@ in a numbered module folder.
 When a notebook command is active, follow that command's manifest in
 `docs/standards/notebook-authoring-checklist.md`. Expand within that
 manifest's canonical sources when its scoped reads do not establish an
-answer, but do not load a different command's manifest.
+answer; do not load the ad-hoc path below or a different command's manifest.
 
 For an ad-hoc notebook edit with no active command, read the checklist and
 apply its [[Full-lesson manifest]], applicable [[Conditional reads]],

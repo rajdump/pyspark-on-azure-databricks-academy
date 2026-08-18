@@ -1,5 +1,5 @@
 ---
-description: Minimal response format for module and notebook authoring commands
+description: Minimal reply format when finishing a module or notebook authoring command
 alwaysApply: false
 ---
 
@@ -37,26 +37,17 @@ minimal**.
   workflow
 - Only mention blockers (missing scaffold, missing `Focus` entry topic, etc.)
 
-## `/validate-notebook`
+## `/validate-notebook` and `/review-module`
 
 **Issues only.**
 
 - If nothing fails: one line — e.g. `No authoring issues found.` — then note
-  the next planned notebook should be authored and reviewed, or, after the
-  final planned notebook, `/review-module` should run before the
-  Git-to-Databricks runtime workflow
-- If something fails: bullet list — `[file]` or `[file ~lines]` → what's wrong → specific fix
-- Group by topic only when there are many issues; never list passed checks
-- Mark non-blocking polish as `(optional)`; do not mix with blocking issues
-- Do not restate review checklist categories as Pass/Fail tables
-
-## `/review-module`
-
-**Issues only.**
-
-- If nothing fails: one line — e.g. `No authoring issues found.` — then note
-  the author should commit and push, pull into the Databricks Git folder,
-  and perform runtime validation in Azure Databricks
+  the next step:
+  - after `/validate-notebook`, the next planned notebook should be authored
+    and reviewed, or, after the final planned notebook, `/review-module`
+    should run before the Git-to-Databricks runtime workflow
+  - after `/review-module`, the author should commit and push, pull into the
+    Databricks Git folder, and perform runtime validation in Azure Databricks
 - If something fails: bullet list — `[file]` or `[file ~lines]` → what's wrong → specific fix
 - Group by topic only when there are many issues; never list passed checks
 - Mark non-blocking polish as `(optional)`; do not mix with blocking issues

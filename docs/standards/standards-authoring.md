@@ -91,4 +91,4 @@ Before accepting a standard, confirm:
 
 - The domain rules inside each standard; those remain owned by that file.
 - Cursor command structure — see `docs/standards/command-authoring.md`.
-- `.mdc` rule structure, which has no owner here.
+- `.mdc` rule structure — see `docs/standards/rule-authoring.md`.

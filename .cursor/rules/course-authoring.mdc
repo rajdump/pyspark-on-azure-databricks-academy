@@ -4,47 +4,39 @@ globs: ["README.md", "COURSE_MODULES.md", "[0-9][0-9] - */README.md"]
 alwaysApply: false
 ---
 
-You are editing a course-level or module-level README, or the course
-roadmap.
+You are editing a course README, a module README, or the course roadmap.
 
-When `/write-module-readme` is active, follow its declared reads. Expand
-within those reads and the [[Canonical sources]] section in
-`docs/standards/readme-authoring.md` when a scoped read is insufficient;
-do not load the ad-hoc list below or a different command's manifest.
+When a command is active, follow its declared reads; do not load the ad-hoc
+path below or a different command's manifest.
 
-When `/review-module` is active, follow the [[Module-review manifest]],
-applicable [[Conditional reads]], and [[Module-review bar]] in
-`docs/standards/notebook-authoring-checklist.md`; do not load the ad-hoc
-list below or a different command's manifest.
+- `/write-module-readme` — expand within those reads and [[Canonical sources]]
+  in `docs/standards/readme-authoring.md` when a scoped read does not
+  establish an answer.
+- `/review-module` — follow [[Module-review manifest]], applicable
+  [[Conditional reads]], and [[Module-review bar]] in
+  `docs/standards/notebook-authoring-checklist.md`.
 
 For ad-hoc edits with no active command:
 
-- **`COURSE_MODULES.md`** — roadmap ownership only (below). Do not add
-  notebook sequences, exercises, or code.
-- **Root `README.md`** — edit in place; keep sections aligned with the
-  existing root `README.md` structure. Do not load readme-authoring.
+- **`COURSE_MODULES.md`** — roadmap ownership only. Do not add notebook
+  sequences, exercises, or code.
+- **Root `README.md`** — edit in place. Its own existing structure is the
+  only structural source for that file.
 - **Numbered module `README.md`** — read
   `docs/standards/readme-authoring.md` and the [[Canonical sources]] it
-  names. For folder or notebook naming, read [[Module folders]] and
-  [[Notebook files]] in `docs/standards/naming-conventions.md`. When
-  editing [[readme-authoring#Learning objectives|Learning objectives]],
-  also read [[Audience assumptions]] and [[Production framing]] in
+  names, then apply [[Required structure]] and the
+  [[Design-complete definition]]. For folder or notebook naming, read
+  [[Module folders]] and [[Notebook files]] in
+  `docs/standards/naming-conventions.md`. When editing
+  [[readme-authoring#Learning objectives|Learning objectives]], also read
+  [[Audience assumptions]] and [[Production framing]] in
   `docs/standards/teaching-guidelines.md`.
-  readme-authoring and the matching `COURSE_MODULES.md` row are canonical;
-  if the README conflicts with them, follow those sources.
 
 For new module design, the author should use `/write-module-readme` (not
 ad-hoc chat) so reads and stop conditions load consistently.
 
-Ownership reminders:
-
-- `COURSE_MODULES.md` owns the full roadmap (module purpose, topics,
-  prerequisites, production relevance, final-project contribution,
-  status).
-- A module's own `README.md` owns that module's detailed design. Follow
-  readme-authoring required structure and the [[Design-complete definition]].
-  Do not guess or invent concrete facts. Do not change roadmap status when
-  that definition is not met.
+readme-authoring and the matching `COURSE_MODULES.md` row are canonical. If a
+README conflicts with them, follow those sources.
 
 Automatic-write restrictions are owned by the [[Author-only writes]] section
 in `AGENTS.md`.

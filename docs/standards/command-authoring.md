@@ -105,6 +105,7 @@ A command with no post-target stop condition must write
 - Automatic-write restrictions — see `AGENTS.md`.
 - Response formatting detail — see
   `.cursor/rules/notebook-command-output.mdc`.
-- The structure of `.cursor/rules/*.mdc` files, which has no owner here.
+- The structure of `.cursor/rules/*.mdc` files — see
+  `docs/standards/rule-authoring.md`.
 - Standards structure and cross-reference conventions — see
   `docs/standards/standards-authoring.md`.
