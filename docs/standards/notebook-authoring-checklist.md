@@ -16,10 +16,10 @@ bars and the command-specific read manifests. Direct readers are
 
 | Command | Purpose | Apply from this checklist |
 |---|---|---|
-| `/new-lesson` | Create a scaffold only | Scaffold manifest and Scaffold bar |
-| `/write-lesson` | Turn a scaffold into a full runnable lesson | Full-lesson manifest, applicable Conditional reads, Full-lesson bar, and Validation gate checks |
-| `/validate-notebook` | Review one full lesson without editing it | Validation manifest, applicable Conditional reads, Full-lesson bar, and Validation gate checks |
-| `/review-module` | Review module-wide consistency without editing files | Module-review manifest, applicable Conditional reads, and Module-review bar |
+| `/new-lesson` | Create a scaffold only | [[#Scaffold manifest]] and [[#Scaffold bar]] |
+| `/write-lesson` | Turn a scaffold into a full runnable lesson | [[#Full-lesson manifest]], applicable [[#Conditional reads]], [[#Full-lesson bar]], and [[#Validation gate checks]] |
+| `/validate-notebook` | Review one full lesson without editing it | [[#Validation manifest]], applicable [[#Conditional reads]], [[#Full-lesson bar]], and [[#Validation gate checks]] |
+| `/review-module` | Review module-wide consistency without editing files | [[#Module-review manifest]], applicable [[#Conditional reads]], and [[#Module-review bar]] |
 
 ## How to read a manifest
 
@@ -148,7 +148,8 @@ Also apply [[#Conditional reads]] below.
 ### Validation manifest (`/validate-notebook`)
 
 Resolve the target through [[#Command target selection]], then read the
-Full-lesson manifest, including the completed sibling for voice comparison.
+[[#Full-lesson manifest]], including the completed sibling for voice
+comparison.
 
 **Validation guards** (stop before reviewing):
 
@@ -246,7 +247,7 @@ when all checks below pass:
   comments name the correct tables and schema or path from
   `docs/data/dataset-overview.md` without inventing columns.
 - **Module 5 setup or cleanup:** When the target row is setup or cleanup,
-  include config placeholders per Scaffold manifest item 8 — do not invent
+  include config placeholders per [[#Scaffold manifest]] item 8 — do not invent
   learner-specific values.
 - **No lesson content yet:** `# TODO` or empty code cells are acceptable.
   Runnable lesson content is not required until `/write-lesson`.
@@ -290,8 +291,10 @@ If a check fails, the notebook is not ready. Fix the gap and run
 Apply after the [[#Full-lesson bar]]. These are per-notebook authoring checks
 in Cursor — not runtime validation and not module-level review.
 
-- **Security and personal values:** No hardcoded tokens, workspace URLs,
-  cluster IDs, or personal catalog/schema names anywhere in the notebook.
+- **Security and personal values:** Nothing in the notebook violates
+  [[Security and portability]] or [[Permitted author defaults]] in
+  `docs/standards/coding-standards.md`, which own the full list of forbidden
+  and safe committed values.
 - **Compute assumptions:** Compute-type or access-mode claims are documented
   by the applicable conditional standard when the lesson assumes them.
 - **README minimum privileges:** When the notebook uses Unity Catalog objects

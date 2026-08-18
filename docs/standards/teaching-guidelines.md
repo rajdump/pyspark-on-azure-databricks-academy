@@ -86,12 +86,10 @@ Spark tour. Where relevant, name the production concern a topic addresses
   only; structure and concrete facts — see
   `docs/standards/readme-authoring.md`)
 - Learner notebooks (markdown cells, comments, exercise framing)
-- `/new-lesson`-scaffolded content follows the [[Scaffold bar]] in
-  `docs/standards/notebook-authoring-checklist.md`; full lessons use
-  `/write-lesson` and the [[Full-lesson bar]] and [[Validation gate checks]]
-  there; `/validate-notebook` applies the same bars read-only via the
-  [[Validation manifest]]; `/review-module` applies module-wide consistency
-  checks via the [[Module-review manifest]] and [[Module-review bar]].
+
+Which command applies which manifest and bar is owned by [[At a glance]] and
+the command read manifests in
+`docs/standards/notebook-authoring-checklist.md`.
 
 ## Does not cover
 

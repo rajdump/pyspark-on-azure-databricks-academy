@@ -89,3 +89,6 @@ standard.
   `docs/standards/coding-standards.md`.
 - The rideshare dataset's fixed object names and paths — see
   `docs/data/dataset-overview.md`.
+- What goes inside the Cursor files named above — see
+  `docs/standards/command-authoring.md` for slash commands and
+  `docs/standards/rule-authoring.md` for `.mdc` rules.
