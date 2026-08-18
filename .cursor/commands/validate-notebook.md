@@ -5,8 +5,8 @@ Response format: @.cursor/rules/notebook-command-output.mdc
 Reads:
 - `docs/standards/notebook-authoring-checklist.md`
   - [[Validation manifest]], [[Validation guards]], [[Command target selection]]
-  - [[Full-lesson manifest]], [[Full-lesson bar]], [[Validation gate checks]],
-    [[Command boundaries]]
+  - [[Full-lesson manifest]], [[Full-lesson bar]], [[Validation gate checks]]
+  - [[Command boundaries]], which this command must follow
   - [[Conditional reads]], only those that apply to the target
 - `docs/standards/readme-authoring.md`
   - [[Notebooks table]]
@@ -25,7 +25,7 @@ Steps:
    by [[Full-lesson manifest]] item 8, then load any applicable
    [[Conditional reads]].
 2. Match the filename to its row in the module README's [[Notebooks table]],
-   per [[Notebook files]]. That row's [[Focus entry]] is the topic source of
+   per [[Notebook files]]. That row's `Focus` entry is the topic source of
    truth.
 3. Review the notebook against the [[Full-lesson bar]], including
    [[Voice consistency]], and the [[Validation gate checks]].
