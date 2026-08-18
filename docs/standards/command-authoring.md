@@ -68,7 +68,7 @@ Next: <successor command.>
   unnecessary `@` costs the whole file on every run.
 - Group sections beneath their file. Never repeat a path.
 - Give every conditional read the condition that triggers it.
-- Reference form is owned by **References** in
+- Reference form is owned by [[References]] in
   `docs/standards/standards-authoring.md`.
 
 ## Target and Guards

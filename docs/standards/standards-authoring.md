@@ -56,7 +56,24 @@ workflows, add an **At a glance** section near the top.
   for information only.
 - For a scoped read, name the exact headings. Cursor has no section-level
   `@path` syntax.
+- Cite another document's section with a section reference, never with bold.
+  Ordinary `**bold**` is emphasis, or a label the current file defines.
 - Confirm referenced files and section headings exist.
+
+Section-reference forms:
+
+```text
+[[Section name]]              a section in a document this file already names
+[[#Section name]]             a heading in this same file
+[[file#Section name]]         when a bare name would match two documents
+[[file#Section name|label]]   alias form, when the prose needs its own wording
+```
+
+A bare name resolves only against documents this file names with `@path` or a
+backticked path, so a reference cannot point somewhere the reader was never
+told to read. `scripts/check_doc_references.py` verifies these references in
+`docs/standards/`, `.cursor/`, and `AGENTS.md`. Renaming a heading breaks every
+file pointing at it, so run the checker after any rename.
 
 ## Ownership and duplication
 

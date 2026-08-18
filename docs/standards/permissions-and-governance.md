@@ -58,7 +58,7 @@ object-level grant looks correct.
 `05 - Reading, Writing, and Schemas` use a Python setup/config cell for the
 learner's Azure storage account, container, storage credential, and ADLS
 folder. They do not use widgets for those values. Committed defaults must
-follow the **Permitted author defaults** section in
+follow the [[Permitted author defaults]] section in
 `docs/standards/coding-standards.md`. Fixed course Unity Catalog names, such
 as `rideshare_dev`, remain defined by `docs/data/dataset-overview.md`.
 
@@ -100,6 +100,6 @@ RBAC on the learner's storage because
   `docs/standards/compute-validation-policy.md`.
 - Actual catalog/schema/volume names — defined in
   `docs/data/dataset-overview.md` for the rideshare course objects.
-- Security and safe committed defaults — see the **Security and
-  portability** and **Permitted author defaults** sections in
+- Security and safe committed defaults — see the [[Security and
+  portability]] and [[Permitted author defaults]] sections in
   `docs/standards/coding-standards.md`.

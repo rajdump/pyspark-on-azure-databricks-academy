@@ -7,7 +7,7 @@ design.
 Direct readers: `AGENTS.md`, `.cursor/rules/course-authoring.mdc`,
 `/write-module-readme`, and
 `docs/standards/notebook-authoring-checklist.md`. `/new-lesson` and
-`/review-module` receive the **Design-complete definition** through the
+`/review-module` receive the [[#Design-complete definition]] through the
 checklist.
 
 ## Canonical sources
@@ -49,8 +49,8 @@ A module README must include:
 5. **Notebooks** — the ordered table below. Record each notebook's exercise
    expectation in the `Focus` entry, or in a dedicated section when the
    module needs extra detail.
-6. **Minimum privileges required** — follow **Minimum-privilege
-   documentation pattern** in
+6. **Minimum privileges required** — follow [[Minimum-privilege
+   documentation pattern]] in
    `docs/standards/permissions-and-governance.md`. List only what
    that module's examples require. Do not guess or invent object names
    or grants.
@@ -74,7 +74,7 @@ exercise scope.
 
 A module README is design-complete only when all of these pass:
 
-- Every applicable item in **Required structure** is present.
+- Every applicable item in [[#Required structure]] is present.
 - Every planned notebook has a numbered row with a final title, `Focus`
   scope, and exercise expectation. State explicitly when an exercise does
   not apply to a setup, cleanup, utility, or write-only notebook.

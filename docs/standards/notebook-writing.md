@@ -63,7 +63,7 @@ Every learner notebook follows this shape:
    Notebooks table `Focus` entry. Split unrelated concept paths into separate
    planned notebooks.
 4. **Examples and exercises** — their teaching order follows the
-   **Structure patterns** section in
+   [[Structure patterns]] section in
    `docs/standards/teaching-guidelines.md`.
 5. **Summary cell** — brief recap of what was covered and a pointer to the
    next notebook.
@@ -81,8 +81,8 @@ Every learner notebook follows this shape:
 ## Code cell conventions
 
 - Follow the import conventions in `docs/standards/coding-standards.md`.
-- Select DataFrame, SQL, and comparison cells using the **DataFrame and SQL
-  teaching policy** in `docs/standards/teaching-guidelines.md`.
+- Select DataFrame, SQL, and comparison cells using the [[DataFrame and SQL
+  teaching policy]] in `docs/standards/teaching-guidelines.md`.
 - Keep cells focused — one idea per cell — so a learner can run cells
   incrementally and see each step's effect with `display()`/`.show()`.
 - **Together (acceptable):** a short setup line, the transformation it
@@ -103,7 +103,7 @@ Every learner notebook follows this shape:
 
 ## What must never appear in a notebook
 
-Apply the **Security and portability** and **Permitted author defaults**
+Apply the [[Security and portability]] and [[Permitted author defaults]]
 sections in `docs/standards/coding-standards.md`. That standard owns all
 path, parameterization, secret, and learner-specific-value restrictions.
 
@@ -111,7 +111,7 @@ path, parameterization, secret, and learner-specific-value restrictions.
 
 If a notebook's examples require specific Unity Catalog privileges beyond
 what a default learner might have, the module's `README.md` documents them
-(see the **Minimum-privilege documentation pattern** in
+(see the [[Minimum-privilege documentation pattern]] in
 `docs/standards/permissions-and-governance.md`). Do not repeat the privilege
 list inside the notebook.
 

@@ -35,6 +35,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_GLOBS: tuple[str, ...] = (
     ".cursor/commands/*.md",
     ".cursor/rules/*.mdc",
+    "docs/standards/*.md",
     "AGENTS.md",
 )
 
