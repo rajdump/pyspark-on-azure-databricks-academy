@@ -21,7 +21,7 @@ For ad-hoc edits with no active command:
 - **`COURSE_MODULES.md`** — roadmap ownership only. Do not add notebook
   sequences, exercises, or code.
 - **Root `README.md`** — edit in place. Its own existing structure is the
-  only structural source for that file.
+  only structural source for that file; do not load readme-authoring.
 - **Numbered module `README.md`** — read
   `docs/standards/readme-authoring.md` and the [[Canonical sources]] it
   names, then apply [[Required structure]] and the
@@ -35,8 +35,9 @@ For ad-hoc edits with no active command:
 For new module design, the author should use `/write-module-readme` (not
 ad-hoc chat) so reads and stop conditions load consistently.
 
-readme-authoring and the matching `COURSE_MODULES.md` row are canonical. If a
-README conflicts with them, follow those sources.
+For a numbered module `README.md`, readme-authoring and the matching
+`COURSE_MODULES.md` row are canonical. If the README conflicts with them,
+follow those sources.
 
 Automatic-write restrictions are owned by the [[Author-only writes]] section
 in `AGENTS.md`.
