@@ -2,7 +2,11 @@
 # MAGIC %md
 # MAGIC # 02 - Understanding the Delta Transaction Log
 # MAGIC
-# MAGIC Notebook 01 showed that a Delta `UPDATE` leaves `_delta_log` next to Parquet files. This notebook recreates `fare_log_delta/` only and walks each **commit**: one JSON file in `_delta_log` is one **version**.
+# MAGIC Notebook 01 introduced the basic structure of a Delta table: Parquet data files together with a `_delta_log` directory.
+# MAGIC
+# MAGIC In this notebook, we create `fare_log_delta/` and examine how the `transaction log` changes over time. 
+# MAGIC
+# MAGIC Each successful table change creates a new commit in `_delta_log`, represented by a JSON file and identified by a new table version.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -33,9 +37,7 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Recreate `fare_log_delta/` only. Schema and four rows come from the
-# MAGIC Module 10 README extract (`trip_id` **1001–1004**). First Delta writes:
-# MAGIC deletion vectors **off**. Ignore `.crc` files in listings.
+# MAGIC Create `fare_log_delta/`. Delta writes: deletion vectors **off**.
 
 # COMMAND ----------
 
@@ -87,12 +89,20 @@ display(trips_extract.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Version 0 — empty table
+# MAGIC ## Version 0 — Create an empty Delta table
 # MAGIC
-# MAGIC Create an empty Delta **folder** at the Volume path — not a catalog
-# MAGIC table. Version **0** records `protocol` (reader/writer contract),
-# MAGIC `metaData` (schema and table id), and `commitInfo` (what Spark did).
-# MAGIC Typically no data `.parquet`. Delta read: **0** rows.
+# MAGIC Create an empty Delta table at the Volume path. This is a **path-based Delta table**, not a table registered in Unity Catalog.
+# MAGIC
+# MAGIC The first commit creates **Version 0** and records the table’s initial information in `_delta_log`, including:
+# MAGIC
+# MAGIC * `protocol` — the Delta reader and writer requirements
+# MAGIC * `metaData` — the table schema, configuration, and unique table ID
+# MAGIC * `commitInfo` — information about the operation that created the table
+# MAGIC
+# MAGIC Because no rows have been written yet, there are normally **no Parquet data files**.
+# MAGIC
+# MAGIC **Table state at Version 0: 0 rows.**
+# MAGIC
 
 # COMMAND ----------
 

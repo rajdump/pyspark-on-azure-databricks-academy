@@ -192,7 +192,6 @@ spark.sql(
 (
     trips_extract.write.format("delta")
     .mode("overwrite")
-    .option("overwriteSchema", "true")
     .option("delta.enableDeletionVectors", "false")
     .save(delta_path)
 )
