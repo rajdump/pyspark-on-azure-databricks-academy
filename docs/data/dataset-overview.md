@@ -268,6 +268,21 @@ Full column contracts:
 | `rideshare_dev.processed.kpi_zone_performance` | One row per (**`pickup_borough`**, **`pickup_zone`**) — **20** | `trip_enriched` |
 | `rideshare_dev.processed.kpi_driver_productivity` | One row per **`driver_id`** — **12** | `trip_driver_assignment` |
 
+### Module 10 — Delta Lake labs
+
+Isolated labs — not pipeline outputs. Do not mutate `trip_enriched`,
+`curated/`, or KPI tables. Extract rows, DDL, and cleanup:
+[Module 10 README](../../10%20-%20Delta%20Lake%20Foundations/README.md).
+
+| Object | Location |
+|---|---|
+| `fare_correction_parquet/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_parquet/` |
+| `fare_correction_delta/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_delta/` |
+| `fare_log_delta/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/` |
+| `rideshare_dev.processed.fare_managed_lab` | Managed (no `LOCATION`) |
+| `rideshare_dev.processed.fare_external_lab` | `{el_rideshare_dev url}/external-tables/fare_external_lab` — **not** a Volume path |
+| `rideshare_dev.processed.fare_timetravel_lab` | Managed (no `LOCATION`) |
+
 ---
 
 ## Unity Catalog platform reference
@@ -287,8 +302,9 @@ Full column contracts:
 
 ### Managed tables
 
-All six are Unity Catalog managed Delta in `rideshare_dev.processed`
-(`landing` has none).
+All six teaching-pipeline tables are Unity Catalog managed Delta in
+`rideshare_dev.processed` (`landing` has none). Module 10 lab tables are
+listed under [Module 10 — Delta Lake labs](#module-10--delta-lake-labs).
 
 | Table | Module | Grain / rows |
 |---|---|---|
@@ -308,13 +324,13 @@ All six are Unity Catalog managed Delta in `rideshare_dev.processed`
 ```
 
 `practice/` and `curated/` are directories inside `output_files`, created on
-first write.
+first write. Module 5 and Module 10 both write under `practice/`.
 
 **Write rules:**
 
 | Stage | Destination |
 |---|---|
-| Module 5 practice | `…/processed/output_files/practice/{output_name}/` (Module 5 only) |
+| Module 5 and Module 10 practice | `…/processed/output_files/practice/{output_name}/` |
 | Module 6 curated Parquet | `…/processed/output_files/curated/{output_name}/` |
 | Module 7 analytical tables | Unity Catalog managed tables (`saveAsTable`) — not Volume folders |
 | Module 8 KPI tables | Unity Catalog managed tables (`saveAsTable`) in `rideshare_dev.processed` (`kpi_*`) |
