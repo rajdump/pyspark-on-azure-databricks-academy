@@ -4,7 +4,8 @@
 # MAGIC
 # MAGIC Notebook 01 introduced the basic structure of a Delta table: Parquet data files together with a `_delta_log` directory.
 # MAGIC
-# MAGIC In this notebook, we create `fare_log_delta/` and examine how the `transaction log` changes over time. 
+# MAGIC In this notebook, we create `fare_log_delta/` and examine how `_delta_log`
+# MAGIC changes over time.
 # MAGIC
 # MAGIC Each successful table change creates a new commit in `_delta_log`, represented by a JSON file and identified by a new table version.
 # MAGIC
@@ -27,7 +28,8 @@
 # MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
 # MAGIC `processed.output_files`). Module 10 `01 - Why Delta Lake Exists.py`
-# MAGIC (conceptual; this notebook does not reuse 01 folders).
+# MAGIC (conceptual). This notebook writes `fare_log_delta/` only — not the
+# MAGIC 01 fare-correction folders.
 # MAGIC
 # MAGIC This notebook does **not** teach `VERSION AS OF`, `TIMESTAMP AS OF`,
 # MAGIC `RESTORE`, `OPTIMIZE`, `VACUUM`, checkpoints, or deletion vectors.
@@ -37,7 +39,9 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Create `fare_log_delta/`. Delta writes: deletion vectors **off**.
+# MAGIC Handmade extract (`trip_id` **1001–1004**), reset `fare_log_delta/` so
+# MAGIC the notebook can re-run. Do not use the 01 fare-correction folders.
+# MAGIC Deletion vectors **off**. Ignore `.crc` files in listings.
 
 # COMMAND ----------
 
