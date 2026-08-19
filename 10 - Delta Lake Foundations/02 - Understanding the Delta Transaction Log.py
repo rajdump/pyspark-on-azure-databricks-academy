@@ -28,8 +28,7 @@
 # MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
 # MAGIC `processed.output_files`). Module 10 `01 - Why Delta Lake Exists.py`
-# MAGIC (conceptual). This notebook writes `fare_log_delta/` only — not the
-# MAGIC 01 fare-correction folders.
+# MAGIC (conceptual).
 # MAGIC
 # MAGIC This notebook does **not** teach `VERSION AS OF`, `TIMESTAMP AS OF`,
 # MAGIC `RESTORE`, `OPTIMIZE`, `VACUUM`, checkpoints, or deletion vectors.
@@ -39,9 +38,8 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Handmade extract (`trip_id` **1001–1004**), reset `fare_log_delta/` so
-# MAGIC the notebook can re-run. Do not use the 01 fare-correction folders.
-# MAGIC Deletion vectors **off**. Ignore `.crc` files in listings.
+# MAGIC Handmade dataset, reset `fare_log_delta/` so the notebook can re-run.
+# MAGIC Deletion vectors **off**.
 
 # COMMAND ----------
 
