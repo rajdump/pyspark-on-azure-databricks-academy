@@ -2,12 +2,7 @@
 # MAGIC %md
 # MAGIC # 02 - Understanding the Delta Transaction Log
 # MAGIC
-# MAGIC Notebook 01 showed that a Delta `UPDATE` leaves `_delta_log` next to
-# MAGIC Parquet files. This notebook recreates `fare_log_delta/` only and walks
-# MAGIC each **commit**: one JSON file in `_delta_log` is one **version**.
-# MAGIC
-# MAGIC In production, leftover Parquet files after an `UPDATE` or `DELETE` are
-# MAGIC normal. The log — not `ls` — is what defines the **current snapshot**.
+# MAGIC Notebook 01 showed that a Delta `UPDATE` leaves `_delta_log` next to Parquet files. This notebook recreates `fare_log_delta/` only and walks each **commit**: one JSON file in `_delta_log` is one **version**.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
