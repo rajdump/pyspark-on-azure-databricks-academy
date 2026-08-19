@@ -31,7 +31,7 @@
 
 # MAGIC %md
 # MAGIC ## Setup
-# MAGIC Handmade dataset,reset two folders so the notebook can re-run.
+# MAGIC Handmade dataset, reset two folders so the notebook can re-run.
 
 # COMMAND ----------
 
@@ -200,7 +200,7 @@ spark.sql(
 print("Delta folder listing:")
 display(dbutils.fs.ls(delta_path))
 
-print("_delta_log listing (do not open JSON):")
+print("_delta_log listing:")
 display(dbutils.fs.ls(f"{delta_path}_delta_log"))
 
 delta_trips = spark.read.format("delta").load(delta_path)
@@ -268,7 +268,7 @@ display(dbutils.fs.ls(f"{delta_path}_delta_log"))
 # MAGIC %md
 # MAGIC ## Volume folders vs managed tables
 # MAGIC
-# MAGIC This lab uses Volume folders, not managed tables, so you can ls the files and see the proof. Managed-table files live in catalog storage `(abfss://)`, which is harder to browse here.
+# MAGIC This lab uses Volume folders, not managed tables, so you can `ls` the files and see the proof. Managed-table files live in catalog storage (`abfss://`), which is harder to browse here.
 
 # COMMAND ----------
 
