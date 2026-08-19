@@ -2,18 +2,15 @@
 # MAGIC %md
 # MAGIC # 01 - Why Delta Lake Exists
 # MAGIC
-# MAGIC Module 5 wrote Parquet and a Delta **folder**. This notebook is the first
-# MAGIC **row change**: a one-row tip correction on a four-row handmade extract.
+# MAGIC Module 5 created both a Parquet and a Delta folder. This notebook contains the first `row change`: a correction for one row in a four-row handmade extract.
 # MAGIC
-# MAGIC In production, a fare correction is a single-row fix. Parquet can only
-# MAGIC rewrite files. Delta records the same fix as an `UPDATE`.
+# MAGIC In production, a fare correction involves fixing a single row. Parquet can only `rewrite` files, while Delta records the same correction as an `UPDATE`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Show why correcting one row in Parquet means rewriting the files
 # MAGIC - Apply the same correction as a Delta `UPDATE`
-# MAGIC - Confirm Delta still stores Parquet plus a `_delta_log` folder (do not
-# MAGIC   open the JSON)
+# MAGIC - Confirm Delta still stores Parquet plus a `_delta_log` folder
 # MAGIC
 # MAGIC **Reads:** none of the 100-row source files or teaching tables
 # MAGIC (`trip_enriched`, KPIs, `curated/`)
@@ -21,8 +18,6 @@
 # MAGIC **Writes:**
 # MAGIC - `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_parquet/`
 # MAGIC - `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_delta/`
-# MAGIC
-# MAGIC Do **not** touch `fare_log_delta/` (notebook 02). No `saveAsTable`.
 # MAGIC
 # MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
@@ -36,10 +31,7 @@
 
 # MAGIC %md
 # MAGIC ## Setup
-# MAGIC
-# MAGIC Isolated practice folders. Schema and four rows come from the Module 10
-# MAGIC README extract (`trip_id` **1001–1004**). Reset only these two folders so
-# MAGIC the notebook can re-run. Do not write Delta yet.
+# MAGIC Handmade dataset,reset two folders so the notebook can re-run.
 
 # COMMAND ----------
 
@@ -174,10 +166,7 @@ display(dbutils.fs.ls(parquet_path))
 # MAGIC
 # MAGIC - There is **no** transactional `UPDATE` on a Parquet folder. The next
 # MAGIC   cell is expected to fail.
-# MAGIC - A failed or overlapping overwrite can leave a **bad folder** — mixed
-# MAGIC   old and new part files — with no log to roll back. This notebook does
-# MAGIC   not crash a write on purpose; treat that as a reliability risk, not a
-# MAGIC   demo to copy.
+# MAGIC - In production, a failed or overlapping overwrite can leave a bad folder (mixed old and new part files) with no log to roll back.
 
 # COMMAND ----------
 
@@ -196,7 +185,7 @@ spark.sql(
 # MAGIC
 # MAGIC Write the **original** four rows (tip **6.00**, not the Parquet overwrite)
 # MAGIC with `format("delta")`. Deletion vectors **off**. `ls`: data files plus
-# MAGIC `_delta_log/`. Do **not** open JSON. Do **not** name `add` / `remove`.
+# MAGIC `_delta_log/`.
 
 # COMMAND ----------
 
@@ -264,8 +253,7 @@ display(delta_after.orderBy("trip_id"))
 # MAGIC ## Glance at files
 # MAGIC
 # MAGIC `ls` data files and `_delta_log` (more than one JSON after `UPDATE`).
-# MAGIC Data is still Parquet; leftover files may remain. Do **not** open JSON.
-# MAGIC JSON → notebook 02.
+# MAGIC Data is still Parquet; leftover files may remain.
 
 # COMMAND ----------
 
@@ -280,9 +268,7 @@ display(dbutils.fs.ls(f"{delta_path}_delta_log"))
 # MAGIC %md
 # MAGIC ## Volume folders vs managed tables
 # MAGIC
-# MAGIC This lab uses Volume folders so `ls` works. Managed tables such as
-# MAGIC `rideshare_dev.processed.trip_enriched` are also Delta; files live in
-# MAGIC the catalog managed location (`abfss://`). Do not change teaching tables.
+# MAGIC This lab uses Volume folders, not managed tables, so you can ls the files and see the proof. Managed-table files live in catalog storage `(abfss://)`, which is harder to browse here.
 
 # COMMAND ----------
 
