@@ -288,9 +288,10 @@ Full column contracts:
 `landing` and `processed` are Unity Catalog schemas under `rideshare_dev` —
 **not** medallion Bronze/Silver/Gold.
 
-A Unity Catalog table `LOCATION` must be a cloud URL with a scheme
-(`abfss://...`). `/Volumes/...` is for file `ls` and DataFrameWriter path
-writes, not catalog `LOCATION`.
+A Unity Catalog table `LOCATION` must be a cloud URL **outside** Volume
+storage. `/Volumes/...` and `{url}/processed/...` are the `output_files`
+Volume — file `ls` and path writes only. Module 10 notebook 03 uses
+`{url}/external-tables/...`.
 
 ### Managed tables
 
@@ -315,7 +316,7 @@ Isolated labs — not pipeline outputs. Extract, DDL, and cleanup:
 |---|---|
 | `fare_correction_parquet/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_parquet/` |
 | `fare_correction_delta/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_delta/` |
-| `rideshare_dev.processed.fare_log_lab` | `{url}/processed/practice/fare_log_delta` (same files as `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/`) |
+| `fare_log_delta/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/` |
 | `rideshare_dev.processed.fare_managed_lab` | Managed (no `LOCATION`) |
 | `rideshare_dev.processed.fare_external_lab` | `{url}/external-tables/fare_external_lab` — **not** a Volume path |
 | `rideshare_dev.processed.fare_timetravel_lab` | Managed (no `LOCATION`) |

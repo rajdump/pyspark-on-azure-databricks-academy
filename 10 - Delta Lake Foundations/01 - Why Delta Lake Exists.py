@@ -279,7 +279,7 @@ display(dbutils.fs.ls(f"{delta_path}_delta_log"))
 # MAGIC
 # MAGIC - Use `UPDATE` on `` delta.`<path>` `` (same path as the worked example)
 # MAGIC - Do not rewrite Parquet
-# MAGIC - Do not touch `fare_log_lab` / `fare_log_delta/`
+# MAGIC - Do not touch `fare_log_delta/`
 # MAGIC
 # MAGIC **Expected:** still **4** rows; trip **1001** tip is **4.00**; trip
 # MAGIC **1003** stays **10.00**.
