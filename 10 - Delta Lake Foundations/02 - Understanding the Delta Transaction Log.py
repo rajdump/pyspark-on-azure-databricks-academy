@@ -2,19 +2,30 @@
 # MAGIC %md
 # MAGIC # 02 - Understanding the Delta Transaction Log
 # MAGIC
-# MAGIC Notebook 01 showed `_delta_log` after an `UPDATE` without opening the JSON.
-# MAGIC This notebook starts an empty Delta folder and walks each commit.
+# MAGIC Notebook 01 showed that an `UPDATE` changes the Delta table state and
+# MAGIC creates a new entry in `_delta_log`, but we did not inspect the log
+# MAGIC itself.
+# MAGIC
+# MAGIC In this notebook, we start with an empty Delta folder and examine each
+# MAGIC commit step by step to see how the transaction log records the table's
+# MAGIC history.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Walk `_delta_log` commit by commit (`protocol` / `metaData` /
-# MAGIC   `commitInfo` / `add` / `remove`)
-# MAGIC - Reconstruct the current snapshot from `add` / `remove`
-# MAGIC - Read `DESCRIBE HISTORY` on the folder
+# MAGIC By the end of this notebook, you will be able to:
 # MAGIC
-# MAGIC **Reads:** none of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, `curated/`). Do **not** touch
-# MAGIC `fare_correction_parquet/` or `fare_correction_delta/`.
+# MAGIC - Inspect `_delta_log` one commit at a time and identify `protocol`,
+# MAGIC   `metadata`, `commitInfo`, `add`, and `remove` actions.
+# MAGIC - Use `add` and `remove` actions to understand which data files belong
+# MAGIC   to the current Delta table snapshot.
+# MAGIC - Use `DESCRIBE HISTORY` to review the sequence of operations performed
+# MAGIC   on the Delta folder.
+# MAGIC
+# MAGIC **Reads:** This notebook uses only the Delta folder created within the
+# MAGIC notebook. It does not read the 100-row source datasets, teaching tables
+# MAGIC such as `trip_enriched`, KPI tables, or `curated/` outputs.
+# MAGIC
+# MAGIC Do not modify `fare_correction_parquet/` or `fare_correction_delta/`.
 # MAGIC
 # MAGIC **Writes:**
 # MAGIC - `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/`
