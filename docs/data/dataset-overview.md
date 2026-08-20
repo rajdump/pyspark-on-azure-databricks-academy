@@ -309,7 +309,7 @@ Isolated labs — not pipeline outputs. Do not mutate `trip_enriched`,
 |---|---|
 | `fare_correction_parquet/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_parquet/` |
 | `fare_correction_delta/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_delta/` |
-| `fare_log_delta/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/` |
+| `rideshare_dev.processed.fare_log_lab` | Volume `LOCATION` `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/` |
 | `rideshare_dev.processed.fare_managed_lab` | Managed (no `LOCATION`) |
 | `rideshare_dev.processed.fare_external_lab` | `{url from DESCRIBE EXTERNAL LOCATION el_rideshare_dev}/external-tables/fare_external_lab` — **not** a Volume path |
 | `rideshare_dev.processed.fare_timetravel_lab` | Managed (no `LOCATION`) |
@@ -329,7 +329,8 @@ first write.
 
 | Stage | Destination |
 |---|---|
-| Module 5 and Module 10 practice | `…/processed/output_files/practice/{output_name}/` |
+| Module 5 practice | `…/processed/output_files/practice/{output_name}/` |
 | Module 6 curated Parquet | `…/processed/output_files/curated/{output_name}/` |
 | Module 7 analytical tables | Unity Catalog managed tables (`saveAsTable`) — not Volume folders |
 | Module 8 KPI tables | Unity Catalog managed tables (`saveAsTable`) in `rideshare_dev.processed` (`kpi_*`) |
+| Module 10 labs | Isolated objects — [Module 10 lab objects](#module-10-lab-objects) |

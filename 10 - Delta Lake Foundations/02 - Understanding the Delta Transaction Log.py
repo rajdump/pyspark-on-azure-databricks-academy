@@ -2,33 +2,27 @@
 # MAGIC %md
 # MAGIC # 02 - Understanding the Delta Transaction Log
 # MAGIC
-# MAGIC Notebook 01 introduced the basic structure of a Delta table: Parquet data files together with a `_delta_log` directory.
-# MAGIC
-# MAGIC In this notebook, we create `fare_log_delta/` and examine how `_delta_log`
-# MAGIC changes over time.
-# MAGIC
-# MAGIC Each successful table change creates a new commit in `_delta_log`, represented by a JSON file and identified by a new table version.
+# MAGIC Notebook 01 showed `_delta_log` after an `UPDATE` without opening the JSON.
+# MAGIC This notebook creates `fare_log_lab` and walks each commit.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Walk `_delta_log` commit by commit (`protocol` / `metaData` /
 # MAGIC   `commitInfo` / `add` / `remove`)
 # MAGIC - Reconstruct the current snapshot from `add` / `remove`
-# MAGIC - Read `DESCRIBE HISTORY` on the Delta path
+# MAGIC - Read `DESCRIBE HISTORY` on `fare_log_lab`
 # MAGIC
 # MAGIC **Reads:** none of the 100-row source files or teaching tables
 # MAGIC (`trip_enriched`, KPIs, `curated/`). Do **not** touch
 # MAGIC `fare_correction_parquet/` or `fare_correction_delta/`.
 # MAGIC
 # MAGIC **Writes:**
+# MAGIC - `rideshare_dev.processed.fare_log_lab`
 # MAGIC - `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/`
-# MAGIC
-# MAGIC No `saveAsTable`. Path `UPDATE` / `DELETE` on `` delta.`<path>` ``.
 # MAGIC
 # MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `processed.output_files`). Module 10 `01 - Why Delta Lake Exists.py`
-# MAGIC (conceptual).
+# MAGIC `processed.output_files`). Module 10 `01 - Why Delta Lake Exists.py`.
 # MAGIC
 # MAGIC This notebook does **not** teach `VERSION AS OF`, `TIMESTAMP AS OF`,
 # MAGIC `RESTORE`, `OPTIMIZE`, `VACUUM`, checkpoints, or deletion vectors.
@@ -38,8 +32,8 @@
 # MAGIC %md
 # MAGIC ## Setup
 # MAGIC
-# MAGIC Handmade dataset, reset `fare_log_delta/` so the notebook can re-run.
-# MAGIC Deletion vectors **off**.
+# MAGIC Handmade extract (`trip_id` **1001–1004**). Reset `fare_log_lab` and
+# MAGIC `fare_log_delta/` so the notebook can re-run. Deletion vectors **off**.
 
 # COMMAND ----------
 
@@ -56,6 +50,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
+table_name = "rideshare_dev.processed.fare_log_lab"
 delta_path = (
     "/Volumes/rideshare_dev/processed/output_files/practice/"
     "fare_log_delta/"
@@ -82,8 +77,10 @@ trips_extract = spark.createDataFrame(
     schema=extract_schema,
 )
 
+spark.sql(f"DROP TABLE IF EXISTS {table_name}")
 dbutils.fs.rm(delta_path, True)
 
+print(f"table_name = {table_name}")
 print(f"delta_path = {delta_path}")
 print("rows in extract =", trips_extract.count())
 display(trips_extract.orderBy("trip_id"))
@@ -91,42 +88,31 @@ display(trips_extract.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Version 0 — Create an empty Delta folder
+# MAGIC ## Version 0 — Empty `fare_log_lab`
 # MAGIC
-# MAGIC Write an empty Delta **folder** at the Volume path — no `saveAsTable` and no `catalog.schema.table` name, not a table registered in Unity Catalog.
+# MAGIC `DeltaTable.create` uses `extract_schema`. Files go under `fare_log_delta/`
+# MAGIC so `_delta_log` can be listed. Do not write `trips_extract` yet.
 # MAGIC
-# MAGIC The first commit creates **Version 0** and records the initial information in `_delta_log`, including:
-# MAGIC
-# MAGIC * `protocol` — the Delta reader and writer requirements
-# MAGIC * `metaData` — the table schema, configuration, and unique table ID
-# MAGIC * `commitInfo` — information about the operation that created the table
-# MAGIC
-# MAGIC Because no rows have been written yet, there are normally **no Parquet data files**.
-# MAGIC
-# MAGIC **Table state at Version 0: 0 rows.**
-# MAGIC
+# MAGIC **0** rows. Typically no data `.parquet`.
 
 # COMMAND ----------
 
 (
     DeltaTable.create(spark)
+    .tableName(table_name)
     .location(delta_path)
-    .addColumn("trip_id", "BIGINT", nullable=False)
-    .addColumn("service_type", "STRING", nullable=False)
-    .addColumn("payment_method", "STRING", nullable=False)
-    .addColumn("base_fare_amount", "DECIMAL(10,2)", nullable=False)
-    .addColumn("tip_amount", "DECIMAL(10,2)", nullable=False)
+    .addColumns(extract_schema)
     .property("delta.enableDeletionVectors", "false")
     .execute()
 )
 
-print("Delta folder after empty create:")
+print("after empty create:")
 display(dbutils.fs.ls(delta_path))
 
 print("_delta_log after empty create:")
 display(dbutils.fs.ls(log_path))
 
-delta_now = spark.read.format("delta").load(delta_path)
+delta_now = spark.table(table_name)
 print(f"delta rows = {delta_now.count()} (expect 0)")
 
 # COMMAND ----------
@@ -152,8 +138,8 @@ display(v0_log)
 # MAGIC %md
 # MAGIC ## Version 1 — `add` trips 1001–1003
 # MAGIC
-# MAGIC Append **1001–1003** (1003 tip still **6.00**). Leave **1004** for the
-# MAGIC next commit. The new JSON should include `add`. Delta read: **3** rows.
+# MAGIC Append **1001–1003** from `trips_extract` (1003 tip still **6.00**).
+# MAGIC Leave **1004** for the next commit. Delta read: **3** rows.
 
 # COMMAND ----------
 
@@ -167,7 +153,7 @@ trips_1001_to_1003 = trips_extract.filter(
     .save(delta_path)
 )
 
-delta_now = spark.read.format("delta").load(delta_path)
+delta_now = spark.table(table_name)
 print(f"delta rows = {delta_now.count()} (expect 3)")
 display(delta_now.orderBy("trip_id"))
 
@@ -191,7 +177,7 @@ display(v1_log)
 # MAGIC %md
 # MAGIC ## Version 2 — `add` trip 1004
 # MAGIC
-# MAGIC Second write adds **1004** only. Another `add`. Delta read: **4** rows.
+# MAGIC Append **1004** from `trips_extract`. Delta read: **4** rows.
 
 # COMMAND ----------
 
@@ -203,7 +189,7 @@ trip_1004 = trips_extract.filter(F.col("trip_id") == 1004)
     .save(delta_path)
 )
 
-delta_now = spark.read.format("delta").load(delta_path)
+delta_now = spark.table(table_name)
 print(f"delta rows = {delta_now.count()} (expect 4)")
 display(delta_now.orderBy("trip_id"))
 
@@ -228,21 +214,21 @@ display(v2_log)
 # MAGIC ## Version 3 — `UPDATE` trip 1003 (`remove` + `add`)
 # MAGIC
 # MAGIC Operations needs trip **1003**'s tip changed from **6.00** to **10.00**.
-# MAGIC Keep all **4** rows. Path `UPDATE` does not edit bytes inside the old
-# MAGIC Parquet file: it `remove`s that file from the snapshot and `add`s a new
-# MAGIC one. A leftover file may remain on disk.
+# MAGIC Keep all **4** rows. `UPDATE` does not edit bytes inside the old Parquet
+# MAGIC file: it `remove`s that file from the snapshot and `add`s a new one.
+# MAGIC A leftover file may remain on disk.
 
 # COMMAND ----------
 
 spark.sql(
     f"""
-    UPDATE delta.`{delta_path}`
+    UPDATE {table_name}
     SET tip_amount = 10.00
     WHERE trip_id = 1003
     """
 )
 
-delta_now = spark.read.format("delta").load(delta_path)
+delta_now = spark.table(table_name)
 print(f"delta rows = {delta_now.count()} (expect 4)")
 display(delta_now.orderBy("trip_id"))
 
@@ -269,19 +255,19 @@ display(v3_log)
 # MAGIC %md
 # MAGIC ## Version 4 — `DELETE` trip 1002 (`remove` + `add`)
 # MAGIC
-# MAGIC Remove trip **1002** the same way: path `DELETE`, then `remove` + `add`
-# MAGIC in the log. Delta read: **3** rows.
+# MAGIC Remove trip **1002** the same way: `DELETE` on `fare_log_lab`, then
+# MAGIC `remove` + `add` in the log. Delta read: **3** rows.
 
 # COMMAND ----------
 
 spark.sql(
     f"""
-    DELETE FROM delta.`{delta_path}`
+    DELETE FROM {table_name}
     WHERE trip_id = 1002
     """
 )
 
-delta_now = spark.read.format("delta").load(delta_path)
+delta_now = spark.table(table_name)
 print(f"delta rows = {delta_now.count()} (expect 3)")
 display(delta_now.orderBy("trip_id"))
 
@@ -372,13 +358,12 @@ display(dbutils.fs.ls(delta_path))
 # MAGIC %md
 # MAGIC ## `DESCRIBE HISTORY`
 # MAGIC
-# MAGIC `DESCRIBE HISTORY` is the readable index of the same commits. Use
-# MAGIC `spark.sql` because the name is a bound path. Stop here — do not query
-# MAGIC a past version.
+# MAGIC Readable index of the same commits on `fare_log_lab`. Stop here — do not
+# MAGIC query a past version.
 
 # COMMAND ----------
 
-history = spark.sql(f"DESCRIBE HISTORY delta.`{delta_path}`")
+history = spark.sql(f"DESCRIBE HISTORY {table_name}")
 display(history)
 
 # COMMAND ----------
@@ -392,7 +377,7 @@ display(history)
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Version **0** is an empty Delta folder: `protocol` / `metaData` /
+# MAGIC - Version **0** is an empty table: `protocol` / `metaData` /
 # MAGIC   `commitInfo`, typically no data `.parquet`, **0** rows
 # MAGIC - Writes `add` files; `UPDATE` and `DELETE` record `remove` + `add`.
 # MAGIC   Leftover Parquet files may stay on disk
