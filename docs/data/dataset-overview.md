@@ -290,8 +290,9 @@ Full column contracts:
 
 A Unity Catalog table `LOCATION` must be a cloud URL **outside** Volume
 storage. `/Volumes/...` and `{url}/processed/...` are the `output_files`
-Volume — file `ls` and path writes only. Module 10 notebook 03 uses
-`{url}/external-tables/...`.
+Volume — file `ls` and DataFrameWriter `.save` only (Module 10 notebooks
+01–02). Do not `CREATE TABLE` at a Volume path. Module 10 notebook 03
+uses `{url}/external-tables/...`.
 
 ### Managed tables
 

@@ -38,7 +38,6 @@
 import json
 from decimal import Decimal
 
-from delta.tables import DeltaTable
 from pyspark.sql import functions as F
 from pyspark.sql.types import (
     DecimalType,
@@ -85,7 +84,7 @@ display(trips_extract.orderBy("trip_id"))
 # MAGIC %md
 # MAGIC ## Version 0 — Empty folder
 # MAGIC
-# MAGIC `DeltaTable.create` uses `extract_schema`. Do not write `trips_extract`
+# MAGIC Write `_delta_log` from `extract_schema`. Do not write `trips_extract`
 # MAGIC yet. Deletion vectors **off**.
 # MAGIC
 # MAGIC **0** rows. Typically no data `.parquet`.
@@ -93,11 +92,10 @@ display(trips_extract.orderBy("trip_id"))
 # COMMAND ----------
 
 (
-    DeltaTable.create(spark)
-    .location(delta_path)
-    .addColumns(extract_schema)
-    .property("delta.enableDeletionVectors", "false")
-    .execute()
+    spark.createDataFrame([], extract_schema).write.format("delta")
+    .mode("overwrite")
+    .option("delta.enableDeletionVectors", "false")
+    .save(delta_path)
 )
 
 print("Delta folder listing:")
