@@ -21,7 +21,7 @@
 # MAGIC - Use `DESCRIBE HISTORY` to review the sequence of operations performed
 # MAGIC   on the Delta folder.
 # MAGIC
-# MAGIC **Reads:** This notebook uses only the Delta folder created within the
+# MAGIC **Reads:** This notebook uses only the handmade dataframe and Delta folder created within the
 # MAGIC notebook. It does not read the 100-row source datasets, teaching tables
 # MAGIC such as `trip_enriched`, KPI tables, or `curated/` outputs.
 # MAGIC
@@ -132,7 +132,7 @@ display(v0_log)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Find `protocol`, `metaData`, and `commitInfo`.
+# MAGIC Find `commitInfo`, `metaData`, and `protocol`.
 
 # COMMAND ----------
 
@@ -289,10 +289,14 @@ display(v4_log)
 # MAGIC %md
 # MAGIC ## Replay `add` / `remove` vs `ls`
 # MAGIC
-# MAGIC The snapshot is the files Delta currently uses. `add` puts a file in;
-# MAGIC `remove` takes it out. `ls` still shows leftover files.
+# MAGIC A Delta table snapshot contains the data files that are currently active.
 # MAGIC
-# MAGIC > **Warning:** Reading every leftover file is not a Delta read.
+# MAGIC * `add` — makes a data file part of the table.
+# MAGIC * `remove` — removes a data file from the current table state.
+# MAGIC * `ls` — shows the physical files that still exist in storage, including files Delta no longer uses.
+# MAGIC
+# MAGIC > **Warning:** Reading all Parquet files directly from the folder is not the same as reading the Delta table.
+# MAGIC
 
 # COMMAND ----------
 
