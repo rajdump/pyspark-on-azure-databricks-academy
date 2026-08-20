@@ -17,15 +17,19 @@
 # MAGIC `fare_correction_parquet/` or `fare_correction_delta/`.
 # MAGIC
 # MAGIC **Writes:**
-# MAGIC - `rideshare_dev.processed.fare_log_lab`
+# MAGIC - `rideshare_dev.processed.fare_log_lab` at
+# MAGIC   `{url from DESCRIBE EXTERNAL LOCATION el_rideshare_dev}/processed/practice/fare_log_delta`
 # MAGIC - `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/`
+# MAGIC   (same files; append and `ls`)
 # MAGIC
 # MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `processed.output_files`). Module 10 `01 - Why Delta Lake Exists.py`.
+# MAGIC `processed.output_files`, `el_rideshare_dev` for table `LOCATION`).
+# MAGIC Module 10 `01 - Why Delta Lake Exists.py`.
 # MAGIC
 # MAGIC This notebook does **not** teach `VERSION AS OF`, `TIMESTAMP AS OF`,
-# MAGIC `RESTORE`, `OPTIMIZE`, `VACUUM`, checkpoints, or deletion vectors.
+# MAGIC `RESTORE`, `OPTIMIZE`, `VACUUM`, checkpoints, deletion vectors, or
+# MAGIC managed vs external tables.
 
 # COMMAND ----------
 
@@ -33,7 +37,9 @@
 # MAGIC ## Setup
 # MAGIC
 # MAGIC Handmade extract (`trip_id` **1001–1004**). Reset `fare_log_lab` and
-# MAGIC `fare_log_delta/` so the notebook can re-run. Deletion vectors **off**.
+# MAGIC `fare_log_delta/` so the notebook can re-run. Catalog `LOCATION` is the
+# MAGIC `abfss://` URL for that Volume folder — a `/Volumes/` path fails. Deletion
+# MAGIC vectors **off**.
 
 # COMMAND ----------
 
@@ -56,6 +62,13 @@ delta_path = (
     "fare_log_delta/"
 )
 log_path = f"{delta_path}_delta_log"
+el_url = (
+    spark.sql("DESCRIBE EXTERNAL LOCATION el_rideshare_dev")
+    .select("url")
+    .first()[0]
+    .rstrip("/")
+)
+table_location = f"{el_url}/processed/practice/fare_log_delta"
 
 extract_schema = StructType(
     [
@@ -81,6 +94,7 @@ spark.sql(f"DROP TABLE IF EXISTS {table_name}")
 dbutils.fs.rm(delta_path, True)
 
 print(f"table_name = {table_name}")
+print(f"table_location = {table_location}")
 print(f"delta_path = {delta_path}")
 print("rows in extract =", trips_extract.count())
 display(trips_extract.orderBy("trip_id"))
@@ -90,8 +104,9 @@ display(trips_extract.orderBy("trip_id"))
 # MAGIC %md
 # MAGIC ## Version 0 — Empty `fare_log_lab`
 # MAGIC
-# MAGIC `DeltaTable.create` uses `extract_schema`. Files go under `fare_log_delta/`
-# MAGIC so `_delta_log` can be listed. Do not write `trips_extract` yet.
+# MAGIC `DeltaTable.create` uses `extract_schema`. `.location` is the `abfss://`
+# MAGIC URL (Unity Catalog rejects `/Volumes/`). Files are the Volume folder so
+# MAGIC `_delta_log` can be listed. Do not write `trips_extract` yet.
 # MAGIC
 # MAGIC **0** rows. Typically no data `.parquet`.
 
@@ -100,7 +115,7 @@ display(trips_extract.orderBy("trip_id"))
 (
     DeltaTable.create(spark)
     .tableName(table_name)
-    .location(delta_path)
+    .location(table_location)
     .addColumns(extract_schema)
     .property("delta.enableDeletionVectors", "false")
     .execute()
@@ -138,8 +153,9 @@ display(v0_log)
 # MAGIC %md
 # MAGIC ## Version 1 — `add` trips 1001–1003
 # MAGIC
-# MAGIC Append **1001–1003** from `trips_extract` (1003 tip still **6.00**).
-# MAGIC Leave **1004** for the next commit. Delta read: **3** rows.
+# MAGIC Append **1001–1003** from `trips_extract` with `.save` on the Volume
+# MAGIC path (same files as catalog `LOCATION`). 1003 tip still **6.00**. Leave
+# MAGIC **1004** for the next commit. Delta read: **3** rows.
 
 # COMMAND ----------
 
@@ -177,7 +193,8 @@ display(v1_log)
 # MAGIC %md
 # MAGIC ## Version 2 — `add` trip 1004
 # MAGIC
-# MAGIC Append **1004** from `trips_extract`. Delta read: **4** rows.
+# MAGIC Append **1004** from `trips_extract` the same way (Volume-path `.save`).
+# MAGIC Delta read: **4** rows.
 
 # COMMAND ----------
 

@@ -274,16 +274,23 @@ Full column contracts:
 
 ### UC objects
 
+`{url}` below is the `url` column from
+`DESCRIBE EXTERNAL LOCATION el_rideshare_dev`.
+
 | Platform piece | Value |
 |---|---|
-| Catalog | `rideshare_dev` |
+| Catalog | `rideshare_dev` (`MANAGED LOCATION` `{url}/uc-managed`) |
 | Schemas | `landing`, `processed` |
-| Volumes (both external) | `landing.source_files`, `processed.output_files` |
+| Volumes (both external) | `landing.source_files` at `{url}/landing`; `processed.output_files` at `{url}/processed` |
 | External location | `el_rideshare_dev` |
 | Storage credential | Student-provided name in the config cell |
 
 `landing` and `processed` are Unity Catalog schemas under `rideshare_dev` —
 **not** medallion Bronze/Silver/Gold.
+
+A Unity Catalog table `LOCATION` must be a cloud URL with a scheme
+(`abfss://...`). `/Volumes/...` is for file `ls` and DataFrameWriter path
+writes, not catalog `LOCATION`.
 
 ### Managed tables
 
@@ -301,17 +308,16 @@ All six are Unity Catalog managed Delta in `rideshare_dev.processed`
 
 ### Module 10 lab objects
 
-Isolated labs — not pipeline outputs. Do not mutate `trip_enriched`,
-`curated/`, or KPI tables. Extract rows, DDL, and cleanup:
+Isolated labs — not pipeline outputs. Extract, DDL, and cleanup:
 [Module 10 README](../../10%20-%20Delta%20Lake%20Foundations/README.md).
 
 | Object | Location |
 |---|---|
 | `fare_correction_parquet/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_parquet/` |
 | `fare_correction_delta/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_delta/` |
-| `rideshare_dev.processed.fare_log_lab` | Volume `LOCATION` `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/` |
+| `rideshare_dev.processed.fare_log_lab` | `{url}/processed/practice/fare_log_delta` (same files as `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/`) |
 | `rideshare_dev.processed.fare_managed_lab` | Managed (no `LOCATION`) |
-| `rideshare_dev.processed.fare_external_lab` | `{url from DESCRIBE EXTERNAL LOCATION el_rideshare_dev}/external-tables/fare_external_lab` — **not** a Volume path |
+| `rideshare_dev.processed.fare_external_lab` | `{url}/external-tables/fare_external_lab` — **not** a Volume path |
 | `rideshare_dev.processed.fare_timetravel_lab` | Managed (no `LOCATION`) |
 
 ### Path patterns
