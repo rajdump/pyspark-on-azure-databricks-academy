@@ -91,11 +91,11 @@ display(trips_extract.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Version 0 — Create an empty Delta table
+# MAGIC ## Version 0 — Create an empty Delta folder
 # MAGIC
-# MAGIC Create an empty Delta table at the Volume path. This is a **path-based Delta table**, not a table registered in Unity Catalog.
+# MAGIC Write an empty Delta **folder** at the Volume path — no `saveAsTable` and no `catalog.schema.table` name, not a table registered in Unity Catalog.
 # MAGIC
-# MAGIC The first commit creates **Version 0** and records the table’s initial information in `_delta_log`, including:
+# MAGIC The first commit creates **Version 0** and records the initial information in `_delta_log`, including:
 # MAGIC
 # MAGIC * `protocol` — the Delta reader and writer requirements
 # MAGIC * `metaData` — the table schema, configuration, and unique table ID
