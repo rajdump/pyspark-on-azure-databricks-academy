@@ -58,7 +58,7 @@ Cell 31 decide → Cell 32 close
 - External files do **not** remain because of the 7-day window; they remain because you control that path
 - Managed `UNDROP` = relation + files UC retained. External `UNDROP` = relation over files that **never left**. Never “external recovers files.”
 - Managed `LIST`: uncaught `# Expected: AnalysisException`
-- `SHOW TABLES DROPPED`: Public Preview; find the **most recently dropped** lab row
+- `SHOW TABLES DROPPED`
 - No `UPDATE`, `DESCRIBE HISTORY`, `OPTIMIZE`, `VACUUM`, PO demo, exercise, `GRANT`, Volume `LOCATION`, `CREATE EXTERNAL TABLE` syntax, 8-day / 48-hour cleanup
 - End state: managed undropped; external re-registered; **4** rows each
 - Cell 31 = decision. Cell 32 = close only (no second architecture table)
@@ -386,12 +386,6 @@ SHOW TABLES DROPPED IN rideshare_dev.processed
 ### Cell 19 (`%md`)
 
 ```markdown
-Find the **most recently dropped** `fare_managed_lab` row
-(`deletedAt`). If this notebook has been run before, older rows with
-the same name can appear.
-
-> **Note:** `SHOW TABLES DROPPED` is Public Preview.
-
 Do not `CREATE` this managed name again before `UNDROP`.
 ```
 
@@ -424,8 +418,7 @@ SHOW TABLES DROPPED IN rideshare_dev.processed
 ### Cell 24 (`%md`) — Table 3
 
 ```markdown
-Find the **most recently dropped** `fare_external_lab` row. The
-**active UC registration** is gone; the ADLS folder is still there
+The **active UC registration** is gone; the ADLS folder is still there
 (data files plus `_delta_log/`).
 
 Managed: DROP → active registration removed → UC retains files →
