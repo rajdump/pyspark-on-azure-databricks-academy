@@ -375,16 +375,19 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # MAGIC %md
 # MAGIC ## Exercise
-# MAGIC The table is already restored, so trip **1002** is present again.
+# MAGIC In production, a fast check for "what did that job change?" is to read
+# MAGIC two Delta versions and subtract them. `exceptAll` (Module 7) returns
+# MAGIC rows in the first DataFrame that are not in the second — the rows that
+# MAGIC disappeared.
 # MAGIC
-# MAGIC Query the table as it looked **immediately after** trip **1002** was
-# MAGIC deleted (`delete_version`).
+# MAGIC `restore_version` is the table just before trip **1002** was deleted.
+# MAGIC `delete_version` is the table just after that delete.
 # MAGIC
-# MAGIC - Use `VERSION AS OF`
+# MAGIC - Read both with PySpark `versionAsOf` (do not hardcode version numbers)
+# MAGIC - Use `exceptAll` to find the rows that disappeared in `delete_version`
 # MAGIC - Do not `RESTORE`
 # MAGIC
-# MAGIC **Expected:** historical read is **3** rows (1002 gone). Current without
-# MAGIC `AS OF` is still **4** rows.
+# MAGIC **Expected:** **1** row — trip **1002**.
 
 # COMMAND ----------
 
@@ -393,21 +396,23 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Hint:** Use `delete_version` with `VERSION AS OF`, then compare that
-# MAGIC result with the current table.
+# MAGIC **Hint:** `spark.read.option("versionAsOf", ...).table(lab_table)` for
+# MAGIC `restore_version` and `delete_version`. Rows that disappeared:
+# MAGIC `before.exceptAll(after)`.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC A Delta table creates versions as it changes.
-# MAGIC DESCRIBE HISTORY shows the table's recorded version history.
-# MAGIC Time travel lets me read an earlier state by version or timestamp
-# MAGIC without changing the current table.
-# MAGIC RESTORE makes an earlier state current again by creating a NEW Delta version.
-# MAGIC Historical access depends on the required transaction history and data
-# MAGIC files still being available.
+# MAGIC - A Delta table creates versions as it changes
+# MAGIC - `DESCRIBE HISTORY` shows the table's recorded version history
+# MAGIC - Time travel lets me read an earlier state by version or timestamp
+# MAGIC   without changing the current table
+# MAGIC - `RESTORE` makes an earlier state current again by creating a NEW Delta
+# MAGIC   version
+# MAGIC - Historical access depends on the required transaction history and data
+# MAGIC   files still being available
 # MAGIC
 # MAGIC **Next:** Module 11 (transactions, schema, `OPTIMIZE` / `VACUUM`, intro
 # MAGIC `MERGE`). This module ends here.
