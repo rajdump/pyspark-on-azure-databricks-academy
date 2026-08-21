@@ -64,12 +64,14 @@ from pyspark.sql.types import (
 managed_table = "rideshare_dev.processed.fare_managed_lab"
 external_table = "rideshare_dev.processed.fare_external_lab"
 
+# Course external location — not a Volume path.
 external_location_url = (
     spark.sql("DESCRIBE EXTERNAL LOCATION el_rideshare_dev")
     .select("url")
     .first()["url"]
     .rstrip("/")
 )
+# Subfolder only. Never CREATE at the external-location root.
 external_table_path = (
     f"{external_location_url}/external-tables/fare_external_lab"
 )
@@ -95,6 +97,7 @@ trips_extract = spark.createDataFrame(
 )
 trips_extract.createOrReplaceTempView("trips_extract")
 
+# Reset: drop UC names, then delete leftover external files.
 spark.sql(f"DROP TABLE IF EXISTS {managed_table}")
 spark.sql(f"DROP TABLE IF EXISTS {external_table}")
 dbutils.fs.rm(external_table_path, True)
@@ -116,6 +119,7 @@ display(trips_extract.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- No LOCATION: Unity Catalog chooses the path. DV off on first CREATE.
 # MAGIC CREATE TABLE rideshare_dev.processed.fare_managed_lab (
 # MAGIC   trip_id BIGINT,
 # MAGIC   service_type STRING,
@@ -128,6 +132,7 @@ display(trips_extract.orderBy("trip_id"))
 
 # COMMAND ----------
 
+# LOCATION makes this external. Same schema as managed. DV off.
 spark.sql(
     f"""
     CREATE TABLE {external_table} (
@@ -156,6 +161,7 @@ print(f"external rows = {spark.table(external_table).count()} (expect 0)")
 
 # COMMAND ----------
 
+# Same four rows in both, so later DROP / UNDROP / re-register can check data.
 spark.sql(f"INSERT INTO {managed_table} SELECT * FROM trips_extract")
 spark.sql(f"INSERT INTO {external_table} SELECT * FROM trips_extract")
 
@@ -176,6 +182,7 @@ display(external_df.orderBy("trip_id"))
 
 # COMMAND ----------
 
+# Compare format and location.
 display(spark.sql(f"DESCRIBE DETAIL {managed_table}"))
 display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 
@@ -198,6 +205,7 @@ display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- Catalog metadata: MANAGED vs EXTERNAL, and storage_path.
 # MAGIC SELECT table_name, table_type, storage_path
 # MAGIC FROM rideshare_dev.information_schema.tables
 # MAGIC WHERE table_schema = 'processed'
@@ -212,10 +220,12 @@ display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 
 # COMMAND ----------
 
+# Should succeed — you control this path.
 display(spark.sql(f"LIST '{external_table_path}'"))
 
 # COMMAND ----------
 
+# Knowing the managed URI does not make LIST a supported file interface.
 managed_uri = (
     spark.sql(f"DESCRIBE DETAIL {managed_table}")
     .select("location")
@@ -252,6 +262,7 @@ spark.sql(f"LIST '{managed_uri}'")  # Expected: AnalysisException
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- Removes the active UC name. Do not CREATE this name again before UNDROP.
 # MAGIC DROP TABLE rideshare_dev.processed.fare_managed_lab;
 # MAGIC SHOW TABLES DROPPED IN rideshare_dev.processed
 
@@ -268,22 +279,26 @@ spark.sql(f"LIST '{managed_uri}'")  # Expected: AnalysisException
 
 # COMMAND ----------
 
+# Folder while the external table still exists.
 print("External folder before DROP:")
 display(spark.sql(f"LIST '{external_table_path}'"))
 
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- UC name only. Files at LOCATION stay.
 # MAGIC DROP TABLE rideshare_dev.processed.fare_external_lab
 
 # COMMAND ----------
 
+# Same folder should still be here — DROP did not delete the files.
 print("External folder after DROP:")
 display(spark.sql(f"LIST '{external_table_path}'"))
 
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- Public Preview. Use the most recently dropped fare_external_lab row.
 # MAGIC SHOW TABLES DROPPED IN rideshare_dev.processed
 
 # COMMAND ----------
@@ -325,6 +340,7 @@ display(spark.sql(f"LIST '{external_table_path}'"))
 
 # COMMAND ----------
 
+# Managed: relation + files UC kept. External: relation over files that stayed.
 spark.sql(f"UNDROP TABLE {managed_table}")
 spark.sql(f"UNDROP TABLE {external_table}")
 
@@ -346,10 +362,12 @@ display(external_df.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC -- Drop the name only. Next cell re-registers the surviving folder.
 # MAGIC DROP TABLE rideshare_dev.processed.fare_external_lab
 
 # COMMAND ----------
 
+# New UC name over the existing folder. Not UNDROP. No column list.
 spark.sql(
     f"""
     CREATE TABLE {external_table}
