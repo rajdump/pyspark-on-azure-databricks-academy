@@ -254,16 +254,14 @@ spark.sql(f"LIST '{managed_uri}'")  # Expected: AnalysisException
 
 # MAGIC %md
 # MAGIC ## DROP TABLE
+# MAGIC Does `DROP` delete the files? Do not wait 7 days. Do not `PURGE`.
 # MAGIC
-# MAGIC `DROP TABLE` removes the table from the **active Unity Catalog metadata**.
+# MAGIC `DROP TABLE` removes the **active Unity Catalog table registration**.
+# MAGIC The table is no longer queryable. For **7 days**, `UNDROP` can recover
+# MAGIC **either** type — that is catalog recovery, not "the table is gone
+# MAGIC forever."
 # MAGIC
-# MAGIC For the next **7 days**, `UNDROP TABLE` can recover the metadata for both
-# MAGIC managed and external tables.
-# MAGIC
-# MAGIC The difference is the files:
-# MAGIC
-# MAGIC - **Managed table:** UC retains the files for recovery.
-# MAGIC - **External table:** the files remain at the external storage path.
+# MAGIC That 7-day window is **not** why external files remain.
 
 # COMMAND ----------
 
