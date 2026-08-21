@@ -112,7 +112,7 @@ display(trips_extract.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Empty managed and external tables
-# MAGIC Managed: no `LOCATION`. Unity Catalog chooses the path.
+# MAGIC Managed: no `LOCATION` Path. Unity Catalog chooses the path.
 # MAGIC External: you choose an `abfss://` path, not `/Volumes/`.
 # MAGIC **0** rows until the next section.
 
@@ -176,9 +176,9 @@ display(external_df.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Where do the files live?
-# MAGIC `LIST` on the external path should succeed. `LIST` on the managed
-# MAGIC table's cloud URI is expected to fail. Knowing a managed location
-# MAGIC does not make it a supported file interface.
+# MAGIC Look at `format` and `location` in `DESCRIBE DETAIL`. Both tables have
+# MAGIC an `abfss://` path. For managed, Unity Catalog chose it. For external,
+# MAGIC you chose it.
 
 # COMMAND ----------
 
@@ -198,8 +198,7 @@ display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 # MAGIC | Who chooses the location | Unity Catalog | you specify |
 # MAGIC | Explicit `LOCATION` | no | yes |
 # MAGIC
-# MAGIC This lab uses Delta for both so path and `DROP` behavior are the only
-# MAGIC variables. External tables can use other file formats; that is not
+# MAGIC This lab uses Delta for both tables. External tables can use other file formats; that is not
 # MAGIC this lab.
 
 # COMMAND ----------
@@ -215,8 +214,13 @@ display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `table_type` is `MANAGED` or `EXTERNAL`. Next: `LIST` the external
-# MAGIC folder, then try the managed URI.
+# MAGIC `table_type` is `MANAGED` or `EXTERNAL`.
+# MAGIC
+# MAGIC You cannot list a managed table’s storage path in the same way that you can with an external table’s storage path. 
+# MAGIC
+# MAGIC Cell 14 succeeds because the external table uses a path that you explicitly provided through a Unity Catalog external location. However, Cell 15 fails because Unity Catalog does not support path-based access to managed table storage, even if you are aware of the underlying URI. The error message about the path overlapping managed storage indicates that Unity Catalog is enforcing that boundary.
+# MAGIC
+# MAGIC This behaviour is by design. For managed tables, Unity Catalog controls the location of managed storage, so you interact with the data by referencing the table name using SQL or DataFrame APIs. In contrast, for external tables, although Unity Catalog still governs them, users with sufficient privileges can access the same data via their cloud storage URIs.
 
 # COMMAND ----------
 
