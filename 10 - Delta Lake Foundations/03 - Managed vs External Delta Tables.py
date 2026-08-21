@@ -254,14 +254,16 @@ spark.sql(f"LIST '{managed_uri}'")  # Expected: AnalysisException
 
 # MAGIC %md
 # MAGIC ## DROP TABLE
-# MAGIC Does `DROP` delete the files? Do not wait 7 days. Do not `PURGE`.
 # MAGIC
-# MAGIC `DROP TABLE` removes the **active Unity Catalog table registration**.
-# MAGIC The table is no longer queryable. For **7 days**, `UNDROP` can recover
-# MAGIC **either** type — that is catalog recovery, not "the table is gone
-# MAGIC forever."
+# MAGIC `DROP TABLE` removes the table from the **active Unity Catalog metadata**.
 # MAGIC
-# MAGIC That 7-day window is **not** why external files remain.
+# MAGIC For the next **7 days**, `UNDROP TABLE` can recover the metadata for both
+# MAGIC managed and external tables.
+# MAGIC
+# MAGIC The difference is the files:
+# MAGIC
+# MAGIC - **Managed table:** UC retains the files for recovery.
+# MAGIC - **External table:** the files remain at the external storage path.
 
 # COMMAND ----------
 
@@ -308,39 +310,27 @@ display(spark.sql(f"LIST '{external_table_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Find the **most recently dropped** `fare_external_lab` row. The
-# MAGIC **active UC registration** is gone; the ADLS folder is still there
-# MAGIC (data files plus `_delta_log/`).
-# MAGIC
-# MAGIC Managed: DROP → active registration removed → UC retains files →
-# MAGIC UNDROP for 7 days → then UC deletes those files
-# MAGIC
-# MAGIC External: DROP → active registration removed → UNDROP for 7 days
-# MAGIC + files remain at the ADLS path independently
-# MAGIC
-# MAGIC The external files do **not** remain because of the 7-day `UNDROP`
-# MAGIC window. They remain because the external table does not give Unity
-# MAGIC Catalog control of deleting those files.
+# MAGIC Find the **most recently dropped** `fare_external_lab` row.
 # MAGIC
 # MAGIC | | Managed | External |
 # MAGIC |---|---|---|
-# MAGIC | Active UC registration after `DROP` | removed | removed |
-# MAGIC | Files after `DROP` | UC retains them for recovery (not a `LIST` browser) | remain at `external_table_path` |
-# MAGIC | Why files remain | 7-day recovery, then UC deletes them | you control those files |
+# MAGIC | UC metadata after `DROP` | recoverable for 7 days | recoverable for 7 days |
+# MAGIC | Files after `DROP` | retained by UC for recovery | remain at `external_table_path` |
+# MAGIC | After recovery window | UC deletes the files | files remain until you delete them |
+# MAGIC
+# MAGIC `UNDROP TABLE` can recover either table type during the 7-day recovery window.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## UNDROP
-# MAGIC Works for both types. For external, the location and credential must
-# MAGIC still exist. `UNDROP TABLE name` restores the most recently dropped
-# MAGIC matching relation. Expect **4** rows each.
 # MAGIC
-# MAGIC - **Managed:** restores the UC relation **and** the data UC retained
-# MAGIC   for recovery.
-# MAGIC - **External:** restores the UC relation over files that **already
-# MAGIC   remained** at the path. The files were never removed. Do not say
-# MAGIC   that external `UNDROP` "recovers the files."
+# MAGIC `UNDROP TABLE` can restore both managed and external tables within the
+# MAGIC 7-day recovery window.
+# MAGIC
+# MAGIC - **Managed:** restores the UC table and retained data.
+# MAGIC - **External:** restores the UC table over files that already remain at
+# MAGIC   the external path.
 
 # COMMAND ----------
 
@@ -359,9 +349,11 @@ display(external_df.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Re-register the external folder
-# MAGIC Leave the managed table undropped. This is **not** `UNDROP`. Drop the
-# MAGIC external name again, then register a new UC table over the folder
-# MAGIC that is still on ADLS.
+# MAGIC
+# MAGIC Drop the external table again, then create a new UC table over the
+# MAGIC existing ADLS folder.
+# MAGIC
+# MAGIC This is **re-registration**, not `UNDROP`.
 
 # COMMAND ----------
 
@@ -387,17 +379,15 @@ display(external_df.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **4** rows. External files were never removed from the path.
+# MAGIC **4 rows** are available again in both tables.
 # MAGIC
 # MAGIC | | Managed | External |
 # MAGIC |---|---|---|
-# MAGIC | `UNDROP` | 4 rows: relation + files UC retained | 4 rows: relation over files that stayed |
-# MAGIC | 7-day window | catalog recovery; then UC deletes managed files | catalog recovery only; files stay because you control them |
-# MAGIC | Re-register | do not `CREATE` the name before `UNDROP` | **new** UC registration over the surviving folder; 4 rows |
+# MAGIC | `UNDROP` | Restores the dropped table and retained data | Restores the dropped table over existing files |
+# MAGIC | Re-register | Not applicable here | Creates a new UC registration over the existing Delta folder |
 # MAGIC
-# MAGIC `UNDROP` restores the previously dropped UC relation. Re-registering
-# MAGIC creates a **new** UC registration over the existing external Delta
-# MAGIC folder.
+# MAGIC `UNDROP` restores the dropped UC table. Re-registering creates a **new**
+# MAGIC UC table over the existing external files.
 
 # COMMAND ----------
 
@@ -406,51 +396,39 @@ display(external_df.orderBy("trip_id"))
 # MAGIC
 # MAGIC ### Use an external table when
 # MAGIC
-# MAGIC Choose an **external table** when the storage path must stay under your
-# MAGIC control.
+# MAGIC Choose an **external table** when you need control of the storage path.
 # MAGIC
 # MAGIC Typical cases:
 # MAGIC
-# MAGIC - data already exists at a specific ADLS path and should stay there
-# MAGIC - another system needs direct access to the same files
-# MAGIC - the table uses a file format that is not supported as a managed table
-# MAGIC - `DROP TABLE` must leave the underlying files untouched
+# MAGIC * data already exists at a specific ADLS path
+# MAGIC * another system needs direct access to the same files
+# MAGIC * the data format is not supported as a managed table
+# MAGIC * `DROP TABLE` must leave the underlying files untouched
 # MAGIC
-# MAGIC You provide the `LOCATION`. Unity Catalog still governs the table, but
-# MAGIC the files remain at the storage path you manage.
+# MAGIC You provide the `LOCATION`. Unity Catalog governs the table, while the
+# MAGIC files remain at the storage path you control.
 # MAGIC
 # MAGIC ### Use a managed table when
 # MAGIC
 # MAGIC Choose a **managed table** for most new tables created in Databricks.
 # MAGIC
 # MAGIC Unity Catalog chooses the storage location and Databricks manages the
-# MAGIC table's storage lifecycle and platform optimizations.
+# MAGIC table storage for you.
 # MAGIC
-# MAGIC For a typical lakehouse architecture:
+# MAGIC | Architecture area                       | Recommended default |
+# MAGIC | --------------------------------------- | ------------------- |
+# MAGIC | Landing / raw source files              | External Volume     |
+# MAGIC | Bronze, Silver, and Gold tables         | Managed table       |
+# MAGIC | Existing or shared data at a fixed path | External table      |
 # MAGIC
-# MAGIC | Area | Recommended default |
-# MAGIC |---|---|
-# MAGIC | Landing / raw source files | External Volume |
-# MAGIC | New Bronze, Silver, and Gold tables | Managed table |
-# MAGIC | Existing or shared data that must stay at a specific path | External table |
-# MAGIC
-# MAGIC Bronze, Silver, and Gold describe **data layers**, not managed or
-# MAGIC external table types.
-# MAGIC
+# MAGIC Bronze, Silver, and Gold are **data layers**, not table types.
 # MAGIC **Bronze does not mean external.**
 # MAGIC
-# MAGIC > **Note:** What do you give up with an external table?
-# MAGIC >
-# MAGIC > External tables remain governed by Unity Catalog, but some capabilities
-# MAGIC > available to managed tables are reduced or unavailable:
-# MAGIC >
-# MAGIC > - automatic Databricks optimizations are more limited
-# MAGIC > - Predictive Optimization is not supported
-# MAGIC >
-# MAGIC > Use external tables because you need control of the storage path,
-# MAGIC > not simply because the data belongs to a particular medallion layer.
+# MAGIC > **External table trade-off:** You keep control of the storage path, but
+# MAGIC > managed-only capabilities such as **Predictive Optimization** are not
+# MAGIC > available.
 # MAGIC
-# MAGIC Module 5 `landing` and `processed` are course storage areas; they are not
+# MAGIC Module 5 `landing` and `processed` are course storage areas, not
 # MAGIC medallion layers.
 
 # COMMAND ----------
@@ -458,14 +436,16 @@ display(external_df.orderBy("trip_id"))
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Both managed and external tables are governed by Unity Catalog
-# MAGIC - Managed is the default for most new Databricks tables
-# MAGIC - External is for cases where you must control or preserve a specific
-# MAGIC   storage path
-# MAGIC - `DROP TABLE` removes the active UC registration; external files remain,
-# MAGIC   while managed files follow the UC-managed recovery and deletion lifecycle
-# MAGIC - `UNDROP` can recover either table type during the 7-day recovery window
-# MAGIC - Re-registering the external folder is a **new** UC registration over
-# MAGIC   the surviving files, not `UNDROP`
+# MAGIC * Both managed and external tables are governed by Unity Catalog.
+# MAGIC * Use **managed tables** by default for most new Databricks tables.
+# MAGIC * Use **external tables** when you need to control or preserve a
+# MAGIC   specific storage path.
+# MAGIC * `DROP TABLE` removes the active UC registration. Managed files follow
+# MAGIC   the UC-managed recovery lifecycle; external files remain at their
+# MAGIC   storage path.
+# MAGIC * `UNDROP` can restore either table type during the 7-day recovery
+# MAGIC   window.
+# MAGIC * Re-registering an external folder creates a **new UC registration**
+# MAGIC   over the existing files.
 # MAGIC
 # MAGIC **Next:** `04 - Delta Time Travel and Restore`
