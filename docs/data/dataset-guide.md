@@ -196,8 +196,9 @@ point: the same questions, answered in SQL.
 ## Where the data lives
 
 `landing` and `processed` are simply two Unity Catalog schemas, not quality
-tiers; this course does not use Bronze/Silver/Gold naming, which is designed
-later in the course. Inside the processed volume, `practice/` is where exercise
+tiers. Bronze, Silver, and Gold are data layers designed later (Module 13);
+Module 10 names them only to contrast those layers with managed vs external
+table types. They are not Module 5 schema names. Inside the processed volume, `practice/` is where exercise
 output goes, and `curated/` holds the pipeline output that later modules depend
 on. Object names, which volumes are external, and when those folders appear are
 recorded in

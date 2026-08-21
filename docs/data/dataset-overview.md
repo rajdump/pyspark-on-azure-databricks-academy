@@ -275,7 +275,7 @@ Full column contracts:
 ### UC objects
 
 `{url}` below is the `url` column from
-`DESCRIBE EXTERNAL LOCATION el_rideshare_dev`.
+`DESCRIBE EXTERNAL LOCATION el_rideshare_dev` (strip a trailing slash).
 
 | Platform piece | Value |
 |---|---|
@@ -321,6 +321,11 @@ Isolated labs — not pipeline outputs. Extract, DDL, and cleanup:
 | `rideshare_dev.processed.fare_managed_lab` | Managed (no `LOCATION`) |
 | `rideshare_dev.processed.fare_external_lab` | `{url}/external-tables/fare_external_lab` — **not** a Volume path |
 | `rideshare_dev.processed.fare_timetravel_lab` | Managed (no `LOCATION`) |
+
+Notebook 03 `CREATE` uses `{url}/external-tables/fare_external_lab` only —
+never the external-location root. `DROP TABLE` on the external name leaves
+those files. `DROP CATALOG CASCADE` drops the Unity Catalog names; it does
+not by itself delete that ADLS folder.
 
 ### Path patterns
 
