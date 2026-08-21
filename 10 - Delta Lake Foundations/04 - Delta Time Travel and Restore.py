@@ -155,7 +155,7 @@ spark.sql(
     WHERE trip_id = 1002
     """
 )
-# Save this version for the exercise (query it after restore)
+# Save this version for the historical-read exercise after RESTORE
 delete_version, _ = latest_history(lab_table)
 display(spark.table(lab_table).orderBy("trip_id"))
 
@@ -375,19 +375,16 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # MAGIC %md
 # MAGIC ## Exercise
-# MAGIC In production, a fast check for "what did that job change?" is to read
-# MAGIC two Delta versions and subtract them. `exceptAll` (Module 7) returns
-# MAGIC rows in the first DataFrame that are not in the second — the rows that
-# MAGIC disappeared.
+# MAGIC The table has already been restored, so trip **1002** is present again
+# MAGIC in the current state.
 # MAGIC
-# MAGIC `restore_version` is the table just before trip **1002** was deleted.
-# MAGIC `delete_version` is the table just after that delete.
+# MAGIC Use PySpark `versionAsOf` to read `delete_version`, then compare it with
+# MAGIC the current table. Time travel still reads that old state even after
+# MAGIC `RESTORE` changed current.
 # MAGIC
-# MAGIC - Read both with PySpark `versionAsOf` (do not hardcode version numbers)
-# MAGIC - Use `exceptAll` to find the rows that disappeared in `delete_version`
-# MAGIC - Do not `RESTORE`
-# MAGIC
-# MAGIC **Expected:** **1** row — trip **1002**.
+# MAGIC **Expected:**
+# MAGIC - `delete_version` → **3** rows
+# MAGIC - current table → **4** rows
 
 # COMMAND ----------
 
@@ -396,9 +393,26 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Hint:** `spark.read.option("versionAsOf", ...).table(lab_table)` for
-# MAGIC `restore_version` and `delete_version`. Rows that disappeared:
-# MAGIC `before.exceptAll(after)`.
+# MAGIC **Hint:** Read `delete_version` with the same `versionAsOf` option used
+# MAGIC earlier, then compare its row count with the current table.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **Solution** (commented out — un-comment if you want to compare)
+
+# COMMAND ----------
+
+# historical = (
+#     spark.read
+#     .option("versionAsOf", delete_version)
+#     .table(lab_table)
+# )
+# print(f"historical rows = {historical.count()} (expect 3)")
+# display(historical.orderBy("trip_id"))
+# current = spark.table(lab_table)
+# print(f"current rows = {current.count()} (expect 4)")
+# display(current.orderBy("trip_id"))
 
 # COMMAND ----------
 
