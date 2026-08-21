@@ -41,6 +41,7 @@ from decimal import Decimal
 
 lab_table = "rideshare_dev.processed.fare_timetravel_lab"
 
+# Small source dataset used to create a controlled Delta history
 trips_extract = spark.createDataFrame(
     [
         (1001, "STANDARD", "card", Decimal("20.00"), Decimal("3.00")),
@@ -51,15 +52,18 @@ trips_extract = spark.createDataFrame(
     "trip_id LONG, service_type STRING, payment_method STRING, "
     "base_fare_amount DECIMAL(10, 2), tip_amount DECIMAL(10, 2)",
 )
+# SQL statements below read from this temporary view
 trips_extract.createOrReplaceTempView("trips_extract")
 
 
+# Latest Delta version and its commit timestamp
 def latest_history(table):
     row = spark.sql(f"DESCRIBE HISTORY {table} LIMIT 1").first()
     ts_str = row["timestamp"].isoformat(sep=" ", timespec="milliseconds")
     return int(row["version"]), ts_str
 
 
+# Recreate the lab table so every run starts with a clean history
 spark.sql(f"DROP TABLE IF EXISTS {lab_table}")
 spark.sql(
     f"""
@@ -101,6 +105,7 @@ display(trips_extract.orderBy("trip_id"))
 
 # COMMAND ----------
 
+# First data version: trips 1001–1003
 spark.sql(
     f"""
     INSERT INTO {lab_table}
@@ -108,10 +113,12 @@ spark.sql(
     WHERE trip_id <= 1003
     """
 )
+# Confirm the table now contains three rows
 print(f"rows = {spark.table(lab_table).count()} (expect 3)")
 
 # COMMAND ----------
 
+# Add trip 1004 — this is the state immediately before the update
 spark.sql(
     f"""
     INSERT INTO {lab_table}
@@ -119,12 +126,15 @@ spark.sql(
     WHERE trip_id = 1004
     """
 )
+# Save version and timestamp for later time-travel queries
 before_update_version, before_update_timestamp = latest_history(lab_table)
 display(spark.table(lab_table).orderBy("trip_id"))
+# Keep this commit timestamp distinct from the upcoming UPDATE
 time.sleep(2)
 
 # COMMAND ----------
 
+# Correct the tip for trip 1003
 spark.sql(
     f"""
     UPDATE {lab_table}
@@ -132,17 +142,20 @@ spark.sql(
     WHERE trip_id = 1003
     """
 )
+# This version is the restore target: corrected tip, 1002 still present
 restore_version, _ = latest_history(lab_table)
 display(spark.table(lab_table).orderBy("trip_id"))
 
 # COMMAND ----------
 
+# Simulate an accidental delete of trip 1002
 spark.sql(
     f"""
     DELETE FROM {lab_table}
     WHERE trip_id = 1002
     """
 )
+# Save this version for the exercise (query it after restore)
 delete_version, _ = latest_history(lab_table)
 display(spark.table(lab_table).orderBy("trip_id"))
 
@@ -164,7 +177,9 @@ display(spark.table(lab_table).orderBy("trip_id"))
 
 # COMMAND ----------
 
+# Versions from CREATE, INSERT, UPDATE, and DELETE
 display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
+# Names of the historical states used in later queries
 print(f"before_update_version = {before_update_version}")
 print(f"restore_version = {restore_version}")
 print(f"delete_version = {delete_version}")
@@ -184,6 +199,7 @@ print(f"delete_version = {delete_version}")
 
 # COMMAND ----------
 
+# Historical state from before the tip update
 before_update = spark.sql(
     f"""
     SELECT *
@@ -193,6 +209,7 @@ before_update = spark.sql(
 )
 display(before_update.orderBy("trip_id"))
 
+# Current table — time travel does not change it
 current = spark.table(lab_table)
 display(current.orderBy("trip_id"))
 
@@ -213,6 +230,7 @@ display(current.orderBy("trip_id"))
 
 # COMMAND ----------
 
+# After the tip correction, before trip 1002 was deleted
 restore_target = spark.sql(
     f"""
     SELECT *
@@ -242,6 +260,7 @@ display(restore_target.orderBy("trip_id"))
 
 # COMMAND ----------
 
+# Same before-update state, identified by commit timestamp
 by_timestamp = spark.sql(
     f"""
     SELECT *
@@ -260,6 +279,7 @@ display(by_timestamp.orderBy("trip_id"))
 
 # COMMAND ----------
 
+# Same historical version, through the DataFrame reader
 historical_df = spark.read.option("versionAsOf", before_update_version).table(
     lab_table
 )
@@ -283,15 +303,19 @@ display(historical_df.orderBy("trip_id"))
 
 # COMMAND ----------
 
+# Recover the state after the UPDATE and before the DELETE
 spark.sql(
     f"""
     RESTORE TABLE {lab_table}
     TO VERSION AS OF {restore_version}
     """
 )
+# RESTORE writes a new Delta commit; capture that new version
 after_version_restore, _ = latest_history(lab_table)
 print(f"after_version_restore = {after_version_restore}")
+# 1002 is back; the corrected tip remains
 display(spark.table(lab_table).orderBy("trip_id"))
+# HISTORY lists RESTORE as a new entry after DELETE
 display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # COMMAND ----------
@@ -379,6 +403,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # COMMAND ----------
 
+# Read the historical state immediately after trip 1002 was deleted
 # historical = spark.sql(
 #     f"""
 #     SELECT *
@@ -388,6 +413,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # )
 # print(f"rows = {historical.count()} (expect 3)")
 # display(historical.orderBy("trip_id"))
+# Compare with the current table, which was restored afterward
 # current = spark.table(lab_table)
 # print(f"rows = {current.count()} (expect 4)")
 # display(current.orderBy("trip_id"))
