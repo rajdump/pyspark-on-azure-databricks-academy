@@ -130,10 +130,7 @@ spark.sql(
     WHERE trip_id <= 1003
     """
 )
-after_first = spark.table(lab_table)
-print(f"rows = {after_first.count()} (expect 3)")
-tip_1003 = after_first.filter("trip_id = 1003").select("tip_amount").first()[0]
-print(f"trip 1003 tip = {tip_1003} (expect 6.00)")
+print(f"rows = {spark.table(lab_table).count()} (expect 3)")
 
 # COMMAND ----------
 
@@ -147,10 +144,6 @@ spark.sql(
 before_update_version, before_update_timestamp = latest_history(lab_table)
 after_second = spark.table(lab_table)
 print(f"rows = {after_second.count()} (expect 4)")
-tip_1003 = after_second.filter("trip_id = 1003").select("tip_amount").first()[0]
-print(f"trip 1003 tip = {tip_1003} (expect 6.00)")
-print(f"before_update_version = {before_update_version}")
-print(f"before_update_timestamp = {before_update_timestamp}")
 display(after_second.orderBy("trip_id"))
 time.sleep(2)
 
@@ -166,11 +159,6 @@ spark.sql(
 restore_version, _ = latest_history(lab_table)
 after_update = spark.table(lab_table)
 print(f"rows = {after_update.count()} (expect 4)")
-tip_1003 = after_update.filter("trip_id = 1003").select("tip_amount").first()[0]
-print(f"trip 1003 tip = {tip_1003} (expect 10.00)")
-n_1002 = after_update.filter("trip_id = 1002").count()
-print(f"trip 1002 rows = {n_1002} (expect 1)")
-print(f"restore_version = {restore_version}")
 display(after_update.orderBy("trip_id"))
 
 # COMMAND ----------
@@ -184,9 +172,6 @@ spark.sql(
 delete_version, _ = latest_history(lab_table)
 after_delete = spark.table(lab_table)
 print(f"rows = {after_delete.count()} (expect 3)")
-n_1002 = after_delete.filter("trip_id = 1002").count()
-print(f"trip 1002 rows = {n_1002} (expect 0)")
-print(f"delete_version = {delete_version}")
 display(after_delete.orderBy("trip_id"))
 
 # COMMAND ----------
@@ -228,14 +213,10 @@ before_update = spark.sql(
     """
 )
 print(f"rows = {before_update.count()} (expect 4)")
-tip_1003 = before_update.filter("trip_id = 1003").select("tip_amount").first()[0]
-print(f"trip 1003 tip = {tip_1003} (expect 6.00)")
 display(before_update.orderBy("trip_id"))
 
 current = spark.table(lab_table)
 print(f"rows = {current.count()} (expect 3)")
-n_1002 = current.filter("trip_id = 1002").count()
-print(f"trip 1002 rows = {n_1002} (expect 0)")
 display(current.orderBy("trip_id"))
 
 # COMMAND ----------
@@ -259,10 +240,6 @@ restore_target = spark.sql(
     """
 )
 print(f"rows = {restore_target.count()} (expect 4)")
-tip_1003 = restore_target.filter("trip_id = 1003").select("tip_amount").first()[0]
-print(f"trip 1003 tip = {tip_1003} (expect 10.00)")
-n_1002 = restore_target.filter("trip_id = 1002").count()
-print(f"trip 1002 rows = {n_1002} (expect 1)")
 display(restore_target.orderBy("trip_id"))
 
 # COMMAND ----------
@@ -291,8 +268,6 @@ by_timestamp = spark.sql(
     """
 )
 print(f"rows = {by_timestamp.count()} (expect 4)")
-tip_1003 = by_timestamp.filter("trip_id = 1003").select("tip_amount").first()[0]
-print(f"trip 1003 tip = {tip_1003} (expect 6.00)")
 display(by_timestamp.orderBy("trip_id"))
 
 # COMMAND ----------
@@ -308,14 +283,10 @@ historical_df = spark.read.option("versionAsOf", before_update_version).table(
     lab_table
 )
 print(f"rows = {historical_df.count()} (expect 4)")
-tip_1003 = historical_df.filter("trip_id = 1003").select("tip_amount").first()[0]
-print(f"trip 1003 tip = {tip_1003} (expect 6.00)")
 display(historical_df.orderBy("trip_id"))
 
 current = spark.table(lab_table)
 print(f"rows = {current.count()} (expect 3)")
-n_1002 = current.filter("trip_id = 1002").count()
-print(f"trip 1002 rows = {n_1002} (expect 0)")
 
 # COMMAND ----------
 
@@ -342,12 +313,7 @@ spark.sql(
 after_version_restore, _ = latest_history(lab_table)
 restored = spark.table(lab_table)
 print(f"rows = {restored.count()} (expect 4)")
-n_1002 = restored.filter("trip_id = 1002").count()
-print(f"trip 1002 rows = {n_1002} (expect 1)")
-tip_1003 = restored.filter("trip_id = 1003").select("tip_amount").first()[0]
-print(f"trip 1003 tip = {tip_1003} (expect 10.00)")
 print(f"after_version_restore = {after_version_restore}")
-print(f"delete_version = {delete_version}")
 display(restored.orderBy("trip_id"))
 display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
@@ -451,8 +417,6 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 #     """
 # )
 # print(f"rows = {historical.count()} (expect 3)")
-# n_1002 = historical.filter("trip_id = 1002").count()
-# print(f"trip 1002 rows = {n_1002} (expect 0)")
 # display(historical.orderBy("trip_id"))
 # current = spark.table(lab_table)
 # print(f"rows = {current.count()} (expect 4)")
