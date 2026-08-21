@@ -112,9 +112,13 @@ display(trips_extract.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Empty managed and external tables
-# MAGIC Managed: no `LOCATION`. Unity Catalog chooses the path.
-# MAGIC External: you choose an `abfss://` path, not `/Volumes/`.
-# MAGIC **0** rows until the next section.
+# MAGIC For a managed table, no storage location is specified, as Unity Catalog
+# MAGIC manages and selects it for you. For an external table, you must explicitly
+# MAGIC provide an external storage path, such as `abfss://...`, rather than using
+# MAGIC a `/Volumes/...` path.
+# MAGIC
+# MAGIC Both types of tables start with zero rows, and data will be inserted in
+# MAGIC the next section.
 
 # COMMAND ----------
 
@@ -154,10 +158,12 @@ print(f"external rows = {spark.table(external_table).count()} (expect 0)")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Insert the extract
-# MAGIC Same four rows into both tables. Trip **1003** tip stays **6.00**.
-# MAGIC This load is so `DROP` / `UNDROP` / re-register can prove **data**
-# MAGIC survived — not a DML lesson.
+# MAGIC ## Insert the data
+# MAGIC
+# MAGIC Insert the same four rows into both tables.
+# MAGIC
+# MAGIC The goal is simply to have data available for the upcoming `DROP`,
+# MAGIC `UNDROP`, and re-registration tests — **not to teach DML**.
 
 # COMMAND ----------
 
@@ -176,9 +182,13 @@ display(external_df.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Where do the files live?
-# MAGIC Look at `format` and `location` in `DESCRIBE DETAIL`. Both tables have
-# MAGIC an `abfss://` path. For managed, Unity Catalog chose it. For external,
-# MAGIC you chose it.
+# MAGIC
+# MAGIC Use `DESCRIBE DETAIL` and compare the `format` and `location` values.
+# MAGIC
+# MAGIC Both tables store their data at an `abfss://` path:
+# MAGIC
+# MAGIC * **Managed table:** Unity Catalog chooses and manages the storage path.
+# MAGIC * **External table:** you explicitly choose the storage path.
 
 # COMMAND ----------
 
@@ -189,17 +199,8 @@ display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Look at `format` and `location`.
-# MAGIC
-# MAGIC | | Managed | External |
-# MAGIC |---|---|---|
-# MAGIC | Registered in Unity Catalog | yes | yes |
-# MAGIC | Format | Delta | Delta |
-# MAGIC | Who chooses the location | Unity Catalog | you specify |
-# MAGIC | Explicit `LOCATION` | no | yes |
-# MAGIC
-# MAGIC This lab uses Delta for both tables. External tables can use other file formats; that is not
-# MAGIC this lab.
+# MAGIC This lab uses Delta for both tables. External tables can use other file
+# MAGIC formats; that is not this lab.
 
 # COMMAND ----------
 
@@ -214,13 +215,26 @@ display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `table_type` is `MANAGED` or `EXTERNAL`.
+# MAGIC ## Managed vs external storage access
 # MAGIC
-# MAGIC You cannot list a managed table’s storage path in the same way that you can with an external table’s storage path. 
+# MAGIC `table_type` identifies the table as either `MANAGED` or `EXTERNAL`.
 # MAGIC
-# MAGIC The next cell succeeds because the external table uses a path that you explicitly provided through a Unity Catalog external location. However, the cell after that fails because Unity Catalog does not support path-based access to managed table storage, even if you are aware of the underlying URI. The error message about the path overlapping managed storage indicates that Unity Catalog is enforcing that boundary.
+# MAGIC Although `DESCRIBE DETAIL` shows an `abfss://` location for both tables,
+# MAGIC the way you access those locations is different.
 # MAGIC
-# MAGIC This behaviour is by design. For managed tables, Unity Catalog controls the location of managed storage, so you interact with the data by referencing the table name using SQL or DataFrame APIs. In contrast, for external tables, although Unity Catalog still governs them, users with sufficient privileges can access the same data via their cloud storage URIs.
+# MAGIC * **External table:** the storage path was explicitly provided through a
+# MAGIC   Unity Catalog external location, so users with the required permissions
+# MAGIC   can access that path directly.
+# MAGIC * **Managed table:** Unity Catalog owns and manages the storage location.
+# MAGIC   You should access the data through the **table name**, not by directly
+# MAGIC   reading or listing its underlying storage path.
+# MAGIC
+# MAGIC Therefore, the external-path example succeeds, while direct path-based
+# MAGIC access to the managed table fails. An error stating that the path
+# MAGIC **overlaps managed storage** is Unity Catalog enforcing this boundary.
+# MAGIC
+# MAGIC This is intentional: **external storage is user-managed; managed table
+# MAGIC storage is Unity Catalog-managed.**
 
 # COMMAND ----------
 
@@ -241,27 +255,23 @@ spark.sql(f"LIST '{managed_uri}'")  # Expected: AnalysisException
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Classroom `LIST` is not a managed-file browser. The failure does
-# MAGIC **not** mean the files are gone.
-# MAGIC
-# MAGIC | | Managed | External |
-# MAGIC |---|---|---|
-# MAGIC | `table_type` | `MANAGED` | `EXTERNAL` |
-# MAGIC | `storage_path` | UC-chosen path | `external_table_path` |
-# MAGIC | `LIST` of that path | expected to fail | succeeds |
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## DROP TABLE
-# MAGIC Does `DROP` delete the files? Do not wait 7 days. Do not `PURGE`.
 # MAGIC
-# MAGIC `DROP TABLE` removes the **active Unity Catalog table registration**.
-# MAGIC The table is no longer queryable. For **7 days**, `UNDROP` can recover
-# MAGIC **either** type — that is catalog recovery, not "the table is gone
-# MAGIC forever."
+# MAGIC When you use the `DROP TABLE` command:
 # MAGIC
-# MAGIC That 7-day window is **not** why external files remain.
+# MAGIC - For a managed table, it removes the active registration from Unity
+# MAGIC   Catalog and marks both the metadata and data for deletion. You can
+# MAGIC   recover this deleted data using the `UNDROP TABLE` command within the
+# MAGIC   default 7-day recovery window. After this period, the data is
+# MAGIC   permanently deleted from cloud storage.
+# MAGIC
+# MAGIC - For an external table, it also removes the active registration from
+# MAGIC   Unity Catalog and marks the metadata for deletion. However, the
+# MAGIC   underlying data files remain intact, allowing you to re-register them
+# MAGIC   later using the appropriate command.
+# MAGIC
+# MAGIC > **Note:** As of June 2026, the default recovery period for managed
+# MAGIC > tables can be configured at the catalog or schema level.
 
 # COMMAND ----------
 
@@ -269,17 +279,6 @@ spark.sql(f"LIST '{managed_uri}'")  # Expected: AnalysisException
 # MAGIC -- Removes the active UC name. Do not CREATE this name again before UNDROP.
 # MAGIC DROP TABLE rideshare_dev.processed.fare_managed_lab;
 # MAGIC SHOW TABLES DROPPED IN rideshare_dev.processed
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Find the **most recently dropped** `fare_managed_lab` row
-# MAGIC (`deletedAt`). If this notebook has been run before, older rows with
-# MAGIC the same name can appear.
-# MAGIC
-# MAGIC > **Note:** `SHOW TABLES DROPPED` is Public Preview.
-# MAGIC
-# MAGIC Do not `CREATE` this managed name again before `UNDROP`.
 
 # COMMAND ----------
 
@@ -308,27 +307,14 @@ display(spark.sql(f"LIST '{external_table_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Find the **most recently dropped** `fare_external_lab` row.
-# MAGIC
-# MAGIC | | Managed | External |
-# MAGIC |---|---|---|
-# MAGIC | UC metadata after `DROP` | recoverable for 7 days | recoverable for 7 days |
-# MAGIC | Files after `DROP` | retained by UC for recovery | remain at `external_table_path` |
-# MAGIC | After recovery window | UC deletes the files | files remain until you delete them |
-# MAGIC
-# MAGIC `UNDROP TABLE` can recover either table type during the 7-day recovery window.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## UNDROP
 # MAGIC
 # MAGIC `UNDROP TABLE` can restore both managed and external tables within the
 # MAGIC 7-day recovery window.
 # MAGIC
-# MAGIC - **Managed:** restores the UC table and retained data.
-# MAGIC - **External:** restores the UC table over files that already remain at
-# MAGIC   the external path.
+# MAGIC - **Managed:** restores the UC table metadata and data.
+# MAGIC - **External:** restores the UC table metadata over files that already
+# MAGIC   remain at the external path.
 
 # COMMAND ----------
 
