@@ -15,9 +15,6 @@
 # MAGIC - Restore an earlier state
 # MAGIC - Understand how retention limits access to historical versions
 # MAGIC
-# MAGIC You will also run one PySpark `versionAsOf` read, and contrast time travel
-# MAGIC **reads** with `RESTORE` (a new Delta commit).
-# MAGIC
 # MAGIC **Reads:** none of the 100-row source files or teaching tables
 # MAGIC (`trip_enriched`, KPIs, `curated/`)
 # MAGIC
@@ -42,25 +39,7 @@
 import time
 from decimal import Decimal
 
-from pyspark.sql.types import (
-    DecimalType,
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-)
-
 lab_table = "rideshare_dev.processed.fare_timetravel_lab"
-
-extract_schema = StructType(
-    [
-        StructField("trip_id", LongType(), False),
-        StructField("service_type", StringType(), False),
-        StructField("payment_method", StringType(), False),
-        StructField("base_fare_amount", DecimalType(10, 2), False),
-        StructField("tip_amount", DecimalType(10, 2), False),
-    ]
-)
 
 trips_extract = spark.createDataFrame(
     [
@@ -69,7 +48,8 @@ trips_extract = spark.createDataFrame(
         (1003, "PREMIUM", "card", Decimal("40.00"), Decimal("6.00")),
         (1004, "STANDARD", "wallet", Decimal("25.00"), Decimal("2.50")),
     ],
-    schema=extract_schema,
+    "trip_id LONG, service_type STRING, payment_method STRING, "
+    "base_fare_amount DECIMAL(10, 2), tip_amount DECIMAL(10, 2)",
 )
 trips_extract.createOrReplaceTempView("trips_extract")
 
@@ -96,15 +76,14 @@ spark.sql(
 )
 
 print(f"lab_table = {lab_table}")
-print(f"rows = {spark.table(lab_table).count()} (expect 0)")
 display(trips_extract.orderBy("trip_id"))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Build table history
-# MAGIC We will create a short, known history. This is the **expected history in
-# MAGIC a clean run** — not integers to paste into SQL:
+# MAGIC We will intentionally create five table states so we have history to
+# MAGIC explore. This is the expected history in a clean run:
 # MAGIC
 # MAGIC ```text
 # MAGIC v0 CREATE TABLE           0 rows
@@ -114,12 +93,10 @@ display(trips_extract.orderBy("trip_id"))
 # MAGIC v4 DELETE                 1002        3 rows
 # MAGIC ```
 # MAGIC
-# MAGIC Code captures named versions after the commits we will query. One
-# MAGIC `sleep(2)` after the second insert, before the update, so the timestamp
-# MAGIC we capture is not the update's timestamp.
+# MAGIC Later queries use captured version names, not these `v0`–`v4` labels.
 # MAGIC
-# MAGIC > **Note:** The pause is only for this lab. Delta does not require waiting
-# MAGIC > between writes.
+# MAGIC > **Note:** After the second insert we pause two seconds so the captured
+# MAGIC > timestamp is clearly before the update. Delta does not require this wait.
 
 # COMMAND ----------
 
@@ -142,9 +119,7 @@ spark.sql(
     """
 )
 before_update_version, before_update_timestamp = latest_history(lab_table)
-after_second = spark.table(lab_table)
-print(f"rows = {after_second.count()} (expect 4)")
-display(after_second.orderBy("trip_id"))
+display(spark.table(lab_table).orderBy("trip_id"))
 time.sleep(2)
 
 # COMMAND ----------
@@ -157,9 +132,7 @@ spark.sql(
     """
 )
 restore_version, _ = latest_history(lab_table)
-after_update = spark.table(lab_table)
-print(f"rows = {after_update.count()} (expect 4)")
-display(after_update.orderBy("trip_id"))
+display(spark.table(lab_table).orderBy("trip_id"))
 
 # COMMAND ----------
 
@@ -170,9 +143,7 @@ spark.sql(
     """
 )
 delete_version, _ = latest_history(lab_table)
-after_delete = spark.table(lab_table)
-print(f"rows = {after_delete.count()} (expect 3)")
-display(after_delete.orderBy("trip_id"))
+display(spark.table(lab_table).orderBy("trip_id"))
 
 # COMMAND ----------
 
@@ -212,11 +183,9 @@ before_update = spark.sql(
     VERSION AS OF {before_update_version}
     """
 )
-print(f"rows = {before_update.count()} (expect 4)")
 display(before_update.orderBy("trip_id"))
 
 current = spark.table(lab_table)
-print(f"rows = {current.count()} (expect 3)")
 display(current.orderBy("trip_id"))
 
 # COMMAND ----------
@@ -225,10 +194,13 @@ display(current.orderBy("trip_id"))
 # MAGIC ### Compare snapshots
 # MAGIC
 # MAGIC ```text
-# MAGIC before update     4 rows   tip 6.00    1002 present   (already queried)
-# MAGIC restore target    4 rows   tip 10.00   1002 present   (query next)
-# MAGIC after delete      3 rows   tip 10.00   1002 missing   (already current)
+# MAGIC Before update    4 rows   tip 6.00    1002 present
+# MAGIC After update     4 rows   tip 10.00   1002 present
+# MAGIC After delete     3 rows   tip 10.00   1002 missing
 # MAGIC ```
+# MAGIC
+# MAGIC You already saw before-update and after-delete. Next is the after-update
+# MAGIC snapshot — later the restore target.
 
 # COMMAND ----------
 
@@ -239,7 +211,6 @@ restore_target = spark.sql(
     VERSION AS OF {restore_version}
     """
 )
-print(f"rows = {restore_target.count()} (expect 4)")
 display(restore_target.orderBy("trip_id"))
 
 # COMMAND ----------
@@ -267,26 +238,20 @@ by_timestamp = spark.sql(
     TIMESTAMP AS OF '{before_update_timestamp}'
     """
 )
-print(f"rows = {by_timestamp.count()} (expect 4)")
 display(by_timestamp.orderBy("trip_id"))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Time travel with PySpark
-# MAGIC The same before-update snapshot as a DataFrame reader option.
-# MAGIC `timestampAsOf` exists in Databricks; this lesson omits it on purpose.
+# MAGIC PySpark can read a historical Delta version with the `versionAsOf` option.
 
 # COMMAND ----------
 
 historical_df = spark.read.option("versionAsOf", before_update_version).table(
     lab_table
 )
-print(f"rows = {historical_df.count()} (expect 4)")
 display(historical_df.orderBy("trip_id"))
-
-current = spark.table(lab_table)
-print(f"rows = {current.count()} (expect 3)")
 
 # COMMAND ----------
 
@@ -311,10 +276,8 @@ spark.sql(
     """
 )
 after_version_restore, _ = latest_history(lab_table)
-restored = spark.table(lab_table)
-print(f"rows = {restored.count()} (expect 4)")
 print(f"after_version_restore = {after_version_restore}")
-display(restored.orderBy("trip_id"))
+display(spark.table(lab_table).orderBy("trip_id"))
 display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # COMMAND ----------
@@ -327,24 +290,19 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC
 # MAGIC `RESTORE` does not erase the delete commit or move the version number
 # MAGIC backward. It writes **another** commit whose table state matches the
-# MAGIC chosen snapshot. If that restore were wrong, you could restore a later
-# MAGIC version still listed in history.
+# MAGIC chosen snapshot. You can restore another available version if the required
+# MAGIC history and data files are still retained.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Restore by timestamp
-# MAGIC `RESTORE` can also identify the target by timestamp. Do **not** run this;
-# MAGIC the version restore already recovered the UPDATE snapshot.
+# MAGIC `RESTORE` can target a version or a timestamp. Do not run this; the table
+# MAGIC is already restored.
 # MAGIC
 # MAGIC ```sql
 # MAGIC RESTORE TABLE … TO TIMESTAMP AS OF '<timestamp>'
 # MAGIC ```
-# MAGIC
-# MAGIC A timestamp that resolves to the same snapshot as `restore_version` would
-# MAGIC restore the same table state. Running it would add another `RESTORE`
-# MAGIC commit with those same rows. Timestamp targeting was already executed as
-# MAGIC a **read**.
 
 # COMMAND ----------
 
@@ -356,22 +314,16 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC ```text
 # MAGIC Historical version
 # MAGIC        │
-# MAGIC        ├── transaction history
-# MAGIC        │      default: 30 days
-# MAGIC        │
-# MAGIC        └── historical data files
-# MAGIC               7-day VACUUM eligibility threshold
+# MAGIC        ├── transaction history     default: 30 days
+# MAGIC        └── historical data files   7-day VACUUM eligibility
 # MAGIC ```
 # MAGIC
-# MAGIC - Delta table history is retained for **30 days** by default.
-# MAGIC - Obsolete data files have a default **7-day retention threshold** before
-# MAGIC   they are eligible for removal by `VACUUM`.
-# MAGIC - For reliable time travel beyond 7 days, both transaction history and
-# MAGIC   historical data files must be retained long enough.
-# MAGIC - `DESCRIBE HISTORY` can still list a version whose required data files
-# MAGIC   are no longer available.
-# MAGIC - The 7-day threshold does **not** mean files are automatically deleted
-# MAGIC   every 7 days. `VACUUM` removes eligible obsolete files.
+# MAGIC Delta keeps table history for **30 days** by default. Obsolete files
+# MAGIC become eligible for `VACUUM` after **7 days**. Reliable time travel beyond
+# MAGIC 7 days needs both sides retained.
+# MAGIC
+# MAGIC `DESCRIBE HISTORY` can still list a version whose files are gone. The
+# MAGIC 7-day threshold is not an automatic delete timer.
 # MAGIC
 # MAGIC This lab's commits are minutes old, so the queries here still work.
 # MAGIC
@@ -430,7 +382,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC ```text
 # MAGIC A Delta table creates versions as it changes.
 # MAGIC DESCRIBE HISTORY shows the table's recorded version history.
-# MAGIC Time travel lets me READ an earlier state without changing the current table.
+# MAGIC Time travel lets me read an earlier state by version or timestamp
+# MAGIC without changing the current table.
 # MAGIC RESTORE makes an earlier state current again by creating a NEW Delta version.
 # MAGIC Historical versions are not retained forever.
 # MAGIC ```
