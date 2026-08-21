@@ -38,11 +38,9 @@
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
 # MAGIC `el_rideshare_dev`, `processed`).
 # MAGIC
-# MAGIC This notebook proves location, `DROP` / `UNDROP`, and re-register. It
-# MAGIC does **not** teach `UPDATE`, `DESCRIBE HISTORY`, time travel,
-# MAGIC `RESTORE`, grants (Module 12), or `CREATE TABLE` at a Volume path. It
-# MAGIC does not run `OPTIMIZE`, `VACUUM`, or Predictive Optimization (Module
-# MAGIC 11).
+# MAGIC This notebook does **not** teach `UPDATE`, `DESCRIBE HISTORY`,
+# MAGIC `OPTIMIZE`, `VACUUM`, Predictive Optimization, time travel, `RESTORE`,
+# MAGIC grants (Module 12), or `CREATE TABLE` at a Volume path.
 
 # COMMAND ----------
 

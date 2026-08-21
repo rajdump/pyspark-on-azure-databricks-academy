@@ -15,7 +15,8 @@ By the end of this module, you'll be able to:
   `add` / `remove`), reconstruct the current snapshot, and read
   `DESCRIBE HISTORY`
 - Contrast managed and external Unity Catalog tables on storage location,
-  `DROP` / `UNDROP`, and external re-registration
+  `DROP` / `UNDROP`, and external re-registration, and choose managed vs
+  external (Databricks-managed storage and optimizations vs path control)
 - Query a past snapshot (`VERSION AS OF`, `TIMESTAMP AS OF`, one PySpark
   `versionAsOf` read) and `RESTORE` it; explain why `VACUUM` can cut how far
   back those files still exist
@@ -72,13 +73,14 @@ listings.
 
 Object locations:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
-(Module 10 lab objects).
+(Module 10 lab objects). `{url}` is the `url` column from
+`DESCRIBE EXTERNAL LOCATION el_rideshare_dev` (strip a trailing slash).
 
 | Notebook | Object |
 |---|---|
 | 01 | `fare_correction_parquet/`, `fare_correction_delta/` |
 | 02 | `fare_log_delta/` |
-| 03 | `rideshare_dev.processed.fare_managed_lab`, `rideshare_dev.processed.fare_external_lab` |
+| 03 | `rideshare_dev.processed.fare_managed_lab`; `rideshare_dev.processed.fare_external_lab` at `{url}/external-tables/fare_external_lab` |
 | 04 | `rideshare_dev.processed.fare_timetravel_lab` |
 
 No `saveAsTable` in **01–02**. 01 and 02 use path DML on `` delta.`<path>` ``.
@@ -103,7 +105,7 @@ exercise**.
 |---|---|---|
 | 01 | Why Delta Lake Exists | Isolated `fare_correction_parquet/` vs `fare_correction_delta/` (do not touch `fare_log_delta/`). Write 4 Parquet rows (1003 tip **6.00**, no `_delta_log`) → business need (1003 → **10.00**, keep **4** rows) → Parquet read/`when`/overwrite → Parquet limits (no transactional `UPDATE`; failed writes can leave a bad folder) → same original rows as Delta (DV off) → path `UPDATE` → verify → `ls` leftover files + `_delta_log` (do **not** open JSON; do **not** name `add`/`remove`). Note: Volume folders so `ls` works; managed tables such as `trip_enriched` are also Delta under `abfss://`. Fence: no ACID, time travel, `DESCRIBE HISTORY`, `DELETE`, `MERGE`, `VACUUM`, DV teaching. Exercise: `UPDATE` **1001** **3.00 → 4.00**; still **4** rows |
 | 02 | Understanding the Delta Transaction Log | Create Volume folder `fare_log_delta/` (empty DataFrameWriter `.save`, empty v0). Walk commits: v0 empty (`protocol`/`metaData`/`commitInfo`, typically no data `.parquet`, Delta read **0**) → v1 `add` **1001–1003** from `trips_extract` (**3**) → v2 `add` **1004** (**4**) → v3 `UPDATE` 1003 `remove`+`add` (**4**, leftover file may remain) → v4 `DELETE` **1002** `remove`+`add` (**3**). Replay add/remove vs `ls` (snapshot ≠ leftover files). `DESCRIBE HISTORY` on the path. Stop before time travel. Fence: no `VERSION AS OF` / `TIMESTAMP AS OF` / `RESTORE` / `OPTIMIZE` / `VACUUM` / checkpoints / DV teaching; no managed-vs-external proof; **no catalog table**. **No exercise** |
-| 03 | Managed vs External Delta Tables | Self-contained original four rows (1003 stays **6.00**; 1001 stays **3.00**). Empty managed `CREATE` (no `LOCATION`, DV off) + empty external `CREATE … LOCATION` at `{url}/external-tables/fare_external_lab` (**0** rows) → `INSERT` both (**4**) → type/location proof (`DESCRIBE DETAIL` format+location; `rideshare_dev.information_schema.tables` `table_type`/`storage_path`; `LIST` external succeeds, `LIST` managed URI expected failure) → `DROP` both / `SHOW TABLES DROPPED` (Public Preview; most recently dropped lab row) / external files remain → `UNDROP` both (**4**; managed = relation + files UC retained; external = relation over files that never left) → leave managed undropped; external `DROP` + re-register `CREATE … LOCATION` without column list (**4**) → decision guide (landing Volume / Bronze-Silver-Gold managed / fixed-path external). Fence: no `UPDATE`, `DESCRIBE HISTORY`, `OPTIMIZE`, `VACUUM`, `VERSION AS OF`/`RESTORE`; no `GRANT` (Module 12); no Volume `LOCATION`; no Predictive Optimization demo. **No exercise** |
+| 03 | Managed vs External Delta Tables | Self-contained original four rows (1003 stays **6.00**; 1001 stays **3.00**). Empty managed `CREATE` (no `LOCATION`, DV off) + empty external `CREATE … LOCATION` at `{url}/external-tables/fare_external_lab` (**0** rows) → `INSERT` both (**4**) → type/location proof (`DESCRIBE DETAIL` format+location; `rideshare_dev.information_schema.tables` `table_type`/`storage_path`; `LIST` external succeeds, `LIST` managed URI expected failure) → `DROP` both / `SHOW TABLES DROPPED` (Public Preview; most recently dropped lab row) / external files remain → `UNDROP` both (**4**; managed = relation + files UC retained; external = relation over files that never left) → leave managed undropped; external `DROP` + re-register `CREATE … LOCATION` without column list (**4**) → decision guide (landing Volume / Bronze-Silver-Gold managed / fixed-path external; managed default = Databricks-managed storage and optimizations). Fence: no `UPDATE`, `DESCRIBE HISTORY`, `OPTIMIZE`, `VACUUM`, `VERSION AS OF`/`RESTORE`; no `GRANT` (Module 12); no Volume `LOCATION`; no Predictive Optimization demo. **No exercise** |
 | 04 | Delta Time Travel and Restore | Self-contained managed `fare_timetravel_lab`. Generate `CREATE` (**0**) → `INSERT` 1001–1003 (**3**, 1003 = **6.00**) → `INSERT` 1004 (**4**) → `UPDATE` 1003 → **10.00** (**4**, 1002 present) → `DELETE` 1002 (**3**); `time.sleep(2)` after each data commit; capture versions/timestamps (`yyyy-MM-dd HH:mm:ss`). `DESCRIBE HISTORY` is the index (read `operation` from the grid). `VERSION AS OF` / `TIMESTAMP AS OF` on the pre-update commit (both **4** rows, 1003 = **6.00**). Compare current (after delete) vs `VERSION AS OF` before-update / after-update (= before-delete) / after-delete. One PySpark `versionAsOf` read (no `timestampAsOf` option, no PySpark restore API). Historical reads leave current unchanged. `RESTORE TABLE … TO VERSION AS OF` the update version (new HISTORY row; **4** rows, 1002 back); brief `RESTORE … TO TIMESTAMP AS OF` the **UPDATE** timestamp (rows look unchanged; proof is the new version). Retention warning: `VACUUM` can remove files a snapshot still names — do **not** run `VACUUM`. Fence: no `UNDROP`, `CLONE`, CDF, JSON, `@v` syntax, time travel on teaching tables. Exercise: `VERSION AS OF` the delete version (**3** rows, 1002 gone); current without `AS OF` still **4** rows; do **not** `RESTORE`. Module 10 ends here; next is Module 11 |
 
 ## Minimum privileges required
