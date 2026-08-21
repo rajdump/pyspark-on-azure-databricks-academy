@@ -414,12 +414,28 @@ display(external_df.orderBy("trip_id"))
 # MAGIC * Use **managed tables** by default for most new Databricks tables.
 # MAGIC * Use **external tables** when you need to control or preserve a
 # MAGIC   specific storage path.
-# MAGIC * `DROP TABLE` removes the active UC registration. Managed files follow
-# MAGIC   the UC-managed recovery lifecycle; external files remain at their
-# MAGIC   storage path.
-# MAGIC * `UNDROP` can restore either table type during the 7-day recovery
-# MAGIC   window.
+# MAGIC * `DROP TABLE` removes the active UC registration. External files
+# MAGIC   remain at their storage path.
 # MAGIC * Re-registering an external folder creates a **new UC registration**
 # MAGIC   over the existing files.
+# MAGIC
+# MAGIC ### Configure the recovery period
+# MAGIC
+# MAGIC For **Unity Catalog managed tables**, the dropped-table recovery period
+# MAGIC can be configured at the **catalog or schema level**. It cannot be
+# MAGIC configured per table.
+# MAGIC
+# MAGIC * **0 hours** — disables `UNDROP`
+# MAGIC * **7 to 30 days** — keeps dropped managed tables recoverable
+# MAGIC * **7 days** — default
+# MAGIC * A **schema-level setting overrides the catalog setting**
+# MAGIC
+# MAGIC ```sql
+# MAGIC -- Set 30-day recovery for managed tables in the catalog
+# MAGIC ALTER CATALOG my_catalog RETAIN DROPPED TO 30 DAYS;
+# MAGIC
+# MAGIC -- Override with 7 days for managed tables in this schema
+# MAGIC ALTER SCHEMA my_catalog.my_schema RETAIN DROPPED TO 7 DAYS;
+# MAGIC ```
 # MAGIC
 # MAGIC **Next:** `04 - Delta Time Travel and Restore`
