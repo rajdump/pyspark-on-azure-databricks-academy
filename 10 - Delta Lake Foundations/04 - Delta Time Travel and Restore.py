@@ -399,31 +399,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Solution** (commented out — un-comment if you want to compare)
-
-# COMMAND ----------
-
-# Read the historical state immediately after trip 1002 was deleted
-# historical = spark.sql(
-#     f"""
-#     SELECT *
-#     FROM {lab_table}
-#     VERSION AS OF {delete_version}
-#     """
-# )
-# print(f"rows = {historical.count()} (expect 3)")
-# display(historical.orderBy("trip_id"))
-# Compare with the current table, which was restored afterward
-# current = spark.table(lab_table)
-# print(f"rows = {current.count()} (expect 4)")
-# display(current.orderBy("trip_id"))
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC ```text
 # MAGIC A Delta table creates versions as it changes.
 # MAGIC DESCRIBE HISTORY shows the table's recorded version history.
 # MAGIC Time travel lets me read an earlier state by version or timestamp
@@ -431,7 +408,6 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC RESTORE makes an earlier state current again by creating a NEW Delta version.
 # MAGIC Historical access depends on the required transaction history and data
 # MAGIC files still being available.
-# MAGIC ```
 # MAGIC
 # MAGIC **Next:** Module 11 (transactions, schema, `OPTIMIZE` / `VACUUM`, intro
 # MAGIC `MERGE`). This module ends here.
