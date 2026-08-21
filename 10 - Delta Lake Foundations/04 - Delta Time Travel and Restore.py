@@ -227,7 +227,8 @@ display(restore_target.orderBy("trip_id"))
 # MAGIC ```
 # MAGIC
 # MAGIC `TIMESTAMP AS OF` resolves to the latest table version **at or before**
-# MAGIC that timestamp. Use the timestamp captured after the second insert.
+# MAGIC that timestamp. This timestamp points to the same before-update snapshot
+# MAGIC used in the previous section.
 
 # COMMAND ----------
 
@@ -284,8 +285,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # MAGIC %md
 # MAGIC ```text
-# MAGIC Before  UPDATE snapshot   DELETE ← current
-# MAGIC After   UPDATE snapshot   DELETE   RESTORE ← current
+# MAGIC Before RESTORE   UPDATE snapshot   DELETE ← current
+# MAGIC After RESTORE    UPDATE snapshot   DELETE   RESTORE ← current
 # MAGIC ```
 # MAGIC
 # MAGIC `RESTORE` does not erase the delete commit or move the version number
@@ -350,9 +351,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Hint:** Use `VERSION AS OF` with `delete_version` (or find the `DELETE`
-# MAGIC row in `DESCRIBE HISTORY`). Then read the table with no `AS OF` and
-# MAGIC confirm `.count()` is **4**.
+# MAGIC **Hint:** Use `delete_version` with `VERSION AS OF`, then compare that
+# MAGIC result with the current table.
 
 # COMMAND ----------
 
