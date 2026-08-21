@@ -112,7 +112,7 @@ display(trips_extract.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Empty managed and external tables
-# MAGIC Managed: no `LOCATION` Path. Unity Catalog chooses the path.
+# MAGIC Managed: no `LOCATION`. Unity Catalog chooses the path.
 # MAGIC External: you choose an `abfss://` path, not `/Volumes/`.
 # MAGIC **0** rows until the next section.
 
@@ -218,7 +218,7 @@ display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 # MAGIC
 # MAGIC You cannot list a managed table’s storage path in the same way that you can with an external table’s storage path. 
 # MAGIC
-# MAGIC Cell 14 succeeds because the external table uses a path that you explicitly provided through a Unity Catalog external location. However, Cell 15 fails because Unity Catalog does not support path-based access to managed table storage, even if you are aware of the underlying URI. The error message about the path overlapping managed storage indicates that Unity Catalog is enforcing that boundary.
+# MAGIC The next cell succeeds because the external table uses a path that you explicitly provided through a Unity Catalog external location. However, the cell after that fails because Unity Catalog does not support path-based access to managed table storage, even if you are aware of the underlying URI. The error message about the path overlapping managed storage indicates that Unity Catalog is enforcing that boundary.
 # MAGIC
 # MAGIC This behaviour is by design. For managed tables, Unity Catalog controls the location of managed storage, so you interact with the data by referencing the table name using SQL or DataFrame APIs. In contrast, for external tables, although Unity Catalog still governs them, users with sufficient privileges can access the same data via their cloud storage URIs.
 
@@ -465,5 +465,7 @@ display(external_df.orderBy("trip_id"))
 # MAGIC - `DROP TABLE` removes the active UC registration; external files remain,
 # MAGIC   while managed files follow the UC-managed recovery and deletion lifecycle
 # MAGIC - `UNDROP` can recover either table type during the 7-day recovery window
+# MAGIC - Re-registering the external folder is a **new** UC registration over
+# MAGIC   the surviving files, not `UNDROP`
 # MAGIC
 # MAGIC **Next:** `04 - Delta Time Travel and Restore`
