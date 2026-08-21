@@ -2,22 +2,20 @@
 # MAGIC %md
 # MAGIC # 03 - Managed vs External Delta Tables
 # MAGIC
-# MAGIC Both are Unity Catalog (UC) tables. The difference is who controls the
-# MAGIC storage location and what happens to the table files when you `DROP TABLE`.
-# MAGIC You still own the data in your cloud account.
+# MAGIC Both managed and external tables are governed by Unity Catalog (UC).
+# MAGIC The key differences are who controls the table’s physical storage and
+# MAGIC which capabilities Databricks manages automatically.
 # MAGIC
-# MAGIC **File lifecycle** here means who decides the storage path, and what
-# MAGIC happens to the table files when you `DROP TABLE`. It does not mean
-# MAGIC `OPTIMIZE` or `VACUUM` (Module 11).
 # MAGIC
 # MAGIC ```text
 # MAGIC Managed table
-# MAGIC UC table ──► UC chooses storage location
-# MAGIC              UC manages files on DROP
+# MAGIC UC table ──► UC chooses the storage location
+# MAGIC              Databricks manages the table storage and
+# MAGIC              supported automatic optimizations
 # MAGIC
 # MAGIC External table
-# MAGIC UC table ──► You choose storage location
-# MAGIC              You manage files on DROP
+# MAGIC UC table ──► You choose the storage location
+# MAGIC              You manage the storage path and files
 # MAGIC ```
 # MAGIC
 # MAGIC ## Learning objectives
