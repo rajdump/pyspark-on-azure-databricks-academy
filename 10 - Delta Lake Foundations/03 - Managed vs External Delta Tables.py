@@ -199,8 +199,9 @@ display(spark.sql(f"DESCRIBE DETAIL {external_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC This lab uses Delta for both tables. External tables can use other file
-# MAGIC formats; that is not this lab.
+# MAGIC ## Catalog metadata
+# MAGIC
+# MAGIC Look at `table_type` and `storage_path`.
 
 # COMMAND ----------
 
@@ -363,19 +364,6 @@ display(external_df.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **4 rows** are available again in both tables.
-# MAGIC
-# MAGIC | | Managed | External |
-# MAGIC |---|---|---|
-# MAGIC | `UNDROP` | Restores the dropped table and retained data | Restores the dropped table over existing files |
-# MAGIC | Re-register | Not applicable here | Creates a new UC registration over the existing Delta folder |
-# MAGIC
-# MAGIC `UNDROP` restores the dropped UC table. Re-registering creates a **new**
-# MAGIC UC table over the existing external files.
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## When to use which
 # MAGIC
 # MAGIC ### Use an external table when
@@ -421,6 +409,8 @@ display(external_df.orderBy("trip_id"))
 # MAGIC ## Summary
 # MAGIC
 # MAGIC * Both managed and external tables are governed by Unity Catalog.
+# MAGIC * This lab uses Delta for both tables. External tables can use other
+# MAGIC   file formats; that is not this lab.
 # MAGIC * Use **managed tables** by default for most new Databricks tables.
 # MAGIC * Use **external tables** when you need to control or preserve a
 # MAGIC   specific storage path.
