@@ -93,7 +93,8 @@ display(trips_extract.orderBy("trip_id"))
 # MAGIC v4 DELETE                 1002        3 rows
 # MAGIC ```
 # MAGIC
-# MAGIC Later queries use captured version names, not these `v0`–`v4` labels.
+# MAGIC The notebook captures the actual versions from Delta history and uses
+# MAGIC those captured values in later queries, not these `v0`–`v4` labels.
 # MAGIC
 # MAGIC > **Note:** After the second insert we pause two seconds so the captured
 # MAGIC > timestamp is clearly before the update. Delta does not require this wait.
@@ -149,8 +150,13 @@ display(spark.table(lab_table).orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Explore history with `DESCRIBE HISTORY`
-# MAGIC `DESCRIBE HISTORY` is the easiest way to see the versions that have been
-# MAGIC created. Look at **`version`**, **`timestamp`**, and **`operation`**.
+# MAGIC `DESCRIBE HISTORY` returns one row per recorded table version. For this
+# MAGIC lesson, look at:
+# MAGIC
+# MAGIC - **`version`** — identifies the table state
+# MAGIC - **`timestamp`** — when that version was created
+# MAGIC - **`operation`** — the type of change
+# MAGIC
 # MAGIC Ignore the other columns for now.
 # MAGIC
 # MAGIC We ran `INSERT` for the first two data commits. `DESCRIBE HISTORY`
@@ -168,11 +174,13 @@ print(f"delete_version = {delete_version}")
 # MAGIC %md
 # MAGIC ## Time travel by version
 # MAGIC Time travel lets you **read** an earlier version without changing the
-# MAGIC current table. Use `VERSION AS OF` when `DESCRIBE HISTORY` already gave
-# MAGIC you the exact commit.
+# MAGIC current table.
+# MAGIC
+# MAGIC `DESCRIBE HISTORY` gave you the version numbers. `VERSION AS OF` reads
+# MAGIC the table as it looked at that commit. The query is read-only.
 # MAGIC
 # MAGIC Read the snapshot from before the tip correction
-# MAGIC (`before_update_version`), then read current (the delete snapshot).
+# MAGIC (`before_update_version`), then read current (after the delete).
 
 # COMMAND ----------
 
@@ -199,8 +207,9 @@ display(current.orderBy("trip_id"))
 # MAGIC After delete     3 rows   tip 10.00   1002 missing
 # MAGIC ```
 # MAGIC
-# MAGIC You already saw before-update and after-delete. Next is the after-update
-# MAGIC snapshot — later the restore target.
+# MAGIC The before-update state shows the original tip. The after-delete state is
+# MAGIC the current table. Next, read the state immediately after the update:
+# MAGIC corrected tip, trip **1002** still present — later the restore target.
 
 # COMMAND ----------
 
@@ -217,6 +226,7 @@ display(restore_target.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Time travel by timestamp
+# MAGIC A historical state can be identified by version number or by time.
 # MAGIC
 # MAGIC ```text
 # MAGIC I know the exact Delta version
@@ -245,7 +255,8 @@ display(by_timestamp.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Time travel with PySpark
-# MAGIC PySpark can read a historical Delta version with the `versionAsOf` option.
+# MAGIC Delta time travel is also available on the DataFrame reader. Use the
+# MAGIC `versionAsOf` option to load a historical version of the table.
 
 # COMMAND ----------
 
@@ -258,6 +269,8 @@ display(historical_df.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Restore an earlier state
+# MAGIC Time travel and `RESTORE` both use Delta history, but they do different
+# MAGIC jobs.
 # MAGIC
 # MAGIC ```text
 # MAGIC TIME TRAVEL  read old state     current unchanged
@@ -289,10 +302,11 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC After RESTORE    UPDATE snapshot   DELETE   RESTORE ← current
 # MAGIC ```
 # MAGIC
-# MAGIC `RESTORE` does not erase the delete commit or move the version number
-# MAGIC backward. It writes **another** commit whose table state matches the
-# MAGIC chosen snapshot. You can restore another available version if the required
-# MAGIC history and data files are still retained.
+# MAGIC `RESTORE` does not rewind or erase Delta history. It writes **another**
+# MAGIC commit whose table state matches the chosen snapshot. The delete commit
+# MAGIC stays in history, and the version number keeps moving forward. You can
+# MAGIC restore another available version if the required history and data files
+# MAGIC are still retained.
 
 # COMMAND ----------
 
@@ -304,6 +318,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC ```sql
 # MAGIC RESTORE TABLE … TO TIMESTAMP AS OF '<timestamp>'
 # MAGIC ```
+# MAGIC
+# MAGIC Both forms select a historical state and create a new Delta version.
 
 # COMMAND ----------
 
@@ -321,7 +337,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC
 # MAGIC Delta keeps table history for **30 days** by default. Obsolete files
 # MAGIC become eligible for `VACUUM` after **7 days**. Reliable time travel beyond
-# MAGIC 7 days needs both sides retained.
+# MAGIC 7 days needs both the transaction history and the required data files.
 # MAGIC
 # MAGIC `DESCRIBE HISTORY` can still list a version whose files are gone. The
 # MAGIC 7-day threshold is not an automatic delete timer.
@@ -335,6 +351,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # MAGIC %md
 # MAGIC ## Exercise
+# MAGIC The table is already restored, so trip **1002** is present again.
+# MAGIC
 # MAGIC Query the table as it looked **immediately after** trip **1002** was
 # MAGIC deleted (`delete_version`).
 # MAGIC
@@ -342,7 +360,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC - Do not `RESTORE`
 # MAGIC
 # MAGIC **Expected:** historical read is **3** rows (1002 gone). Current without
-# MAGIC `AS OF` is still **4** rows (1002 is back from restore).
+# MAGIC `AS OF` is still **4** rows.
 
 # COMMAND ----------
 
@@ -385,7 +403,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC Time travel lets me read an earlier state by version or timestamp
 # MAGIC without changing the current table.
 # MAGIC RESTORE makes an earlier state current again by creating a NEW Delta version.
-# MAGIC Historical versions are not retained forever.
+# MAGIC Historical access depends on the required transaction history and data
+# MAGIC files still being available.
 # MAGIC ```
 # MAGIC
 # MAGIC **Next:** Module 11 (transactions, schema, `OPTIMIZE` / `VACUUM`, intro
