@@ -406,20 +406,7 @@ display(external_df.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Summary
-# MAGIC
-# MAGIC * Both managed and external tables are governed by Unity Catalog.
-# MAGIC * This lab uses Delta for both tables. External tables can use other
-# MAGIC   file formats; that is not this lab.
-# MAGIC * Use **managed tables** by default for most new Databricks tables.
-# MAGIC * Use **external tables** when you need to control or preserve a
-# MAGIC   specific storage path.
-# MAGIC * `DROP TABLE` removes the active UC registration. External files
-# MAGIC   remain at their storage path.
-# MAGIC * Re-registering an external folder creates a **new UC registration**
-# MAGIC   over the existing files.
-# MAGIC
-# MAGIC ### Configure the recovery period
+# MAGIC ## Configure the recovery period
 # MAGIC
 # MAGIC For **Unity Catalog managed tables**, the dropped-table recovery period
 # MAGIC can be configured at the **catalog or schema level**. It cannot be
@@ -437,5 +424,21 @@ display(external_df.orderBy("trip_id"))
 # MAGIC -- Override with 7 days for managed tables in this schema
 # MAGIC ALTER SCHEMA my_catalog.my_schema RETAIN DROPPED TO 7 DAYS;
 # MAGIC ```
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Summary
+# MAGIC
+# MAGIC * Both managed and external tables are governed by Unity Catalog.
+# MAGIC * This lab uses Delta for both tables. External tables can use other
+# MAGIC   file formats; that is not this lab.
+# MAGIC * Use **managed tables** by default for most new Databricks tables.
+# MAGIC * Use **external tables** when you need to control or preserve a
+# MAGIC   specific storage path.
+# MAGIC * `DROP TABLE` removes the active UC registration. External files
+# MAGIC   remain at their storage path.
+# MAGIC * Re-registering an external folder creates a **new UC registration**
+# MAGIC   over the existing files.
 # MAGIC
 # MAGIC **Next:** `04 - Delta Time Travel and Restore`
