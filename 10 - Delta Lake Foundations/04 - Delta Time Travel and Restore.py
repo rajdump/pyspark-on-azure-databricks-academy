@@ -320,24 +320,27 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # MAGIC %md
 # MAGIC ## Retention: how far back can you go?
-# MAGIC Time travel is not a permanent backup. A historical read or restore needs
-# MAGIC transaction history **and** the data files for that version.
+# MAGIC Time travel and `RESTORE` work only while Delta still has:
+# MAGIC
+# MAGIC - the transaction history for that version
+# MAGIC - the data files referenced by that version
 # MAGIC
 # MAGIC ```text
 # MAGIC Historical version
 # MAGIC        │
-# MAGIC        ├── transaction history     default: 30 days
-# MAGIC        └── historical data files   7-day VACUUM eligibility
+# MAGIC        ├── Transaction history      default: 30 days
+# MAGIC        └── Required data files      VACUUM retention: 7 days
 # MAGIC ```
 # MAGIC
-# MAGIC Delta keeps table history for **30 days** by default. Obsolete files
-# MAGIC become eligible for `VACUUM` after **7 days**. Reliable time travel beyond
-# MAGIC 7 days needs both the transaction history and the required data files.
+# MAGIC Delta keeps table history for 30 days by default.
+# MAGIC Data files that are no longer part of the current table become eligible
+# MAGIC for removal by `VACUUM` after 7 days by default.
+# MAGIC So a version may still appear in `DESCRIBE HISTORY`, but time travel or
+# MAGIC `RESTORE` can fail if the required old data files have already been
+# MAGIC removed.
 # MAGIC
-# MAGIC `DESCRIBE HISTORY` can still list a version whose files are gone. The
-# MAGIC 7-day threshold is not an automatic delete timer.
-# MAGIC
-# MAGIC This lab's commits are minutes old, so the queries here still work.
+# MAGIC **Note:** The 7-day retention period does not mean files are automatically
+# MAGIC deleted after 7 days. `VACUUM` must remove them.
 # MAGIC
 # MAGIC > **Warning:** Do not run `VACUUM` in this notebook. Maintenance is
 # MAGIC > Module 11.
@@ -390,14 +393,14 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - A Delta table creates versions as it changes
-# MAGIC - `DESCRIBE HISTORY` shows the table's recorded version history
-# MAGIC - Time travel lets me read an earlier state by version or timestamp
-# MAGIC   without changing the current table
-# MAGIC - `RESTORE` makes an earlier state current again by creating a NEW Delta
-# MAGIC   version
-# MAGIC - Historical access depends on the required transaction history and data
-# MAGIC   files still being available
+# MAGIC - Delta creates a new table version for each committed change.
+# MAGIC - `DESCRIBE HISTORY` shows the recorded version history.
+# MAGIC - Time travel reads an earlier table state by version or timestamp
+# MAGIC   without changing the current table.
+# MAGIC - `RESTORE` adds a new commit that makes an earlier table state current
+# MAGIC   again.
+# MAGIC - Time travel and restore work only while the required transaction
+# MAGIC   history and data files are still available.
 # MAGIC
-# MAGIC **Next:** Module 11 (transactions, schema, `OPTIMIZE` / `VACUUM`, intro
-# MAGIC `MERGE`). This module ends here.
+# MAGIC **Next:** Module 11 — transactions, schema, `OPTIMIZE`, `VACUUM`, and an
+# MAGIC introduction to `MERGE`.
