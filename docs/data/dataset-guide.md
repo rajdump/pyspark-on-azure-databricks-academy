@@ -244,7 +244,7 @@ Two consequences worth carrying forward:
 - Because NULLs are concentrated in known columns for known rows, you can always
   predict what a correct result looks like before running the query. The precise
   map of which columns are NULL for which trips is in
-  [Module 7 — Managed analytical tables](dataset-overview.md#module-7--managed-analytical-tables).
+  [Module 7 — Joins and Set Operations](dataset-overview.md#module-7--joins-and-set-operations).
 
 ## Where the exact facts live
 
@@ -254,5 +254,5 @@ Two consequences worth carrying forward:
 | Which keys join to which | [Join keys](dataset-overview.md#join-keys) |
 | Nested driver fields | [Supplementary: `drivers`](dataset-overview.md#supplementary-drivers-nested-xml) |
 | Source formats, Volume paths, and per-stage row counts | [Module pipeline](dataset-overview.md#module-pipeline) |
-| Which columns are NULL and why | [Module 7 — Managed analytical tables](dataset-overview.md#module-7--managed-analytical-tables) |
+| Which columns are NULL and why | [Module 7 — Joins and Set Operations](dataset-overview.md#module-7--joins-and-set-operations) |
 | Catalog, schema, volume, and table names | [Unity Catalog platform reference](dataset-overview.md#unity-catalog-platform-reference) |

@@ -263,7 +263,7 @@ Sources: [Module 05 README](../05%20-%20Reading,%20Writing,%20and%20Schemas/READ
   propagating to Module 07 targets.
 
 Sources: [Module 06 README](../06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives/README.md),
-[dataset overview — Module 6 curated outputs](../docs/data/dataset-overview.md#module-6--curated-outputs)
+[dataset overview — Module 6 — Built-in Functions, Complex Types, and UDF Alternatives](../docs/data/dataset-overview.md#module-6--built-in-functions-complex-types-and-udf-alternatives)
 
 ## D-017 — Module 07 joins preserve business grain and visible gaps
 
@@ -337,7 +337,7 @@ Column contracts live in the Module 8 README (Paths and outputs). Preferred
 over Volume Parquet for Modules 9–13 (SQL/`spark.table`, Delta, Gold, MERGE).
 
 Sources: [Module 08 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md),
-[dataset overview — Module 8 KPI outputs](../docs/data/dataset-overview.md#module-8--kpi-outputs),
+[dataset overview — Module 8 — Aggregations and Window Functions](../docs/data/dataset-overview.md#module-8--aggregations-and-window-functions),
 [08 - Build KPI Tables.md](../08%20-%20Aggregations%20and%20Window%20Functions/08%20-%20Build%20KPI%20Tables.md)
 
 ## Security and portability decisions

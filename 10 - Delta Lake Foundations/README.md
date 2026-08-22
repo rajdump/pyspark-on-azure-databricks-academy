@@ -74,7 +74,7 @@ listings.
 
 Object locations:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
-(Module 10 lab objects). `{url}` is the `url` column from
+(Module 10 — Delta Lake Foundations). `{url}` is the `url` column from
 `DESCRIBE EXTERNAL LOCATION el_rideshare_dev` (strip a trailing slash).
 
 | Notebook | Object |
