@@ -36,7 +36,6 @@
 
 # COMMAND ----------
 
-import time
 from decimal import Decimal
 
 lab_table = "rideshare_dev.processed.fare_timetravel_lab"
@@ -54,14 +53,6 @@ trips_extract = spark.createDataFrame(
 )
 # SQL statements below read from this temporary view
 trips_extract.createOrReplaceTempView("trips_extract")
-
-
-# Latest Delta version and its commit timestamp
-def latest_history(table):
-    row = spark.sql(f"DESCRIBE HISTORY {table} LIMIT 1").first()
-    ts_str = row["timestamp"].isoformat(sep=" ", timespec="milliseconds")
-    return int(row["version"]), ts_str
-
 
 # Recreate the lab table so every run starts with a clean history
 spark.sql(f"DROP TABLE IF EXISTS {lab_table}")
@@ -87,21 +78,19 @@ display(trips_extract.orderBy("trip_id"))
 # MAGIC %md
 # MAGIC ## Build table history
 # MAGIC We will intentionally create five table states so we have history to
-# MAGIC explore. This is the expected history in a clean run:
+# MAGIC explore. After a full run from the top, `DESCRIBE HISTORY` matches this
+# MAGIC timeline:
 # MAGIC
 # MAGIC ```text
-# MAGIC v0 CREATE TABLE           0 rows
-# MAGIC v1 WRITE (first INSERT)   1001-1003   3 rows   1003 tip 6.00
-# MAGIC v2 WRITE (second INSERT)  +1004       4 rows   1003 tip 6.00
-# MAGIC v3 UPDATE                 1003 tip 10 4 rows   1002 present
-# MAGIC v4 DELETE                 1002        3 rows
+# MAGIC version 0  CREATE TABLE           0 rows
+# MAGIC version 1  WRITE (first INSERT)   1001-1003   3 rows   1003 tip 6.00
+# MAGIC version 2  WRITE (second INSERT)  +1004       4 rows   1003 tip 6.00
+# MAGIC version 3  UPDATE                 1003 tip 10 4 rows   1002 present
+# MAGIC version 4  DELETE                 1002        3 rows
 # MAGIC ```
 # MAGIC
-# MAGIC The notebook captures the actual versions from Delta history and uses
-# MAGIC those captured values in later queries, not these `v0`–`v4` labels.
-# MAGIC
-# MAGIC > **Note:** After the second insert we pause two seconds so the captured
-# MAGIC > timestamp is clearly before the update. Delta does not require this wait.
+# MAGIC Later cells use these version numbers. If you re-run only some cells,
+# MAGIC use the numbers `DESCRIBE HISTORY` shows in **this** run.
 
 # COMMAND ----------
 
@@ -113,12 +102,11 @@ spark.sql(
     WHERE trip_id <= 1003
     """
 )
-# Confirm the table now contains three rows
 print(f"rows = {spark.table(lab_table).count()} (expect 3)")
 
 # COMMAND ----------
 
-# Add trip 1004 — this is the state immediately before the update
+# Add trip 1004 — table state immediately before the update
 spark.sql(
     f"""
     INSERT INTO {lab_table}
@@ -126,11 +114,7 @@ spark.sql(
     WHERE trip_id = 1004
     """
 )
-# Save version and timestamp for later time-travel queries
-before_update_version, before_update_timestamp = latest_history(lab_table)
 display(spark.table(lab_table).orderBy("trip_id"))
-# Keep this commit timestamp distinct from the upcoming UPDATE
-time.sleep(2)
 
 # COMMAND ----------
 
@@ -142,8 +126,6 @@ spark.sql(
     WHERE trip_id = 1003
     """
 )
-# This version is the restore target: corrected tip, 1002 still present
-restore_version, _ = latest_history(lab_table)
 display(spark.table(lab_table).orderBy("trip_id"))
 
 # COMMAND ----------
@@ -155,16 +137,14 @@ spark.sql(
     WHERE trip_id = 1002
     """
 )
-# Save this version for the historical-read exercise after RESTORE
-delete_version, _ = latest_history(lab_table)
 display(spark.table(lab_table).orderBy("trip_id"))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Explore history with `DESCRIBE HISTORY`
-# MAGIC `DESCRIBE HISTORY` returns one row per recorded table version. For this
-# MAGIC lesson, look at:
+# MAGIC `DESCRIBE HISTORY` is how you identify versions. It returns one row per
+# MAGIC recorded table version. For this lesson, look at:
 # MAGIC
 # MAGIC - **`version`** — identifies the table state
 # MAGIC - **`timestamp`** — when that version was created
@@ -174,15 +154,14 @@ display(spark.table(lab_table).orderBy("trip_id"))
 # MAGIC
 # MAGIC We ran `INSERT` for the first two data commits. `DESCRIBE HISTORY`
 # MAGIC typically records those appends as **`WRITE`**.
+# MAGIC
+# MAGIC Find version **2** (before the tip update), version **3** (after the
+# MAGIC update, 1002 still present), and version **4** (after the delete). Later
+# MAGIC queries use those numbers.
 
 # COMMAND ----------
 
-# Versions from CREATE, INSERT, UPDATE, and DELETE
 display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
-# Names of the historical states used in later queries
-print(f"before_update_version = {before_update_version}")
-print(f"restore_version = {restore_version}")
-print(f"delete_version = {delete_version}")
 
 # COMMAND ----------
 
@@ -194,17 +173,17 @@ print(f"delete_version = {delete_version}")
 # MAGIC `DESCRIBE HISTORY` gave you the version numbers. `VERSION AS OF` reads
 # MAGIC the table as it looked at that commit. The query is read-only.
 # MAGIC
-# MAGIC Read the snapshot from before the tip correction
-# MAGIC (`before_update_version`), then read current (after the delete).
+# MAGIC Read version **2** (before the tip correction), then read current (after
+# MAGIC the delete).
 
 # COMMAND ----------
 
-# Historical state from before the tip update
+# Table as it looked at version 2 (before the tip update)
 before_update = spark.sql(
     f"""
     SELECT *
     FROM {lab_table}
-    VERSION AS OF {before_update_version}
+    VERSION AS OF 2
     """
 )
 display(before_update.orderBy("trip_id"))
@@ -216,35 +195,35 @@ display(current.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Compare snapshots
+# MAGIC ### Compare versions
 # MAGIC
 # MAGIC ```text
-# MAGIC Before update    4 rows   tip 6.00    1002 present
-# MAGIC After update     4 rows   tip 10.00   1002 present
-# MAGIC After delete     3 rows   tip 10.00   1002 missing
+# MAGIC Version 2  before update    4 rows   tip 6.00    1002 present
+# MAGIC Version 3  after update     4 rows   tip 10.00   1002 present
+# MAGIC Version 4  after delete     3 rows   tip 10.00   1002 missing
 # MAGIC ```
 # MAGIC
-# MAGIC The before-update state shows the original tip. The after-delete state is
-# MAGIC the current table. Next, read the state immediately after the update:
-# MAGIC corrected tip, trip **1002** still present — later the restore target.
+# MAGIC Version 2 shows the original tip. Version 4 is the current table. Next,
+# MAGIC read version 3: corrected tip, trip **1002** still present. That is the
+# MAGIC version we will restore to later.
 
 # COMMAND ----------
 
-# After the tip correction, before trip 1002 was deleted
-restore_target = spark.sql(
+# Table as it looked at version 3 (after the tip correction)
+after_update = spark.sql(
     f"""
     SELECT *
     FROM {lab_table}
-    VERSION AS OF {restore_version}
+    VERSION AS OF 3
     """
 )
-display(restore_target.orderBy("trip_id"))
+display(after_update.orderBy("trip_id"))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Time travel by timestamp
-# MAGIC A historical state can be identified by version number or by time.
+# MAGIC A historical table state can be identified by version number or by time.
 # MAGIC
 # MAGIC ```text
 # MAGIC I know the exact Delta version
@@ -255,17 +234,20 @@ display(restore_target.orderBy("trip_id"))
 # MAGIC ```
 # MAGIC
 # MAGIC `TIMESTAMP AS OF` resolves to the latest table version **at or before**
-# MAGIC that timestamp. This timestamp points to the same before-update snapshot
-# MAGIC used in the previous section.
+# MAGIC that timestamp. Use the **timestamp** column HISTORY showed for version
+# MAGIC **2** — the same table state as `VERSION AS OF 2`.
 
 # COMMAND ----------
 
-# Same before-update state, identified by commit timestamp
+# Timestamp HISTORY recorded for version 2
+v2 = spark.sql(f"DESCRIBE HISTORY {lab_table}").where("version = 2").first()
+ts_v2 = v2["timestamp"].isoformat(sep=" ", timespec="milliseconds")
+
 by_timestamp = spark.sql(
     f"""
     SELECT *
     FROM {lab_table}
-    TIMESTAMP AS OF '{before_update_timestamp}'
+    TIMESTAMP AS OF '{ts_v2}'
     """
 )
 display(by_timestamp.orderBy("trip_id"))
@@ -279,10 +261,8 @@ display(by_timestamp.orderBy("trip_id"))
 
 # COMMAND ----------
 
-# Same historical version, through the DataFrame reader
-historical_df = spark.read.option("versionAsOf", before_update_version).table(
-    lab_table
-)
+# Same version 2, through the DataFrame reader
+historical_df = spark.read.option("versionAsOf", 2).table(lab_table)
 display(historical_df.orderBy("trip_id"))
 
 # COMMAND ----------
@@ -293,41 +273,38 @@ display(historical_df.orderBy("trip_id"))
 # MAGIC jobs.
 # MAGIC
 # MAGIC ```text
-# MAGIC TIME TRAVEL  read old state     current unchanged
-# MAGIC RESTORE      make old state current    new Delta version
+# MAGIC TIME TRAVEL   read an earlier version     current table unchanged
+# MAGIC RESTORE       make an earlier version     the new current state
+# MAGIC               current                     (a new Delta version)
 # MAGIC ```
 # MAGIC
-# MAGIC Suppose deleting trip **1002** was a mistake. `restore_version` is the
-# MAGIC UPDATE snapshot: trip **1003** is already **10.00**, and **1002** is still
-# MAGIC there.
+# MAGIC Suppose deleting trip **1002** was a mistake. Version **3** is the UPDATE:
+# MAGIC trip **1003** is already **10.00**, and **1002** is still there.
 
 # COMMAND ----------
 
-# Recover the state after the UPDATE and before the DELETE
+# Recover version 3: after the UPDATE, before the DELETE
 spark.sql(
     f"""
     RESTORE TABLE {lab_table}
-    TO VERSION AS OF {restore_version}
+    TO VERSION AS OF 3
     """
 )
-# RESTORE writes a new Delta commit; capture that new version
-after_version_restore, _ = latest_history(lab_table)
-print(f"after_version_restore = {after_version_restore}")
 # 1002 is back; the corrected tip remains
 display(spark.table(lab_table).orderBy("trip_id"))
-# HISTORY lists RESTORE as a new entry after DELETE
+# HISTORY lists RESTORE as a new version after DELETE
 display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ```text
-# MAGIC Before RESTORE   UPDATE snapshot   DELETE ← current
-# MAGIC After RESTORE    UPDATE snapshot   DELETE   RESTORE ← current
+# MAGIC Before RESTORE   version 3 UPDATE   version 4 DELETE ← current
+# MAGIC After RESTORE    version 3 UPDATE   version 4 DELETE   version 5 RESTORE ← current
 # MAGIC ```
 # MAGIC
 # MAGIC `RESTORE` does not rewind or erase Delta history. It writes **another**
-# MAGIC commit whose table state matches the chosen snapshot. The delete commit
+# MAGIC commit whose table state matches the chosen version. The delete commit
 # MAGIC stays in history, and the version number keeps moving forward. You can
 # MAGIC restore another available version if the required history and data files
 # MAGIC are still retained.
@@ -343,7 +320,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC RESTORE TABLE … TO TIMESTAMP AS OF '<timestamp>'
 # MAGIC ```
 # MAGIC
-# MAGIC Both forms select a historical state and create a new Delta version.
+# MAGIC Both forms select a historical table state and create a new Delta version.
 
 # COMMAND ----------
 
@@ -378,12 +355,12 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC The table has already been restored, so trip **1002** is present again
 # MAGIC in the current state.
 # MAGIC
-# MAGIC Use PySpark `versionAsOf` to read `delete_version`, then compare it with
-# MAGIC the current table. Time travel still reads that old state even after
-# MAGIC `RESTORE` changed current.
+# MAGIC Use PySpark `versionAsOf` to read version **4** (the `DELETE` in HISTORY),
+# MAGIC then compare it with the current table. Time travel still reads that old
+# MAGIC state even after `RESTORE` changed current.
 # MAGIC
 # MAGIC **Expected:**
-# MAGIC - `delete_version` → **3** rows
+# MAGIC - version **4** → **3** rows
 # MAGIC - current table → **4** rows
 
 # COMMAND ----------
@@ -393,7 +370,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Hint:** Read `delete_version` with the same `versionAsOf` option used
+# MAGIC **Hint:** Read version **4** with the same `versionAsOf` option used
 # MAGIC earlier, then compare its row count with the current table.
 
 # COMMAND ----------
@@ -405,7 +382,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # historical = (
 #     spark.read
-#     .option("versionAsOf", delete_version)
+#     .option("versionAsOf", 4)
 #     .table(lab_table)
 # )
 # print(f"historical rows = {historical.count()} (expect 3)")
