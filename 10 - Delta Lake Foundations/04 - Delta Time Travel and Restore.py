@@ -298,29 +298,23 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ```text
-# MAGIC Before RESTORE   version 3 UPDATE   version 4 DELETE ← current
-# MAGIC After RESTORE    version 3 UPDATE   version 4 DELETE   version 5 RESTORE ← current
-# MAGIC ```
+# MAGIC `RESTORE` adds a new commit to the Delta transaction log. The new commit can point to the same data files used by the older version.
 # MAGIC
-# MAGIC `RESTORE` does not rewind or erase Delta history. It writes **another**
-# MAGIC commit whose table state matches the chosen version. The delete commit
-# MAGIC stays in history, and the version number keeps moving forward. You can
-# MAGIC restore another available version if the required history and data files
-# MAGIC are still retained.
+# MAGIC The original versions remain in history, and the version number continues to increase.
+# MAGIC
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Restore by timestamp
-# MAGIC `RESTORE` can target a version or a timestamp. Do not run this; the table
-# MAGIC is already restored.
+# MAGIC `RESTORE` can also use a timestamp instead of a version number.
+# MAGIC
 # MAGIC
 # MAGIC ```sql
 # MAGIC RESTORE TABLE … TO TIMESTAMP AS OF '<timestamp>'
 # MAGIC ```
 # MAGIC
-# MAGIC Both forms select a historical table state and create a new Delta version.
+# MAGIC Databricks finds the table state at that time and adds a new commit to the Delta transaction log that makes that historical state current again.
 
 # COMMAND ----------
 
