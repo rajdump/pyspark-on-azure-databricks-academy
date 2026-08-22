@@ -30,7 +30,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Create the lab table
+# MAGIC ## Setup — create the lab table
 # MAGIC We use a managed Delta table so the lesson can focus on versions, time
 # MAGIC travel, and restore.
 
@@ -71,7 +71,7 @@ spark.sql(
 )
 
 print(f"lab_table = {lab_table}")
-display(trips_extract.orderBy("trip_id"))
+print(f"rows = {spark.table(lab_table).count()} (expect 0)")
 
 # COMMAND ----------
 

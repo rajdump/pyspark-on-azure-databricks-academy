@@ -15,7 +15,7 @@
 # MAGIC By the end of this notebook, you will be able to:
 # MAGIC
 # MAGIC - Inspect `_delta_log` one commit at a time and identify `protocol`,
-# MAGIC   `metadata`, `commitInfo`, `add`, and `remove` actions.
+# MAGIC   `metaData`, `commitInfo`, `add`, and `remove` actions.
 # MAGIC - Use `add` and `remove` actions to understand which data files belong
 # MAGIC   to the current Delta table snapshot.
 # MAGIC - Use `DESCRIBE HISTORY` to review the sequence of operations performed
