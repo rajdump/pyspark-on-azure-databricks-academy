@@ -116,6 +116,7 @@ external-location / managed-location DDL and ADLS teardown only.
 **Reads:** repo `data/raw`. **Writes:** landing Volume; managed
 `trip_time_preview`; practice files under `…/practice/` (teaching only —
 Modules 6–9 do not read them).
+[Module 5 README](../../05%20-%20Reading%2C%20Writing%2C%20and%20Schemas/README.md).
 
 Notebook **01** copies one folder per dataset and creates the catalog,
 schemas, and volumes in [UC objects](#uc-objects).
@@ -162,6 +163,7 @@ Both files keep the CSV header and all 100 original records.
 **Reads:** landing (including the controlled-bad CSVs in notebook **03**);
 `trip_time_preview` in notebook **01** only. **Writes:** curated Parquet
 under `…/processed/output_files/curated/{name}/`.
+[Module 6 README](../../06%20-%20Built-in%20Functions%2C%20Complex%20Types%2C%20and%20UDF%20Alternatives/README.md).
 
 There is **no** curated `trip_time` or `zone_lookup`; Module 7 still reads
 those from landing.
@@ -218,6 +220,7 @@ trip_id bigint
 **Reads:** curated `trip`, `payment`, `drivers_flat`; landing `trip_time`,
 `zone_lookup`. **Writes:** managed Delta in `rideshare_dev.processed`
 (`saveAsTable`).
+[Module 7 README](../../07%20-%20Joins%20and%20Set%20Operations/README.md).
 
 | Table | Grain / rows | Columns |
 |---|---|---:|
@@ -282,8 +285,9 @@ dropoff_location_id int
 ### Module 8 — Aggregations and Window Functions
 
 **Reads:** `trip_enriched`, `trip_driver_assignment`. **Writes:** three
-managed `kpi_*` tables (`saveAsTable`). Column formulas: [Module 8 README —
-Paths and outputs](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs).
+managed `kpi_*` tables (`saveAsTable`).
+[Module 8 README](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
+(column formulas: [Paths and outputs](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs)).
 
 | Table | Grain / rows | Source table |
 |---|---|---|
@@ -296,6 +300,7 @@ Paths and outputs](../../08%20-%20Aggregations%20and%20Window%20Functions/README
 **Reads:** `trip_enriched`, `trip_driver_assignment`,
 `kpi_daily_trip_summary`, `kpi_zone_performance`. **Writes:** none
 (session temp views only).
+[Module 9 README](../../09%20-%20Spark%20SQL%20and%20DataFrame%20Interoperability/README.md).
 
 Notebook **06** rebuilds the three Module 8 KPI contracts in Spark SQL from
 the Module 7 tables — read-only.
@@ -303,8 +308,9 @@ the Module 7 tables — read-only.
 ### Module 10 — Delta Lake Foundations
 
 **Reads / mutates:** none of `trip_enriched`, the KPI tables, or `curated/`.
-**Writes:** isolated lab folders and tables below. Extract, DDL, and
-cleanup: [Module 10 README](../../10%20-%20Delta%20Lake%20Foundations/README.md).
+**Writes:** isolated lab folders and tables below.
+[Module 10 README](../../10%20-%20Delta%20Lake%20Foundations/README.md)
+(extract, DDL, and cleanup).
 
 `{url}` is defined in [UC objects](#uc-objects).
 
