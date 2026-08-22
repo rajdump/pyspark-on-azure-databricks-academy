@@ -5,408 +5,271 @@ aliases:
 tags:
   - course/decisions
   - architecture
-updated: 2026-08-13
+updated: 2026-08-23
 ---
 
 # Course decisions
 
-This note indexes decisions already established across the repository. It
-summarizes and links; the canonical files remain authoritative.
+Index of **accepted** architecture, data, and pedagogy choices. Canonical
+detail stays in the linked sources — this file records the decision and where
+to read more.
 
-## Source precedence
+Source precedence for facts: [AGENTS](../AGENTS.md) **Read for facts** section.
+Roadmap status: [COURSE_MODULES](../COURSE_MODULES.md).
 
-The precedence order is owned by [AGENTS](../AGENTS.md) — see its **Read for
-facts** section. Do not maintain a second copy here.
+## Platform and scope
 
-That precedence explains why [COURSE_MODULES](../COURSE_MODULES.md) is the
-status authority, and why approved Module 07 mappings override conflicting
-personal notes.
+### D-001 — Batch data engineering only
 
-## D-001 — Course scope is batch data engineering
+Teach production-oriented **batch** pipelines. Exclude Structured Streaming,
+Auto Loader, streaming tables, machine learning, and general Azure
+infrastructure administration. Assume basic Python and SQL; no prior Spark or
+Databricks experience required.
 
-**Status:** Accepted
+Sources: [README](../README.md), [COURSE_MODULES](../COURSE_MODULES.md)
 
-- Teach production-oriented batch data engineering.
-- Exclude Structured Streaming, Auto Loader, streaming tables/pipelines,
-  machine learning, and general Azure infrastructure administration.
-- Assume basic Python and basic SQL, but no prior Spark, Databricks, or
-  production data engineering experience.
+### D-002 — Azure Databricks + Unity Catalog baseline
 
-Sources: [README](../README.md), [COURSE_MODULES](../COURSE_MODULES.md),
-[AGENTS](../AGENTS.md)
-
-## D-002 — Azure Databricks and Unity Catalog are the platform baseline
-
-**Status:** Accepted
-
-- Azure Databricks Premium with Unity Catalog enabled
-- Databricks Runtime 17.3 LTS
-- Spark 4.0.0
-- Python 3.12
-- Scala 2.13 runtime
-
-Serverless uses independently versioned environments; the DBR pin must not be
-claimed for serverless.
+Azure Databricks Premium, Unity Catalog enabled, Databricks Runtime **17.3
+LTS**, Spark **4.0.0**, Python **3.12**, Scala **2.13**. Do not claim a DBR
+pin for serverless — it uses independently versioned environments.
 
 Sources: [README — Technical baseline](../README.md#technical-baseline),
 [compute validation policy](../docs/standards/compute-validation-policy.md)
 
-## D-003 — Learner notebooks use Databricks source `.py`
+### D-003 — Databricks source `.py` notebooks
 
-**Status:** Accepted
-
-- Never use `.ipynb`.
-- First line: `# Databricks notebook source`
-- Cells use exact `# COMMAND ----------` boundaries.
-- Markdown and SQL cells use Databricks `# MAGIC` markers.
+Learner notebooks are `.py` with first line `# Databricks notebook source`,
+`# COMMAND ----------` cell boundaries, and `# MAGIC` for markdown/SQL. Never
+`.ipynb`.
 
 Source: [notebook writing](../docs/standards/notebook-writing.md)
 
-## D-004 — GitHub is the canonical remote source
-
-**Status:** Accepted
+### D-004 — GitHub is canonical remote
 
 ```text
 Cursor local authoring → GitHub → Azure Databricks Git folder
 ```
 
-- Author and review locally.
-- Push approved work to GitHub.
-- Pull into an Azure Databricks Git folder.
-- Execute Spark, Delta, and Unity Catalog behavior in Azure Databricks.
-
-Local tooling handles formatting, linting, typing, and non-Spark tests only.
+Spark, Delta, and Unity Catalog run only in Azure Databricks. Local tooling
+covers formatting, linting, typing, and non-Spark checks.
 
 Sources: [README — Development workflow](../README.md#development-workflow),
-[coding standards — Local tooling boundaries](../docs/standards/coding-standards.md#local-tooling-boundaries)
+[coding standards](../docs/standards/coding-standards.md)
 
-## D-005 — Documentation has explicit owners
-
-**Status:** Accepted
+### D-005 — Documentation owners
 
 | Artifact | Owns |
 |---|---|
-| [COURSE_MODULES](../COURSE_MODULES.md) | Roadmap, module purpose, prerequisites, production relevance, status |
-| Module `README.md` | Detailed lesson design, navigation, outputs, minimum privileges |
-| [dataset overview](../docs/data/dataset-overview.md) | Dataset schemas, join keys, physical paths, pipeline contracts |
-| `docs/standards/` | Shared coding, notebook, teaching, naming, compute, and permission policy |
-| `docs/validation/` | Author-recorded Azure runtime evidence |
-| [AGENTS](../AGENTS.md) | Repository-wide agent constraints, author-only writes, source precedence, and pointers to the canonical documents |
+| `COURSE_MODULES.md` | Roadmap, prerequisites, production relevance, status |
+| Module `README.md` | Lesson design, outputs, minimum privileges |
+| `docs/data/dataset-overview.md` | Schemas, keys, paths, pipeline contracts |
+| `docs/standards/` | Shared authoring and policy |
+| `AGENTS.md` | Agent constraints and source precedence |
 
-Cursor commands must not update roadmap status or runtime evidence
-automatically.
+Agents do not auto-update roadmap status.
 
-## D-006 — One rideshare dataset threads through the course
+## Data and pipeline
 
-**Status:** Accepted
+### D-006 — One rideshare dataset throughout
 
-The course uses `trip`, `trip_time`, `payment`, and `zone_lookup`, plus nested
-`drivers`, instead of switching datasets between modules.
+`trip`, `trip_time`, `payment`, `zone_lookup`, and nested `drivers` thread
+through every module. Zones **21–22** are intentionally unmatched for outer-join
+teaching.
 
-Core contracts:
+Source: [dataset overview](../docs/data/dataset-overview.md)
 
-- `trip`, `trip_time`, `payment`: 100 rows each
-- `zone_lookup`: 22 rows
-- `drivers`: 12 XML records
-- Zones 21–22 are intentionally unmatched for outer-join teaching.
-
-Canonical details: [dataset overview](../docs/data/dataset-overview.md)
-
-## D-007 — The pipeline progresses from files to analytical outputs
-
-**Status:** Accepted
+### D-007 — Phase II pipeline progression
 
 ```mermaid
 flowchart LR
-    M5[Module 05<br/>Landing files] --> M6[Module 06<br/>Curated Parquet]
-    M6 --> M7[Module 07<br/>Managed Delta]
-    M7 --> M8[Module 08<br/>KPI managed Delta]
-    M8 --> M9[Module 09<br/>SQL synthesis]
+    M5[Module 05 landing] --> M6[Module 06 curated]
+    M6 --> M7[Module 07 managed Delta]
+    M7 --> M8[Module 08 KPI Delta]
+    M8 --> M9[Module 09 SQL synthesis]
 ```
 
-- Module 05 writes practice outputs.
-- Module 06 writes curated Parquet.
-- Module 07 writes Unity Catalog managed Delta tables.
-- Module 08 writes managed Delta `kpi_*` tables (`saveAsTable`).
-- Modules after 05 do not read `practice/`.
+Modules after 05 do not read `practice/`. Module 10 teaches Delta on isolated
+lab objects and does not mutate teaching tables.
 
 Source: [dataset overview — Module pipeline](../docs/data/dataset-overview.md#module-pipeline)
 
-## D-008 — `landing` and `processed` are UC schemas, not medallion layers
+### D-008 — `landing` / `processed` are not medallion layers
 
-**Status:** Accepted
+Catalog `rideshare_dev`; schemas `landing` and `processed`; volumes
+`landing.source_files` and `processed.output_files`; folders `practice/` and
+`curated/` inside the output volume. Formal medallion design is Module **13**;
+first medallion build is Module **14**.
 
-- Catalog: `rideshare_dev`
-- Schemas: `landing`, `processed`
-- Volumes: `landing.source_files`, `processed.output_files`
-- `practice/` and `curated/` are folders inside the output volume.
-- Formal Bronze/Silver/Gold architecture is taught in Module 12.
+Source: [dataset overview](../docs/data/dataset-overview.md)
 
-Source: [dataset overview — Unity Catalog platform reference](../docs/data/dataset-overview.md#unity-catalog-platform-reference)
+### D-009 — Fixed UC names; learner supplies storage
 
-## D-009 — Learner Azure resources vary; course UC names stay fixed
-
-**Status:** Accepted
-
-Each learner supplies their own storage account, container, storage credential,
-and ADLS folder in the Module 05 setup and cleanup config cells. Course catalog,
-schema, volume, table, and external-location names follow the canonical course
-contract.
-
-The storage credential must already exist; its creation instructions live in
-course PDF material, not this repository.
+Course catalog, schema, volume, table, and external-location names are fixed.
+Each learner supplies storage account, container, credential, and ADLS path in
+Module 05 config cells. Storage credential creation is in course PDF material,
+not this repo.
 
 Sources: [Module 05 README](../05%20-%20Reading,%20Writing,%20and%20Schemas/README.md),
 [permissions and governance](../docs/standards/permissions-and-governance.md)
 
-## D-010 — Permissions are three separate systems
+### D-010 — Three permission systems
 
-**Status:** Accepted
-
-Do not conflate:
-
-1. Azure RBAC
-2. Databricks workspace permissions
-3. Unity Catalog privileges
-
-Unity Catalog reads require the complete hierarchy:
-`USE CATALOG → USE SCHEMA → object-level privilege`.
+Azure RBAC, Databricks workspace permissions, and Unity Catalog privileges
+are separate. UC reads need `USE CATALOG → USE SCHEMA → object privilege`.
 
 Source: [permissions and governance](../docs/standards/permissions-and-governance.md)
 
-## D-011 — Compute validation starts on Standard all-purpose
+## Authoring and validation
 
-**Status:** Accepted
+### D-011 — Standard all-purpose first
 
-1. Validate on classic all-purpose Standard access mode first.
-2. Do not repeat on Dedicated after Standard passes unless the lesson or API
-   requires it.
-3. Use Dedicated for a verified technical or teaching reason, never to hide a
-   defect.
-4. Treat serverless as a compatibility check rather than the course default.
-5. Test jobs or pipeline-managed compute only in modules that teach those
-   systems.
+Validate on classic all-purpose **Standard** first. Use **Dedicated** only for
+a verified API or teaching reason — never to hide a defect. Treat serverless as
+a compatibility check. Jobs and pipeline-managed compute only in modules that
+teach those systems.
 
 Source: [compute validation policy](../docs/standards/compute-validation-policy.md)
 
-## D-012 — Teaching starts concrete and progresses deliberately
+### D-012 — Concrete, deliberate teaching
 
-**Status:** Accepted
-
-- Explain unfamiliar ideas before use.
-- Start with a concrete rideshare scenario.
-- Show a worked example before assigning an exercise.
-- Keep one concept path per notebook.
-- Call out common production mistakes explicitly.
-- Prefer depth on job-relevant APIs over broad API coverage.
+Explain before use; one concept path per notebook; worked example before
+exercise; call out production mistakes; depth over API breadth.
 
 Source: [teaching guidelines](../docs/standards/teaching-guidelines.md)
 
-## D-013 — DataFrame API and built-ins are the default
+### D-013 — DataFrame API and built-ins default
 
-**Status:** Accepted
-
-- Import functions as `from pyspark.sql import functions as F`.
-- Prefer built-in Spark functions over Python UDFs.
-- Use readable chained transformations.
-- Avoid `.collect()` and `.toPandas()` unless data is known to be small.
-- Teach Spark SQL when it serves the lesson; Module 09 formalizes dual-API
-  patterns.
+`from pyspark.sql import functions as F`; built-ins over UDFs; avoid
+`.collect()` / `.toPandas()` unless data is small. Module 09 formalizes
+dual-API patterns.
 
 Source: [coding standards](../docs/standards/coding-standards.md)
 
-## D-014 — Explicit schemas and safe conversions are production defaults
+### D-014 — Explicit schemas and safe conversions
 
-**Status:** Accepted
+Prefer explicit schemas over inference in production-shaped lessons. Under Spark
+4 ANSI, prefer `try_cast` and `try_*` over disabling ANSI. Normalize before
+drop/fill; keep rejected rows visible.
 
-- Schema inference is acceptable for small demonstrations, not the production
-  default.
-- Under Spark 4 ANSI behavior, prefer `try_cast` and related `try_*` functions
-  to globally disabling ANSI mode.
-- Normalize blanks, sentinels, and invalid values before drop/fill logic.
-- Preserve rejected-row visibility through explicit checks.
-
-Sources:
-[Module 03 README](../03%20-%20Data%20Cleaning,%20NULL%20Semantics,%20and%20Type%20Handling/README.md),
+Sources: [Module 03 README](../03%20-%20Data%20Cleaning,%20NULL%20Semantics,%20and%20Type%20Handling/README.md),
 [Module 05 README](../05%20-%20Reading,%20Writing,%20and%20Schemas/README.md)
 
-## D-015 — Module 05 uses one primary source format per dataset
+## Module-specific contracts
 
-**Status:** Accepted
+### D-015 — Module 05 primary source formats
 
-| Dataset | Primary teaching format |
+| Dataset | Format |
 |---|---|
 | `trip` | CSV |
 | `trip_time` | Parquet |
 | `payment` | Avro |
-| `zone_lookup` | JSON Lines |
+| `zone_lookup` | JSON Lines (22 rows — not the 20-row Parquet alternate) |
 | `drivers` | XML |
 
-Alternate formats under `data/raw/` support authoring and comparison but are
-not all copied to landing. The canonical `zone_lookup` source is the 22-row
-JSON file; its 20-row Parquet alternate must not replace it in join lessons.
+Source: [Module 05 README](../05%20-%20Reading,%20Writing,%20and%20Schemas/README.md)
 
-Sources: [Module 05 README](../05%20-%20Reading,%20Writing,%20and%20Schemas/README.md),
-[dataset overview — Source files](../docs/data/dataset-overview.md#source-files)
+### D-016 — Module 06 curated outputs
 
-## D-016 — Module 06 produces curated, cleaned contracts
+`curated/trip/` (106 rows), `curated/payment/` (105 rows),
+`curated/drivers_flat/`; `service_type` uppercase; `payment_method` lowercase;
+`UNKNOWN` / `unknown` are string sentinels. Derived enrichments stay in curated
+sources — they do not auto-flow to Module 07 targets.
 
-**Status:** Accepted
+Source: [Module 06 README](../06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives/README.md)
 
-- `curated/trip/`: 108 controlled-bad source rows become 106 rows.
-- `curated/payment/`: 106 controlled-bad source rows become 105 rows.
-- `curated/drivers_flat/`: one row per driver-trip assignment.
-- `service_type` is uppercase.
-- `payment_method` is lowercase.
-- `UNKNOWN` and `unknown` are string sentinels, not SQL NULL.
-- Derived enrichments remain in curated sources rather than automatically
-  propagating to Module 07 targets.
+### D-017 — Module 07 join discipline
 
-Sources: [Module 06 README](../06%20-%20Built-in%20Functions,%20Complex%20Types,%20and%20UDF%20Alternatives/README.md),
-[dataset overview — Module 6 — Built-in Functions, Complex Types, and UDF Alternatives](../docs/data/dataset-overview.md#module-6--built-in-functions-complex-types-and-udf-alternatives)
-
-## D-017 — Module 07 joins preserve business grain and visible gaps
-
-**Status:** Approved and runtime-verified on 2026-08-05
-
-Two habits govern join lessons:
-
-1. Know each input grain before joining.
-2. Predict → run → verify.
-
-For duplicates with different payloads, select deterministically with
-`Window` and `row_number`; do not rely on arbitrary `dropDuplicates`.
+Know input grain before joining; predict → run → verify. For duplicate keys with
+different payloads, use `Window` + `row_number` — not arbitrary
+`dropDuplicates`.
 
 Source: [Module 07 README](../07%20-%20Joins%20and%20Set%20Operations/README.md)
 
-## D-018 — Module 07 delivers two lean managed tables
+### D-018 — Module 07 managed table contracts
 
-**Status:** Approved and signed off on 2026-08-05
+Approved 2026-08-05; runtime-verified.
 
-### `trip_enriched`
+| Table | Grain | Rows × cols |
+|---|---|---|
+| `trip_enriched` | one row per `trip_id` | 106 × 16 |
+| `trip_driver_assignment` | one row per (`driver_id`, `trip_id`) | 100 × 13 |
 
-- Grain: one row per `trip_id`
-- 106 rows, 16 columns
-- `curated/trip` drives left joins.
-- Missing time and payment remain visible as NULL.
-- Includes selected trip, time, core payment, and pickup/drop-off zone fields.
-- Excludes operational timing, full payment breakdown, and derived curated
-  enrichments.
-
-### `trip_driver_assignment`
-
-- Grain: one row per (`driver_id`, `trip_id`)
-- 100 rows, 13 columns
-- `drivers_flat` drives the result.
-- Includes driver details and selected trip descriptors.
-- Excludes time, payment, and zone-name fields.
-
-The fuller production medallion design is deferred to Module 12.
+Excludes operational timing, full payment breakdown, and derived curated
+enrichments. Production medallion tables are built in Module **14**.
 
 Sources:
 [BRD](../07%20-%20Joins%20and%20Set%20Operations/requirements/BRD.md),
-[trip_enriched mapping](../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_enriched_mapping.md),
-[trip_driver_assignment mapping](../07%20-%20Joins%20and%20Set%20Operations/requirements/trip_driver_assignment_mapping.md)
+[mappings](../07%20-%20Joins%20and%20Set%20Operations/requirements/)
 
-## D-019 — Module 08 separates grouped and windowed grain
+### D-019 — Module 08 aggregation and window grain
 
-**Status:** Accepted module design; implementation in progress
-
-- Name output grain before aggregation and verify it afterward.
-- `groupBy` reduces rows.
-- Windows preserve the rows they receive until a later filter.
-- Use explicit `ROWS` frames for row-by-row running calculations.
-- Top-N selection policy is explicit:
-  - `row_number <= N` gives at most N rows per group.
-  - `rank <= N` can retain extra tied rows.
-- NULL sort placement must be intentional.
+Name output grain before and after aggregation. `groupBy` reduces rows;
+windows preserve row count until a later filter. Top-N: `row_number <= N` vs
+`rank <= N`; NULL sort placement must be intentional.
 
 Source: [Module 08 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
 
-## D-020 — Module 08 writes three managed Delta KPI tables
+### D-020 — Module 08 KPI managed Delta tables
 
-**Status:** Accepted; Notebook 08 authoring follows the approved md replica
+| Table | Grain | Rows |
+|---|---|---|
+| `kpi_daily_trip_summary` | non-NULL `trip_date` | 14 |
+| `kpi_zone_performance` | pickup borough + zone | 20 |
+| `kpi_driver_productivity` | `driver_id` | 12 |
 
-- `rideshare_dev.processed.kpi_daily_trip_summary` — one row per non-NULL trip date (14)
-- `rideshare_dev.processed.kpi_zone_performance` — one row per pickup borough and zone (20)
-- `rideshare_dev.processed.kpi_driver_productivity` — one row per driver (12)
-- Format: Unity Catalog managed Delta via `.mode("overwrite").saveAsTable(...)`
-- Cleanup: Module 5 **99** Level 4 (not Level 2 `curated/`)
+Managed Delta via `saveAsTable`; cleanup via Module 05 **99** Level 4.
 
-Column contracts live in the Module 8 README (Paths and outputs). Preferred
-over Volume Parquet for Modules 9–13 (SQL/`spark.table`, Delta, Gold, MERGE).
+Source: [Module 08 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
 
-Sources: [Module 08 README](../08%20-%20Aggregations%20and%20Window%20Functions/README.md),
-[dataset overview — Module 8 — Aggregations and Window Functions](../docs/data/dataset-overview.md#module-8--aggregations-and-window-functions),
-[08 - Build KPI Tables.md](../08%20-%20Aggregations%20and%20Window%20Functions/08%20-%20Build%20KPI%20Tables.md)
+### D-021 — 21-module roadmap (Phase III–V)
 
-## Security and portability decisions
+**Accepted 2026-08-13; extended to 21 modules.** [COURSE_MODULES](../COURSE_MODULES.md)
+is the live owner of titles and status. Module numbers below are the current
+ownership map — they supersede older references in D-008 and D-018.
 
-**Status:** Accepted
+| Module | Ownership |
+|---:|---|
+| 10 | Delta foundations on lab objects (complete) |
+| 11 | Delta transactions, schema, maintenance, introductory `MERGE` |
+| 12 | Govern existing `landing` / `processed` assets |
+| 13 | Paper-design medallion — no objects created |
+| 14 | Full-refresh `bronze` / `silver` / `gold`; new landing volume; `src/` |
+| 15 | Production incremental `MERGE` |
+| 16 | Required batch Lakeflow Pipelines |
+| 17 | Testing and data quality |
+| 18 | Performance and Spark internals |
+| 19 | Lakeflow Jobs; `databricks.yml` from scratch |
+| 20 | Observability and operations |
+| 21 | Deployable capstone |
 
-- Never commit tokens, passwords, client secrets, cluster IDs, or hardcoded
-  local machine paths.
-- Do not place personal catalog/schema names in public-facing content.
-- Parameterize environment-specific values.
-- Treat the repository as public.
+Direct prerequisites: `9 → 10 → … → 21`.
 
-Source: [coding standards — Security and portability](../docs/standards/coding-standards.md#security-and-portability)
+### D-022 — Security and portability
 
-The former `databricks.yml` stub with a committed workspace host was deleted
-on 2026-08-13. Learners create `databricks.yml` from scratch in Module 18.
-See [[#D-021 — 20-module advanced roadmap]].
+No committed secrets, cluster IDs, or hardcoded local paths. No personal
+catalog names in public content. Treat the repo as public. Learners create
+`databricks.yml` in Module **19** (deleted stub removed 2026-08-13).
 
-## Deferred and open decisions
+Source: [coding standards](../docs/standards/coding-standards.md)
 
-Module-number items below are **historical**. Current ownership is [[#D-021 — 20-module advanced roadmap]].
+## Open items
 
-- [x] Define Module 08 KPI column schemas in the Module 8 README (managed Delta tables).
-- [ ] Decide whether Modules 07–08 need serverless compatibility evidence.
-- [ ] Choose where to teach column- vs row-oriented files and warehouse vs
-  lake vs lakehouse concepts from `take_notes/M5.txt`.
-- [ ] Clarify Avro vs Parquet vs Delta positioning in future material.
-- [ ] Introduce reusable `src/` package structure in Module 13 or later.
-- [ ] Define the testing strategy in Module 17.
-- [ ] Expand the Databricks bundle beyond its development stub in Module 15.
+Tracked in [[progress#Backlog]] unless a new decision is needed:
 
-## D-021 — 20-module advanced roadmap
+- Optional serverless compatibility check for Modules 07–08
+- Column- vs row-oriented files; warehouse vs lake vs lakehouse placement
+- Avro vs Parquet vs Delta positioning in later modules
+- Testing strategy detail (Module 17)
 
-**Status:** Accepted for the roadmap on 2026-08-13. Phase III is a **working
-design**, not a notebook-authoring lock.
+## Known conflicts
 
-[COURSE_MODULES](../COURSE_MODULES.md) is now a 20-module required path.
-This addendum supersedes later-phase *module numbers* in earlier entries
-(for example D-008 / D-018 “Module 12” for medallion implementation, and
-the deferred `src/` / testing / bundle bullets above). Those entries stay
-as written for history.
-
-Locked ownership:
-
-- **10** — Delta on existing tables; introductory `MERGE` syntax only
-- **11** — govern existing `landing` / `processed` only
-- **12** — paper-design medallion; create nothing
-- **13** — create `bronze` / `silver` / `gold`, a new landing volume, copy
-  repo `data/raw` there, introduce `src/`; do not reuse Module 5 objects
-- **14** — production incremental `MERGE`
-- **15** — required batch Lakeflow Pipelines (no streaming / Auto Loader)
-- **16** — testing (`pytest` local = pure Python; Spark DQ in Databricks)
-- **17** — performance / AQE depth
-- **18** — Jobs; create `databricks.yml` from scratch
-- **19** — observability
-- **20** — capstone; prerequisite cell is Module 19
-
-Direct prerequisites: `9 → 10 → … → 20`.
-
-Source: [COURSE_MODULES](../COURSE_MODULES.md)
-
-## Known documentation conflicts
-
-- Module 07 personal notes ([[NB07_personal_notes]]) contain target columns
-  that conflict with the approved mappings; the BRD and mapping documents
-  prevail.
+[`take_notes/NB07_personal_notes.md`](../take_notes/NB07_personal_notes.md)
+lists columns not in approved Module 07 mappings. BRD and mapping documents
+prevail.
 
 ## Related
 
 - [[home|Vault home]]
 - [[progress|Course progress]]
-- [COURSE_MODULES](../COURSE_MODULES.md) — canonical roadmap
+- [COURSE_MODULES](../COURSE_MODULES.md)

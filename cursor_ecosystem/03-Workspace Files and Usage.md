@@ -22,8 +22,7 @@ Author in Cursor
   GitHub (source of truth)
         ↓
   Azure Databricks Git folder runs notebooks
-        ↓
-  docs/validation/                  → record what actually ran
+
   cursor_ecosystem/                 → author notes on Cursor routing
   vault/ + take_notes/              → private tracking
 ```
@@ -94,13 +93,7 @@ here**; they do not duplicate the content.
 | `permissions-and-governance.md` | Azure RBAC vs workspace permissions vs Unity Catalog privileges; “minimum privileges” pattern for module READMEs |
 | `standards-authoring.md` | Structure, language, and cross-reference conventions for standards; no lesson consumers |
 
-## 4. Runtime validation evidence (`docs/validation/`)
-
-One Markdown file per completed module (`01`–`09`). Fill these **after**
-running notebooks in Azure Databricks (compute used, pass/partial, DBR
-notes). Agents must not write this automatically.
-
-## 5. Module design (not the `.py` notebooks)
+## 4. Module design (not the `.py` notebooks)
 
 Each numbered folder has a `README.md` that owns **that module’s**
 objectives, notebook order, exercises, dataset notes, and privileges. It
@@ -118,7 +111,7 @@ Module 7 also has approved build specs (not lesson text):
 | `07 …/requirements/trip_enriched_mapping.md` | Column-level source-to-target mapping |
 | `07 …/requirements/trip_driver_assignment_mapping.md` | Same for the driver-assignment table |
 
-## 6. Cursor authoring automation (`.cursor/`)
+## 5. Cursor authoring automation (`.cursor/`)
 
 Used when writing course content in Cursor. Learners running notebooks
 in Databricks do not need these.
@@ -151,7 +144,7 @@ then run `python3 scripts/check_doc_references.py`.
 `.cursorignore` keeps binary Parquet/Avro, `uv.lock`, and `.venv/` out of
 AI context.
 
-## 7. Local Python tooling (does **not** run Spark)
+## 6. Local Python tooling (does **not** run Spark)
 
 Spark, Delta, and Unity Catalog run only in Azure Databricks.
 
@@ -168,7 +161,7 @@ Spark, Delta, and Unity Catalog run only in Azure Databricks.
 `pytest` is configured with `testpaths = ["tests"]`, but **`tests/` does
 not exist yet**.
 
-## 8. Author notes (not learner-facing)
+## 7. Author notes (not learner-facing)
 
 These folders are author-only. They are not learner notebooks and not
 normative standards.
@@ -202,7 +195,7 @@ source of truth stays outside so Git/Databricks/Cursor paths stay stable.
 |---|---|
 | `to_dos.md` | Personal author to-dos and notes |
 
-## 9. Generated / local / accidental (usually ignore)
+## 8. Generated / local / accidental (usually ignore)
 
 | Path | Usage |
 |---|---|

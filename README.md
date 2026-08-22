@@ -72,7 +72,7 @@ Local laptop (Cursor)  -->  GitHub  -->  Azure Databricks Git folder
 1. Author and review notebooks, Markdown, and code locally in Cursor.
 2. Commit and push to GitHub — the canonical remote source of truth.
 3. Azure Databricks pulls the approved version via a Git folder.
-4. Run and validate in Azure Databricks; record results in `docs/validation/`.
+4. Run and validate in Azure Databricks.
 
 Local tooling handles formatting, linting, and non-Spark checks only. Spark,
 Delta Lake, and Unity Catalog execution happens exclusively in Azure
@@ -88,7 +88,6 @@ agents.
 - Compute selection and validation order:
   `docs/standards/compute-validation-policy.md`
 - Dataset reference (schemas, join keys, physical layout): `docs/data/dataset-overview.md`
-- Author-facing runtime validation evidence: `docs/validation/`
 
 ### Local authoring setup
 

@@ -102,5 +102,4 @@ Catalog operations — that validation only happens in Azure Databricks (see
 - Identifier naming — see `docs/standards/naming-conventions.md`.
 - Notebook structure and cell formatting — see
   `docs/standards/notebook-writing.md`.
-- Compute selection and runtime evidence — see
-  `docs/standards/compute-validation-policy.md`.
+- Compute selection — see `docs/standards/compute-validation-policy.md`.

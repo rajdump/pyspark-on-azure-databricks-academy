@@ -72,14 +72,13 @@ Deeper facts are not copied into `AGENTS.md`. It names the dataset document rath
 
 **Read for facts** is the canonical home of source precedence. `vault/decisions.md` points to it instead of keeping a second copy, since `vault/` is itself context-only in that chain.
 
-Two actions remain author-owned:
+Two restrictions remain author-owned:
 
 - updating status in `COURSE_MODULES.md`
-- writing runtime validation evidence under `docs/validation/`
+- scaffolding learner notebooks only when the **Readiness precondition** in
+  `docs/standards/notebook-authoring-checklist.md` is met
 
-Agents must not perform either action as a side effect of lesson work.
-
-A third gate also lives in `AGENTS.md`: scaffold learner notebooks only when the **Readiness precondition** in `docs/standards/notebook-authoring-checklist.md` is met.
+Agents must not perform either as a side effect of lesson work.
 
 ### Cross-file section references
 

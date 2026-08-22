@@ -40,19 +40,16 @@ rules as folders.
 ```
 
 Always identify a notebook by **both** its module and its own title in
-prose, references, and validation records — never "Notebook 02" alone.
+prose and references — never "Notebook 02" alone.
 Example: "`02 - Apache Spark Architecture and PySpark.py` in
 `01 - Azure Databricks and Spark Foundations`".
 
 ## Internal documentation files
 
-Files under `docs/standards/`, `docs/data/`, and `docs/validation/` use
-kebab-case, lowercase, `.md`: e.g. `coding-standards.md`,
-`dataset-overview.md`. These are author-facing, not learner-facing, so they
-follow ordinary developer-documentation convention rather than the
-Title Case rule above. `docs/validation/` files are the one exception —
-they use the same `NN - Module Title.md` pattern as module folders, because
-they must identify a specific module unambiguously.
+Files under `docs/standards/` and `docs/data/` use kebab-case, lowercase,
+`.md`: e.g. `coding-standards.md`, `dataset-overview.md`. These are
+author-facing, not learner-facing, so they follow ordinary
+developer-documentation convention rather than the Title Case rule above.
 
 ## Cursor configuration files
 

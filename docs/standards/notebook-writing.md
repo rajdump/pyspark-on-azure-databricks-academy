@@ -122,5 +122,4 @@ list inside the notebook.
   `docs/standards/teaching-guidelines.md`.
 - Minimum-privilege documentation — see
   `docs/standards/permissions-and-governance.md`.
-- Compute selection and runtime evidence — see
-  `docs/standards/compute-validation-policy.md`.
+- Compute selection — see `docs/standards/compute-validation-policy.md`.

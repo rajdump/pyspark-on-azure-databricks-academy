@@ -1,49 +1,39 @@
 # Author vault (`vault/`)
 
-Obsidian vault for **author notes only**. Course source-of-truth files stay
-outside this folder so Cursor, slash commands, and Databricks Git paths keep
-working.
+Obsidian vault for **author navigation and decision memory**. Canonical course
+facts live outside this folder.
 
-## How to open
+## Open the vault
 
-1. In Obsidian: **Open folder as vault**
-2. Select this folder:
-   `PySpark on Azure Databricks Academy/vault`
-3. Do **not** open the repo root as the vault
+1. Obsidian → **Open folder as vault**
+2. Select `PySpark on Azure Databricks Academy/vault`
+3. Do **not** open the repository root as the vault
 
-Start from `home.md`.
+Start from [[home]].
 
-## What belongs here
+## Files in this vault
 
-| Path | Purpose |
+| File | Role |
 |---|---|
-| `home.md` | Vault dashboard |
-| `progress.md` | Course progress tracker |
-| `decisions.md` | Decision log |
-| `.obsidian/` | Obsidian app settings for this vault |
+| `home.md` | Entry dashboard — links and current snapshot |
+| `progress.md` | Roadmap position, module tracker, backlog |
+| `decisions.md` | Accepted architecture and pedagogy decisions |
+| `.obsidian/` | Obsidian settings (not course content) |
 
-Author-only Module 7 notes live outside this vault at
-[`take_notes/NB07_personal_notes.md`](../take_notes/NB07_personal_notes.md)
-(linked from progress/decisions; not a vault-local file).
+## Outside the vault
 
-## What does **not** belong here
+Link to canonical sources with relative paths — for example
+`[COURSE_MODULES](../COURSE_MODULES.md)` — rather than copying their content
+here.
 
-Do not move these into `vault/`:
+| Area | Location |
+|---|---|
+| Roadmap and module status | `COURSE_MODULES.md` |
+| Lesson design and outputs | module `README.md` |
+| Dataset contracts | `docs/data/dataset-overview.md` |
+| Authoring policy | `docs/standards/` |
+| Module 07 personal notes | `take_notes/NB07_personal_notes.md` |
 
-- `COURSE_MODULES.md`, `README.md`, `AGENTS.md`
-- `docs/` (standards, dataset, validation)
-- Module `README.md` files and learner notebooks
-- Approved Module 7 requirements (`BRD.md`, mapping docs)
-- `.cursor/` rules and slash commands
+## Wikilinks
 
-Link to those files with relative markdown links such as
-`[COURSE_MODULES](../COURSE_MODULES.md)`.
-
-## Intra-vault links
-
-Use short wikilinks between author notes:
-
-- `[[home]]`
-- `[[progress]]`
-- `[[decisions]]`
-- `[[NB07_personal_notes]]`
+- `[[home]]`, `[[progress]]`, `[[decisions]]`

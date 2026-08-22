@@ -94,5 +94,5 @@ A module README is design-complete only when all of these pass:
 - Code, security, and naming rules — see
   `docs/standards/coding-standards.md` and
   `docs/standards/naming-conventions.md`.
-- Runtime validation and evidence — see
+- Runtime compute selection and Azure Databricks testing — see
   `docs/standards/compute-validation-policy.md`.

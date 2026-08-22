@@ -28,8 +28,7 @@ need. The refactor introduces command-specific manifests and scoped reads
 while preserving canonical ownership and authoring safeguards.
 
 This work optimizes declared context routing. It does not change course
-content, dataset contracts, notebook content, roadmap status, or runtime
-validation evidence.
+content, dataset contracts, notebook content, or roadmap status.
 
 ## Measurement method
 
@@ -143,7 +142,8 @@ Static coverage confirms that the routing still reaches:
 - Module 5 setup/cleanup parameterization and safe author defaults
 - Module notebook sequence and leaked-evidence checks
 - Unfinished-scaffold, hidden-state, and intentional-error spot checks
-- Separation between Cursor authoring review and Databricks runtime evidence
+- Separation between Cursor authoring review and Azure Databricks runtime
+  testing
 
 These safeguards passed static assertions and isolated specification
 scenarios. They do not prove Cursor's internal attachment behavior.
@@ -156,8 +156,7 @@ scenarios. They do not prove Cursor's internal attachment behavior.
 - IDE lint checks
 - File and section reference review
 - Canonical-owner and requirement-coverage review
-- Confirmation that dataset, notebooks, roadmap, and validation evidence
-  were not edited
+- Confirmation that dataset, notebooks, and roadmap were not edited
 
 ## Behavioral specification testing completed
 
@@ -175,7 +174,7 @@ Twenty-five isolated scenarios passed:
   boundary.
 
 Tests ran in a disposable worktree. Fixtures were removed, no commits were
-created, and course roadmap, dataset, validation evidence, and real learner
+created, and course roadmap, dataset, and real learner
 notebooks remained unchanged. No reusable verification harness from these
 tests is committed in this repository.
 
@@ -192,4 +191,4 @@ chats with controlled open files. Record which files and sections are read,
 whether glob rules attach, and whether scoped sources are systematically
 opened in full. Treat systematic whole-file expansion as an efficiency
 regression, not a correctness failure. Keep these results separate from
-Azure Databricks runtime evidence.
+Azure Databricks runtime testing.

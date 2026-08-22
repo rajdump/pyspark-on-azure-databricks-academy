@@ -162,8 +162,8 @@ comparison.
   and that the immediately prior notebook is a full lesson.
 
 Then review the target notebook against the [[#Full-lesson bar]] and
-[[#Validation gate checks]]. Validation is read-only and does not produce
-runtime evidence.
+[[#Validation gate checks]]. Validation is read-only and does not run
+notebooks in Azure Databricks.
 
 ### Module-review manifest (`/review-module`)
 
@@ -188,7 +188,7 @@ Read:
 9. The sections selected by [[#Dataset scope]].
 
 Then apply the [[#Module-review bar]] below. Module review is read-only
-and does not produce runtime evidence.
+and does not run notebooks in Azure Databricks.
 
 ### Conditional reads
 
@@ -351,7 +351,7 @@ apply. A module passes `/review-module` only when all checks below pass:
 - `/validate-notebook` applies per-notebook authoring checks without editing.
 - `/review-module` applies the Module-review bar after all planned notebooks
   pass `/validate-notebook`; it does not repeat each Full-lesson review.
-- Runtime validation and author-recorded evidence remain outside all four
+- Runtime validation in Azure Databricks remains outside all four
   commands.
 
 ## Workflow and validation boundary
@@ -370,4 +370,4 @@ replace validating each notebook.
 The Scaffold and Full-lesson bars cover authoring quality only. Runtime
 validation is separate and follows
 `docs/standards/compute-validation-policy.md`. Notebook commands do not
-commit, push, pull, run Databricks, or record runtime results.
+commit, push, pull, or run Databricks.

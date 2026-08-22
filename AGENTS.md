@@ -22,8 +22,6 @@ Do not perform these unless the author explicitly asks:
 
 - Changing module status in `COURSE_MODULES.md`, including as a side effect
   of lesson work.
-- Editing `docs/validation/`, which records only Azure Databricks output the
-  author supplied. Never infer or mark a runtime outcome.
 - Scaffolding a new learner notebook before the [[Readiness precondition]] in
   `docs/standards/notebook-authoring-checklist.md` is met.
 
@@ -42,8 +40,7 @@ Read these for course facts. When they disagree, the earlier source wins.
 5. `docs/standards/` — authoring policy and pedagogy; read
    `docs/standards/notebook-authoring-checklist.md` for command read
    manifests and acceptance bars
-6. `docs/validation/` — recorded runtime evidence
-7. `vault/`, `take_notes/`, and dated root notes — context only
+6. `vault/`, `take_notes/`, and dated root notes — context only
 
 Outside that chain, the root `README.md` owns the learner overview and the
 technical baseline (runtime, Spark and Python versions, governance,

@@ -38,5 +38,4 @@ Boundaries:
 - This command does not perform runtime validation in Azure Databricks.
 
 Next: the next planned notebook. After the final one passes, `/review-module`,
-then runtime validation in Azure Databricks with evidence recorded per
-`docs/standards/compute-validation-policy.md`.
+then runtime validation in Azure Databricks.
