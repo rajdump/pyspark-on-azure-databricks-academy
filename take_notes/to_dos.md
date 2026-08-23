@@ -65,3 +65,46 @@ For each file, answer:
 - Which commands or rules consume it?
 - What does it explicitly not cover?
 - What practical behavior does it change?
+
+## August 23rd 2026
+
+### Companion site for theory (launch)
+
+Databricks notebooks stay labs: code plus short cell-level explanation. Longer
+theory (data-lake drawbacks, warehouse vs lake vs lakehouse, ACID overview,
+governance ideas) does not belong as encyclopedia markdown in the notebooks.
+
+When launching, put that theory on a companion site and link it from the
+matching notebook (one “read this first” link at the top — not a URL on every
+cell).
+
+Prefer a site **built from this repo** (GitHub Pages, MkDocs, or Docusaurus)
+so the page version ships with the notebook version, PRs can review both, and
+links do not rot on a disconnected Notion or marketing site. Notion/PPT stay
+fine for drafting or a live talk.
+
+Split by topic (not one mega article). Map pages to modules (e.g. lake
+limitations → Module 10 / 01; ACID → 11; governance → 12; medallion → 13).
+Do not put streaming / Auto Loader on the site while the course is
+batch-only. Dataset contracts (tables, paths, row counts) stay in
+`docs/data/dataset-overview.md` and the notebooks — the site explains ideas,
+not those facts.
+
+### Cover limitations: warehouse, data lake, and Parquet → Delta Lake
+
+Theory track should explain **why** teams move to Delta, not only how `UPDATE`
+works in a notebook:
+
+- **Data warehouse** limitations (cost, rigidity, weak fit for raw /
+  semi-structured files)
+- **Data lake** limitations (files without a table log: no reliable row
+  change, snapshot, versioning, or fine-grained governance)
+- **Parquet** as lake storage: columnar and useful, but a Parquet *folder*
+  is still not a table (rewrite-to-change-a-row, no `_delta_log`)
+- **Delta Lake** as the transformation: same Parquet data files plus a
+  transaction log — lakehouse table behavior on lake storage
+
+Keep this on the companion site (and/or a short lecture). Module 10 notebook
+01 stays the lab proof of one gap (Parquet overwrite vs Delta `UPDATE`).
+Later modules still own ACID, governance, and medallion — do not dump those
+into notebook 01.
