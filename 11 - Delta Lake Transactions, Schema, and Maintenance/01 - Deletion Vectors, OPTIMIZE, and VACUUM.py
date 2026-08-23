@@ -39,27 +39,9 @@
 
 from decimal import Decimal
 
-from pyspark.sql.types import (
-    DecimalType,
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-)
-
 maint_path = (
     "/Volumes/rideshare_dev/processed/output_files/practice/"
     "fare_maint_lab/"
-)
-
-extract_schema = StructType(
-    [
-        StructField("trip_id", LongType(), False),
-        StructField("service_type", StringType(), False),
-        StructField("payment_method", StringType(), False),
-        StructField("base_fare_amount", DecimalType(10, 2), False),
-        StructField("tip_amount", DecimalType(10, 2), False),
-    ]
 )
 
 trips_extract = spark.createDataFrame(
@@ -69,7 +51,8 @@ trips_extract = spark.createDataFrame(
         (1003, "PREMIUM", "card", Decimal("40.00"), Decimal("6.00")),
         (1004, "STANDARD", "wallet", Decimal("25.00"), Decimal("2.50")),
     ],
-    schema=extract_schema,
+    "trip_id LONG, service_type STRING, payment_method STRING, "
+    "base_fare_amount DECIMAL(10, 2), tip_amount DECIMAL(10, 2)",
 )
 
 
