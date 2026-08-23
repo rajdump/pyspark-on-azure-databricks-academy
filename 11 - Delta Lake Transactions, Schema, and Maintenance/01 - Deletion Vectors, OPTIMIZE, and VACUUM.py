@@ -31,9 +31,8 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Setup
-# MAGIC Same four-row extract as Module 10. Reset the folder. Deletion vectors
-# MAGIC **off**. Ignore `.crc` files in listings.
+# MAGIC ## 0) Baseline
+# MAGIC Same four-row extract as Module 10. Deletion vectors **off**. One data file.
 
 # COMMAND ----------
 
@@ -55,20 +54,6 @@ trips_extract = spark.createDataFrame(
     "base_fare_amount DECIMAL(10, 2), tip_amount DECIMAL(10, 2)",
 )
 
-
-def show_data_files(folder: str) -> None:
-    listing = dbutils.fs.ls(folder)
-    data_files = [
-        item
-        for item in listing
-        if not item.name.endswith(".crc") and not item.name.startswith("_")
-    ]
-    print(f"data file count = {len(data_files)}")
-    for item in data_files:
-        print(f"{item.name}  {item.size} bytes")
-    display(listing)
-
-
 dbutils.fs.rm(maint_path, True)
 (
     trips_extract.write.format("delta")
@@ -78,31 +63,14 @@ dbutils.fs.rm(maint_path, True)
 )
 
 print(f"maint_path = {maint_path}")
-print("rows in extract =", trips_extract.count())
-display(trips_extract.orderBy("trip_id"))
+display(dbutils.fs.ls(maint_path))
+display(spark.read.format("delta").load(maint_path).orderBy("trip_id"))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Baseline — one data file
-# MAGIC Note the file **size**. You should see **one** data file and **4** rows.
-# MAGIC Trip **1003** tip is **6.00**.
-
-# COMMAND ----------
-
-print("After setup (deletion vectors off):")
-show_data_files(maint_path)
-baseline = spark.read.format("delta").load(maint_path)
-print(f"rows = {baseline.count()} (expect 4)")
-display(baseline.orderBy("trip_id"))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 1) `UPDATE` without deletion vectors
-# MAGIC You already did this kind of `UPDATE` in Module 10. One change **rewrites
-# MAGIC the whole file**. The leftover old file on disk is expected. Here, look at
-# MAGIC the **size** of the new file.
+# MAGIC ## 1) Without deletion vectors
+# MAGIC One row `UPDATE` rewrites the whole file.
 
 # COMMAND ----------
 
@@ -113,22 +81,14 @@ spark.sql(
     WHERE trip_id = 1003
     """
 )
-
-# COMMAND ----------
-
-print("After UPDATE 1003 → 10.00 (deletion vectors off):")
-show_data_files(maint_path)
-after_full_rewrite = spark.read.format("delta").load(maint_path)
-print(f"rows = {after_full_rewrite.count()} (expect 4)")
-display(after_full_rewrite.orderBy("trip_id"))
+display(dbutils.fs.ls(maint_path))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2) Same kind of `UPDATE` with deletion vectors on
-# MAGIC Turn deletion vectors **on**. Change trip **1003** again. Spark leaves the
-# MAGIC existing file in place, marks the old row, and writes a **small** new
-# MAGIC file for the new tip. Compare that size to step 1.
+# MAGIC ## 2) With deletion vectors
+# MAGIC Turn them on and `UPDATE` the same trip. The existing data file stays. A
+# MAGIC small new file holds the change.
 
 # COMMAND ----------
 
@@ -138,9 +98,6 @@ spark.sql(
     SET TBLPROPERTIES ('delta.enableDeletionVectors' = 'true')
     """
 )
-
-# COMMAND ----------
-
 spark.sql(
     f"""
     UPDATE delta.`{maint_path}`
@@ -148,22 +105,13 @@ spark.sql(
     WHERE trip_id = 1003
     """
 )
-
-# COMMAND ----------
-
-print("After UPDATE 1003 → 12.00 (deletion vectors on):")
-show_data_files(maint_path)
-after_dv = spark.read.format("delta").load(maint_path)
-print(f"rows = {after_dv.count()} (expect 4)")
-display(after_dv.orderBy("trip_id"))
+display(dbutils.fs.ls(maint_path))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3) Keep updating — more live files
-# MAGIC Two more fare corrections. Each `UPDATE` can add another small file. The
-# MAGIC table **still needs all of them**. Count the files — this is the small-file
-# MAGIC problem.
+# MAGIC ## 3) Repeated changes leave live files
+# MAGIC Two more `UPDATE`s. The table still needs every file you see.
 
 # COMMAND ----------
 
@@ -181,21 +129,14 @@ spark.sql(
     WHERE trip_id = 1004
     """
 )
-
-# COMMAND ----------
-
-print("After UPDATE 1001 → 4.00 and 1004 → 3.50:")
-show_data_files(maint_path)
-after_more = spark.read.format("delta").load(maint_path)
-print(f"rows = {after_more.count()} (expect 4)")
-display(after_more.orderBy("trip_id"))
+display(dbutils.fs.ls(maint_path))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4) `VACUUM` cannot delete files the table still uses
-# MAGIC Those small files are the current table. `VACUUM` will not remove them —
-# MAGIC even with `RETAIN 0`.
+# MAGIC ## 4) `VACUUM` is not compaction
+# MAGIC If there are many small files, `VACUUM` is not the fix. It cannot remove
+# MAGIC files the current table still uses.
 
 # COMMAND ----------
 
@@ -203,83 +144,39 @@ spark.conf.set(
     "spark.databricks.delta.retentionDurationCheck.enabled", "false"
 )
 spark.sql(f"VACUUM delta.`{maint_path}` RETAIN 0 HOURS")
-
-# COMMAND ----------
-
-print("After VACUUM (before OPTIMIZE):")
-show_data_files(maint_path)
+display(dbutils.fs.ls(maint_path))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5) `OPTIMIZE` merges live small files
-# MAGIC `OPTIMIZE` reads the live small files and writes fewer larger files (on
-# MAGIC this extract, often **one**). The table now points at that new file. The
-# MAGIC old small files are no longer the current table, but they may still sit
-# MAGIC on disk.
+# MAGIC ## 5) `OPTIMIZE` fixes the live layout
+# MAGIC `OPTIMIZE` rewrites the current files into fewer files.
 
 # COMMAND ----------
 
-# One-row history lookup for the proof cell after VACUUM; this does not scale.
-pre_optimize_version = (
-    spark.sql(f"DESCRIBE HISTORY delta.`{maint_path}`")
-    .selectExpr("max(version) AS v")
-    .collect()[0]["v"]
-)
-print(f"version before OPTIMIZE = {pre_optimize_version}")
 spark.sql(f"OPTIMIZE delta.`{maint_path}`")
-
-# COMMAND ----------
-
-print("After OPTIMIZE:")
-show_data_files(maint_path)
-after_optimize = spark.read.format("delta").load(maint_path)
-print(f"rows = {after_optimize.count()} (expect 4)")
-display(after_optimize.orderBy("trip_id"))
+display(dbutils.fs.ls(maint_path))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 6) `VACUUM` after `OPTIMIZE`
-# MAGIC Module 10 used **7** days. This lab uses **`RETAIN 0 HOURS`** so you see
-# MAGIC leftover files disappear in this notebook. Time travel to those versions
-# MAGIC is lost **on purpose**. Never use `RETAIN 0` on a real table.
+# MAGIC ## 6) `VACUUM` removes obsolete files
+# MAGIC Those replaced files are no longer the current table, so `VACUUM` can
+# MAGIC delete them. This lab uses `RETAIN 0 HOURS` so you see it now. Do not do
+# MAGIC that on a real table — versions that needed those files stop working.
 
 # COMMAND ----------
 
 spark.sql(f"VACUUM delta.`{maint_path}` RETAIN 0 HOURS")
-
-# COMMAND ----------
-
-print("After VACUUM (after OPTIMIZE):")
-show_data_files(maint_path)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC You used `VERSION AS OF` in Module 10. The next cell reads the version
-# MAGIC from **before** `OPTIMIZE`. It is expected to **fail** — those files are
-# MAGIC gone.
-# MAGIC
-# MAGIC > **Warning:** `RETAIN 0 HOURS` is for this lab only.
-
-# COMMAND ----------
-
-spark.sql(
-    f"""
-    SELECT * FROM delta.`{maint_path}`
-    VERSION AS OF {pre_optimize_version}
-    """
-)  # Expected: SparkException
+display(dbutils.fs.ls(maint_path))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Without deletion vectors, one `UPDATE` **rewrites the whole file**. With
-# MAGIC   them on, the same kind of change writes a **small** new file
-# MAGIC - `VACUUM` cannot delete files the **current** table still uses
-# MAGIC - `OPTIMIZE` merges live small files; `VACUUM` then deletes the leftovers
+# MAGIC - **Deletion vectors** → cheaper row-level changes
+# MAGIC - **`OPTIMIZE`** → improve current file layout
+# MAGIC - **`VACUUM`** → remove obsolete files
 # MAGIC
 # MAGIC **Next:** the rest of Module 11 (not in this notebook).

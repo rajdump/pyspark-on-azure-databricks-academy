@@ -12,13 +12,10 @@ are not designed yet.
 
 By the end of notebook **01**, you'll be able to:
 
-- Show that one `UPDATE` without deletion vectors rewrites the whole data
-  file, and that the same kind of `UPDATE` with deletion vectors on writes a
-  small new file instead
-- Show that `VACUUM` cannot remove files the current table still uses
-- Compact live small files with `OPTIMIZE`, then `VACUUM` unused files
-  (`RETAIN 0 HOURS` in this lab only — that drops time travel to those
-  versions on purpose)
+- Compare how an `UPDATE` behaves with and without **deletion vectors**
+- Show that `VACUUM` removes only files that are no longer used by the table
+- Compact active files with `OPTIMIZE`, then remove eligible old files with
+  `VACUUM`
 
 This notebook does not teach ACID, schema evolution, `MERGE`, liquid
 clustering, Change Data Feed, or a table-properties tour. Grants are
@@ -61,7 +58,7 @@ tip_amount decimal(10,2)
 |---|---|---|---:|---:|---|
 | 1001 | STANDARD | card | 20.00 | 3.00 | Step 3: tip → **4.00** |
 | 1002 | SHARED | cash | 15.00 | 0.00 | Unchanged |
-| 1003 | PREMIUM | card | 40.00 | 6.00 | Step 1: tip → **10.00**; step 2: tip → **12.00** |
+| 1003 | PREMIUM | card | 40.00 | 6.00 | Step 1: **6.00 → 10.00** (DV off); step 2: **12.00** (DV on) |
 | 1004 | STANDARD | wallet | 25.00 | 2.50 | Step 3: tip → **3.50** |
 
 First write: deletion vectors **off**. Ignore `.crc` files in listings.
@@ -89,7 +86,7 @@ One specified notebook so far. **No exercise.**
 
 | # | Notebook | Focus |
 |---|---|---|
-| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | Volume folder `fare_maint_lab/` (do not use Module 10 folders). Setup: DV **off**, four rows, **one** data file, note size. Step 1: `UPDATE` **1003** **6.00 → 10.00** without DV — new file is a full rewrite; show size (Module 10 recap; leftover file is expected). Step 2: enable DV; `UPDATE` **1003** **10.00 → 12.00** — existing file stays; new file is small; show size. Step 3: `UPDATE` **1001** **3.00 → 4.00** and **1004** **2.50 → 3.50** — many live small files the table still needs. Step 4: `VACUUM RETAIN 0` — those files stay (`VACUUM` cannot delete files the table still uses). Step 5: `OPTIMIZE` — fewer larger files (often **one**); old small files off the current table but may still sit on disk. Step 6: `VACUUM RETAIN 0 HOURS` (session retention check off, set once before step 4) — leftovers gone; time travel to those versions is lost **on purpose**; never `RETAIN 0` on a real table. Proof: `VERSION AS OF` a version from before `OPTIMIZE` should fail (callback to Module 10, not a new lesson). Ignore `.crc`. Fence: no `MERGE`, liquid clustering, TBLPROPERTIES tour, CDF, Predictive Optimization demo, HISTORY walk, log JSON, 30-day/7-day diagram (one sentence: Module 10 used 7 days; this lab uses 0 so you see it now). **No exercise** |
+| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | Volume folder `fare_maint_lab/`. **0** baseline: DV off, four rows, one file, `ls`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `ls` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `ls` (small new file; existing file stays). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `ls` (multiple **live** files). **4** `VACUUM RETAIN 0`, `ls` (live files stay — not compaction). **5** `OPTIMIZE`, `ls` (fewer live files). **6** `VACUUM RETAIN 0` (session check off; lab only), `ls` (obsolete files gone; time travel that needed them stops). Fence: no helper, no HISTORY/`VERSION AS OF` demo, no `MERGE`. **No exercise** |
 
 ## Minimum privileges required
 
