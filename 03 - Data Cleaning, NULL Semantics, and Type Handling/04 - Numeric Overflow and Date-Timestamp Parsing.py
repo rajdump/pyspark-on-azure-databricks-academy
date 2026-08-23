@@ -15,6 +15,8 @@
 # MAGIC   aggregation overflow should return **`NULL`** instead of raising
 # MAGIC - Parse text into **`date`** and **`timestamp`** values with
 # MAGIC   **`to_date`** / **`to_timestamp`** and format patterns
+# MAGIC - Check **`spark.sql.session.timeZone`** and set it when the project
+# MAGIC   needs a specific timezone
 # MAGIC - Use **`try_to_date`** / **`try_to_timestamp`** for invalid source values
 # MAGIC - Distinguish an **invalid source value** (data problem) from an
 # MAGIC   **invalid format pattern** (code problem)
@@ -299,6 +301,30 @@ parsed.show(truncate=False)
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Session timezone
+# MAGIC
+# MAGIC Spark uses a **session timezone** when working with timestamps.
+# MAGIC
+# MAGIC If the source value does not include timezone information, such as
+# MAGIC **`2026-07-16 14:00:00`**, Spark uses the current session timezone to
+# MAGIC interpret that value.
+# MAGIC
+# MAGIC First, check which timezone the Spark session is using. If the project
+# MAGIC requires a specific timezone, set it explicitly before processing
+# MAGIC timestamps.
+
+# COMMAND ----------
+
+print(spark.conf.get("spark.sql.session.timeZone"))  # noqa: F821
+
+spark.conf.set("spark.sql.session.timeZone", "Asia/Kolkata")  # noqa: F821
+print(spark.conf.get("spark.sql.session.timeZone"))  # noqa: F821
+
+spark.conf.set("spark.sql.session.timeZone", "UTC")  # noqa: F821
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Return `NULL` for invalid timestamps
 # MAGIC
 # MAGIC Malformed **`trip_date`** or out-of-range **`hour_of_day`** produces text
@@ -523,6 +549,8 @@ operations_review.show(truncate=False)
 # MAGIC   **`NULL`** instead of stopping the aggregation
 # MAGIC - **Date/timestamp parsing** — **`to_date`** / **`to_timestamp`** with
 # MAGIC   explicit patterns; **`try_to_*`** for bad source text
+# MAGIC - **Session timezone** — check **`spark.sql.session.timeZone`**; set it
+# MAGIC   before parsing timestamp text that has no zone
 # MAGIC - **Bad data vs bad pattern** — fix patterns in code; use **`try_*`** for
 # MAGIC   bad source values
 # MAGIC - **Review output** — keep source columns beside safe results; split
