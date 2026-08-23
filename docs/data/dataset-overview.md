@@ -5,7 +5,7 @@ counts, Volume paths, and Unity Catalog object names.
 
 Explainer: [`dataset-guide.md`](dataset-guide.md). Lesson design and
 privileges: each module `README.md`.
-
+  
 ## Core data model
 
 Four core tables. Modules 1–4 build small in-memory DataFrames on these
@@ -96,7 +96,7 @@ trips_assigned  repeated trip_id list
 
 **5** lands files → **6** curated Parquet → **7** managed Delta → **8** KPI
 tables → **9** Spark SQL reread (no durable writes) → **10** isolated Delta
-labs (does not mutate pipeline tables).
+labs → **11** isolated Delta labs (does not mutate pipeline tables).
 
 `…/` in the tables below expands from these Volume roots (also
 [Path patterns](#path-patterns)):
@@ -329,6 +329,21 @@ path DML). Notebook **03** `CREATE` uses that `external-tables` folder only
 leaves those files. `DROP CATALOG CASCADE` drops the Unity Catalog names; it
 does not by itself delete that ADLS folder.
 
+### Module 11 — Delta Lake Transactions, Schema, and Maintenance
+
+**Reads / mutates:** none of `trip_enriched`, the KPI tables, or `curated/`.
+**Writes:** isolated lab folder below.
+[Module 11 README](../../11%20-%20Delta%20Lake%20Transactions%2C%20Schema%2C%20and%20Maintenance/README.md)
+(extract, path DML, and cleanup). Notebooks **02–04** are not designed yet.
+
+| Object | Location |
+|---|---|
+| `fare_maint_lab/` | `/Volumes/rideshare_dev/processed/output_files/practice/fare_maint_lab/` |
+
+Notebook **01** uses a Volume path under `practice/` (`ls` / `.save` / path
+DML). No `CREATE TABLE` at a Volume path. Module 5 `99` Level 1 clears
+`practice/` (including this folder).
+
 ## Unity Catalog platform reference
 
 ### UC objects
@@ -376,7 +391,7 @@ first write.
 | Kind | Destination |
 |---|---|
 | Landing files | `…/landing/source_files/{dataset}/` |
-| Practice files (Module 5 teaching writes; Module 10 notebooks 01–02) | `…/practice/{output_name}/` |
+| Practice files (Module 5 teaching writes; Module 10 notebooks 01–02; Module 11 notebook 01) | `…/practice/{output_name}/` |
 | Curated Parquet (Module 6 writes; Module 7 reads) | `…/curated/{output_name}/` |
 | Pipeline managed tables | `rideshare_dev.processed` — [Managed tables](#managed-tables) |
 | External table `LOCATION` (Module 10 notebook 03 only) | `{url}/external-tables/…` |
@@ -387,5 +402,6 @@ first write.
   [`dataset-guide.md`](dataset-guide.md)
 - KPI column formulas — Module 8 README (Paths and outputs)
 - Module 10 extract rows and lab DDL — Module 10 README
+- Module 11 notebook 01 extract and tip mutations — Module 11 README
 - Privileges — each module README
 - Medallion `bronze` / `silver` / `gold` — Modules 13–14
