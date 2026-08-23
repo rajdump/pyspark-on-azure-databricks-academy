@@ -2,20 +2,18 @@
 # MAGIC %md
 # MAGIC # 01 - Deletion Vectors, OPTIMIZE, and VACUUM
 # MAGIC
-# MAGIC Module 10 showed how a one-row fare `UPDATE` can leave old data files
-# MAGIC behind.
+# MAGIC Module 10 showed how a one-row fare `UPDATE` can leave old data files behind.
 # MAGIC
 # MAGIC This notebook introduces **deletion vectors**, then uses **`OPTIMIZE`** to
-# MAGIC improve the active file layout and **`VACUUM`** to remove old files that
-# MAGIC are no longer needed.
+# MAGIC improve the active file layout and **`VACUUM`** to remove old files that are
+# MAGIC no longer needed.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Compare how an `UPDATE` behaves with and without **deletion vectors**
-# MAGIC - Show that `VACUUM` removes only files that are no longer used by the
-# MAGIC   table
-# MAGIC - Compact active files with `OPTIMIZE`, then remove eligible old files
-# MAGIC   with `VACUUM`
+# MAGIC - Show that `VACUUM` removes only files that are no longer used by the table
+# MAGIC - Compact active files with `OPTIMIZE`, then remove eligible old files with
+# MAGIC   `VACUUM`
 # MAGIC
 # MAGIC **Reads:** none of the 100-row source files or teaching tables
 # MAGIC (`trip_enriched`, KPIs, `curated/`)
