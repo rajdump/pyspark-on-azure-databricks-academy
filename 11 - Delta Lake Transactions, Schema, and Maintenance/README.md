@@ -29,7 +29,7 @@ Complete Module 10 notebooks **`01`–`04`**. You need the Module 5 platform
 | Asset | Notes | Source |
 |---|---|---|
 | Catalog `rideshare_dev`; schema `processed` | Course catalog | Module 5 `01 - Unity Catalog Volumes and Data Landing.py` |
-| Volume `rideshare_dev.processed.output_files` | 01 practice folder | Module 5 `01 - Unity Catalog Volumes and Data Landing.py` |
+| External location `el_rideshare_dev` | 01 table `LOCATION` | Module 5 `01 - Unity Catalog Volumes and Data Landing.py` |
 
 Recall Module 10: `UPDATE` can leave extra files on disk; history is kept
 about **30** days; data files become eligible for `VACUUM` after **7** days;
@@ -67,18 +67,21 @@ First write: deletion vectors **off**. Ignore `.crc` files in listings.
 
 Object location:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
-(Module 11 — Delta Lake Transactions, Schema, and Maintenance).
+(Module 11 — Delta Lake Transactions, Schema, and Maintenance). `{url}` is
+the `url` column from `DESCRIBE EXTERNAL LOCATION el_rideshare_dev` (strip
+a trailing slash).
 
 | Notebook | Object |
 |---|---|
-| 01 | `fare_maint_lab/` at `/Volumes/rideshare_dev/processed/output_files/practice/fare_maint_lab/` |
+| 01 | `rideshare_dev.processed.fare_maint_lab` at `{url}/external-tables/fare_maint_lab` |
 
-No `saveAsTable`. Path DML on `` delta.`<path>` ``. Bound paths use
-`spark.sql`; `%sql` only for fixed names.
+External table (not a Volume path). Table DML on the catalog name. Bound
+`LOCATION` uses `spark.sql`; `%sql` only for fixed names. Do not `CREATE
+TABLE` at a Volume path.
 
-**Cleanup:** Notebook 01 setup `rm`s `fare_maint_lab/`. Module 5
-`99 - Rideshare Project Cleanup and Reset.py` Level 1 clears `practice/`
-(including this folder).
+**Cleanup:** Notebook 01 setup `DROP`s the table and `rm`s the `LOCATION`
+folder. `DROP TABLE` does not delete those files. Module 5 `99` Level 1
+does not clear `external-tables/` (same as Module 10 notebook 03).
 
 ## Notebooks
 
@@ -86,7 +89,7 @@ One specified notebook so far. **No exercise.**
 
 | # | Notebook | Focus |
 |---|---|---|
-| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | Volume folder `fare_maint_lab/`. **0** baseline: DV off, four rows, one file, `ls`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `ls` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `ls` (small new file; existing file stays). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `ls` (multiple **live** files). **4** `VACUUM RETAIN 0`, `ls` (live files stay — not compaction). **5** `OPTIMIZE`, `ls` (fewer live files). **6** `VACUUM RETAIN 0` (session check off; lab only), `ls` (obsolete files gone; time travel that needed them stops). Fence: no helper, no HISTORY/`VERSION AS OF` demo, no `MERGE`. **No exercise** |
+| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | External table `fare_maint_lab`. **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` (multiple **live** files). **4** `VACUUM RETAIN 0 HOURS`, `LIST` (live files stay — not compaction). **5** `OPTIMIZE`, `LIST` (fewer live files). **6** `VACUUM RETAIN 0 HOURS` (session check off; lab only), `LIST` (obsolete files gone). Fence: no helper, no HISTORY/`VERSION AS OF` demo, no `MERGE`. **No exercise** |
 
 ## Minimum privileges required
 
@@ -94,6 +97,9 @@ One specified notebook so far. **No exercise.**
   **DROP** here — Module 5 already created those objects):
   - **`USE CATALOG`** on **`rideshare_dev`**
   - **`USE SCHEMA`** on **`rideshare_dev.processed`**
-  - **`READ VOLUME`** / **`WRITE VOLUME`** on
-    **`rideshare_dev.processed.output_files`**
+  - **`CREATE TABLE`** on **`rideshare_dev.processed`**
+  - **`CREATE EXTERNAL TABLE`**, **`READ FILES`**, and **`WRITE FILES`**
+    on **`el_rideshare_dev`**
+  - Table owner **`SELECT`** / **`MODIFY`** on
+    **`rideshare_dev.processed.fare_maint_lab`**
 - Workspace: **`CAN ATTACH TO`** (or **`CAN RESTART`**) on the compute used here
