@@ -220,8 +220,7 @@ display(delta_trips.orderBy("trip_id"))
 # MAGIC Correct trip **1003** with `UPDATE` on `` delta.`<path>` ``. No
 # MAGIC `saveAsTable`.
 # MAGIC
-# MAGIC Delta does not edit a row inside an existing Parquet file. It records the
-# MAGIC change in `_delta_log`.
+# MAGIC Delta does not modify an existing Parquet file directly. Instead, it creates a new Parquet file that contains the updated rows. The changes are recorded in the `_delta_log`, which marks the new file as part of the current table state. While the old file may still be stored and show up when listing the contents, Delta no longer uses it for the current version.
 
 # COMMAND ----------
 
@@ -251,8 +250,7 @@ display(delta_after.orderBy("trip_id"))
 # MAGIC %md
 # MAGIC ## Glance at files
 # MAGIC
-# MAGIC `ls` data files and `_delta_log` (more than one JSON after `UPDATE`).
-# MAGIC Data is still Parquet; leftover files may remain.
+# MAGIC After an UPDATE, the `ls` command may display multiple Parquet data files and several JSON commit files in the `_delta_log` directory. The data continues to be stored in Parquet format, but Delta uses the transaction log to identify which data files are part of the current table version, rather than reading every Parquet file in the folder. Older files may still be stored even if they are no longer part of the current table state.
 
 # COMMAND ----------
 
@@ -320,10 +318,11 @@ display(dbutils.fs.ls(f"{delta_path}_delta_log"))
 # MAGIC
 # MAGIC - Parquet row fixes are **read → `when` → overwrite**. There is no
 # MAGIC   transactional `UPDATE`, and a failed overwrite can leave a bad folder
-# MAGIC - The same four-row extract as Delta accepts path `UPDATE`; `_delta_log`
-# MAGIC   records the change next to Parquet data files
+# MAGIC - A Delta UPDATE does not modify the existing Parquet file in place. It writes a new Parquet file, and _delta_log records which files belong to the current table state. This is handled transactionally.
+# MAGIC - Plain Parquet has no UPDATE. You must rewrite or overwrite the data yourself.
 # MAGIC - Volume folders make `ls` easy; managed tables such as `trip_enriched`
 # MAGIC   are also Delta under `abfss://`
+# MAGIC - How to make a one-row change without rewriting the whole data file is Module 11.
 # MAGIC
 # MAGIC **Next:** `02 - Understanding the Delta Transaction Log` walks
 # MAGIC `_delta_log` commit by commit.
