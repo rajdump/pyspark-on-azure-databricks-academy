@@ -11,6 +11,11 @@
 # MAGIC A deletion vector marks a replaced row so Spark can skip rewriting the
 # MAGIC whole Parquet file.
 # MAGIC
+# MAGIC Auto-compaction: After a DML operation completes, automatic compaction may
+# MAGIC run on the cluster. It can combine eligible small files and rewrite files
+# MAGIC containing deletion vectors without requiring you to execute the `OPTIMIZE`
+# MAGIC command explicitly.
+# MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Compare how an `UPDATE` behaves with and without **deletion vectors**
@@ -41,6 +46,9 @@
 # MAGIC Then list the table folder and note the Parquet file size.
 # MAGIC
 # MAGIC At this point, the current table data is stored in **one Parquet file**.
+# MAGIC
+# MAGIC This lab turns auto-compaction off so each `LIST` matches the cell you just
+# MAGIC ran.
 
 # COMMAND ----------
 
@@ -67,7 +75,10 @@ spark.sql(
     )
     USING DELTA
     LOCATION '{lab_path}'
-    TBLPROPERTIES ('delta.enableDeletionVectors' = 'false')
+    TBLPROPERTIES (
+      'delta.enableDeletionVectors' = 'false',
+      'delta.autoOptimize.autoCompact' = 'false'
+    )
     """
 )
 spark.sql(
