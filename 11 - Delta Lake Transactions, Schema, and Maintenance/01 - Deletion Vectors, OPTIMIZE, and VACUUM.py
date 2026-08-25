@@ -165,6 +165,8 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC %md
 # MAGIC ## Step 4 — Run VACUUM
 # MAGIC
+# MAGIC We manually disabled the retention safety check for the current Spark session so that Delta allows a VACUUM retention period shorter than the default safety threshold.
+# MAGIC
 # MAGIC Run `VACUUM RETAIN 0 HOURS`, then list the folder again.
 # MAGIC
 # MAGIC `VACUUM` does **not** combine small files. It removes old files only when they are no longer needed and have passed the retention period.
