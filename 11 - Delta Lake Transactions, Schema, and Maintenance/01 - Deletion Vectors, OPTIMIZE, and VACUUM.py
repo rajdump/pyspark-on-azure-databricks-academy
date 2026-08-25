@@ -206,13 +206,40 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 5 — Run OPTIMIZE
+# MAGIC ## Step 5 — Insert two more trips
+# MAGIC
+# MAGIC Each `INSERT` adds a small new Parquet file. `INSERT` does not write a deletion vector. List the folder after each insert.
+
+# COMMAND ----------
+
+spark.sql(
+    f"""
+    INSERT INTO {lab_table} VALUES
+      (1005, 'STANDARD', 'card', 18.00, 2.00)
+    """
+)
+display(spark.sql(f"LIST '{lab_path}'"))
+
+# COMMAND ----------
+
+spark.sql(
+    f"""
+    INSERT INTO {lab_table} VALUES
+      (1006, 'SHARED', 'cash', 12.00, 0.00)
+    """
+)
+display(spark.sql(f"LIST '{lab_path}'"))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Step 6 — Run OPTIMIZE
 # MAGIC
 # MAGIC Run `OPTIMIZE`, then list the folder again.
 # MAGIC
 # MAGIC `OPTIMIZE` reorganizes the table’s **live data** into fewer, larger files.
 # MAGIC
-# MAGIC If auto-compaction has already compacted the table, `OPTIMIZE` may have little or no additional work to do. `LIST` may still show older files because they can remain in storage until `VACUUM` removes them.
+# MAGIC The Step 5 inserts added small files that `OPTIMIZE` can combine. Older files can remain in `LIST` until `VACUUM`.
 
 # COMMAND ----------
 
@@ -222,7 +249,7 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 6 — Remove the obsolete files
+# MAGIC ## Step 7 — Remove the obsolete files
 # MAGIC
 # MAGIC The default `VACUUM` retention period is **7 days**, so files created during this lab are normally too new to remove.
 # MAGIC
@@ -252,8 +279,9 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC | 2    | DV on → the update can avoid rewriting the entire Parquet file                                                    |
 # MAGIC | 3    | More DV updates may trigger auto-compaction; `LIST` can still show obsolete Parquet and `.bin` files              |
 # MAGIC | 4    | `VACUUM` removes obsolete files; it does **not** compact data                                                     |
-# MAGIC | 5    | `OPTIMIZE` compacts live files into fewer, larger files; it may do little if auto-compaction already handled them |
-# MAGIC | 6    | `VACUUM` removes obsolete files left after `OPTIMIZE`                                                             |
+# MAGIC | 5    | Two `INSERT`s add small Parquet files; no deletion-vector `.bin`                                                  |
+# MAGIC | 6    | `OPTIMIZE` combines those live files into fewer, larger files                                                     |
+# MAGIC | 7    | `VACUUM` removes obsolete files left after `OPTIMIZE`                                                             |
 # MAGIC
 # MAGIC **Deletion vectors reduce rewrite work. Auto-compaction and `OPTIMIZE` improve file layout. `VACUUM` removes obsolete files.**
 # MAGIC

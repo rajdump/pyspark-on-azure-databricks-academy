@@ -42,8 +42,9 @@ tables, or `curated/`.
 
 ## Dataset
 
-Same four-row handmade extract as Module 10 (`trip_id` **1001–1004**), not
-the 100-row source files. Columns from `trip.service_type` and `payment`
+Same handmade extract as Module 10 (`trip_id` **1001–1004**), not the
+100-row source files, plus two lab `INSERT`s (**1005**, **1006**) after the
+first `VACUUM`. Columns from `trip.service_type` and `payment`
 (no `driver_payout_amount`). `service_type` uppercase; `payment_method`
 lowercase.
 
@@ -61,6 +62,8 @@ tip_amount decimal(10,2)
 | 1002 | SHARED | cash | 15.00 | 0.00 | Unchanged |
 | 1003 | PREMIUM | card | 40.00 | 6.00 | Step 1: **6.00 → 10.00** (DV off); step 2: **12.00** (DV on) |
 | 1004 | STANDARD | wallet | 25.00 | 2.50 | Step 3: tip → **3.50** |
+| 1005 | STANDARD | card | 18.00 | 2.00 | Step 5: `INSERT` |
+| 1006 | SHARED | cash | 12.00 | 0.00 | Step 5: `INSERT` |
 
 First write: deletion vectors **off**. Ignore `.crc` files in listings.
 
@@ -90,7 +93,7 @@ One specified notebook so far. **No exercise.**
 
 | # | Notebook | Focus |
 |---|---|---|
-| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | External table `fare_maint_lab`. **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays — DV demo). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` (auto-compact after these DV writes: **one live** file; leftovers can remain in `LIST`); `DESCRIBE HISTORY` (auto `OPTIMIZE`). **4** `VACUUM RETAIN 0 HOURS`, `LIST` (`VACUUM` is not compaction; leftovers gone so `LIST` can be one file). **5** `OPTIMIZE`, `LIST` (may be a no-op, or rewrite leaving an extra obsolete file). **6** `VACUUM RETAIN 0 HOURS` (session check off; lab only), `LIST` (obsolete files gone). Fence: no helper, no `VERSION AS OF` / `RESTORE`, no `MERGE`, no auto-compact table property. **No exercise** |
+| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | External table `fare_maint_lab`. **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays — DV demo). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` (auto-compact after these DV writes: **one live** file; leftovers can remain in `LIST`); `DESCRIBE HISTORY` (auto `OPTIMIZE`). **4** `VACUUM RETAIN 0 HOURS`, `LIST` (`VACUUM` is not compaction; leftovers gone so `LIST` can be one file). **5** two separate `INSERT`s **1005** then **1006**, `LIST` after each (small files; no `.bin`). **6** `OPTIMIZE`, `LIST` (combine the insert files; leftovers can remain). **7** `VACUUM RETAIN 0 HOURS` (session check off; lab only), `LIST` (obsolete files gone). Fence: no helper, no `VERSION AS OF` / `RESTORE`, no `MERGE`, no auto-compact table property. **No exercise** |
 
 ## Minimum privileges required
 
