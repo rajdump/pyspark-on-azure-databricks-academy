@@ -136,6 +136,12 @@ spark.sql(
     SET TBLPROPERTIES ('delta.enableDeletionVectors' = 'true')
     """
 )
+
+display(spark.sql(f"LIST '{lab_path}'"))
+
+
+# COMMAND ----------
+
 spark.sql(
     f"""
     UPDATE {lab_table}
@@ -173,6 +179,11 @@ spark.sql(
     WHERE trip_id = 1001
     """
 )
+
+display(spark.sql(f"LIST '{lab_path}'"))
+
+# COMMAND ----------
+
 spark.sql(
     f"""
     UPDATE {lab_table}
