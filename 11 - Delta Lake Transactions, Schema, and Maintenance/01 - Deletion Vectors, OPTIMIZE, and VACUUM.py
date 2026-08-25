@@ -14,8 +14,7 @@
 # MAGIC Auto-compaction: After a DML operation completes, automatic compaction may
 # MAGIC run on the cluster. It can combine eligible small files and rewrite files
 # MAGIC containing deletion vectors without requiring you to execute the `OPTIMIZE`
-# MAGIC command explicitly. After deletion-vector writes, that compact can still
-# MAGIC run even when the table auto-compact property is false.
+# MAGIC command explicitly.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -48,11 +47,6 @@
 # MAGIC Then list the table folder and note the Parquet file size.
 # MAGIC
 # MAGIC At this point, the current table data is stored in **one Parquet file**.
-# MAGIC
-# MAGIC The `CREATE` sets the table auto-compact property to false. That does not
-# MAGIC stop every automatic compact after deletion-vector writes. Later `LIST`
-# MAGIC results can include leftover files from that compact, not only the files
-# MAGIC the cell you just ran wrote.
 
 # COMMAND ----------
 
@@ -192,10 +186,15 @@ display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC `DESCRIBE HISTORY` can show `OPTIMIZE` with `"auto":"true"` after those
+# MAGIC updates. That is automatic compaction. You have not run `OPTIMIZE` yet.
+
+# COMMAND ----------
+
 # MAGIC %sql
-# MAGIC
-# MAGIC select version, operation, operationParameters from (
-# MAGIC DESCRIBE HISTORY rideshare_dev.processed.fare_maint_lab) 
+# MAGIC SELECT version, operation, operationParameters
+# MAGIC FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_maint_lab) 
 
 # COMMAND ----------
 
@@ -278,7 +277,7 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC |---|---|
 # MAGIC | 1 | DV off → updating one row rewrites its Parquet file |
 # MAGIC | 2 | DV on → the update can avoid the full-file rewrite |
-# MAGIC | 3 | Further DV updates can trigger automatic compaction → one live file; `LIST` may still show leftovers |
+# MAGIC | 3 | Further DV updates can trigger automatic compaction → one live file; `LIST` may still show leftovers; history can show auto `OPTIMIZE` |
 # MAGIC | 4 | `VACUUM` does not compact; it can delete leftovers so `LIST` looks compacted |
 # MAGIC | 5 | `OPTIMIZE` compacts live files if any remain; it may already be a no-op |
 # MAGIC | 6 | `VACUUM` removes obsolete files left after `OPTIMIZE` |
@@ -287,4 +286,5 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC `OPTIMIZE` improves file layout. `VACUUM` removes files that are no
 # MAGIC longer needed.**
 # MAGIC
-# MAGIC **Next:** remaining Module 11 notebooks are not in this notebook.
+# MAGIC **Next:** later Module 11 notebooks continue with transactions, schema
+# MAGIC change, and introductory `MERGE`.
