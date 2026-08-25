@@ -56,8 +56,6 @@
 
 # COMMAND ----------
 
-spark.conf.set("spark.databricks.delta.autoCompact.enabled", "false")
-
 lab_table = "rideshare_dev.processed.fare_maint_lab"
 external_location_url = (
     spark.sql("DESCRIBE EXTERNAL LOCATION el_rideshare_dev")
@@ -82,8 +80,7 @@ spark.sql(
     USING DELTA
     LOCATION '{lab_path}'
     TBLPROPERTIES (
-      'delta.enableDeletionVectors' = 'false',
-      'delta.autoOptimize.autoCompact' = 'false'
+      'delta.enableDeletionVectors' = 'false'
     )
     """
 )
@@ -283,7 +280,3 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC longer needed.**
 # MAGIC
 # MAGIC **Next:** remaining Module 11 notebooks are not in this notebook.
-
-# COMMAND ----------
-
-print(spark.conf.get("spark.databricks.delta.autoCompact.enabled"))
