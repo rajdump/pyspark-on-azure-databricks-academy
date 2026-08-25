@@ -137,9 +137,6 @@ spark.sql(
     """
 )
 
-display(spark.sql(f"LIST '{lab_path}'"))
-
-
 # COMMAND ----------
 
 spark.sql(
