@@ -56,6 +56,8 @@
 
 # COMMAND ----------
 
+spark.conf.set("spark.databricks.delta.autoCompact.enabled", "false")
+
 lab_table = "rideshare_dev.processed.fare_maint_lab"
 external_location_url = (
     spark.sql("DESCRIBE EXTERNAL LOCATION el_rideshare_dev")
@@ -185,6 +187,13 @@ display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC
+# MAGIC select version, operation, operationParameters from (
+# MAGIC DESCRIBE HISTORY rideshare_dev.processed.fare_maint_lab) 
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Step 4 — Run VACUUM
 # MAGIC
@@ -274,3 +283,7 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC longer needed.**
 # MAGIC
 # MAGIC **Next:** remaining Module 11 notebooks are not in this notebook.
+
+# COMMAND ----------
+
+print(spark.conf.get("spark.databricks.delta.autoCompact.enabled"))
