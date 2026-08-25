@@ -1,108 +1,296 @@
 # Learnings: Deletion Vectors, OPTIMIZE, and VACUUM
 
-**Notebook:** [01 - Deletion Vectors, OPTIMIZE, and VACUUM.py](../11%20-%20Delta%20Lake%20Transactions,%20Schema,%20and%20Maintenance/01%20-%20Deletion%20Vectors,%20OPTIMIZE,%20and%20VACUUM.py)
+**Notebook:** `01 - Deletion Vectors, OPTIMIZE, and VACUUM` (Module 11)
 
-**Runtime:** DBR 17.3. **Table:** `rideshare_dev.processed.fare_maint_lab`
-
-Author-only. Auto-compaction **enabled**. Ignore `_delta_log/` and `.crc`.
-
-From `DESCRIBE HISTORY` on this runtime:
-
-| Version | Operation | Auto-`OPTIMIZE`? |
-|---|---|---|
-| 0 | `CREATE TABLE` | No |
-| 1 | `INSERT` (four rows) | No |
-| 2 | `UPDATE` 1003, DV **off** | No |
-| 3 | Enable deletion vectors | No |
-| **4** | `UPDATE` 1003, DV **on** | **No** |
-| 5 | `UPDATE` 1001, DV on | Then **v6** `OPTIMIZE` `"auto":"true"` (~1s) — 2 files + 1 DV removed from the snapshot |
-| 7 | `UPDATE` 1004, DV on | Then **v8** `OPTIMIZE` `"auto":"true"` (~4s) — 3 files + 1 DV removed from the snapshot |
-
-After each auto-`OPTIMIZE`, **live** data is **one Parquet file** and **no live `.bin`**. Obsolete files can stay in `LIST` until `VACUUM`. What you **read** is that one clean file.
-
-`D0`, `D1`, … = data files. `B1`, `B2`, … = `.bin` files. Labels, not hashes.
+**Table:** `rideshare_dev.processed.fare_maint_lab`
 
 ---
 
-## Step 0 — `INSERT` (DV off)
+## Version 0 — CREATE TABLE
 
-| | Data | `.bin` |
-|---|---|---|
-| **Write** | `D0` (four rows) | none |
-| **Live** | `D0` | none |
-| **On disk / `LIST`** | **1** | **0** |
+Creates empty table with `delta.enableDeletionVectors = false`.
 
-Auto-compaction does not run.
+**Files on disk:** None (just `_delta_log/`)
 
 ---
 
-## Step 1 — `UPDATE` 1003, DV off
+## Version 1 — INSERT 4 rows
 
-Full-file rewrite. No `.bin`. Auto-compaction does not run.
+| Metric | Value |
+| --- | --- |
+| numFiles | 1 |
+| numOutputRows | 4 |
+| numOutputBytes | 2,186 |
 
-| | Data | `.bin` |
-|---|---|---|
-| **Write** | New `D1` (four current rows). `D0` obsolete | none |
-| **Live** | `D1` | none |
-| **On disk / `LIST`** | **2** (`D0`, `D1`) | **0** |
-
----
-
-## Step 2 — enable DV, `UPDATE` 1003 again
-
-`ALTER` adds no files.
-
-**First DV `UPDATE` (history v4). No auto-`OPTIMIZE` after this version.**
-
-| | Data | `.bin` |
-|---|---|---|
-| **Write** | `D1` stays. Small `D2` = new `1003` | `B1` on `D1` (old `1003` skipped) |
-| **Live** | `D1` + `D2` | `B1` |
-| **Obsolete** | `D0` | none |
-| **On disk / `LIST`** | **3** | **1** |
-
-This is the only DV step where `LIST` can still show the DV layout (base + small file + `.bin`).
+**Files on disk:** 1 parquet (2,186 B) — ACTIVE, all 4 rows
 
 ---
 
-## Step 3 — two more DV `UPDATE`s
+## Version 2 — UPDATE trip_id=1003 (DV OFF)
 
-### `UPDATE` 1001 (history v5)
+| Metric | Value |
+| --- | --- |
+| numRemovedFiles | 1 |
+| numAddedFiles | 1 |
+| numAddedBytes | 2,186 |
+| numCopiedRows | **3** |
+| numUpdatedRows | 1 |
 
-Hits the **same** live base `D1` (already has a DV).
+**Files on disk:**
 
-| | Data | `.bin` |
-|---|---|---|
-| **Write** | Small new file for `1001`. New `.bin` on `D1` | Extra small Parquet + `.bin` |
+| File | Size | Status |
+| --- | --- | --- |
+| Original parquet | 2,186 B | OBSOLETE |
+| New parquet (full rewrite) | 2,186 B | ACTIVE (4 rows) |
 
-**Then auto-`OPTIMIZE` (v6), ~1 second later.** Snapshot: **one** clean Parquet (`D3`). No live `.bin`. Old data files and `.bin`s are obsolete but may still appear in `LIST`.
-
-**Live after v6: 1 data file. 0 `.bin`.**
-
-### `UPDATE` 1004 (history v7)
-
-Hits that new clean base. Writes a small file + `.bin` again.
-
-**Then auto-`OPTIMIZE` (v8), ~4 seconds later.** Again: **one** clean Parquet. No live `.bin`.
-
-**Live after Step 3: 1 data file. 0 `.bin`.**
-
-`LIST` may show more names (obsolete leftovers). The table you query is **one** file. That is what “we saw only one file after DV enabled” means after Step 3 — not after the first DV `UPDATE` at v4.
+**Explanation:** Without DVs, Spark must rewrite the whole file. It read 4 rows, changed 1, and wrote all 4 into a new file. `numCopiedRows=3` is the wasted work.
 
 ---
 
-## Step 4 — `VACUUM RETAIN 0`
+## Version 3 — SET TBLPROPERTIES
 
-Deletes obsolete files only. Live is already one file, so `LIST` goes to **1** data file and **0** `.bin`. Looks like `VACUUM` compacted. It only removed leftovers from the auto-`OPTIMIZE`s.
-
----
-
-## Step 5 — `OPTIMIZE`
-
-Live is already one file. Your `OPTIMIZE` has nothing to merge. `LIST` stays **1** file, or **2** if it rewrites into a new Parquet and leaves the old one.
+Enables deletion vectors. No file changes.
 
 ---
 
-## Step 6 — `VACUUM RETAIN 0` again
+## Version 4 — UPDATE trip_id=1003 (DV ON)
 
-**1** data file. **0** `.bin`.
+| Metric | Value |
+| --- | --- |
+| numRemovedFiles | **0** |
+| numAddedFiles | 1 |
+| numAddedBytes | 2,086 |
+| numCopiedRows | **0** |
+| numUpdatedRows | 1 |
+| numDeletionVectorsAdded | **1** |
+| numDeletionVectorsRemoved | 0 |
+| numDeletionVectorsUpdated | 0 |
+
+**Files on disk (LIST captured before auto-compact):**
+
+| File | Size | Status |
+| --- | --- | --- |
+| V1 parquet | 2,186 B | Obsolete (since V2) |
+| V2 parquet | 2,186 B | ACTIVE — 3 live rows, DV masks trip_id=1003 |
+| DV `.bin` | 43 B | ACTIVE — marks 1 row in V2 parquet |
+| V4 parquet | 2,086 B | ACTIVE — updated trip_id=1003 value |
+
+**Explanation:** No file was removed or rewritten. The 43-byte DV tells Spark "skip the trip_id=1003 row in the base file." The updated value lives in the small new parquet. `numCopiedRows=0` — zero wasted work.
+
+**Comparison — Step 1 vs Step 2:**
+
+| Metric | Step 1 (DV off) | Step 2 (DV on) |
+| --- | --- | --- |
+| numCopiedRows | 3 | **0** |
+| numRemovedFiles | 1 | **0** |
+| numAddedBytes | 2,186 (full) | **2,086** (partial) |
+| Base file rewritten? | Yes | **No** |
+
+---
+
+## Version 5 — OPTIMIZE (auto-compaction)
+
+Fires automatically after V4.
+
+| Metric | Value |
+| --- | --- |
+| numRemovedFiles | 2 |
+| numRemovedBytes | 4,272 (= 2,186 + 2,086) |
+| numDeletionVectorsRemoved | 1 |
+| numAddedFiles | 1 |
+| numAddedBytes | 2,186 |
+
+**What it did:** Compacted the DV'd base file + the V4 fragment into one clean file (all 4 rows, no DV).
+
+**Active after V5:** 1 single clean file (2,186 B)
+
+---
+
+## Version 6 — UPDATE trip_id=1001 (DV ON)
+
+| Metric | Value |
+| --- | --- |
+| numRemovedFiles | 0 |
+| numAddedFiles | 1 |
+| numAddedBytes | 2,093 |
+| numCopiedRows | **0** |
+| numUpdatedRows | 1 |
+| numDeletionVectorsAdded | 1 |
+| numDeletionVectorsUpdated | **0** |
+
+**Explanation:** V5 auto-compact already resolved V4's DV. The V5 output file has no prior DV — V6 adds a fresh one. That's why `numDeletionVectorsUpdated = 0`.
+
+**Active after V6:** V5 output (with DV, 3 live rows) + V6 parquet (1 row: trip_id=1001)
+
+---
+
+## Version 7 — OPTIMIZE (auto-compaction)
+
+Fires automatically after V6.
+
+| Metric | Value |
+| --- | --- |
+| numRemovedFiles | 2 |
+| numRemovedBytes | 4,279 (= 2,186 + 2,093) |
+| numDeletionVectorsRemoved | 1 |
+| numAddedFiles | 1 |
+| numAddedBytes | 2,185 |
+
+**Active after V7:** 1 single clean file (2,185 B)
+
+---
+
+## Version 8 — UPDATE trip_id=1004 (DV ON)
+
+| Metric | Value |
+| --- | --- |
+| numRemovedFiles | 0 |
+| numAddedFiles | 1 |
+| numAddedBytes | 2,106 |
+| numCopiedRows | **0** |
+| numUpdatedRows | 1 |
+| numDeletionVectorsAdded | 1 |
+| numDeletionVectorsUpdated | 0 |
+
+**Active after V8:** V7 output (with DV, 3 live rows) + V8 parquet (1 row: trip_id=1004)
+
+---
+
+## Version 9 — OPTIMIZE (auto-compaction)
+
+Fires automatically after V8.
+
+| Metric | Value |
+| --- | --- |
+| numRemovedFiles | 2 |
+| numRemovedBytes | 4,291 (= 2,185 + 2,106) |
+| numDeletionVectorsRemoved | 1 |
+| numAddedFiles | 1 |
+| numAddedBytes | 2,193 |
+
+**Active after V9:** 1 single clean file (2,193 B) — all 4 rows, no DV
+
+---
+
+## Versions 10–11 — VACUUM (Step 4)
+
+`VACUUM RETAIN 0 HOURS`
+
+| Metric | Value |
+| --- | --- |
+| numFilesToDelete | **10** |
+| sizeOfDataToDelete | **15,157 B** |
+| numDeletedFiles | 10 |
+
+**After:** Only 1 parquet remains (2,193 B). VACUUM removed 10 obsolete files (7 parquets + 3 DV bins).
+
+**Key lesson:** VACUUM does NOT compact. It only garbage-collects files no longer referenced by the current table version.
+
+---
+
+## Version 12 — INSERT trip_id=1005 (Step 5)
+
+| Metric | Value |
+| --- | --- |
+| numFiles | 1 |
+| numOutputRows | 1 |
+| numOutputBytes | 2,093 |
+
+**After:** 2 active files on disk (V9 output + new insert)
+
+---
+
+## Version 13 — INSERT trip_id=1006 (Step 5)
+
+| Metric | Value |
+| --- | --- |
+| numFiles | 1 |
+| numOutputRows | 1 |
+| numOutputBytes | 2,079 |
+
+**After:** 3 active files on disk
+
+| File | Size | Rows |
+| --- | --- | --- |
+| V9 compacted parquet | 2,193 B | 4 rows (1001-1004) |
+| V12 insert parquet | 2,093 B | 1 row (trip_id=1005) |
+| V13 insert parquet | 2,079 B | 1 row (trip_id=1006) |
+
+**No DV involved** — INSERTs just create new files.
+
+---
+
+## Version 14 — OPTIMIZE (manual, Step 6)
+
+| Metric | Value |
+| --- | --- |
+| numRemovedFiles | **3** |
+| numRemovedBytes | **6,365** (= 2,193 + 2,093 + 2,079) |
+| numDeletionVectorsRemoved | 0 |
+| numAddedFiles | 1 |
+| numAddedBytes | **2,254** |
+
+**After:** 4 files on disk (3 obsolete + 1 new active)
+
+| File | Size | Status |
+| --- | --- | --- |
+| V9 parquet | 2,193 B | OBSOLETE |
+| V12 parquet | 2,093 B | OBSOLETE |
+| V13 parquet | 2,079 B | OBSOLETE |
+| V14 OPTIMIZE output | **2,254 B** | ACTIVE (all 6 rows) |
+
+**Key lesson:** OPTIMIZE compacts live files into one — but the old files remain on disk until VACUUM.
+
+---
+
+## Versions 15–16 — VACUUM (Step 7)
+
+`VACUUM RETAIN 0 HOURS`
+
+| Metric | Value |
+| --- | --- |
+| numFilesToDelete | **3** |
+| sizeOfDataToDelete | **6,365 B** |
+| numDeletedFiles | 3 |
+
+**After:** Only 1 parquet remains (2,254 B, all 6 rows). Clean final state.
+
+---
+
+## Why Two VACUUMs?
+
+| VACUUM | What it removes |
+| --- | --- |
+| First (Step 4) | Debris from DV writes + auto-compaction (10 files) |
+| Second (Step 7) | Debris from OPTIMIZE (3 files) |
+
+Each VACUUM has **different files to remove**. The INSERTs (Step 5) create new small files that give OPTIMIZE real work to do, and OPTIMIZE leaves behind the files it replaced.
+
+---
+
+## Auto-Compaction Behavior
+
+Auto-compaction after DV writes:
+- Targets the file with the deletion vector + its associated fragments
+- Does NOT guarantee all small files will be compacted
+- Is non-deterministic — same code may produce different numbers of auto-compacts across runs
+- Documentation states: "File compaction events don't have strict guarantees for resolving changes recorded in deletion vectors"
+
+For guaranteed full compaction, use manual `OPTIMIZE`.
+
+---
+
+## Summary
+
+| Step | Versions | What it proves |
+| --- | --- | --- |
+| 0 | V0–V1 | Baseline: 1 file, 4 rows |
+| 1 | V2 | DV off: full rewrite, numCopiedRows=3 |
+| 2 | V3–V4 (+V5 auto) | DV on: no rewrite, numCopiedRows=0 |
+| 3 | V6–V8 (+V7,V9 auto) | Pattern repeats; auto-compact resolves each DV |
+| 4 | V10–V11 | VACUUM removes 10 dead files, leaves 1 active |
+| 5 | V12–V13 | INSERTs create small files (gives OPTIMIZE work) |
+| 6 | V14 | OPTIMIZE merges 3 files into 1 — creates new dead files |
+| 7 | V15–V16 | VACUUM removes OPTIMIZE's 3 dead files |
+
+**Core takeaway:** Deletion vectors reduce rewrite work (numCopiedRows=0). Auto-compaction or OPTIMIZE consolidates file layout. VACUUM removes files no longer needed.
