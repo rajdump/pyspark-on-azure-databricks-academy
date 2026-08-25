@@ -13,9 +13,10 @@ are not designed yet.
 By the end of notebook **01**, you'll be able to:
 
 - Compare how an `UPDATE` behaves with and without **deletion vectors**
-- Show that `VACUUM` removes only files that are no longer used by the table
-- Compact active files with `OPTIMIZE`, then remove eligible old files with
-  `VACUUM`
+- Show that `VACUUM` removes only files that are no longer used by the
+  table — it does not compact
+- Compact live files with `OPTIMIZE` when they have not already been
+  compacted automatically, then remove eligible old files with `VACUUM`
 
 This notebook does not teach ACID, schema evolution, `MERGE`, liquid
 clustering, Change Data Feed, or a table-properties tour. Grants are
@@ -89,7 +90,7 @@ One specified notebook so far. **No exercise.**
 
 | # | Notebook | Focus |
 |---|---|---|
-| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | External table `fare_maint_lab`. **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` (multiple **live** files). **4** `VACUUM RETAIN 0 HOURS`, `LIST` (live files stay — not compaction). **5** `OPTIMIZE`, `LIST` (fewer live files). **6** `VACUUM RETAIN 0 HOURS` (session check off; lab only), `LIST` (obsolete files gone). Fence: no helper, no HISTORY/`VERSION AS OF` demo, no `MERGE`. **No exercise** |
+| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | External table `fare_maint_lab`. **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays — DV demo). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` (auto-compact after these DV writes: **one live** file; leftovers can remain in `LIST`). **4** `VACUUM RETAIN 0 HOURS`, `LIST` (`VACUUM` is not compaction; leftovers gone so `LIST` can be one file). **5** `OPTIMIZE`, `LIST` (may be a no-op, or rewrite leaving an extra obsolete file). **6** `VACUUM RETAIN 0 HOURS` (session check off; lab only), `LIST` (obsolete files gone). Fence: no helper, no HISTORY/`VERSION AS OF` demo, no `MERGE`. **No exercise** |
 
 ## Minimum privileges required
 

@@ -14,14 +14,16 @@
 # MAGIC Auto-compaction: After a DML operation completes, automatic compaction may
 # MAGIC run on the cluster. It can combine eligible small files and rewrite files
 # MAGIC containing deletion vectors without requiring you to execute the `OPTIMIZE`
-# MAGIC command explicitly.
+# MAGIC command explicitly. After deletion-vector writes, that compact can still
+# MAGIC run even when the table auto-compact property is false.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Compare how an `UPDATE` behaves with and without **deletion vectors**
-# MAGIC - Show that `VACUUM` removes only files that are no longer used by the table
-# MAGIC - Compact active files with `OPTIMIZE`, then remove eligible old files with
-# MAGIC   `VACUUM`
+# MAGIC - Show that `VACUUM` removes only files that are no longer used by the
+# MAGIC   table — it does not compact
+# MAGIC - Compact live files with `OPTIMIZE` when they have not already been
+# MAGIC   compacted automatically, then remove eligible old files with `VACUUM`
 # MAGIC
 # MAGIC **Reads:** none of the 100-row source files or teaching tables
 # MAGIC (`trip_enriched`, KPIs, `curated/`)
@@ -47,8 +49,10 @@
 # MAGIC
 # MAGIC At this point, the current table data is stored in **one Parquet file**.
 # MAGIC
-# MAGIC This lab turns auto-compaction off so each `LIST` matches the cell you just
-# MAGIC ran.
+# MAGIC The `CREATE` sets the table auto-compact property to false. That does not
+# MAGIC stop every automatic compact after deletion-vector writes. Later `LIST`
+# MAGIC results can include leftover files from that compact, not only the files
+# MAGIC the cell you just ran wrote.
 
 # COMMAND ----------
 
@@ -147,11 +151,19 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC %md
 # MAGIC ## Step 3 — Keep updating
 # MAGIC
-# MAGIC Run a few more updates with deletion vectors enabled, then list the folder again.
+# MAGIC Run two more updates with deletion vectors enabled, then list the folder
+# MAGIC again.
 # MAGIC
-# MAGIC The original data file still holds unchanged rows, while the updates create additional small files.
+# MAGIC Each update can add a small file and a deletion-vector file, the same
+# MAGIC pattern as Step 2.
 # MAGIC
-# MAGIC Repeated row-level changes can therefore leave the table reading from **many small files**.
+# MAGIC After these writes, automatic compaction can rewrite the live files
+# MAGIC without you running `OPTIMIZE`. The current table is then **one data
+# MAGIC file**, with **no live deletion-vector file**.
+# MAGIC
+# MAGIC `LIST` can still show leftover Parquet names and `.bin` files (the
+# MAGIC deletion-vector files) from that compact. Those extra names are not extra
+# MAGIC live files.
 
 # COMMAND ----------
 
@@ -176,13 +188,18 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC %md
 # MAGIC ## Step 4 — Run VACUUM
 # MAGIC
-# MAGIC We manually disabled the retention safety check for the current Spark session so that Delta allows a VACUUM retention period shorter than the default safety threshold.
+# MAGIC Disable the retention safety check for this Spark session so Delta allows
+# MAGIC a `VACUUM` retention period shorter than the default safety threshold.
 # MAGIC
 # MAGIC Run `VACUUM RETAIN 0 HOURS`, then list the folder again.
 # MAGIC
-# MAGIC `VACUUM` does **not** combine small files. It removes old files only when they are no longer needed and have passed the retention period.
+# MAGIC `VACUUM` does **not** combine files. It removes only files the current
+# MAGIC table no longer uses, once they have passed the retention period.
 # MAGIC
-# MAGIC The live small files remain because the current table still uses them.
+# MAGIC If automatic compaction already rewrote the live data into one file,
+# MAGIC `VACUUM` deletes the leftover files. `LIST` can then show **one** data
+# MAGIC file. That can look as if `VACUUM` compacted the table. It did not.
+# MAGIC Compaction already happened; `VACUUM` only removed the leftovers.
 
 # COMMAND ----------
 
@@ -199,11 +216,14 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC
 # MAGIC Run `OPTIMIZE`, then list the folder again.
 # MAGIC
-# MAGIC `OPTIMIZE` reorganizes the table's live data into **fewer, larger files**.
+# MAGIC `OPTIMIZE` reorganizes the table's **live** data into fewer, larger files.
 # MAGIC
-# MAGIC On this tiny table, you may see the current rows compacted into a single data file.
+# MAGIC If automatic compaction already left one live file, this `OPTIMIZE` may
+# MAGIC rewrite nothing. `LIST` then stays at one data file. Or it may write a
+# MAGIC new Parquet file and leave the previous one on disk for history, so
+# MAGIC `LIST` shows two.
 # MAGIC
-# MAGIC The previous files can remain on disk because Delta may still need them for historical versions.
+# MAGIC Either result matches a table that is already compacted.
 
 # COMMAND ----------
 
@@ -215,15 +235,20 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC %md
 # MAGIC ## Step 6 — Remove the obsolete files
 # MAGIC
-# MAGIC The default `VACUUM` retention period is **7 days**, so the files created during this lab are normally too new to delete.
+# MAGIC The default `VACUUM` retention period is **7 days**, so the files created
+# MAGIC during this lab are normally too new to delete.
 # MAGIC
-# MAGIC For this lab only, disable the retention safety check and run:
+# MAGIC For this lab only, the session already has the retention safety check
+# MAGIC disabled. Run:
 # MAGIC
 # MAGIC `VACUUM ... RETAIN 0 HOURS`
 # MAGIC
-# MAGIC Now the obsolete files created by the earlier updates and `OPTIMIZE` can be physically removed.
+# MAGIC If Step 5 wrote a new file and left the old one, `VACUUM` can now remove
+# MAGIC that leftover. If `OPTIMIZE` rewrote nothing, `LIST` already shows one
+# MAGIC file and stays that way.
 # MAGIC
-# MAGIC > **Warning:** `RETAIN 0 HOURS` removes historical data files immediately. Do not use it on production tables.
+# MAGIC > **Warning:** `RETAIN 0 HOURS` removes historical data files immediately.
+# MAGIC > Do not use it on production tables.
 
 # COMMAND ----------
 
@@ -239,11 +264,13 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC |---|---|
 # MAGIC | 1 | DV off → updating one row rewrites its Parquet file |
 # MAGIC | 2 | DV on → the update can avoid the full-file rewrite |
-# MAGIC | 3 | Repeated updates can create many small live files |
-# MAGIC | 4 | `VACUUM` does not compact live files |
-# MAGIC | 5 | `OPTIMIZE` compacts live data into fewer files |
-# MAGIC | 6 | `VACUUM` removes obsolete files after compaction |
+# MAGIC | 3 | Further DV updates can trigger automatic compaction → one live file; `LIST` may still show leftovers |
+# MAGIC | 4 | `VACUUM` does not compact; it can delete leftovers so `LIST` looks compacted |
+# MAGIC | 5 | `OPTIMIZE` compacts live files if any remain; it may already be a no-op |
+# MAGIC | 6 | `VACUUM` removes obsolete files left after `OPTIMIZE` |
 # MAGIC
-# MAGIC **Deletion vectors reduce rewrite work. `OPTIMIZE` improves file layout. `VACUUM` removes files that are no longer needed.**
+# MAGIC **Deletion vectors reduce rewrite work. Automatic compaction or
+# MAGIC `OPTIMIZE` improves file layout. `VACUUM` removes files that are no
+# MAGIC longer needed.**
 # MAGIC
 # MAGIC **Next:** remaining Module 11 notebooks are not in this notebook.
