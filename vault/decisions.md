@@ -264,9 +264,7 @@ Tracked in [[progress#Backlog]] unless a new decision is needed:
 
 ## Known conflicts
 
-[`take_notes/NB07_personal_notes.md`](../take_notes/NB07_personal_notes.md)
-lists columns not in approved Module 07 mappings. BRD and mapping documents
-prevail.
+None. BRD and mapping documents remain canonical for Module 07 columns.
 
 ## Related
 

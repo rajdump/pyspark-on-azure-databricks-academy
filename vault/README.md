@@ -32,7 +32,8 @@ here.
 | Lesson design and outputs | module `README.md` |
 | Dataset contracts | `docs/data/dataset-overview.md` |
 | Authoring policy | `docs/standards/` |
-| Module 07 personal notes | `take_notes/NB07_personal_notes.md` |
+| Author to-dos | `to_dos/` |
+| Runtime learnings | `learnings/` |
 
 ## Wikilinks
 

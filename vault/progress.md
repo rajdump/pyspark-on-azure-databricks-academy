@@ -77,9 +77,7 @@ enforcement and evolution, `OPTIMIZE`, `VACUUM`, deletion vectors, introductory
 
 ### High priority
 
-- [ ] Reconcile [`take_notes/NB07_personal_notes.md`](../take_notes/NB07_personal_notes.md)
-  with approved Module 07 mappings (`surge_amount` and time/payment fields in
-  personal notes are not in signed-off targets).
+- [ ] None.
 
 ### Lower priority
 
@@ -87,8 +85,6 @@ enforcement and evolution, `OPTIMIZE`, `VACUUM`, deletion vectors, introductory
   policy treats serverless as a check after Standard).
 - [ ] Document `data/raw/parquet/zone_lookup.parquet` (20 rows) vs canonical
   JSON (22 rows, teaching zones 21–22) in dataset docs.
-- [ ] Place file-format and lakehouse teaching ideas from `take_notes/M5.txt`
-  in a future module.
 - [ ] Remove duplicate `.databricks` entries in `.gitignore` during config
   housekeeping.
 

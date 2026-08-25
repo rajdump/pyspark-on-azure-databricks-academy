@@ -40,7 +40,7 @@ Read these for course facts. When they disagree, the earlier source wins.
 5. `docs/standards/` — authoring policy and pedagogy; read
    `docs/standards/notebook-authoring-checklist.md` for command read
    manifests and acceptance bars
-6. `vault/`, `take_notes/`, and dated root notes — context only
+6. `vault/`, `to_dos/`, `learnings/`, and dated root notes — context only
 
 Outside that chain, the root `README.md` owns the learner overview and the
 technical baseline (runtime, Spark and Python versions, governance,

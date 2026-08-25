@@ -24,7 +24,7 @@ Author in Cursor
   Azure Databricks Git folder runs notebooks
 
   cursor_ecosystem/                 → author notes on Cursor routing
-  vault/ + take_notes/              → private tracking
+  vault/ + to_dos/ + learnings/     → private tracking
 ```
 
 **If you are a learner:** start at root `README.md` → `COURSE_MODULES.md`
@@ -189,11 +189,20 @@ source of truth stays outside so Git/Databricks/Cursor paths stay stable.
 | `vault/decisions.md` | Decision log with links back to canonical docs |
 | `vault/.obsidian/` | Obsidian app settings for this vault |
 
-### Scratch notes (`take_notes/`)
+### Author to-dos (`to_dos/`)
 
 | File | Usage |
 |---|---|
-| `to_dos.md` | Personal author to-dos and notes |
+| `to_dos.md` | Dated author to-dos |
+| `topics-missing-from-this-course.md` | Topics this course does not teach |
+
+### Runtime learnings (`learnings/`)
+
+Author-only notes from Azure Databricks runs. Not learner content.
+
+| File | Usage |
+|---|---|
+| `01 - Deletion Vectors, OPTIMIZE, and VACUUM.md` | DBR 17.3 walkthrough for Module 11 notebook 01 |
 
 ## 8. Generated / local / accidental (usually ignore)
 
