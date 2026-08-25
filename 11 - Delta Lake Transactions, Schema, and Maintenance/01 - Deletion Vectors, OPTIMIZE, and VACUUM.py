@@ -8,13 +8,10 @@
 # MAGIC improve the active file layout and **`VACUUM`** to remove old files that are
 # MAGIC no longer needed.
 # MAGIC
-# MAGIC A deletion vector marks a replaced row so Spark can skip rewriting the
-# MAGIC whole Parquet file.
+# MAGIC A deletion vector marks **deleted or updated rows** in an existing Parquet file, allowing Delta to avoid rewriting the entire file immediately.
 # MAGIC
-# MAGIC Auto-compaction: After a DML operation completes, automatic compaction may
-# MAGIC run on the cluster. It can combine eligible small files and rewrite files
-# MAGIC containing deletion vectors without requiring you to execute the `OPTIMIZE`
-# MAGIC command explicitly.
+# MAGIC **Auto-compaction:** After an `UPDATE`, `DELETE`, or `MERGE`, Databricks may automatically compact eligible small files into larger files. You do not need to run `OPTIMIZE` explicitly, but auto-compaction does **not** guarantee that every small file will be compacted.
+# MAGIC
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -154,8 +151,7 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC pattern as Step 2.
 # MAGIC
 # MAGIC After these writes, automatic compaction can rewrite the live files
-# MAGIC without you running `OPTIMIZE`. The current table is then **one data
-# MAGIC file**, with **no live deletion-vector file**.
+# MAGIC without you running `OPTIMIZE`.
 # MAGIC
 # MAGIC `LIST` can still show leftover Parquet names and `.bin` files (the
 # MAGIC deletion-vector files) from that compact. Those extra names are not extra
