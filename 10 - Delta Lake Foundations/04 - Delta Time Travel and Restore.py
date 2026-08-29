@@ -188,14 +188,17 @@ display(current.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Time travel by timestamp
-# MAGIC Sometimes you don't know the Delta version number. Instead, you know approximately when the table was last correct, such as before a bad load.
-
-# COMMAND ----------
-
-# MAGIC %sql
+# MAGIC Sometimes you don't know the Delta version number. Instead, you know
+# MAGIC approximately when the table was last correct, such as before a bad load.
+# MAGIC
+# MAGIC ```sql
 # MAGIC SELECT *
 # MAGIC FROM rideshare_dev.processed.fare_timetravel_lab
-# MAGIC TIMESTAMP AS OF '2026-08-29T18:45:22.000+00:00'
+# MAGIC TIMESTAMP AS OF '<timestamp>'
+# MAGIC ```
+# MAGIC
+# MAGIC Delta reads the table version at or before that time. Time travel does
+# MAGIC not change the current table.
 
 # COMMAND ----------
 
