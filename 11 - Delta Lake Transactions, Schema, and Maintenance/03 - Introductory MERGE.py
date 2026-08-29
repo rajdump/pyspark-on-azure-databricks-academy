@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 02 - Introductory MERGE
+# MAGIC # 03 - Introductory MERGE
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -98,4 +98,4 @@
 # MAGIC
 # MAGIC TODO: recap MERGE matched update and not-matched insert.
 # MAGIC
-# MAGIC **Next:** `03 - Deletion Vectors, REORG TABLE, and VACUUM`.
+# MAGIC **Next:** `04 - ACID and Optimistic Concurrency`.

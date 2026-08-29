@@ -2,17 +2,17 @@
 
 ## Purpose
 
-Apply schema change, introductory `MERGE`, deletion-vector maintenance, and
+Apply deletion-vector maintenance, schema change, introductory `MERGE`, and
 ACID / optimistic concurrency after the foundations module.
 
 ## Learning objectives
 
 By the end of this module, you'll be able to:
 
-- Enforce a table schema, add a column, and apply `NOT NULL` / `CHECK`
-- Apply an introductory `MERGE` (matched update and not-matched insert)
 - Compare `UPDATE` with and without **deletion vectors**, then physically
   remove old row bytes with `REORG TABLE ... APPLY (PURGE)` and `VACUUM`
+- Enforce a table schema, add a column, and apply `NOT NULL` / `CHECK`
+- Apply an introductory `MERGE` (matched update and not-matched insert)
 - Explain ACID and optimistic concurrency, including a write conflict and
   retry
 
@@ -31,7 +31,7 @@ Complete Module 10 notebooks **`01`–`04`**. You need the Module 5 platform
 
 Recall Module 10: `UPDATE` can leave extra files on disk; history is kept
 about **30** days; data files become eligible for `VACUUM` after **7** days;
-do not run `VACUUM` in Module 10. Notebook **03** is the first run of
+do not run `VACUUM` in Module 10. Notebook **01** is the first run of
 `REORG` and `VACUUM`.
 
 Does **not** read or mutate `trip_enriched`, `trip_driver_assignment`, KPI
@@ -52,18 +52,18 @@ base_fare_amount decimal(10,2)
 tip_amount decimal(10,2)
 ```
 
-Notebook **01** adds `driver_payout_amount decimal(10,2)` from
+Notebook **02** adds `driver_payout_amount decimal(10,2)` from
 [`payment`](../docs/data/dataset-overview.md#payment). Leave that column
 **NULL** on the four lab rows — do not invent payout amounts.
 
 | trip_id | service_type | payment_method | base_fare_amount | tip_amount | Lab use |
 |---|---|---|---:|---:|---|
-| 1001 | STANDARD | card | 20.00 | 3.00 | 02 exercise: `MERGE` tip → **4.00**; 03: tip → **4.00**; 04 OCC |
-| 1002 | SHARED | cash | 15.00 | 0.00 | 03: `DELETE` |
-| 1003 | PREMIUM | card | 40.00 | 6.00 | 02 `MERGE` → **10.00**; 03: **6.00 → 10.00** (DV off), **12.00** (DV on); 04 OCC |
-| 1004 | STANDARD | wallet | 25.00 | 2.50 | 02 `MERGE` insert; 03: tip → **3.50**; 04 OCC |
+| 1001 | STANDARD | card | 20.00 | 3.00 | 01: tip → **4.00**; 03 exercise: `MERGE` tip → **4.00**; 04 OCC |
+| 1002 | SHARED | cash | 15.00 | 0.00 | 01: `DELETE` |
+| 1003 | PREMIUM | card | 40.00 | 6.00 | 01: **6.00 → 10.00** (DV off), **12.00** (DV on); 03 `MERGE` → **10.00**; 04 OCC |
+| 1004 | STANDARD | wallet | 25.00 | 2.50 | 01: tip → **3.50**; 03 `MERGE` insert; 04 OCC |
 
-First write in each notebook: deletion vectors **off**. Notebook **03** also
+First write in each notebook: deletion vectors **off**. Notebook **01** also
 sets auto-compaction **off** (lab control, not taught). Ignore `.crc` files
 in listings.
 
@@ -89,14 +89,14 @@ does not clear `external-tables/` (same as Module 10 notebook 03).
 
 ## Notebooks
 
-Four notebooks, in order, all on `fare_maint_lab`. Notebook **02** ends with
-a short exercise. Notebooks **01**, **03**, and **04** have **no exercise**.
+Four notebooks, in order, all on `fare_maint_lab`. Notebook **03** ends with
+a short exercise. Notebooks **01**, **02**, and **04** have **no exercise**.
 
 | # | Notebook | Focus |
 |---|---|---|
-| 01 | Schema Enforcement and Evolution | **0** `CREATE` extract columns only (no `driver_payout_amount`), `INSERT` **1001–1004**, **4** rows. **1** enforcement: write/append a DataFrame that includes `driver_payout_amount` → expected fail. **2** `ALTER TABLE ADD COLUMN driver_payout_amount DECIMAL(10,2)`; `mergeSchema` write succeeds; `SELECT` still **4** rows; payout is **NULL**. **3** `NOT NULL` on `trip_id`; `CHECK (tip_amount >= 0)`; one insert that violates `CHECK` → expected fail. Fence: no column mapping, `DROP COLUMN`, identity/generated columns, `MERGE`, DV, or `OPTIMIZE`. **No exercise** |
-| 02 | Introductory MERGE | DV off. **0** `CREATE` + `INSERT` **1001–1003** only (**3** rows; 1003 tip **6.00**; **1004** absent). **1** `MERGE` from a source with 1003 tip **10.00** and extract row **1004**: `WHEN MATCHED` update tip; `WHEN NOT MATCHED` insert. **2** `SELECT` **4** rows; 1003 is **10.00**; 1004 present. Fence: no production incremental `MERGE` (Module 15), CDF, or `REPLACE WHERE`. Exercise: `MERGE` **1001** **3.00 → 4.00**; still **4** rows; 1003 stays **10.00** |
-| 03 | Deletion Vectors, REORG TABLE, and VACUUM | Auto-compact **off** (lab control, not taught). **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays; `.bin`). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` after each (small files + `.bin`). **4** `DELETE` 1002; `SELECT` **3** rows; `LIST` (live Parquet + `.bin`). **5** `VACUUM RETAIN 0 HOURS`, `LIST` (obsolete files can go; live DV files remain). **6** `REORG TABLE ... APPLY (PURGE)`, `LIST`, `DESCRIBE HISTORY`. **7** `VACUUM RETAIN 0 HOURS`, `LIST`. **8** second `REORG` (idempotent). Fence: no `OPTIMIZE`, auto-compact teaching, `VERSION AS OF` / `RESTORE`, `MERGE`, other `REORG` `APPLY` clauses, or partition `WHERE`. **No exercise** |
+| 01 | Deletion Vectors, REORG TABLE, and VACUUM | Auto-compact **off** (lab control, not taught). **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays; `.bin`). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` after each (small files + `.bin`). **4** `DELETE` 1002; `SELECT` **3** rows; `LIST` (live Parquet + `.bin`). **5** `VACUUM RETAIN 0 HOURS`, `LIST` (obsolete files can go; live DV files remain). **6** `REORG TABLE ... APPLY (PURGE)`, `LIST`, `DESCRIBE HISTORY`. **7** `VACUUM RETAIN 0 HOURS`, `LIST`. **8** second `REORG` (idempotent). Fence: no `OPTIMIZE`, auto-compact teaching, `VERSION AS OF` / `RESTORE`, `MERGE`, other `REORG` `APPLY` clauses, or partition `WHERE`. **No exercise** |
+| 02 | Schema Enforcement and Evolution | **0** `CREATE` extract columns only (no `driver_payout_amount`), `INSERT` **1001–1004**, **4** rows. **1** enforcement: write/append a DataFrame that includes `driver_payout_amount` → expected fail. **2** `ALTER TABLE ADD COLUMN driver_payout_amount DECIMAL(10,2)`; `mergeSchema` write succeeds; `SELECT` still **4** rows; payout is **NULL**. **3** `NOT NULL` on `trip_id`; `CHECK (tip_amount >= 0)`; one insert that violates `CHECK` → expected fail. Fence: no column mapping, `DROP COLUMN`, identity/generated columns, `MERGE`, DV, or `OPTIMIZE`. **No exercise** |
+| 03 | Introductory MERGE | DV off. **0** `CREATE` + `INSERT` **1001–1003** only (**3** rows; 1003 tip **6.00**; **1004** absent). **1** `MERGE` from a source with 1003 tip **10.00** and extract row **1004**: `WHEN MATCHED` update tip; `WHEN NOT MATCHED` insert. **2** `SELECT` **4** rows; 1003 is **10.00**; 1004 present. Fence: no production incremental `MERGE` (Module 15), CDF, or `REPLACE WHERE`. Exercise: `MERGE` **1001** **3.00 → 4.00**; still **4** rows; 1003 stays **10.00** |
 | 04 | ACID and Optimistic Concurrency | DV off. **0** `CREATE` + `INSERT` **1001–1004**. **1** `UPDATE` 1003 tip **6.00 → 10.00**; `DESCRIBE HISTORY`. **2** Explain OCC: readers see a snapshot; a writer validates against that version; overlapping writers on the same files conflict. **3** One overlapping-write demo (second writer loses with a concurrent-modification error, then retries); **4** rows remain. **4** `SHOW TBLPROPERTIES` glance (`delta.enableDeletionVectors`). Mention: deletion vectors can allow row-level concurrency for non-overlapping rows — no lab. Fence: no isolation-level tour, checkpoints, protocol versions, or `OPTIMIZE`. **No exercise** |
 
 ## Minimum privileges required

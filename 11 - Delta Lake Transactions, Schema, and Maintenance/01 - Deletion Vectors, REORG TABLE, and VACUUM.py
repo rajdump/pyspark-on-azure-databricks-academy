@@ -1,12 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 03 - Deletion Vectors, REORG TABLE, and VACUUM
+# MAGIC # 01 - Deletion Vectors, REORG TABLE, and VACUUM
 # MAGIC
-# MAGIC Module 10 showed how a one-row fare `UPDATE` can leave old data files behind.
+# MAGIC Module 10 showed how a one-row fare `UPDATE` can leave old data files
+# MAGIC behind, and ended by warning you not to run `VACUUM` yet.
 # MAGIC
-# MAGIC This notebook introduces **deletion vectors**, then uses
-# MAGIC **`REORG TABLE ... APPLY (PURGE)`** to rewrite current files that still hold
-# MAGIC deleted or updated rows, and **`VACUUM`** to remove the old files.
+# MAGIC This notebook is that maintenance. It introduces **deletion vectors**,
+# MAGIC then uses **`REORG TABLE ... APPLY (PURGE)`** to rewrite current files that
+# MAGIC still hold deleted or updated rows, and **`VACUUM`** to remove the old
+# MAGIC files.
 # MAGIC
 # MAGIC A deletion vector marks **deleted or updated rows** in an existing Parquet
 # MAGIC file, so Delta can avoid rewriting the entire file immediately.
@@ -301,4 +303,4 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC (PURGE)` removes the old row bytes from current files. `VACUUM` then
 # MAGIC deletes the files `REORG` replaced.**
 # MAGIC
-# MAGIC **Next:** `04 - ACID and Optimistic Concurrency`.
+# MAGIC **Next:** `02 - Schema Enforcement and Evolution`.

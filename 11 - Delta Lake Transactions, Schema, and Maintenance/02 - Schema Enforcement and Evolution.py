@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 01 - Schema Enforcement and Evolution
+# MAGIC # 02 - Schema Enforcement and Evolution
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -104,4 +104,4 @@
 # MAGIC
 # MAGIC TODO: recap schema enforcement, ADD COLUMN / mergeSchema, NOT NULL, CHECK.
 # MAGIC
-# MAGIC **Next:** `02 - Introductory MERGE`.
+# MAGIC **Next:** `03 - Introductory MERGE`.

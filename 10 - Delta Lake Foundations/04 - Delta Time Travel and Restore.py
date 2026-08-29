@@ -343,7 +343,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC deleted after 7 days. `VACUUM` must remove them.
 # MAGIC
 # MAGIC > **Warning:** Do not run `VACUUM` in this notebook. Maintenance is
-# MAGIC > Module 11.
+# MAGIC > Module 11, starting with `01 - Deletion Vectors, REORG TABLE, and
+# MAGIC > VACUUM`.
 
 # COMMAND ----------
 
@@ -402,5 +403,5 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC - Time travel and restore work only while the required transaction
 # MAGIC   history and data files are still available.
 # MAGIC
-# MAGIC **Next:** Module 11 — transactions, schema, deletion vectors, `REORG`,
-# MAGIC `VACUUM`, and an introduction to `MERGE`.
+# MAGIC **Next:** Module 11 — start with deletion vectors, `REORG`, and
+# MAGIC `VACUUM`, then schema, transactions, and an introduction to `MERGE`.

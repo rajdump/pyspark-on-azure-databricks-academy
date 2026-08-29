@@ -406,7 +406,7 @@ first write.
   [`dataset-guide.md`](dataset-guide.md)
 - KPI column formulas — Module 8 README (Paths and outputs)
 - Module 10 extract rows and lab DDL — Module 10 README
-- Module 11 extract, schema/`MERGE`/maintenance mutations, and `DELETE`
+- Module 11 extract, maintenance/`MERGE`/schema mutations, and `DELETE`
   1002 — Module 11 README
 - Privileges — each module README
 - Medallion `bronze` / `silver` / `gold` — Modules 13–14
