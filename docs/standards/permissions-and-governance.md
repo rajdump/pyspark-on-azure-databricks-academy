@@ -41,13 +41,13 @@ USE CATALOG <catalog>  -->  USE SCHEMA <schema>  -->  SELECT (or other object-le
 Missing any link in this chain produces an access error even if the final
 object-level grant looks correct.
 
-## Module 5 and Module 11 responsibilities
+## Module 5 and Module 12 responsibilities
 
 - **Module 5 — Reading, Writing, and Schemas** creates the rideshare catalog,
   external location, schemas, and volumes in each learner's own account.
   Its README owns the required privileges and setup inputs. Creating the
   storage credential itself is documented outside this repository.
-- **Module 11 — Unity Catalog and Data Governance** governs those existing
+- **Module 12 — Unity Catalog and Data Governance** governs those existing
   objects through grants, ownership, credentials, and least privilege. It
   does not recreate the Module 5 setup.
 

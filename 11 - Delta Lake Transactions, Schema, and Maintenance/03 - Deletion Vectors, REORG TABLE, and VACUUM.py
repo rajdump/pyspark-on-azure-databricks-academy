@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 01 - Deletion Vectors, REORG TABLE, and VACUUM
+# MAGIC # 03 - Deletion Vectors, REORG TABLE, and VACUUM
 # MAGIC
 # MAGIC Module 10 showed how a one-row fare `UPDATE` can leave old data files behind.
 # MAGIC
@@ -301,5 +301,4 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC (PURGE)` removes the old row bytes from current files. `VACUUM` then
 # MAGIC deletes the files `REORG` replaced.**
 # MAGIC
-# MAGIC **Next:** Module 11 continues with transactions, schema changes, and
-# MAGIC introductory `MERGE`.
+# MAGIC **Next:** `04 - ACID and Optimistic Concurrency`.

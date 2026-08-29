@@ -73,7 +73,7 @@ pre-create them. Schema names `landing` / `processed` are not medallion
 layers (Modules 12–13).
 
 `01 - Unity Catalog Volumes and Data Landing.py` creates platform objects;
-**Module 11** explains governance (grants, ownership, credentials, least
+**Module 12** explains governance (grants, ownership, credentials, least
 privilege) on those existing objects.
 
 ## Notebooks

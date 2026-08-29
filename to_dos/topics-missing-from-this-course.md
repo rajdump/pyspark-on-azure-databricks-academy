@@ -4,19 +4,12 @@ Compared with ScholarNest *Mastering Azure Databricks* (code notebooks only; the
 
 - Structured Streaming
 - Auto Loader
-- `COPY INTO`
 - Delta Live Tables / streaming pipelines
 - `APPLY CHANGES` / SCD Type 2 in DLT
-- ZORDER
 - Column mapping / `DROP COLUMN` rewrite
 - `CONVERT TO DELTA`
-- Change Data Feed
-- Liquid clustering
-- Predictive Optimization (named in Module 10, not taught)
 - Shallow / deep `CLONE`
-- `REPLACE WHERE` / `INSERT REPLACE`
 - Identity / generated columns
-- Table `CHECK` / `NOT NULL` constraints
 - UniForm / Iceberg
 - Delta Sharing
 - UC row filters / column masks / ABAC

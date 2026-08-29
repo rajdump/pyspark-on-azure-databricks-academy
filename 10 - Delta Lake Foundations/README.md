@@ -23,8 +23,8 @@ By the end of this module, you'll be able to:
   bounded by retention and that `VACUUM` removes eligible files
 
 This module does not teach ACID internals, concurrency, schema evolution,
-deletion vectors, `MERGE`, or `OPTIMIZE` / `VACUUM` behavior — those are
-Module 11. Grants are Module 12.
+deletion vectors, `MERGE`, or `VACUUM` behavior — those are Module 11.
+`OPTIMIZE` and file layout are Module 18. Grants are Module 12.
 
 ## Prerequisites
 

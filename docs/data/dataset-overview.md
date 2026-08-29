@@ -334,7 +334,8 @@ does not by itself delete that ADLS folder.
 **Reads / mutates:** none of `trip_enriched`, the KPI tables, or `curated/`.
 **Writes:** isolated lab table below.
 [Module 11 README](../../11%20-%20Delta%20Lake%20Transactions%2C%20Schema%2C%20and%20Maintenance/README.md)
-(extract, DDL, and cleanup). Notebooks **02–04** are not designed yet.
+(extract, DDL, mutations, and cleanup). Notebooks **01–04** are
+self-contained on that table (each setup `DROP`s and `rm`s).
 
 `{url}` is defined in [UC objects](#uc-objects).
 
@@ -342,10 +343,10 @@ does not by itself delete that ADLS folder.
 |---|---|
 | `rideshare_dev.processed.fare_maint_lab` | `{url}/external-tables/fare_maint_lab` — **not** a Volume path |
 
-Notebook **01** `CREATE` uses that `external-tables` folder (`LIST` / table
-DML). No `CREATE TABLE` at a Volume path. `DROP TABLE` leaves those files.
-Module 5 `99` Level 1 does not clear `external-tables/` (same as Module 10
-notebook 03).
+Notebooks **01–04** `CREATE` use that `external-tables` folder (`LIST` /
+table DML). No `CREATE TABLE` at a Volume path. `DROP TABLE` leaves those
+files. Module 5 `99` Level 1 does not clear `external-tables/` (same as
+Module 10 notebook 03).
 
 ## Unity Catalog platform reference
 
@@ -397,7 +398,7 @@ first write.
 | Practice files (Module 5 teaching writes; Module 10 notebooks 01–02) | `…/practice/{output_name}/` |
 | Curated Parquet (Module 6 writes; Module 7 reads) | `…/curated/{output_name}/` |
 | Pipeline managed tables | `rideshare_dev.processed` — [Managed tables](#managed-tables) |
-| External table `LOCATION` (Module 10 notebook 03; Module 11 notebook 01) | `{url}/external-tables/…` |
+| External table `LOCATION` (Module 10 notebook 03; Module 11 notebooks 01–04) | `{url}/external-tables/…` |
 
 ## Does not cover
 
@@ -405,7 +406,7 @@ first write.
   [`dataset-guide.md`](dataset-guide.md)
 - KPI column formulas — Module 8 README (Paths and outputs)
 - Module 10 extract rows and lab DDL — Module 10 README
-- Module 11 notebook 01 extract, tip mutations, and `DELETE` 1002 —
-  Module 11 README
+- Module 11 extract, schema/`MERGE`/maintenance mutations, and `DELETE`
+  1002 — Module 11 README
 - Privileges — each module README
 - Medallion `bronze` / `silver` / `gold` — Modules 13–14
