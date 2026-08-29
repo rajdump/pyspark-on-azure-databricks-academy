@@ -216,34 +216,18 @@ display(after_update.orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Time travel by timestamp
-# MAGIC A historical table state can be identified by version number or by time.
+# MAGIC When you know *when* the table was last correct — a bad load, a batch
+# MAGIC window — you type that time. You do not look up a version first.
 # MAGIC
-# MAGIC ```text
-# MAGIC I know the exact Delta version
-# MAGIC → VERSION AS OF
-# MAGIC
-# MAGIC I know the time when the table was correct
-# MAGIC → TIMESTAMP AS OF
+# MAGIC ```sql
+# MAGIC SELECT *
+# MAGIC FROM rideshare_dev.processed.fare_timetravel_lab
+# MAGIC TIMESTAMP AS OF '<timestamp>'
 # MAGIC ```
 # MAGIC
-# MAGIC `TIMESTAMP AS OF` resolves to the latest table version **at or before**
-# MAGIC that timestamp. Use the **timestamp** column HISTORY showed for version
-# MAGIC **2** — the same table state as `VERSION AS OF 2`.
-
-# COMMAND ----------
-
-# Timestamp HISTORY recorded for version 2
-v2 = spark.sql(f"DESCRIBE HISTORY {lab_table}").where("version = 2").first()
-ts_v2 = v2["timestamp"].isoformat(sep=" ", timespec="milliseconds")
-
-by_timestamp = spark.sql(
-    f"""
-    SELECT *
-    FROM {lab_table}
-    TIMESTAMP AS OF '{ts_v2}'
-    """
-)
-display(by_timestamp.orderBy("trip_id"))
+# MAGIC `TIMESTAMP AS OF` reads the latest version **at or before** that time.
+# MAGIC `DESCRIBE HISTORY` already showed the timestamps for this table. The
+# MAGIC timestamp for version **2** reads the same state as `VERSION AS OF 2`.
 
 # COMMAND ----------
 
