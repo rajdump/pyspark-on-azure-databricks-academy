@@ -218,7 +218,7 @@ display(historical_df.orderBy("trip_id"))
 # MAGIC Time travel and `RESTORE` both use Delta history, but they do different
 # MAGIC jobs.
 # MAGIC
-# MAGIC > `RESTORE` creates a new table version that matches the version you choose. The older versions remain in the table history.
+# MAGIC > **Note:** `RESTORE` creates a new table version that matches the version you choose. The older versions remain in the table history.
 
 # COMMAND ----------
 
@@ -251,9 +251,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # COMMAND ----------
 
-# MAGIC
 # MAGIC %md
-# MAGIC
 # MAGIC ## Retention: how far back can you go?
 # MAGIC
 # MAGIC Time travel and `RESTORE` work only while Delta retains the information needed to access an earlier version:
@@ -267,7 +265,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC        ├── Transaction history      default: 30 days
 # MAGIC        │
 # MAGIC        └── Required data files      VACUUM retention: 7 days
-# MAGIC ````
+# MAGIC ```
 # MAGIC
 # MAGIC Delta keeps table history for 30 days by default.
 # MAGIC
