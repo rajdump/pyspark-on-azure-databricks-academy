@@ -32,7 +32,8 @@
 # MAGIC
 # MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `processed.output_files`). Module 10 `01 - Why Delta Lake Exists.py`.
+# MAGIC `processed.output_files`). Module 10
+# MAGIC `01 - Parquet Rewrite vs Delta UPDATE.py`.
 # MAGIC
 # MAGIC This notebook does **not** teach `VERSION AS OF`, `TIMESTAMP AS OF`,
 # MAGIC `RESTORE`, `OPTIMIZE`, `VACUUM`, checkpoints, deletion vectors, or

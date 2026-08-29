@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 01 - Why Delta Lake Exists
+# MAGIC # 01 - Parquet Rewrite vs Delta UPDATE
 # MAGIC
 # MAGIC Module 5 created both a Parquet and a Delta folder. This notebook contains the first `row change`: a correction for one row in a four-row handmade extract.
 # MAGIC
