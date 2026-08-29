@@ -57,10 +57,10 @@ tip_amount decimal(10,2)
 
 | trip_id | service_type | payment_method | base_fare_amount | tip_amount | Lab use in 01 |
 |---|---|---|---:|---:|---|
-| 1001 | STANDARD | card | 20.00 | 3.00 | Unchanged |
-| 1002 | SHARED | cash | 15.00 | 0.00 | Step 3: `DELETE` |
+| 1001 | STANDARD | card | 20.00 | 3.00 | Step 3: tip → **4.00** |
+| 1002 | SHARED | cash | 15.00 | 0.00 | Step 4: `DELETE` |
 | 1003 | PREMIUM | card | 40.00 | 6.00 | Step 1: **6.00 → 10.00** (DV off); step 2: **12.00** (DV on) |
-| 1004 | STANDARD | wallet | 25.00 | 2.50 | Unchanged |
+| 1004 | STANDARD | wallet | 25.00 | 2.50 | Step 3: tip → **3.50** |
 
 First write: deletion vectors **off**; auto-compaction **off** (lab control,
 not taught). Ignore `.crc` files in listings.
@@ -91,7 +91,7 @@ One specified notebook so far. **No exercise.**
 
 | # | Notebook | Focus |
 |---|---|---|
-| 01 | Deletion Vectors, REORG TABLE, and VACUUM | External table `fare_maint_lab`. Auto-compact **off** (lab control, not taught). **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays; `.bin`). **3** `DELETE` 1002; `SELECT` **3** rows; `LIST` (live Parquet + `.bin`). **4** `VACUUM RETAIN 0 HOURS`, `LIST` (obsolete files can go; live DV files remain). **5** `REORG TABLE ... APPLY (PURGE)`, `LIST`, `DESCRIBE HISTORY`. **6** `VACUUM RETAIN 0 HOURS`, `LIST`. **7** second `REORG` (idempotent). Choice rule in prose only: `OPTIMIZE` is layout (not run). Fence: no `OPTIMIZE`, no auto-compact teaching, no helper, no `VERSION AS OF` / `RESTORE`, no `MERGE`, no other `REORG` `APPLY` clauses, no partition `WHERE`. **No exercise** |
+| 01 | Deletion Vectors, REORG TABLE, and VACUUM | External table `fare_maint_lab`. Auto-compact **off** (lab control, not taught). **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays; `.bin`). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` after each (small files + `.bin`). **4** `DELETE` 1002; `SELECT` **3** rows; `LIST` (live Parquet + `.bin`). **5** `VACUUM RETAIN 0 HOURS`, `LIST` (obsolete files can go; live DV files remain). **6** `REORG TABLE ... APPLY (PURGE)`, `LIST`, `DESCRIBE HISTORY`. **7** `VACUUM RETAIN 0 HOURS`, `LIST`. **8** second `REORG` (idempotent). Fence: no `OPTIMIZE`, no auto-compact teaching, no helper, no `VERSION AS OF` / `RESTORE`, no `MERGE`, no other `REORG` `APPLY` clauses, no partition `WHERE`. **No exercise** |
 
 ## Minimum privileges required
 

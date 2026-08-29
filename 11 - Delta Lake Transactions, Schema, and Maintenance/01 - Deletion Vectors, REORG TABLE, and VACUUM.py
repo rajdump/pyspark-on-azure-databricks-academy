@@ -11,12 +11,6 @@
 # MAGIC A deletion vector marks **deleted or updated rows** in an existing Parquet
 # MAGIC file, so Delta can avoid rewriting the entire file immediately.
 # MAGIC
-# MAGIC **`OPTIMIZE`** is for file layout and performance. A rewrite can apply
-# MAGIC deletion vectors as a side effect, but compaction does not guarantee every
-# MAGIC deletion vector is resolved. This notebook does not run `OPTIMIZE`. Use
-# MAGIC **`REORG TABLE ... APPLY (PURGE)`** when the goal is to purge soft-deleted
-# MAGIC data from current files.
-# MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
 # MAGIC - Compare how an `UPDATE` behaves with and without **deletion vectors**
@@ -153,7 +147,41 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 3 — Delete a row with deletion vectors
+# MAGIC ## Step 3 — Keep updating
+# MAGIC
+# MAGIC Run two more updates with deletion vectors enabled, then list the folder
+# MAGIC after each.
+# MAGIC
+# MAGIC Each update may create a **small Parquet file** and a **deletion-vector
+# MAGIC `.bin` file**. Older Parquet and `.bin` files can remain in `LIST` until
+# MAGIC `VACUUM`.
+
+# COMMAND ----------
+
+spark.sql(
+    f"""
+    UPDATE {lab_table}
+    SET tip_amount = 4.00
+    WHERE trip_id = 1001
+    """
+)
+display(spark.sql(f"LIST '{lab_path}'"))
+
+# COMMAND ----------
+
+spark.sql(
+    f"""
+    UPDATE {lab_table}
+    SET tip_amount = 3.50
+    WHERE trip_id = 1004
+    """
+)
+display(spark.sql(f"LIST '{lab_path}'"))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Step 4 — Delete a row with deletion vectors
 # MAGIC
 # MAGIC Delete trip **1002**. The query result drops the row. The live Parquet
 # MAGIC file can still hold that trip's bytes, with a deletion vector marking it
@@ -173,7 +201,7 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 4 — Run VACUUM
+# MAGIC ## Step 5 — Run VACUUM
 # MAGIC
 # MAGIC Disable the retention safety check for the current Spark session, then run
 # MAGIC `VACUUM RETAIN 0 HOURS` and list the folder again.
@@ -199,15 +227,11 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 5 — Purge with REORG TABLE
+# MAGIC ## Step 6 — Purge with REORG TABLE
 # MAGIC
 # MAGIC `REORG TABLE ... APPLY (PURGE)` rewrites **current** files that still
 # MAGIC carry deletion-vector changes. After this command, the deleted and
 # MAGIC updated rows are gone from the live data files.
-# MAGIC
-# MAGIC That is different from `OPTIMIZE`, which you run for file layout.
-# MAGIC `OPTIMIZE` can apply deletion vectors when it rewrites files, but it does
-# MAGIC not guarantee that every deletion vector is resolved.
 # MAGIC
 # MAGIC The old files can remain in `LIST` until `VACUUM`.
 
@@ -230,7 +254,7 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 6 — Remove the obsolete files
+# MAGIC ## Step 7 — Remove the obsolete files
 # MAGIC
 # MAGIC The default `VACUUM` retention period is **7 days**, so files created
 # MAGIC during this lab are normally too new to remove.
@@ -247,7 +271,7 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 7 — Run REORG again
+# MAGIC ## Step 8 — Run REORG again
 # MAGIC
 # MAGIC `REORG TABLE ... APPLY (PURGE)` is idempotent. A second run has no further
 # MAGIC rewrite to do when current files no longer carry deletion-vector changes.
@@ -266,15 +290,16 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC | ---- | ------------- |
 # MAGIC | 1 | DV off → updating one row rewrites the Parquet file containing that row |
 # MAGIC | 2 | DV on → the update can avoid rewriting the entire Parquet file |
-# MAGIC | 3 | `DELETE` 1002 → `SELECT` has 3 rows; live files can still hold the row |
-# MAGIC | 4 | `VACUUM` removes unused files; it does **not** purge live DV data |
-# MAGIC | 5 | `REORG TABLE ... APPLY (PURGE)` rewrites current files that carry DVs |
-# MAGIC | 6 | `VACUUM` removes the files `REORG` replaced |
-# MAGIC | 7 | A second `REORG` is a no-op |
+# MAGIC | 3 | More DV updates add small Parquet files and `.bin` files |
+# MAGIC | 4 | `DELETE` 1002 → `SELECT` has 3 rows; live files can still hold the row |
+# MAGIC | 5 | `VACUUM` removes unused files; it does **not** purge live DV data |
+# MAGIC | 6 | `REORG TABLE ... APPLY (PURGE)` rewrites current files that carry DVs |
+# MAGIC | 7 | `VACUUM` removes the files `REORG` replaced |
+# MAGIC | 8 | A second `REORG` is a no-op |
 # MAGIC
-# MAGIC **Use `REORG TABLE ... APPLY (PURGE)` to purge soft-deleted data from
-# MAGIC current files. Use `OPTIMIZE` when the goal is file layout. `VACUUM`
-# MAGIC removes obsolete files after either rewrite.**
+# MAGIC **Deletion vectors avoid a full file rewrite. `REORG TABLE ... APPLY
+# MAGIC (PURGE)` removes the old row bytes from current files. `VACUUM` then
+# MAGIC deletes the files `REORG` replaced.**
 # MAGIC
 # MAGIC **Next:** Module 11 continues with transactions, schema changes, and
 # MAGIC introductory `MERGE`.
