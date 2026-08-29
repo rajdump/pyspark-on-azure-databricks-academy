@@ -217,6 +217,8 @@ display(historical_df.orderBy("trip_id"))
 # MAGIC ## Restore an earlier state
 # MAGIC Time travel and `RESTORE` both use Delta history, but they do different
 # MAGIC jobs.
+# MAGIC
+# MAGIC > `RESTORE` creates a new table version that matches the version you choose. The older versions remain in the table history.
 
 # COMMAND ----------
 
@@ -232,13 +234,6 @@ display(spark.table(lab_table).orderBy("trip_id"))
 
 # HISTORY lists RESTORE as a new version after DELETE
 display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC
-# MAGIC > `RESTORE` creates a new table version that matches the version you choose. The older versions remain in the table history.
-# MAGIC
 
 # COMMAND ----------
 
@@ -285,45 +280,23 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Exercise
-# MAGIC The table has already been restored, so trip **1002** is present again
-# MAGIC in the current state.
 # MAGIC
-# MAGIC Use PySpark `versionAsOf` to read version **4** (the `DELETE` in HISTORY),
-# MAGIC then compare it with the current table. Time travel still reads that old
-# MAGIC state even after `RESTORE` changed current.
+# MAGIC ## Exercise
+# MAGIC
+# MAGIC The table has already been restored, so trip **1002** is back in the current table.
+# MAGIC
+# MAGIC Use PySpark `versionAsOf` to read version **4**, where trip **1002** was deleted.
+# MAGIC
+# MAGIC Then compare version **4** with the current table.
 # MAGIC
 # MAGIC **Expected:**
-# MAGIC - version **4** → **3** rows
-# MAGIC - current table → **4** rows
+# MAGIC
+# MAGIC - Version **4** → **3 rows**
+# MAGIC - Current table → **4 rows**
 
 # COMMAND ----------
 
 # Your code here.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **Hint:** Read version **4** with the same `versionAsOf` option used
-# MAGIC earlier, then compare its row count with the current table.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC **Solution** (commented out — un-comment if you want to compare)
-
-# COMMAND ----------
-
-# historical = (
-#     spark.read
-#     .option("versionAsOf", 4)
-#     .table(lab_table)
-# )
-# print(f"historical rows = {historical.count()} (expect 3)")
-# display(historical.orderBy("trip_id"))
-# current = spark.table(lab_table)
-# print(f"current rows = {current.count()} (expect 4)")
-# display(current.orderBy("trip_id"))
 
 # COMMAND ----------
 
