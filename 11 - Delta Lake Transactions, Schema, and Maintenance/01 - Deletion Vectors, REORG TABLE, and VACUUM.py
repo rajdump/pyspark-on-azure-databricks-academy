@@ -2,9 +2,8 @@
 # MAGIC %md
 # MAGIC # 01 - Deletion Vectors, REORG TABLE, and VACUUM
 # MAGIC
-# MAGIC Module 10 `04 - Delta Time Travel and Restore` proved that old files
-# MAGIC must stay. Retention asked when they can go. This notebook answers:
-# MAGIC **how does Delta eventually clean up old data?**
+# MAGIC Delta `UPDATE` and `DELETE` change the **logical** table state. What
+# MAGIC happens to the obsolete **physical** data?
 # MAGIC
 # MAGIC ```text
 # MAGIC Logical change     UPDATE / DELETE
@@ -19,9 +18,8 @@
 # MAGIC VACUUM             remove obsolete files the table no longer uses
 # MAGIC ```
 # MAGIC
-# MAGIC This notebook does **not** continue `fare_timetravel_lab` — that table
-# MAGIC was managed, so you could not `LIST` the path. Here you recreate the
-# MAGIC leftover-file pattern on an **external** table so `LIST` works.
+# MAGIC This notebook does **not** continue `fare_timetravel_lab`. That table was
+# MAGIC managed. Here you use an **external** table so `LIST` can show the files.
 # MAGIC
 # MAGIC A deletion vector marks **deleted or updated rows** in an existing Parquet
 # MAGIC file, so Delta can avoid rewriting the entire file immediately.

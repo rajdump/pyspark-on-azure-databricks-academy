@@ -393,6 +393,7 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC - Time travel and restore work only while the required history and data
 # MAGIC   files are still available.
 # MAGIC
-# MAGIC **Next:** Earlier versions stay readable because that data is still
-# MAGIC there. Module 11 `01 - Deletion Vectors, REORG TABLE, and VACUUM` is
-# MAGIC how obsolete data is eventually cleaned up.
+# MAGIC **Next:** Time travel and `RESTORE` depend on historical versions
+# MAGIC remaining available. Module 11
+# MAGIC `01 - Deletion Vectors, REORG TABLE, and VACUUM` introduces cleanup of
+# MAGIC obsolete data and its effect on historical access.
