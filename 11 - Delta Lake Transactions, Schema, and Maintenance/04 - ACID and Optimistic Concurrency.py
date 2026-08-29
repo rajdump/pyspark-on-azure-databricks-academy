@@ -3,8 +3,7 @@
 # MAGIC # 04 - ACID and Optimistic Concurrency
 # MAGIC
 # MAGIC Two jobs correct fares on the **same four trips** in `fare_maint_lab`.
-# MAGIC That one story is the ACID example — not a second dataset and not four
-# MAGIC separate labs.
+# MAGIC That one story is the ACID example.
 # MAGIC
 # MAGIC Production pipelines need those writes to stay **transactionally
 # MAGIC correct**: one commit must not mix partial work from two writers.
@@ -133,8 +132,8 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC %md
 # MAGIC ## Step 2 — Optimistic concurrency
 # MAGIC
-# MAGIC A second job might correct a card tip and a wallet tip on **this same
-# MAGIC table** while the first job's files are still being rewritten.
+# MAGIC Two jobs might correct a card tip and a wallet tip on **this same table**
+# MAGIC at the same time.
 # MAGIC
 # MAGIC **Optimistic concurrency** is how Delta handles that on `fare_maint_lab`:
 # MAGIC
@@ -165,15 +164,15 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC - **Atomic** — the loser does not commit (that tip stays old until retry).
 # MAGIC - **Consistent** — `SELECT` still has four trips, not a mixed broken row.
 # MAGIC
-# MAGIC The next cell retries the loser.
+# MAGIC The next cell runs those two `UPDATE`s as two threads so they can overlap.
 # MAGIC
-# MAGIC > **Note:** If both writes commit, this cell fails. Re-run it so the
+# MAGIC > **Note:** If both writes commit, the next cell fails. Re-run it so the
 # MAGIC > two `UPDATE`s overlap.
 
 # COMMAND ----------
 
 conflict_errors = []
-unexpected_errors = []
+committed = []
 results_lock = threading.Lock()
 start_together = threading.Barrier(2)
 conflict_types = (
@@ -197,11 +196,9 @@ def update_tip(trip_id, tip_amount):
         with results_lock:
             conflict_errors.append((trip_id, tip_amount, type(exc).__name__))
         print(f"trip_id {trip_id} did not commit: {type(exc).__name__}")
-    except Exception as exc:
-        with results_lock:
-            unexpected_errors.append(exc)
-        print(f"trip_id {trip_id} failed: {type(exc).__name__}")
     else:
+        with results_lock:
+            committed.append(trip_id)
         print(f"trip_id {trip_id} committed tip_amount = {tip_amount}")
 
 
@@ -214,10 +211,8 @@ for writer in writers:
 for writer in writers:
     writer.join()
 
-if unexpected_errors:
-    raise unexpected_errors[0]
-if not conflict_errors:
-    raise RuntimeError(
+if not conflict_errors or len(conflict_errors) + len(committed) != 2:
+    raise RuntimeError(  # Expected: RuntimeError
         "Expected one UPDATE to lose with a concurrent-modification "
         "error. Re-run this cell so the two writes overlap."
     )
