@@ -25,7 +25,7 @@
 # MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog, `processed`).
 # MAGIC
-# MAGIC This notebook does not run `VACUUM` or teach deletion vectors.
+# MAGIC This notebook does not run `VACUUM`.
 
 # COMMAND ----------
 
@@ -66,12 +66,8 @@ spark.sql(
       tip_amount DECIMAL(10, 2)
     )
     USING DELTA
-    TBLPROPERTIES ('delta.enableDeletionVectors' = 'false')
     """
 )
-
-print(f"lab_table = {lab_table}")
-print(f"rows = {spark.table(lab_table).count()} (expect 0)")
 
 # COMMAND ----------
 
@@ -99,7 +95,7 @@ spark.sql(
     WHERE trip_id <= 1003
     """
 )
-print(f"rows = {spark.table(lab_table).count()} (expect 3)")
+display(spark.table(lab_table).orderBy("trip_id"))
 
 # COMMAND ----------
 
