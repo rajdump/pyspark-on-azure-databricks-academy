@@ -104,4 +104,4 @@
 # MAGIC
 # MAGIC TODO: recap schema enforcement, ADD COLUMN / mergeSchema, NOT NULL, CHECK.
 # MAGIC
-# MAGIC **Next:** `02 - Introductory MERGE.py`
+# MAGIC **Next:** `02 - Introductory MERGE`.
