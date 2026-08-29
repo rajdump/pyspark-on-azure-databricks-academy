@@ -200,9 +200,7 @@ source of truth stays outside so Git/Databricks/Cursor paths stay stable.
 
 Author-only notes from Azure Databricks runs. Not learner content.
 
-| File | Usage |
-|---|---|
-| `01 - Deletion Vectors, OPTIMIZE, and VACUUM.md` | DBR 17.3 walkthrough for Module 11 notebook 01 |
+None currently.
 
 ## 8. Generated / local / accidental (usually ignore)
 

@@ -14,12 +14,12 @@ By the end of notebook **01**, you'll be able to:
 
 - Compare how an `UPDATE` behaves with and without **deletion vectors**
 - Show that `VACUUM` removes only files that are no longer used by the
-  table — it does not compact
-- Compact live files with `OPTIMIZE` when they have not already been
-  compacted automatically, then remove eligible old files with `VACUUM`
+  table — it does not purge deletion-vector rows from live files
+- Purge those rows from current files with
+  `REORG TABLE ... APPLY (PURGE)`, then remove the old files with `VACUUM`
 
-This notebook does not teach ACID, schema evolution, `MERGE`, liquid
-clustering, Change Data Feed, or a table-properties tour. Grants are
+This notebook does not teach ACID, schema evolution, `MERGE`, `OPTIMIZE`,
+liquid clustering, Change Data Feed, or a table-properties tour. Grants are
 Module 12.
 
 ## Prerequisites
@@ -35,7 +35,7 @@ Complete Module 10 notebooks **`01`–`04`**. You need the Module 5 platform
 Recall Module 10: `UPDATE` can leave extra files on disk; history is kept
 about **30** days; data files become eligible for `VACUUM` after **7** days;
 do not run `VACUUM` in Module 10. This notebook is the first run of
-`OPTIMIZE` and `VACUUM`.
+`REORG` and `VACUUM`.
 
 Does **not** read or mutate `trip_enriched`, `trip_driver_assignment`, KPI
 tables, or `curated/`.
@@ -43,8 +43,7 @@ tables, or `curated/`.
 ## Dataset
 
 Same handmade extract as Module 10 (`trip_id` **1001–1004**), not the
-100-row source files, plus two lab `INSERT`s (**1005**, **1006**) after the
-first `VACUUM`. Columns from `trip.service_type` and `payment`
+100-row source files. Columns from `trip.service_type` and `payment`
 (no `driver_payout_amount`). `service_type` uppercase; `payment_method`
 lowercase.
 
@@ -58,14 +57,13 @@ tip_amount decimal(10,2)
 
 | trip_id | service_type | payment_method | base_fare_amount | tip_amount | Lab use in 01 |
 |---|---|---|---:|---:|---|
-| 1001 | STANDARD | card | 20.00 | 3.00 | Step 3: tip → **4.00** |
-| 1002 | SHARED | cash | 15.00 | 0.00 | Unchanged |
+| 1001 | STANDARD | card | 20.00 | 3.00 | Unchanged |
+| 1002 | SHARED | cash | 15.00 | 0.00 | Step 3: `DELETE` |
 | 1003 | PREMIUM | card | 40.00 | 6.00 | Step 1: **6.00 → 10.00** (DV off); step 2: **12.00** (DV on) |
-| 1004 | STANDARD | wallet | 25.00 | 2.50 | Step 3: tip → **3.50** |
-| 1005 | STANDARD | card | 18.00 | 2.00 | Step 5: `INSERT` |
-| 1006 | SHARED | cash | 12.00 | 0.00 | Step 5: `INSERT` |
+| 1004 | STANDARD | wallet | 25.00 | 2.50 | Unchanged |
 
-First write: deletion vectors **off**. Ignore `.crc` files in listings.
+First write: deletion vectors **off**; auto-compaction **off** (lab control,
+not taught). Ignore `.crc` files in listings.
 
 ## Paths and outputs
 
@@ -93,7 +91,7 @@ One specified notebook so far. **No exercise.**
 
 | # | Notebook | Focus |
 |---|---|---|
-| 01 | Deletion Vectors, OPTIMIZE, and VACUUM | External table `fare_maint_lab`. **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays — DV demo). **3** `UPDATE` 1001 **→ 4.00** and 1004 **→ 3.50**, `LIST` (auto-compact after these DV writes: **one live** file; leftovers can remain in `LIST`); `DESCRIBE HISTORY` (auto `OPTIMIZE`). **4** `VACUUM RETAIN 0 HOURS`, `LIST` (`VACUUM` is not compaction; leftovers gone so `LIST` can be one file). **5** two separate `INSERT`s **1005** then **1006**, `LIST` after each (small files; no `.bin`). **6** `OPTIMIZE`, `LIST` (combine the insert files; leftovers can remain). **7** `VACUUM RETAIN 0 HOURS` (session check off; lab only), `LIST` (obsolete files gone). Fence: no helper, no `VERSION AS OF` / `RESTORE`, no `MERGE`, no auto-compact table property. **No exercise** |
+| 01 | Deletion Vectors, REORG TABLE, and VACUUM | External table `fare_maint_lab`. Auto-compact **off** (lab control, not taught). **0** baseline: DV off, four rows, one file, `LIST`. **1** `UPDATE` 1003 **6.00 → 10.00** without DV, `LIST` (rewrite). **2** enable DV; `UPDATE` 1003 **→ 12.00**, `LIST` (small new file; existing file stays; `.bin`). **3** `DELETE` 1002; `SELECT` **3** rows; `LIST` (live Parquet + `.bin`). **4** `VACUUM RETAIN 0 HOURS`, `LIST` (obsolete files can go; live DV files remain). **5** `REORG TABLE ... APPLY (PURGE)`, `LIST`, `DESCRIBE HISTORY`. **6** `VACUUM RETAIN 0 HOURS`, `LIST`. **7** second `REORG` (idempotent). Choice rule in prose only: `OPTIMIZE` is layout (not run). Fence: no `OPTIMIZE`, no auto-compact teaching, no helper, no `VERSION AS OF` / `RESTORE`, no `MERGE`, no other `REORG` `APPLY` clauses, no partition `WHERE`. **No exercise** |
 
 ## Minimum privileges required
 

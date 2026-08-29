@@ -8,7 +8,6 @@ Compared with ScholarNest *Mastering Azure Databricks* (code notebooks only; the
 - Delta Live Tables / streaming pipelines
 - `APPLY CHANGES` / SCD Type 2 in DLT
 - ZORDER
-- `REORG … APPLY (PURGE)`
 - Column mapping / `DROP COLUMN` rewrite
 - `CONVERT TO DELTA`
 - Change Data Feed

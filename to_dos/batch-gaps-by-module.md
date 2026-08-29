@@ -4,7 +4,6 @@ Topics missing from the batch path (Modules 1–21) and where to cover them.
 
 | Topic | Module |
 |---|---|
-| `REORG … APPLY (PURGE)` | 11 |
 | Column mapping / `DROP COLUMN` | 11 |
 | `CHECK` / `NOT NULL` | 11 |
 | Identity / generated columns | 11 |

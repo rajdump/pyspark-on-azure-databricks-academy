@@ -63,8 +63,8 @@ not this note.
 Roadmap status in [COURSE_MODULES](../COURSE_MODULES.md): **Not Started**.
 
 Scope (from roadmap): ACID semantics, optimistic concurrency, schema
-enforcement and evolution, `OPTIMIZE`, `VACUUM`, deletion vectors, introductory
-`MERGE` syntax. Production incremental `MERGE` is Module 15.
+enforcement and evolution, `OPTIMIZE`, `REORG`, `VACUUM`, deletion vectors,
+introductory `MERGE` syntax. Production incremental `MERGE` is Module 15.
 
 **Suggested sequence**
 

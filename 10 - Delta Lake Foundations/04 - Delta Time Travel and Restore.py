@@ -402,5 +402,5 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC - Time travel and restore work only while the required transaction
 # MAGIC   history and data files are still available.
 # MAGIC
-# MAGIC **Next:** Module 11 — transactions, schema, `OPTIMIZE`, `VACUUM`, and an
-# MAGIC introduction to `MERGE`.
+# MAGIC **Next:** Module 11 — transactions, schema, deletion vectors, `REORG`,
+# MAGIC `VACUUM`, and an introduction to `MERGE`.
