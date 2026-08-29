@@ -1,38 +1,54 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
+# MAGIC
 # MAGIC # 04 - Delta Time Travel and Restore
 # MAGIC
-# MAGIC The fares table will change several times. How do you inspect an earlier
-# MAGIC state, and how do you make an older state current again?
+# MAGIC A Delta table can change over time, creating multiple versions of the
+# MAGIC same table. This raises two important questions:
 # MAGIC
-# MAGIC `02 - Understanding the Delta Transaction Log` showed how Delta versions
-# MAGIC are created. This notebook uses version history to read and restore
-# MAGIC earlier table states.
+# MAGIC - How can you inspect what the table looked like at an earlier point?
+# MAGIC - How can you make a previous table state the current state again?
+# MAGIC
+# MAGIC In `02 - Understanding the Delta Transaction Log`, you learned how Delta
+# MAGIC records table changes and creates new versions. This notebook builds on
+# MAGIC that foundation to explore how those versions can be queried and restored.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
+# MAGIC By the end of this notebook, you will be able to:
+# MAGIC
 # MAGIC - Inspect Delta table history
-# MAGIC - Query an earlier state by version and by timestamp
-# MAGIC - Restore an earlier state
+# MAGIC - Query an earlier table state by version
+# MAGIC - Query an earlier table state by timestamp
+# MAGIC - Read a historical version using PySpark
+# MAGIC - Restore an earlier table state
 # MAGIC - Understand how retention limits access to historical versions
 # MAGIC
-# MAGIC **Reads:** none of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, `curated/`)
+# MAGIC **Reads:** None of the 100-row source files or teaching tables
+# MAGIC (`trip_enriched`, KPIs, or `curated/`)
 # MAGIC
 # MAGIC **Writes:**
+# MAGIC
 # MAGIC - `rideshare_dev.processed.fare_timetravel_lab`
 # MAGIC
-# MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
-# MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog, `processed`).
+# MAGIC **Prerequisites:**
 # MAGIC
-# MAGIC This notebook does not run `VACUUM`.
+# MAGIC - Module 9 notebooks `01`–`06`
+# MAGIC - Module 5 `01 - Unity Catalog Volumes and Data Landing.py`
+# MAGIC   (catalog and `processed` schema)
+# MAGIC
+# MAGIC **Scope note:** This notebook focuses on table history, time travel,
+# MAGIC `RESTORE`, and retention. It does not run `VACUUM`.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Setup — create the lab table
-# MAGIC We use a managed Delta table so the lesson can focus on versions, time
-# MAGIC travel, and restore.
+# MAGIC We use a managed Delta table to keep the lesson focused on table versions, time travel, and `RESTORE`.
 
 # COMMAND ----------
 
@@ -73,17 +89,7 @@ spark.sql(
 
 # MAGIC %md
 # MAGIC ## Build table history
-# MAGIC We will intentionally create five table states so we have history to
-# MAGIC explore. After a full run from the top, `DESCRIBE HISTORY` matches this
-# MAGIC timeline:
-# MAGIC
-# MAGIC ```text
-# MAGIC version 0  CREATE TABLE           0 rows
-# MAGIC version 1  WRITE (first INSERT)   1001-1003   3 rows   1003 tip 6.00
-# MAGIC version 2  WRITE (second INSERT)  +1004       4 rows   1003 tip 6.00
-# MAGIC version 3  UPDATE                 1003 tip 10 4 rows   1002 present
-# MAGIC version 4  DELETE                 1002        3 rows
-# MAGIC ```
+# MAGIC We will intentionally create five table versions to build a history that we can explore.
 
 # COMMAND ----------
 
@@ -136,38 +142,31 @@ display(spark.table(lab_table).orderBy("trip_id"))
 
 # MAGIC %md
 # MAGIC ## Explore history with `DESCRIBE HISTORY`
-# MAGIC `DESCRIBE HISTORY` is how you identify versions. It returns one row per
-# MAGIC recorded table version. For this lesson, look at:
 # MAGIC
-# MAGIC - **`version`** — identifies the table state
-# MAGIC - **`timestamp`** — when that version was created
-# MAGIC - **`operation`** — the type of change
+# MAGIC `DESCRIBE HISTORY` lets you inspect the versions recorded for a Delta table.
+# MAGIC
+# MAGIC For this lesson, focus on:
+# MAGIC
+# MAGIC * **`version`** — identifies the table version
+# MAGIC * **`timestamp`** — when the version was created
+# MAGIC * **`operation`** — the type of operation that created the version
 # MAGIC
 # MAGIC Ignore the other columns for now.
 # MAGIC
-# MAGIC We ran `INSERT` for the first two data commits. `DESCRIBE HISTORY`
-# MAGIC typically records those appends as **`WRITE`**.
 # MAGIC
-# MAGIC Find version **2** (before the tip update), version **3** (after the
-# MAGIC update, 1002 still present), and version **4** (after the delete). Later
-# MAGIC queries use those numbers.
 
 # COMMAND ----------
 
-display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
+# MAGIC %sql
+# MAGIC SELECT version, timestamp, operation FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_timetravel_lab)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Time travel by version
-# MAGIC Time travel lets you **read** an earlier version without changing the
-# MAGIC current table.
 # MAGIC
-# MAGIC `DESCRIBE HISTORY` gave you the version numbers. `VERSION AS OF` reads
-# MAGIC the table as it looked at that commit. The query is read-only.
+# MAGIC Time travel lets you **read** an earlier version of a Delta table without changing its current state.
 # MAGIC
-# MAGIC Read version **2** (before the tip correction), then read current (after
-# MAGIC the delete).
 
 # COMMAND ----------
 
@@ -188,53 +187,23 @@ display(current.orderBy("trip_id"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Compare versions
-# MAGIC
-# MAGIC ```text
-# MAGIC Version 2  before update    4 rows   tip 6.00    1002 present
-# MAGIC Version 3  after update     4 rows   tip 10.00   1002 present
-# MAGIC Version 4  after delete     3 rows   tip 10.00   1002 missing
-# MAGIC ```
-# MAGIC
-# MAGIC Version 2 shows the original tip. Version 4 is the current table. Next,
-# MAGIC read version 3: corrected tip, trip **1002** still present. That is the
-# MAGIC version we will restore to later.
-
-# COMMAND ----------
-
-# Table as it looked at version 3 (after the tip correction)
-after_update = spark.sql(
-    f"""
-    SELECT *
-    FROM {lab_table}
-    VERSION AS OF 3
-    """
-)
-display(after_update.orderBy("trip_id"))
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Time travel by timestamp
-# MAGIC When you know *when* the table was last correct — a bad load, a batch
-# MAGIC window — you type that time. You do not look up a version first.
-# MAGIC
-# MAGIC ```sql
+# MAGIC Sometimes you don't know the Delta version number. Instead, you know approximately when the table was last correct, such as before a bad load.
+
+# COMMAND ----------
+
+# MAGIC %sql
 # MAGIC SELECT *
 # MAGIC FROM rideshare_dev.processed.fare_timetravel_lab
-# MAGIC TIMESTAMP AS OF '<timestamp>'
-# MAGIC ```
-# MAGIC
-# MAGIC `TIMESTAMP AS OF` reads the latest version **at or before** that time.
-# MAGIC `DESCRIBE HISTORY` already showed the timestamps for this table. The
-# MAGIC timestamp for version **2** reads the same state as `VERSION AS OF 2`.
+# MAGIC TIMESTAMP AS OF '2026-08-29T18:45:22.000+00:00'
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Time travel with PySpark
-# MAGIC Delta time travel is also available on the DataFrame reader. Use the
-# MAGIC `versionAsOf` option to load a historical version of the table.
+# MAGIC
+# MAGIC Delta time travel is also available through the DataFrame reader. Use the `versionAsOf` option to load a specific historical version of the table.
+# MAGIC
 
 # COMMAND ----------
 
@@ -248,15 +217,6 @@ display(historical_df.orderBy("trip_id"))
 # MAGIC ## Restore an earlier state
 # MAGIC Time travel and `RESTORE` both use Delta history, but they do different
 # MAGIC jobs.
-# MAGIC
-# MAGIC ```text
-# MAGIC TIME TRAVEL   read an earlier version     current table unchanged
-# MAGIC RESTORE       make an earlier version     the new current state
-# MAGIC               current                     (a new Delta version)
-# MAGIC ```
-# MAGIC
-# MAGIC Suppose deleting trip **1002** was a mistake. Version **3** is the UPDATE:
-# MAGIC trip **1003** is already **10.00**, and **1002** is still there.
 
 # COMMAND ----------
 
@@ -269,52 +229,58 @@ spark.sql(
 )
 # 1002 is back; the corrected tip remains
 display(spark.table(lab_table).orderBy("trip_id"))
+
 # HISTORY lists RESTORE as a new version after DELETE
 display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `RESTORE` adds a new commit. It can reuse data files from the version
-# MAGIC you restore. Earlier versions remain in history, and the version number
-# MAGIC continues to increase.
+# MAGIC
+# MAGIC > `RESTORE` creates a new table version that matches the version you choose. The older versions remain in the table history.
+# MAGIC
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Restore by timestamp
+# MAGIC
 # MAGIC `RESTORE` can also use a timestamp instead of a version number.
 # MAGIC
-# MAGIC
 # MAGIC ```sql
-# MAGIC RESTORE TABLE … TO TIMESTAMP AS OF '<timestamp>'
+# MAGIC RESTORE TABLE ... TO TIMESTAMP AS OF '<timestamp>'
 # MAGIC ```
 # MAGIC
-# MAGIC Databricks finds the table state at that time and adds a new commit to the Delta transaction log that makes that historical state current again.
+# MAGIC Databricks finds the table state at that time and creates a new version with that state as the current table.
+# MAGIC
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Retention: how far back can you go?
-# MAGIC Time travel and `RESTORE` work only while Delta still has both:
 # MAGIC
-# MAGIC - the **transaction history** for that version
-# MAGIC - the **data files** that version needs to read
+# MAGIC %md
+# MAGIC
+# MAGIC ## Retention: how far back can you go?
+# MAGIC
+# MAGIC Time travel and `RESTORE` work only while Delta retains the information needed to access an earlier version:
+# MAGIC
+# MAGIC - **Transaction history** — identifies the table version.
+# MAGIC - **Data files** — contain the data needed to read that version.
 # MAGIC
 # MAGIC ```text
 # MAGIC Historical version
 # MAGIC        │
 # MAGIC        ├── Transaction history      default: 30 days
+# MAGIC        │
 # MAGIC        └── Required data files      VACUUM retention: 7 days
-# MAGIC ```
+# MAGIC ````
 # MAGIC
 # MAGIC Delta keeps table history for 30 days by default.
-# MAGIC Data files that are no longer part of the current table become eligible
-# MAGIC for removal by `VACUUM` after 7 days by default.
-# MAGIC After those files are gone, `VERSION AS OF` can fail even if HISTORY
-# MAGIC still lists the version.
 # MAGIC
-# MAGIC > **Warning:** Do not run `VACUUM` in this notebook.
+# MAGIC Data files that are no longer needed by the current table become eligible for removal after 7 days by default. They remain in storage until VACUUM runs and deletes them.
+# MAGIC
+# MAGIC After the required data files are removed, `VERSION AS OF` may no longer be able to read that historical version, even if `DESCRIBE HISTORY` still lists it.
+# MAGIC
+# MAGIC > **Warning:** Do not run `VACUUM` in this notebook
 
 # COMMAND ----------
 
