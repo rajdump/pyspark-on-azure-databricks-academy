@@ -5,8 +5,9 @@
 # MAGIC The fares table will change several times. How do you inspect an earlier
 # MAGIC state, and how do you make an older state current again?
 # MAGIC
-# MAGIC Notebook 02 showed how Delta versions are created. This notebook uses
-# MAGIC version history to read and restore earlier table states.
+# MAGIC `02 - Understanding the Delta Transaction Log` showed how Delta versions
+# MAGIC are created. This notebook uses version history to read and restore
+# MAGIC earlier table states.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -24,8 +25,10 @@
 # MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
 # MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog, `processed`).
 # MAGIC
-# MAGIC This notebook does not cover Delta maintenance or advanced change-tracking
-# MAGIC features.
+# MAGIC This notebook does not run `VACUUM` or teach deletion vectors. Time
+# MAGIC travel here depends on leftover files from the `INSERT` / `UPDATE` /
+# MAGIC `DELETE` history. The next notebook is how Delta eventually removes
+# MAGIC them.
 
 # COMMAND ----------
 
@@ -138,6 +141,25 @@ spark.sql(
     """
 )
 display(spark.table(lab_table).orderBy("trip_id"))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Each of those commits wrote **data files**, not only a HISTORY row:
+# MAGIC
+# MAGIC ```text
+# MAGIC INSERT 1001–1003   added a file
+# MAGIC INSERT 1004        added a file
+# MAGIC UPDATE 1003        added a file; the tip-6.00 file can remain
+# MAGIC DELETE 1002        added a file; the file that still had 1002 can remain
+# MAGIC ```
+# MAGIC
+# MAGIC `02 - Understanding the Delta Transaction Log` showed this with `ls`:
+# MAGIC the current table is not every file on disk. Time travel in the next
+# MAGIC sections still works because those leftover files are still there.
+# MAGIC
+# MAGIC This table is **managed**, so you cannot `LIST` the path
+# MAGIC (`03 - Managed vs External Delta Tables`).
 
 # COMMAND ----------
 
@@ -298,10 +320,12 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC `RESTORE` adds a new commit to the Delta transaction log. The new commit can point to the same data files used by the older version.
+# MAGIC `RESTORE` adds a new commit. That commit can point at **data files that
+# MAGIC are still on disk** from version 3 — leftover files from the `INSERT`s
+# MAGIC and `UPDATE`, which the `DELETE` did not physically remove.
 # MAGIC
-# MAGIC The original versions remain in history, and the version number continues to increase.
-# MAGIC
+# MAGIC The original versions remain in history, and the version number
+# MAGIC continues to increase.
 
 # COMMAND ----------
 
@@ -320,10 +344,11 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 
 # MAGIC %md
 # MAGIC ## Retention: how far back can you go?
-# MAGIC Time travel and `RESTORE` work only while Delta still has:
+# MAGIC Time travel and `RESTORE` worked here because Delta still has:
 # MAGIC
 # MAGIC - the transaction history for that version
-# MAGIC - the data files referenced by that version
+# MAGIC - the leftover data files from this notebook's two `INSERT`s, the
+# MAGIC   `UPDATE` of 1003, and the `DELETE` of 1002
 # MAGIC
 # MAGIC ```text
 # MAGIC Historical version
@@ -335,16 +360,11 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC Delta keeps table history for 30 days by default.
 # MAGIC Data files that are no longer part of the current table become eligible
 # MAGIC for removal by `VACUUM` after 7 days by default.
-# MAGIC So a version may still appear in `DESCRIBE HISTORY`, but time travel or
-# MAGIC `RESTORE` can fail if the required old data files have already been
-# MAGIC removed.
+# MAGIC The 7-day window does not delete files by itself — `VACUUM` must remove
+# MAGIC them. After those leftover files are gone, `VERSION AS OF` cannot read
+# MAGIC them, even if HISTORY still lists the version.
 # MAGIC
-# MAGIC **Note:** The 7-day retention period does not mean files are automatically
-# MAGIC deleted after 7 days. `VACUUM` must remove them.
-# MAGIC
-# MAGIC > **Warning:** Do not run `VACUUM` in this notebook. Maintenance is
-# MAGIC > Module 11, starting with `01 - Deletion Vectors, REORG TABLE, and
-# MAGIC > VACUUM`.
+# MAGIC > **Warning:** Do not run `VACUUM` in this notebook.
 
 # COMMAND ----------
 
@@ -392,6 +412,46 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## The next problem: old data does not disappear immediately
+# MAGIC Time travel and `RESTORE` worked because Delta **kept** the old files.
+# MAGIC That is also the problem: those files cannot stay forever.
+# MAGIC
+# MAGIC ```text
+# MAGIC UPDATE / DELETE
+# MAGIC        │
+# MAGIC        ▼
+# MAGIC New Delta version
+# MAGIC        │
+# MAGIC        ▼
+# MAGIC Previous files may still exist
+# MAGIC        │
+# MAGIC        ├── Needed for time travel
+# MAGIC        └── Needed for RESTORE
+# MAGIC ```
+# MAGIC
+# MAGIC Delta cannot immediately delete old files — they may still be required
+# MAGIC for time travel or restore. Changing a fare and physically removing old
+# MAGIC bytes are **different jobs**.
+# MAGIC
+# MAGIC ```text
+# MAGIC Logical change          UPDATE / DELETE
+# MAGIC        │
+# MAGIC        ▼
+# MAGIC Old row bytes may remain
+# MAGIC        │
+# MAGIC        ▼
+# MAGIC Rewrite live files      REORG TABLE ... APPLY (PURGE)
+# MAGIC        │
+# MAGIC        ▼
+# MAGIC Remove obsolete files   VACUUM
+# MAGIC ```
+# MAGIC
+# MAGIC Deletion vectors (next notebook) are one way a logical change can avoid
+# MAGIC rewriting the whole live file. This notebook does not teach them.
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC - Delta creates a new table version for each committed change.
@@ -401,7 +461,11 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC - `RESTORE` adds a new commit that makes an earlier table state current
 # MAGIC   again.
 # MAGIC - Time travel and restore work only while the required transaction
-# MAGIC   history and data files are still available.
+# MAGIC   history and leftover data files are still available.
+# MAGIC - Changing data is not the same as physically removing old files.
 # MAGIC
-# MAGIC **Next:** Module 11 — start with deletion vectors, `REORG`, and
-# MAGIC `VACUUM`, then schema, transactions, and an introduction to `MERGE`.
+# MAGIC **Next:** We can read and restore old versions, but those historical
+# MAGIC files cannot be retained forever. Module 11
+# MAGIC `01 - Deletion Vectors, REORG TABLE, and VACUUM` is how Delta
+# MAGIC distinguishes a logical change from physically removing old data, and
+# MAGIC how `REORG` and `VACUUM` eventually clean up.

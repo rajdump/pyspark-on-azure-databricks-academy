@@ -2,13 +2,26 @@
 # MAGIC %md
 # MAGIC # 01 - Deletion Vectors, REORG TABLE, and VACUUM
 # MAGIC
-# MAGIC Module 10 showed how a one-row fare `UPDATE` can leave old data files
-# MAGIC behind, and ended by warning you not to run `VACUUM` yet.
+# MAGIC Module 10 `04 - Delta Time Travel and Restore` proved that old files
+# MAGIC must stay. Retention asked when they can go. This notebook answers:
+# MAGIC **how does Delta eventually clean up old data?**
 # MAGIC
-# MAGIC This notebook is that maintenance. It introduces **deletion vectors**,
-# MAGIC then uses **`REORG TABLE ... APPLY (PURGE)`** to rewrite current files that
-# MAGIC still hold deleted or updated rows, and **`VACUUM`** to remove the old
-# MAGIC files.
+# MAGIC ```text
+# MAGIC Logical change     UPDATE / DELETE
+# MAGIC        │
+# MAGIC        ▼
+# MAGIC Deletion vectors   mark rows in a live file (avoid a full rewrite)
+# MAGIC        │
+# MAGIC        ▼
+# MAGIC REORG ... PURGE    rewrite live files; old row bytes gone from current
+# MAGIC        │
+# MAGIC        ▼
+# MAGIC VACUUM             remove obsolete files the table no longer uses
+# MAGIC ```
+# MAGIC
+# MAGIC This notebook does **not** continue `fare_timetravel_lab` — that table
+# MAGIC was managed, so you could not `LIST` the path. Here you recreate the
+# MAGIC leftover-file pattern on an **external** table so `LIST` works.
 # MAGIC
 # MAGIC A deletion vector marks **deleted or updated rows** in an existing Parquet
 # MAGIC file, so Delta can avoid rewriting the entire file immediately.
@@ -40,11 +53,13 @@
 # MAGIC %md
 # MAGIC ## Step 0 — Start with one data file
 # MAGIC
-# MAGIC Create the Delta table with **deletion vectors disabled** and insert four
-# MAGIC rows. Auto-compaction is off so later deletion vectors stay visible for
-# MAGIC the purge demo.
+# MAGIC Create an **external** Delta table with **deletion vectors disabled**.
+# MAGIC Insert all four rows in **one** write so `LIST` starts with **one Parquet
+# MAGIC file**. (The time-travel table used two `INSERT`s, so it already had
+# MAGIC more than one file before the `UPDATE`.)
 # MAGIC
-# MAGIC At this point, the current table data is stored in **one Parquet file**.
+# MAGIC Auto-compaction is off so later deletion vectors stay visible for the
+# MAGIC purge demo.
 
 # COMMAND ----------
 
@@ -96,10 +111,13 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC %md
 # MAGIC ## Step 1 — Update one row without deletion vectors
 # MAGIC
+# MAGIC The `UPDATE` of trip **1003** is a **logical** change — the same fare
+# MAGIC correction as in Module 10 `04 - Delta Time Travel and Restore`. The
+# MAGIC current table shows tip **10.00**. The old file can remain for history.
+# MAGIC This time you can `LIST` that leftover file.
+# MAGIC
 # MAGIC Without deletion vectors, updating a single row requires Spark to rewrite
 # MAGIC the **entire Parquet file that contains that row**.
-# MAGIC
-# MAGIC The original file remains on disk for Delta history.
 
 # COMMAND ----------
 
@@ -299,8 +317,8 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC | 7 | `VACUUM` removes the files `REORG` replaced |
 # MAGIC | 8 | A second `REORG` is a no-op |
 # MAGIC
-# MAGIC **Deletion vectors avoid a full file rewrite. `REORG TABLE ... APPLY
-# MAGIC (PURGE)` removes the old row bytes from current files. `VACUUM` then
-# MAGIC deletes the files `REORG` replaced.**
+# MAGIC **Logical change is not physical removal. Deletion vectors avoid a full
+# MAGIC file rewrite. `REORG TABLE ... APPLY (PURGE)` removes the old row bytes
+# MAGIC from current files. `VACUUM` then deletes the files `REORG` replaced.**
 # MAGIC
 # MAGIC **Next:** `02 - Schema Enforcement and Evolution`.
