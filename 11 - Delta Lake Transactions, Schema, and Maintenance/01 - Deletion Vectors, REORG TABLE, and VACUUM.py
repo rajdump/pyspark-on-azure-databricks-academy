@@ -8,6 +8,9 @@
 # MAGIC `REORG TABLE ... APPLY (PURGE)` clean up obsolete files and
 # MAGIC deletion-vector rows.
 # MAGIC
+# MAGIC Run `00 - Copy Fare DV Lab File` first so this folder already has the
+# MAGIC converted Delta files.
+# MAGIC
 # MAGIC Without deletion vectors, updating, deleting and merging even a single row can require Delta to rewrite the entire Parquet file containing that row. With deletion vectors, Delta marks the affected rows instead of immediately rewriting the file. When the table is read, Delta uses these marks to hide the affected rows and return the current data.
 # MAGIC
 # MAGIC # Learning objectives
