@@ -332,22 +332,19 @@ does not by itself delete that ADLS folder.
 ### Module 11 — Delta Lake Transactions, Schema, and Maintenance
 
 **Reads / mutates:** none of `trip_enriched`, the KPI tables, or `curated/`.
-**Writes:** isolated lab tables and the lab Parquet copy below.
+**Writes:** isolated lab table and lab Parquet copy below.
 [Module 11 README](../../11%20-%20Delta%20Lake%20Transactions%2C%20Schema%2C%20and%20Maintenance/README.md)
-(extract, DDL, mutations, copy, and cleanup). Notebooks **01–04** are
-self-contained on `fare_maint_lab` (each setup `DROP`s and `rm`s).
-Notebook **00** copies the repo lab Parquet; it does not `CREATE TABLE`.
+(extract, DDL, mutations, copy, and cleanup).
 
 `{url}` is defined in [UC objects](#uc-objects).
 
 | Object | Location |
 |---|---|
-| `data/lab/fare_dv_lab.parquet` | Repo lab file (about **290 MB** or larger). Not in Module 5 landing. |
-| `{url}/external-tables/fare_dv_lab/fare_dv_lab.parquet` | **00** copy destination — **not** a Volume path |
-| `rideshare_dev.processed.fare_dv_lab` | `{url}/external-tables/fare_dv_lab` — **not** a Volume path |
+| `data/lab/fare_dv_lab.parquet` | Author workspace file (~300 MB). Gitignored — not on GitHub. Not in Module 5 landing. |
+| `{url}/external-tables/fare_dv_lab/fare_dv_lab.parquet` | Notebook **00** copy destination — **not** a Volume path |
 | `rideshare_dev.processed.fare_maint_lab` | `{url}/external-tables/fare_maint_lab` — **not** a Volume path |
 
-Lab Parquet columns (01-only DV size demo; not the four-row extract):
+Lab Parquet columns (notebook **00** copy; not the four-row extract):
 
 ```text
 row_id
@@ -367,10 +364,8 @@ hourly_rate
 dollars_per_mile
 ```
 
-Notebooks **01–04** `CREATE` use the `fare_maint_lab` `external-tables`
-folder (`LIST` / table DML). No `CREATE TABLE` at a Volume path.
-`DROP TABLE` leaves those files. Module 5 `99` Level 1 does not clear
-`external-tables/` or `data/lab/` (same as Module 10 notebook 03).
+`DROP TABLE` leaves `external-tables/` files. Module 5 `99` Level 1 does not
+clear `external-tables/` or `data/lab/` (same as Module 10 notebook 03).
 
 ## Unity Catalog platform reference
 
@@ -399,8 +394,8 @@ at a Volume path.
 
 Pipeline teaching tables — Unity Catalog managed Delta in
 `rideshare_dev.processed` (`landing` has none). Grain and schemas are in the
-pipeline sections above. Module 10 lab tables are listed under
-[Module 10 — Delta Lake Foundations](#module-10--delta-lake-foundations).
+pipeline sections above. Module 10 and 11 lab tables are listed under
+those module headings, not here.
 
 | Table | Module |
 |---|---|
@@ -422,8 +417,8 @@ first write.
 | Practice files (Module 5 teaching writes; Module 10 notebooks 01–02) | `…/practice/{output_name}/` |
 | Curated Parquet (Module 6 writes; Module 7 reads) | `…/curated/{output_name}/` |
 | Pipeline managed tables | `rideshare_dev.processed` — [Managed tables](#managed-tables) |
-| External table `LOCATION` (Module 10 notebook 03; Module 11 notebooks 00–04) | `{url}/external-tables/…` |
-| Lab Parquet (Module 11 notebook 00) | repo `data/lab/fare_dv_lab.parquet` → `{url}/external-tables/fare_dv_lab/` |
+| External table `LOCATION` (Module 10 notebook 03; Module 11 notebooks 01–04) | `{url}/external-tables/…` |
+| Lab Parquet (Module 11 notebook 00) | workspace `data/lab/fare_dv_lab.parquet` (gitignored) → `{url}/external-tables/fare_dv_lab/` |
 
 ## Does not cover
 

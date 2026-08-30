@@ -71,6 +71,8 @@ Local laptop (Cursor)  -->  GitHub  -->  Azure Databricks Git folder
 
 1. Author and review notebooks, Markdown, and code locally in Cursor.
 2. Commit and push to GitHub — the canonical remote source of truth.
+   Do not commit `data/lab/*.parquet` (gitignored; keep it locally, in the
+   Databricks Git folder working copy, and on ADLS).
 3. Azure Databricks pulls the approved version via a Git folder.
 4. Run and validate in Azure Databricks.
 

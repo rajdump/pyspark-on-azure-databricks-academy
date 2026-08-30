@@ -3,6 +3,7 @@
 # doc, not by loading binary files into context.
 data/raw/**/*.parquet
 data/raw/**/*.avro
+data/lab/**/*.parquet
 
 # Lock file - large, generated, not useful as AI context
 uv.lock

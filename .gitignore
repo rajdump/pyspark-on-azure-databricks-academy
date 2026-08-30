@@ -30,6 +30,5 @@ Thumbs.db
 
 .databricks
 
-.databricks
-
-.databricks
+# Module 11 DV lab Parquet (~300 MB). Local / Databricks Git folder / ADLS only.
+data/lab/*.parquet
