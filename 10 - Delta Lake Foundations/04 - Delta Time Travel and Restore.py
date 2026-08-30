@@ -48,7 +48,7 @@
 
 # MAGIC %md
 # MAGIC ## Setup — create the lab table
-# MAGIC We use a managed Delta table to keep the lesson focused on table versions, time travel, and `RESTORE`.
+# MAGIC We use a managed Delta table to keep the lesson focused on table versions, time travel, and RESTORE.
 
 # COMMAND ----------
 
@@ -304,16 +304,10 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
-# MAGIC - Delta creates a new table version for each committed change.
-# MAGIC - `DESCRIBE HISTORY` shows the recorded version history.
-# MAGIC - Time travel reads an earlier table state by version or timestamp
-# MAGIC   without changing the current table.
-# MAGIC - `RESTORE` adds a new commit that makes an earlier table state current
-# MAGIC   again.
-# MAGIC - Time travel and restore work only while the required history and data
-# MAGIC   files are still available.
+# MAGIC - Every committed change creates a new version of the Delta table.
+# MAGIC - You can use `DESCRIBE HISTORY` to inspect the version history of the table.
+# MAGIC - Time travel allows you to read a previous state of the table by version or timestamp, without altering the current table.
+# MAGIC - The `RESTORE` command creates a new version that makes an earlier state of the table current again.
+# MAGIC - Access to historical versions relies on the availability of the necessary transaction history and data files.
 # MAGIC
-# MAGIC **Next:** Time travel and `RESTORE` depend on historical versions
-# MAGIC remaining available. Module 11
-# MAGIC `01 - Deletion Vectors, REORG TABLE, and VACUUM` introduces cleanup of
-# MAGIC obsolete data and its effect on historical access.
+# MAGIC Module 11, titled '01 - Deletion Vectors, REORG TABLE, and VACUUM,' explores how Delta manages obsolete data and how cleanup can impact access to historical versions..

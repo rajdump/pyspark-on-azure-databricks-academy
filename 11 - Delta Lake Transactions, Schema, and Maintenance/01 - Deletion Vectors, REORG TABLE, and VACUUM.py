@@ -2,31 +2,15 @@
 # MAGIC %md
 # MAGIC # 01 - Deletion Vectors, REORG TABLE, and VACUUM
 # MAGIC
-# MAGIC Delta `UPDATE` and `DELETE` change the **logical** table state. What
-# MAGIC happens to the obsolete **physical** data?
+# MAGIC Deletion vectors make `DELETE`, `UPDATE`, and `MERGE` operations faster.
 # MAGIC
-# MAGIC ```text
-# MAGIC Logical change     UPDATE / DELETE
-# MAGIC        │
-# MAGIC        ▼
-# MAGIC Deletion vectors   mark rows in a live file (avoid a full rewrite)
-# MAGIC        │
-# MAGIC        ▼
-# MAGIC REORG ... PURGE    rewrite live files; old row bytes gone from current
-# MAGIC        │
-# MAGIC        ▼
-# MAGIC VACUUM             remove obsolete files the table no longer uses
-# MAGIC ```
+# MAGIC Without deletion vectors, changing or deleting even one row may require rewriting the entire Parquet file that contains that row.
 # MAGIC
-# MAGIC This notebook does **not** continue `fare_timetravel_lab`. That table was
-# MAGIC managed. Here you use an **external** table so `LIST` can show the files.
-# MAGIC
-# MAGIC A deletion vector marks **deleted or updated rows** in an existing Parquet
-# MAGIC file, so Delta can avoid rewriting the entire file immediately.
+# MAGIC With deletion vectors, the affected rows are marked instead of immediately rewriting the file. When the table is read, Delta uses these marks to hide the affected rows and return the current data.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Compare how an `UPDATE` behaves with and without **deletion vectors**
+# MAGIC - Compare how an`UPDATE` behaves with and without **deletion vectors**
 # MAGIC - Show that `VACUUM` removes only files that are no longer used by the
 # MAGIC   table — it does not purge deletion-vector rows from live files
 # MAGIC - Purge those rows from current files with
