@@ -282,3 +282,5 @@ display(spark.sql(f"LIST '{lab_path}'"))
 # MAGIC | 6 | Second VACUUM → cleaned up the file REORG replaced |
 # MAGIC
 # MAGIC **Deletion vectors avoid expensive rewrites. `REORG PURGE` removes marked rows from live files. `VACUUM` cleans up the leftovers.**
+# MAGIC
+# MAGIC **Next:** `02 - Schema Enforcement and Evolution`

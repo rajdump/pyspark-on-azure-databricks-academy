@@ -1,13 +1,11 @@
 # Databricks notebook source
-# /// script
-# [tool.databricks.environment]
-# environment_version = "5"
-# ///
 # MAGIC %md
 # MAGIC # 00 - Copy Fare DV Lab File
 # MAGIC
-# MAGIC Copy `data/lab/fare_dv_lab.parquet` to the table folder. Open from the
-# MAGIC course **Git folder**. No `CREATE TABLE`.
+# MAGIC Set up the deletion-vector lab file. Copy
+# MAGIC `data/lab/fare_dv_lab.parquet` to the table folder, then
+# MAGIC `CONVERT TO DELTA`. Open from the course **Git folder**. No
+# MAGIC `CREATE TABLE`.
 # MAGIC
 # MAGIC **Next:** `01 - Deletion Vectors, REORG TABLE, and VACUUM`
 
