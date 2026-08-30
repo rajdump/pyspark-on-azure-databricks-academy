@@ -306,6 +306,5 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC - The `RESTORE` command creates a new version that makes an earlier state of the table current again.
 # MAGIC - Access to historical versions relies on the availability of the necessary transaction history and data files.
 # MAGIC
-# MAGIC **Next:** Module 11 `00 - Copy Fare DV Lab File`, then
-# MAGIC `01 - Deletion Vectors, REORG TABLE, and VACUUM` — cleanup of obsolete
-# MAGIC data and its effect on historical access..
+# MAGIC **Next:** Module 11 `01 - Deletion Vectors, REORG TABLE, and VACUUM` —
+# MAGIC cleanup of obsolete data and its effect on historical access..

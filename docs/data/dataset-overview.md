@@ -342,41 +342,7 @@ does not by itself delete that ADLS folder.
 |---|---|
 | `data/lab/fare_dv_lab.parquet` | Author workspace file (~300 MB). Gitignored — not on GitHub. Not in Module 5 landing. |
 | `{url}/external-tables/fare_dv_lab/fare_dv_lab.parquet` | Notebook **00** copy destination — **not** a Volume path |
-| `rideshare_dev.processed.fare_dv_lab` | `{url}/external-tables/fare_dv_lab` — **not** a Volume path. **11,060,030** rows, ~300 MB, all `Lyft`. |
 | `rideshare_dev.processed.fare_maint_lab` | `{url}/external-tables/fare_maint_lab` — **not** a Volume path |
-
-Lab Parquet / `fare_dv_lab` columns (notebook **00** copy; notebook **01**
-Delta table; not the four-row extract):
-
-```text
-row_id                 bigint
-pickup_location        bigint
-dropoff_location       bigint
-trip_length            double
-request_to_dropoff     double
-request_to_pickup      double
-total_ride_time        double
-on_scene_to_pickup     double
-on_scene_to_dropoff    double
-passenger_fare         double
-driver_total_pay       double
-rideshare_profit       double
-hourly_rate            double
-dollars_per_mile       double
-business               string
-```
-
-Notebook **01** inspection set (never `SELECT *` the full table):
-
-| row_id | pickup_location | dropoff_location | trip_length | passenger_fare | driver_total_pay | rideshare_profit | dollars_per_mile | business |
-|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| 210049714452023 | 82 | 132 | 11.185 | 51.57 | 36.34 | 15.23 | 3.25 | Lyft |
-| 210049714452029 | 181 | 140 | 8.754 | 41.76 | 35.08 | 6.68 | 4.01 | Lyft |
-| 210049714452046 | 42 | 138 | 7.85 | 38.65 | 18.58 | 20.07 | 2.37 | Lyft |
-| 210049714452050 | 233 | 239 | 4.392 | 40.13 | 36.13 | 10.00 | 8.23 | Lyft |
-
-On these four rows, `on_scene_to_pickup`, `on_scene_to_dropoff`, and
-`hourly_rate` are NULL. Mutations: Module 11 README.
 
 `DROP TABLE` leaves `external-tables/` files. Module 5 `99` Level 1 does not
 clear `external-tables/` or `data/lab/` (same as Module 10 notebook 03).
