@@ -1,8 +1,4 @@
 # Databricks notebook source
-# /// script
-# [tool.databricks.environment]
-# environment_version = "5"
-# ///
 # MAGIC %md
 # MAGIC
 # MAGIC # 04 - Delta Time Travel and Restore
@@ -310,4 +306,5 @@ display(spark.sql(f"DESCRIBE HISTORY {lab_table}"))
 # MAGIC - The `RESTORE` command creates a new version that makes an earlier state of the table current again.
 # MAGIC - Access to historical versions relies on the availability of the necessary transaction history and data files.
 # MAGIC
-# MAGIC Module 11, titled '01 - Deletion Vectors, REORG TABLE, and VACUUM,' explores how Delta manages obsolete data and how cleanup can impact access to historical versions..
+# MAGIC **Next:** Module 11 `01 - Deletion Vectors, REORG TABLE, and VACUUM` —
+# MAGIC cleanup of obsolete data and its effect on historical access..
