@@ -2,8 +2,9 @@
 # MAGIC %md
 # MAGIC # 00 - Copy Fare DV Lab File
 # MAGIC
-# MAGIC Copy `data/lab/fare_dv_lab.parquet` to the external-tables folder. Open
-# MAGIC from the course **Git folder**. No `CREATE TABLE`.
+# MAGIC Copy `data/lab/fare_dv_lab.parquet` to the table folder. Open from the
+# MAGIC course **Git folder**. No `CREATE TABLE` — notebook **01** registers
+# MAGIC Delta on that folder.
 # MAGIC
 # MAGIC **Next:** `01 - Deletion Vectors, REORG TABLE, and VACUUM`
 
