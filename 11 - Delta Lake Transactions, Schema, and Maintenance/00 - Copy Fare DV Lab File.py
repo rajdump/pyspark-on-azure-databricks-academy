@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %md
 # MAGIC # 00 - Copy Fare DV Lab File
 # MAGIC
@@ -40,4 +44,10 @@ if not src.is_file():
 
 dbutils.fs.mkdirs(lab_path)
 dbutils.fs.cp(f"file:{src.resolve()}", dest_file)
+display(spark.sql(f"LIST '{lab_path}'"))
+
+# COMMAND ----------
+
+# DBTITLE 1,Convert Parquet to Delta
+spark.sql(f"CONVERT TO DELTA parquet.`{lab_path}`")
 display(spark.sql(f"LIST '{lab_path}'"))

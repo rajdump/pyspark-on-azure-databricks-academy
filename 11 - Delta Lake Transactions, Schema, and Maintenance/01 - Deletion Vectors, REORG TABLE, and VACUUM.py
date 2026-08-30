@@ -1,53 +1,20 @@
 # Databricks notebook source
+# DBTITLE 1,Introduction
 # MAGIC %md
 # MAGIC # 01 - Deletion Vectors, REORG TABLE, and VACUUM
 # MAGIC
-# MAGIC Deletion vectors make `DELETE`, `UPDATE`, and `MERGE` operations faster.
+# MAGIC Without deletion vectors, updating, deleting and merging even a single row can require Delta to rewrite the entire Parquet file containing that row. With deletion vectors, Delta marks the affected rows instead of immediately rewriting the file. When the table is read, Delta uses these marks to hide the affected rows and return the current data.
 # MAGIC
-# MAGIC Without deletion vectors, changing or deleting even one row may require rewriting the entire Parquet file that contains that row.
+# MAGIC # Learning objectives
 # MAGIC
-# MAGIC With deletion vectors, the affected rows are marked instead of immediately rewriting the file. When the table is read, Delta uses these marks to hide the affected rows and return the current data.
-# MAGIC
-# MAGIC ## Learning objectives
-# MAGIC
-# MAGIC - Compare how an`UPDATE` behaves with and without **deletion vectors**
-# MAGIC - Show that `VACUUM` removes only files that are no longer used by the
-# MAGIC   table — it does not purge deletion-vector rows from live files
-# MAGIC - Purge those rows from current files with
-# MAGIC   `REORG TABLE ... APPLY (PURGE)`, then remove the old files with `VACUUM`
-# MAGIC
-# MAGIC **Reads:** none of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, `curated/`)
-# MAGIC
-# MAGIC **Writes:**
-# MAGIC - `rideshare_dev.processed.fare_maint_lab` at `{url}/external-tables/fare_maint_lab`
-# MAGIC
-# MAGIC **Prerequisites:** Module 10 notebooks `01`–`04`. Module 5
-# MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `el_rideshare_dev`, `processed`).
-# MAGIC
-# MAGIC This notebook does **not** teach ACID, schema evolution, `MERGE`,
-# MAGIC `OPTIMIZE`, liquid clustering, Change Data Feed, or a table-properties
-# MAGIC tour.
+# MAGIC - Compare one `UPDATE` with and without **deletion vectors**
+# MAGIC - `DELETE` a row that stays in the live file until purge
+# MAGIC - `VACUUM` — cleans up old, unused files
+# MAGIC - `REORG TABLE APPLY (PURGE)` — removes marked rows from live files
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Step 0 — Start with one data file
-# MAGIC
-# MAGIC Create an **external** Delta table with **deletion vectors disabled**.
-# MAGIC Insert all four rows in **one** write so `LIST` starts with **one Parquet
-# MAGIC file**. (The time-travel table used two `INSERT`s, so it already had
-# MAGIC more than one file before the `UPDATE`.)
-# MAGIC
-# MAGIC Auto-compaction is off so later deletion vectors stay visible for the
-# MAGIC purge demo.
-
-# COMMAND ----------
-
-spark.conf.set("spark.databricks.delta.autoCompact.enabled", "false")
-
-lab_table = "rideshare_dev.processed.fare_maint_lab"
+lab_table = "rideshare_dev.processed.fare_dv_lab"
 
 external_location_url = (
     spark.sql("DESCRIBE EXTERNAL LOCATION el_rideshare_dev")
@@ -55,76 +22,100 @@ external_location_url = (
     .first()["url"]
     .rstrip("/")
 )
-lab_path = f"{external_location_url}/external-tables/fare_maint_lab"
 
-spark.sql(f"DROP TABLE IF EXISTS {lab_table}")
-dbutils.fs.rm(lab_path, True)
+lab_path = f"{external_location_url}/external-tables/fare_dv_lab"
+
+display(spark.sql(f"LIST '{lab_path}'"))
+
+# COMMAND ----------
+
+# DBTITLE 1,Step 0
+# MAGIC %md
+# MAGIC ## Step 0 — Create the table with deletion vectors OFF
+# MAGIC
+# MAGIC Create an external Delta table with deletion vectors and auto-compaction disabled.
+
+# COMMAND ----------
 
 spark.sql(
     f"""
-    CREATE TABLE {lab_table} (
-      trip_id BIGINT,
-      service_type STRING,
-      payment_method STRING,
-      base_fare_amount DECIMAL(10, 2),
-      tip_amount DECIMAL(10, 2)
-    )
+    DROP TABLE IF EXISTS {lab_table}
+    """
+)
+
+spark.sql(
+    f"""
+    CREATE TABLE IF NOT EXISTS {lab_table}
     USING DELTA
     LOCATION '{lab_path}'
-    TBLPROPERTIES (
+    """
+)
+
+spark.sql(
+    f"""
+    ALTER TABLE {lab_table}
+    SET TBLPROPERTIES (
       'delta.enableDeletionVectors' = 'false',
       'delta.autoOptimize.autoCompact' = 'false'
     )
     """
 )
-spark.sql(
-    f"""
-    INSERT INTO {lab_table} VALUES
-      (1001, 'STANDARD', 'card', 20.00, 3.00),
-      (1002, 'SHARED', 'cash', 15.00, 0.00),
-      (1003, 'PREMIUM', 'card', 40.00, 6.00),
-      (1004, 'STANDARD', 'wallet', 25.00, 2.50)
-    """
-)
+
 display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
+# DBTITLE 1,Track 4 rows
 # MAGIC %md
-# MAGIC ## Step 1 — Update one row without deletion vectors
+# MAGIC Pick 4 rows to track throughout the lab. Note their original `passenger_fare` values.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT row_id,passenger_fare
+# MAGIC FROM rideshare_dev.processed.fare_dv_lab
+# MAGIC WHERE row_id IN (210049714452023,210049714452029,210049714452046,210049714452050)
+# MAGIC ORDER BY row_id
+
+# COMMAND ----------
+
+# DBTITLE 1,Step 1
+# MAGIC %md
+# MAGIC ## Step 1 — Update one row WITHOUT deletion vectors
 # MAGIC
-# MAGIC The `UPDATE` of trip **1003** is a **logical** change — the same fare
-# MAGIC correction as in Module 10 `04 - Delta Time Travel and Restore`. The
-# MAGIC current table shows tip **10.00**. The old file can remain for history.
-# MAGIC This time you can `LIST` that leftover file.
+# MAGIC With DVs off, Delta rewrites the entire Parquet file just to change one row. Watch the file listing grow.
 # MAGIC
-# MAGIC Without deletion vectors, updating a single row requires Spark to rewrite
-# MAGIC the **entire Parquet file that contains that row**.
 
 # COMMAND ----------
 
 spark.sql(
     f"""
     UPDATE {lab_table}
-    SET tip_amount = 10.00
-    WHERE trip_id = 1003
+    SET passenger_fare = 55.00
+    WHERE row_id = 210049714452023
     """
 )
 display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
+# DBTITLE 1,Check history — no DVs
+# MAGIC %md
+# MAGIC Check history. Notice `numCopiedRows` — Delta copied all 11 million rows just to update one.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT version, operation, operationParameters,operationMetrics
+# MAGIC FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_dv_lab)
+
+# COMMAND ----------
+
+# DBTITLE 1,Step 2
 # MAGIC %md
 # MAGIC ## Step 2 — Enable deletion vectors
 # MAGIC
-# MAGIC Enable deletion vectors and update the **same row again**.
-# MAGIC
-# MAGIC Now Delta can avoid rewriting the entire Parquet file. The old row is
-# MAGIC marked as no longer part of the current table state, and the updated row
-# MAGIC is written to a new data file.
-# MAGIC
-# MAGIC Compare the new file size with Step 1. The new data file should be much
-# MAGIC smaller, and you should also see a deletion-vector `.bin` file.
+# MAGIC Turn on DVs, then update the same row. This time Delta writes a tiny file + a `.bin` marker instead of rewriting everything.
 
 # COMMAND ----------
 
@@ -137,86 +128,72 @@ spark.sql(
 
 # COMMAND ----------
 
-spark.sql(
-    f"""
-    UPDATE {lab_table}
-    SET tip_amount = 12.00
-    WHERE trip_id = 1003
-    """
-)
-display(spark.sql(f"LIST '{lab_path}'"))
-
-# COMMAND ----------
-
+# DBTITLE 1,Update with DVs on
 # MAGIC %md
-# MAGIC ## Step 3 — Keep updating
-# MAGIC
-# MAGIC Run two more updates with deletion vectors enabled, then list the folder
-# MAGIC after each.
-# MAGIC
-# MAGIC Each update may create a **small Parquet file** and a **deletion-vector
-# MAGIC `.bin` file**. Older Parquet and `.bin` files can remain in `LIST` until
-# MAGIC `VACUUM`.
+# MAGIC Update the same row again. Compare the new file sizes to Step 1 — much smaller this time.
 
 # COMMAND ----------
 
 spark.sql(
     f"""
     UPDATE {lab_table}
-    SET tip_amount = 4.00
-    WHERE trip_id = 1001
+    SET passenger_fare = 60.00
+    WHERE row_id = 210049714452023
     """
 )
 display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
-spark.sql(
-    f"""
-    UPDATE {lab_table}
-    SET tip_amount = 3.50
-    WHERE trip_id = 1004
-    """
-)
-display(spark.sql(f"LIST '{lab_path}'"))
-
-# COMMAND ----------
-
+# DBTITLE 1,Check history — with DVs
 # MAGIC %md
-# MAGIC ## Step 4 — Delete a row with deletion vectors
+# MAGIC Check history. `numCopiedRows` is now **0** — no full rewrite happened.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT version, operation, operationParameters,operationMetrics
+# MAGIC FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_dv_lab)
+
+# COMMAND ----------
+
+# DBTITLE 1,Step 3
+# MAGIC %md
+# MAGIC ## Step 3 — Delete a row with deletion vectors
 # MAGIC
-# MAGIC Delete trip **1002**. The query result drops the row. The live Parquet
-# MAGIC file can still hold that trip's bytes, with a deletion vector marking it
-# MAGIC as removed.
+# MAGIC Delete a row. Delta adds a `.bin` marker — no files rewritten, zero bytes added.
 
 # COMMAND ----------
 
 spark.sql(
     f"""
     DELETE FROM {lab_table}
-    WHERE trip_id = 1002
+    WHERE row_id = 210049714452046
     """
 )
-display(spark.sql(f"SELECT * FROM {lab_table} ORDER BY trip_id"))
 display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
+# DBTITLE 1,Check history — delete
 # MAGIC %md
-# MAGIC ## Step 5 — Run VACUUM
+# MAGIC Check history. `numAddedFiles = 0`, `numAddedBytes = 0`. The row is hidden, not physically removed.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT version, operation, operationParameters,operationMetrics
+# MAGIC FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_dv_lab)
+
+# COMMAND ----------
+
+# DBTITLE 1,Step 4
+# MAGIC %md
+# MAGIC ## Step 4 — VACUUM
 # MAGIC
-# MAGIC Disable the retention safety check for the current Spark session, then run
-# MAGIC `VACUUM RETAIN 0 HOURS` and list the folder again.
+# MAGIC `VACUUM` removes old unused files only. It does **not** touch deletion-vector-marked rows in live files.
 # MAGIC
-# MAGIC `VACUUM` does **not** purge deletion-vector rows from live files. It only
-# MAGIC removes obsolete files that are no longer used by the table and are
-# MAGIC outside the retention period.
-# MAGIC
-# MAGIC The leftover file from the Step 1 rewrite can go. Live files that still
-# MAGIC carry deletion vectors remain.
-# MAGIC
-# MAGIC > **Warning:** `RETAIN 0 HOURS` can immediately remove historical files
-# MAGIC > required for time travel. Do not use it on production tables.
+# MAGIC ⚠️ `RETAIN 0 HOURS` skips the safety window — never use on production tables.
 
 # COMMAND ----------
 
@@ -228,14 +205,23 @@ display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
+# DBTITLE 1,Check history — vacuum
 # MAGIC %md
-# MAGIC ## Step 6 — Purge with REORG TABLE
+# MAGIC Check history. VACUUM deleted 2 obsolete files (∼315 MB). Live files with DV marks are untouched.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT version, operation, operationParameters,operationMetrics
+# MAGIC FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_dv_lab)
+
+# COMMAND ----------
+
+# DBTITLE 1,Step 5
+# MAGIC %md
+# MAGIC ## Step 5 — Purge with REORG TABLE
 # MAGIC
-# MAGIC `REORG TABLE ... APPLY (PURGE)` rewrites **current** files that still
-# MAGIC carry deletion-vector changes. After this command, the deleted and
-# MAGIC updated rows are gone from the live data files.
-# MAGIC
-# MAGIC The old files can remain in `LIST` until `VACUUM`.
+# MAGIC `REORG TABLE APPLY (PURGE)` rewrites live files to physically remove marked rows. Old files stick around until the next `VACUUM`.
 
 # COMMAND ----------
 
@@ -244,26 +230,23 @@ display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
+# DBTITLE 1,Check history — reorg
 # MAGIC %md
-# MAGIC `DESCRIBE HISTORY` records the `REORG`.
+# MAGIC Check history. REORG replaced 1 file and removed 1 deletion vector.
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT version, operation, operationParameters
-# MAGIC FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_maint_lab)
+# MAGIC SELECT version, operation, operationParameters,operationMetrics
+# MAGIC FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_dv_lab)
 
 # COMMAND ----------
 
+# DBTITLE 1,Step 6 — Second VACUUM
 # MAGIC %md
-# MAGIC ## Step 7 — Remove the obsolete files
+# MAGIC ## Step 6 — Second VACUUM
 # MAGIC
-# MAGIC The default `VACUUM` retention period is **7 days**, so files created
-# MAGIC during this lab are normally too new to remove.
-# MAGIC
-# MAGIC For this lab, the retention safety check is already disabled. Run
-# MAGIC `VACUUM ... RETAIN 0 HOURS` again. This removes files that `REORG`
-# MAGIC replaced.
+# MAGIC Run `VACUUM` again to clean up the old file that REORG replaced.
 
 # COMMAND ----------
 
@@ -272,35 +255,30 @@ display(spark.sql(f"LIST '{lab_path}'"))
 
 # COMMAND ----------
 
+# DBTITLE 1,Final history
 # MAGIC %md
-# MAGIC ## Step 8 — Run REORG again
-# MAGIC
-# MAGIC `REORG TABLE ... APPLY (PURGE)` is idempotent. A second run has no further
-# MAGIC rewrite to do when current files no longer carry deletion-vector changes.
+# MAGIC Final history — all operations logged end to end.
 
 # COMMAND ----------
 
-spark.sql(f"REORG TABLE {lab_table} APPLY (PURGE)")
-display(spark.sql(f"LIST '{lab_path}'"))
+# MAGIC %sql
+# MAGIC SELECT version, operation, operationParameters,operationMetrics
+# MAGIC FROM (DESCRIBE HISTORY rideshare_dev.processed.fare_dv_lab)
 
 # COMMAND ----------
 
+# DBTITLE 1,Summary
 # MAGIC %md
 # MAGIC ## Summary
 # MAGIC
 # MAGIC | Step | What happened |
 # MAGIC | ---- | ------------- |
-# MAGIC | 1 | DV off → updating one row rewrites the Parquet file containing that row |
-# MAGIC | 2 | DV on → the update can avoid rewriting the entire Parquet file |
-# MAGIC | 3 | More DV updates add small Parquet files and `.bin` files |
-# MAGIC | 4 | `DELETE` 1002 → `SELECT` has 3 rows; live files can still hold the row |
-# MAGIC | 5 | `VACUUM` removes unused files; it does **not** purge live DV data |
-# MAGIC | 6 | `REORG TABLE ... APPLY (PURGE)` rewrites current files that carry DVs |
-# MAGIC | 7 | `VACUUM` removes the files `REORG` replaced |
-# MAGIC | 8 | A second `REORG` is a no-op |
+# MAGIC | 0 | Created table with deletion vectors OFF |
+# MAGIC | 1 | UPDATE without DV → rewrote entire file (~315 MB copied) |
+# MAGIC | 2 | UPDATE with DV → wrote only ~5 KB (tiny file + `.bin` marker) |
+# MAGIC | 3 | DELETE with DV → just a `.bin` marker, no new data files |
+# MAGIC | 4 | VACUUM → removed old unused files, did NOT touch live DV marks |
+# MAGIC | 5 | REORG PURGE → rewrote live files, physically removed marked rows |
+# MAGIC | 6 | Second VACUUM → cleaned up the file REORG replaced |
 # MAGIC
-# MAGIC **Logical change is not physical removal. Deletion vectors avoid a full
-# MAGIC file rewrite. `REORG TABLE ... APPLY (PURGE)` removes the old row bytes
-# MAGIC from current files. `VACUUM` then deletes the files `REORG` replaced.**
-# MAGIC
-# MAGIC **Next:** `02 - Schema Enforcement and Evolution`.
+# MAGIC **Deletion vectors avoid expensive rewrites. `REORG PURGE` removes marked rows from live files. `VACUUM` cleans up the leftovers.**
