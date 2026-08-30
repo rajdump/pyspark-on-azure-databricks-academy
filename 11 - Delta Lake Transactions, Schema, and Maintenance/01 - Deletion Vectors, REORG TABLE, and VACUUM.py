@@ -3,6 +3,11 @@
 # MAGIC %md
 # MAGIC # 01 - Deletion Vectors, REORG TABLE, and VACUUM
 # MAGIC
+# MAGIC Module 10 showed that old files can remain available for history and
+# MAGIC time travel. This notebook shows how `VACUUM` and
+# MAGIC `REORG TABLE ... APPLY (PURGE)` clean up obsolete files and
+# MAGIC deletion-vector rows.
+# MAGIC
 # MAGIC Without deletion vectors, updating, deleting and merging even a single row can require Delta to rewrite the entire Parquet file containing that row. With deletion vectors, Delta marks the affected rows instead of immediately rewriting the file. When the table is read, Delta uses these marks to hide the affected rows and return the current data.
 # MAGIC
 # MAGIC # Learning objectives
