@@ -25,6 +25,9 @@
 # MAGIC
 # MAGIC Both tables contain `service_type`. Once we join them, we'll need to make
 # MAGIC clear which table that column comes from.
+# MAGIC
+# MAGIC Module 7 covered join patterns. Module 8 `01 - GroupBy and Basic
+# MAGIC Aggregations` covered aggregations. Here we apply those ideas with Spark SQL.
 
 # COMMAND ----------
 

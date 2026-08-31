@@ -25,6 +25,9 @@
 # MAGIC - `payment_method` — used later in the exercise
 # MAGIC
 # MAGIC The table contains **106 trips**.
+# MAGIC
+# MAGIC Module 8 `04 - Pivot` introduced the DataFrame `pivot` operation. Here we
+# MAGIC use the SQL forms, including `UNPIVOT`.
 
 # COMMAND ----------
 

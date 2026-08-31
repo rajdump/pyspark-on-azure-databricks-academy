@@ -19,6 +19,10 @@
 # MAGIC We'll use `rideshare_dev.processed.trip_enriched` throughout — **106** trips,
 # MAGIC one row per `trip_id`. Load it as a DataFrame now so it is ready when we
 # MAGIC switch to the DataFrame API.
+# MAGIC
+# MAGIC Module 2 `06 - Querying DataFrames with SQL` introduced `%sql`,
+# MAGIC `spark.sql`, and temp views. Here we apply those patterns to Unity Catalog
+# MAGIC tables and compare the entry points side by side.
 
 # COMMAND ----------
 
