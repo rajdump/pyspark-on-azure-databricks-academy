@@ -402,7 +402,6 @@ spark.table(managed_table).show(3)
 # MAGIC - **Files vs tables** — Volume path vs **`catalog.schema.table`**
 # MAGIC   (table privileges → Module 11)
 # MAGIC
-# MAGIC **Next:** Module 6 — column transforms and nested data (including
-# MAGIC **`explode`** on **`drivers`**). Use
-# MAGIC **99 - Rideshare Project Cleanup and Reset** to clear **`practice/`**
-# MAGIC or tear down the project.
+# MAGIC **Next:** Module 6 `01 - Column Transforms with Built-in Functions`.
+# MAGIC Use **99 - Rideshare Project Cleanup and Reset** to clear **`practice/`**
+# MAGIC or tear down the project — recovery only, not the successor.

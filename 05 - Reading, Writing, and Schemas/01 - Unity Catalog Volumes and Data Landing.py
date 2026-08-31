@@ -321,5 +321,7 @@ except Exception as e:
 # MAGIC `practice/` and `curated/` appear under `output_files` on **first write** —
 # MAGIC this notebook does not create those folders.
 # MAGIC
-# MAGIC **Next:** Reading notebooks (CSV → … → write patterns) use Volume paths only.
+# MAGIC Reading notebooks (CSV → … → write patterns) use Volume paths only.
 # MAGIC Governance of these objects is Module 11.
+# MAGIC
+# MAGIC **Next:** `02 - Reading CSV`

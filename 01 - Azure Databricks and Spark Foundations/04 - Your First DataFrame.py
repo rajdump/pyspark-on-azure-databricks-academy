@@ -116,5 +116,4 @@ trips_df.printSchema()
 # MAGIC   inferred schema**, which is fine for demos but not recommended for
 # MAGIC   production pipelines
 # MAGIC
-# MAGIC Next up: Module 2 — DataFrame Fundamentals, where you go deeper on
-# MAGIC creating, inspecting, and transforming DataFrames.
+# MAGIC **Next:** Module 2 — DataFrame Fundamentals (`01 - Creating DataFrames`).
