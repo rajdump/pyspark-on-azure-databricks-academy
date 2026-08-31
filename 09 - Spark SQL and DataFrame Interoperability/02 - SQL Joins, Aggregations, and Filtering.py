@@ -263,7 +263,7 @@ print(f"trip_driver_assignment: {trip_driver_assignment.count()} rows")  # expec
 # MAGIC
 # MAGIC **Expected:** **2 rows** — `other` is removed (total base fare **308.68**).
 # MAGIC
-# MAGIC **Callback:** Module 8 `02 - Multi-column Keys, NULL Groups, and Filter
+# MAGIC Module 8 `02 - Multi-column Keys, NULL Groups, and Filter
 # MAGIC Placement` covered the same filter-placement idea with the DataFrame API.
 
 # COMMAND ----------

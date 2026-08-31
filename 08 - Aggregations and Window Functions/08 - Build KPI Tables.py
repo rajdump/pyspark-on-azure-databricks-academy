@@ -424,3 +424,6 @@ print(f"kpi_driver_productivity: {driver_out.count()} rows")  # expect 12
 # MAGIC
 # MAGIC In **Module 9** `06 - End-to-End SQL Pipeline`, we rebuild the same KPI
 # MAGIC calculations in Spark SQL. That notebook does not write tables.
+# MAGIC
+# MAGIC **Next:** Module 9 — Spark SQL and DataFrame Interoperability
+# MAGIC (`01 - Dual API Foundations and When to Choose`).
