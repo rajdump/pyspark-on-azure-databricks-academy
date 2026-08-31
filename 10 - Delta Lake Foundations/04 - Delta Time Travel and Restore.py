@@ -15,6 +15,10 @@
 # MAGIC %md
 # MAGIC ## Setup — create the lab table
 # MAGIC We use a managed Delta table to keep the lesson focused on table versions, time travel, and RESTORE.
+# MAGIC
+# MAGIC In `02 - Understanding the Delta Transaction Log`, you learned how Delta
+# MAGIC records table changes and creates new versions. This notebook builds on
+# MAGIC that foundation to explore how those versions can be queried and restored.
 
 # COMMAND ----------
 

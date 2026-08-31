@@ -14,6 +14,10 @@
 # MAGIC ## Setup DataFrame for casting examples
 # MAGIC
 # MAGIC Notebook 02 normalized missing-value disguises to real **`NULL`** values.
+# MAGIC You should already know intro **`cast`** from Module 2
+# MAGIC **`03 - Selecting and Transforming Columns`**. Module 2 deferred the deeper
+# MAGIC casting rules to here.
+# MAGIC
 # MAGIC The next problem is **wrong types**: numbers stored as text that
 # MAGIC arithmetic operations cannot use until they are converted.
 # MAGIC
