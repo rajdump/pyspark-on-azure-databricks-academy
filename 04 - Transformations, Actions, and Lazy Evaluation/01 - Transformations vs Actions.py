@@ -1,29 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Transformations vs Actions
+# MAGIC # 01 - Transformations vs Actions
 # MAGIC
-# MAGIC Transformations such as **`select()`**, **`filter()`**, and
-# MAGIC **`withColumn()`** define processing steps and return new DataFrames without
-# MAGIC immediately processing the data. Actions such as **`show()`**, **`count()`**,
-# MAGIC or writing a DataFrame to storage trigger Spark to execute the accumulated
-# MAGIC plan and produce output.
+# MAGIC Distinguish transformations from actions on chains learners already write.
 # MAGIC
-# MAGIC This notebook answers a question that Modules 2 and 3 left open: when does
-# MAGIC Spark actually process your data?
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Distinguish transformations, which return DataFrames and extend logical
-# MAGIC   plans, from actions, which execute those plans
-# MAGIC - Classify common DataFrame APIs as transformations or actions
-# MAGIC - Chain several transformations before a single action
-# MAGIC
-# MAGIC **Prerequisites.** Modules 2 and 3 — you should already be comfortable
-# MAGIC using **`select`**, **`filter`**, **`withColumn`**, and **`F.col`**.
-# MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses a
-# MAGIC small, hand-built rideshare-style DataFrame aligned with the course
-# MAGIC **`trip`** schema.
-
+# MAGIC - Distinguish transformations (new DataFrame, build logical plan) from actions
+# MAGIC   (execute the plan)
 # COMMAND ----------
 
 # MAGIC %md

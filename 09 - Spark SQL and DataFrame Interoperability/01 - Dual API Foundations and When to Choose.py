@@ -2,32 +2,15 @@
 # MAGIC %md
 # MAGIC # 01 - Dual API Foundations and When to Choose
 # MAGIC
-# MAGIC Spark lets us work with the same data through **Spark SQL** or the
-# MAGIC **DataFrame API**.
+# MAGIC Choose among `%sql`, `spark.table`, `spark.sql`→DataFrame, and DF→temp view.
+# MAGIC No `GROUP BY`.
 # MAGIC
-# MAGIC In this notebook, we'll use the same `trip_enriched` table through both APIs,
-# MAGIC move results between SQL and DataFrames, and learn when each entry point is
-# MAGIC the better fit.
+# MAGIC `trip_enriched`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Query a Unity Catalog table directly with `%sql`
-# MAGIC - Load the same table as a DataFrame with `spark.table`
-# MAGIC - Run SQL with `spark.sql(...)` and continue with the DataFrame API
-# MAGIC - Expose a DataFrame to SQL with `createOrReplaceTempView`
-# MAGIC - Build absolute `tip_amount_band` with row-level `CASE WHEN` (≠ Module 6 `tip_band`)
-# MAGIC - Choose the right entry point for the task
-# MAGIC
-# MAGIC **Callback:** Module 2 `06 - Querying DataFrames with SQL` introduced
-# MAGIC `%sql`, `spark.sql`, and temp views. Here, we apply those patterns to
-# MAGIC Unity Catalog tables and compare the entry points side by side.
-# MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` — **106 rows**
-# MAGIC
-# MAGIC **Writes:** None. This notebook is read-only.
-# MAGIC
-# MAGIC **Prerequisites:** Module 7–8 managed tables; Module 2 SQL intro.
-
+# MAGIC - Choose among direct `%sql`, `spark.table`, `spark.sql`→DataFrame, and
+# MAGIC   DF→`createOrReplaceTempView` for a given task
 # COMMAND ----------
 
 # MAGIC %md

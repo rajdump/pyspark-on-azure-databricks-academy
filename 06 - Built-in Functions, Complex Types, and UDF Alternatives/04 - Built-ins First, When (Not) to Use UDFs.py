@@ -1,44 +1,16 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC # 04 - Built-ins First, When (Not) to Use UDFs
 # MAGIC
-# MAGIC # 04 - Built-ins First: When (Not) to Use UDFs
+# MAGIC Built-ins as default; Python UDF contrast only — do not overwrite curated
+# MAGIC outputs.
 # MAGIC
-# MAGIC A **UDF** (user-defined function) lets you write a column rule in plain Python
-# MAGIC instead of Spark's built-in `F.*` expressions. UDFs feel familiar, so it is
-# MAGIC tempting to reach for one by default. In production, **use Spark built-in
-# MAGIC functions first**.
+# MAGIC A small column-rule demo (not a curated overwrite).
 # MAGIC
-# MAGIC PySpark DataFrame transformations written with built-in `F.*` functions create
-# MAGIC Spark expressions and add them to the execution plan. Spark executes those
-# MAGIC expressions using its JVM-based engine.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC Catalyst can inspect built-in expressions and optimize them together with the
-# MAGIC surrounding query plan. A Python UDF contains regular Python logic, so Spark
-# MAGIC must run it in a separate Python worker. Catalyst can execute the UDF but cannot
-# MAGIC inspect or optimize the logic inside the function.
-# MAGIC
-# MAGIC Not all PySpark code builds Spark expressions — `print()`, assignments, and
-# MAGIC helper functions run as ordinary Python. This notebook focuses on **column
-# MAGIC transforms** built with `F.*`.
-# MAGIC
-# MAGIC This notebook implements the same small rule twice — built-in and Python UDF —
-# MAGIC so you can compare execution behavior and decide when a UDF is genuinely
-# MAGIC justified.
-# MAGIC
-# MAGIC You will:
-# MAGIC
-# MAGIC 1. Express a column rule with Spark built-in `F.*` functions on curated data
-# MAGIC    from Notebook 03
-# MAGIC 2. Implement the same rule as a Python UDF and contrast it with the built-in
-# MAGIC    version
-# MAGIC 3. Use a decision table to choose an approach on a new column rule
-# MAGIC
-# MAGIC **Prerequisites.** Complete Module 6 **`01 - Column Transforms with Built-in
-# MAGIC Functions`**, **`02 - Complex Types: Structs, Arrays, and explode`**, and
-# MAGIC **`03 - Cleaning and Curated Outputs`**. The curated Parquet outputs under
-# MAGIC `…/curated/trip/` (106 rows) and `…/curated/payment/` (105 rows) must exist.
-# MAGIC This notebook reads those outputs and does **not** overwrite them.
-
+# MAGIC - Explain when to prefer built-ins over Python UDFs (and when Pandas/Arrow UDFs
+# MAGIC   exist as an advanced fallback outside this course)
 # COMMAND ----------
 
 # MAGIC %md

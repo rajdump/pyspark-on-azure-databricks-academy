@@ -2,13 +2,17 @@
 # MAGIC %md
 # MAGIC # 00 - Copy Fare DV Lab File
 # MAGIC
-# MAGIC Set up the deletion-vector lab file. Copy
-# MAGIC `data/lab/fare_dv_lab.parquet` to the table folder, then
-# MAGIC `CONVERT TO DELTA`. Open from the course **Git folder**. No
-# MAGIC `CREATE TABLE`.
+# MAGIC Setup for notebook **01**. Open from the course Git folder.
 # MAGIC
+# MAGIC `data/lab/fare_dv_lab.parquet`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Copy the lab Parquet, `LIST`, and `CONVERT TO DELTA` so notebook **01** can
+# MAGIC   register an external table
+# COMMAND ----------
+# MAGIC %md
 # MAGIC **Next:** `01 - Deletion Vectors, REORG TABLE, and VACUUM`
-
 # COMMAND ----------
 
 from pathlib import Path

@@ -1,26 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Selecting and Transforming Columns
+# MAGIC # 03 - Selecting and Transforming Columns
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Project and reorder columns with `select`, and explain DataFrame
-# MAGIC   immutability
-# MAGIC - Choose column-name strings vs `F.col` when you need an expression
-# MAGIC - Build Column expressions with `alias`, light `cast`, `F.lit`, and
+# MAGIC Reshape columns with the DataFrame API — the transforms later notebooks reuse.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Select, add, rename, recalculate, and drop columns
+# MAGIC - Build Column expressions with `F.col`, `alias`, light `cast`, `F.lit`, and
 # MAGIC   `F.when` / `otherwise`
-# MAGIC - Add or replace columns with `withColumn` / `withColumns`
-# MAGIC - Rename and drop columns with `withColumnRenamed` /
-# MAGIC   `withColumnsRenamed` and `drop`
-# MAGIC - Choose `select` vs `withColumn` when adding vs recalculating a column
-# MAGIC - Chain transforms into a small operations-style output
-# MAGIC
-# MAGIC **Prerequisites.** `02 - Inspecting DataFrames` in this module — you
-# MAGIC should already know how to create and inspect a small DataFrame.
-# MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC a small, hand-built rideshare-style DataFrame (aligned with the `trip`
-# MAGIC table column names).
-
+# MAGIC - Choose `select` vs `withColumn` and chain into a small ops-style output
 # COMMAND ----------
 
 # MAGIC %md

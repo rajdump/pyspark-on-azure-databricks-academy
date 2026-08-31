@@ -30,7 +30,7 @@ For ad-hoc edits with no active command:
   `docs/standards/naming-conventions.md`. When editing
   [[readme-authoring#Learning objectives|Learning objectives]], also read
   [[Audience assumptions]] and [[Production framing]] in
-  `docs/standards/teaching-guidelines.md`.
+  `docs/standards/notebook-content-standard.md`.
 
 For new module design, the author should use `/write-module-readme` (not
 ad-hoc chat) so reads and stop conditions load consistently.

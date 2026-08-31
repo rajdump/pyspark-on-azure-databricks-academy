@@ -1,27 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # SQL Expressions in DataFrame Code
+# MAGIC # 04 - SQL Expressions in DataFrame Code
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Build a Column from a SQL expression string with `F.expr`
-# MAGIC - Apply several SQL expression strings with `selectExpr`
-# MAGIC - Write conditional column logic with SQL `CASE WHEN` (same idea as
-# MAGIC   `F.when` from the previous notebook)
-# MAGIC - Compare misspelled column names across `F.col` and `F.expr` styles
-# MAGIC   (`AnalysisException`)
-# MAGIC - Distinguish Python `SyntaxError` from Spark SQL parse errors on bad
-# MAGIC   expression strings
-# MAGIC - Choose the clearer expression form and reuse SQL strings consistently
-# MAGIC   in a small operations-style summary
+# MAGIC Express the same column logic as SQL strings inside DataFrame code.
 # MAGIC
-# MAGIC **Prerequisites.** `03 - Selecting and Transforming Columns` in this
-# MAGIC module — you should already know `F.col`, `F.when`, `F.lit`, and reusable
-# MAGIC Column expressions.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC a small, hand-built rideshare-style DataFrame (aligned with the `trip`
-# MAGIC table column names).
-
+# MAGIC - Use `F.expr` and `selectExpr`, including SQL `CASE WHEN`
+# MAGIC - Recognize misspelled-column `AnalysisException` across styles
+# MAGIC - Distinguish Python `SyntaxError` from Spark SQL parse errors and choose a
+# MAGIC   consistent style
 # COMMAND ----------
 
 # MAGIC %md

@@ -1,20 +1,15 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
 # MAGIC # 06 - Intersect, subtract, and exceptAll
 # MAGIC
-# MAGIC Notebook **05** stacked DataFrames with `union` / `unionByName`. This
-# MAGIC notebook covers the remaining set operations: keep rows on **both** sides,
-# MAGIC or keep rows on **one** side only.
+# MAGIC Whole-row set ops on constructed frames.
 # MAGIC
-# MAGIC | Section | Focus |
-# MAGIC |---|---|
-# MAGIC | 1 | `intersect` vs `intersectAll` |
-# MAGIC | 2 | `subtract` vs `exceptAll` |
-# MAGIC | Practice | Predict multiset counts on a new pair |
+# MAGIC Constructed frames (no landing read).
 # MAGIC
-# MAGIC **Prerequisites.** Module 7 **`01`–`05`**. **No write.**
-
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Use `intersect` / `intersectAll` / `subtract` / `exceptAll` and SQL `EXCEPT`
+# MAGIC   naming
 # COMMAND ----------
 
 # DBTITLE 1,Set-op rules

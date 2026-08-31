@@ -2,9 +2,15 @@
 # MAGIC %md
 # MAGIC # 07 - Build Unified Curated Tables
 # MAGIC
-# MAGIC Join curated and landing sources into `trip_enriched` and
-# MAGIC `trip_driver_assignment`, the two managed tables Modules 8–9 read.
-
+# MAGIC Write-only business flow: load, build both tables per mapping docs,
+# MAGIC `saveAsTable` overwrite.
+# MAGIC
+# MAGIC Curated trip/payment/drivers_flat; landing `trip_time`,.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Apply the module patterns to write **`trip_enriched`** and
+# MAGIC   **`trip_driver_assignment`**
 # COMMAND ----------
 
 # MAGIC %md

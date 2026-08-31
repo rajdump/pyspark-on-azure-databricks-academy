@@ -9,7 +9,7 @@ Reads:
   - [[Command boundaries]], which this command must follow
   - [[Conditional reads]], only those that apply to the target
 - `docs/standards/readme-authoring.md`
-  - [[Notebooks table]]
+  - [[Notebook contracts]]
 - `docs/standards/naming-conventions.md`
   - [[Notebook files]]
 
@@ -26,12 +26,12 @@ Guards — stop before proceeding when:
   lesson do not make it unfinished
 
 Steps:
-1. Match the filename to its row in the module README's [[Notebooks table]],
-   per [[Notebook files]]. That row's `Focus` entry is the topic source of
-   truth.
+1. Match the filename to `## Notebook NN — Title` ([[Notebook contracts]]).
+   Take number and title, then apply [[Notebook files]]. Lesson flow is the
+   topic source of truth.
 2. Read the sources selected by the [[Full-lesson manifest]] and any
    applicable [[Conditional reads]], including the completed sibling from
-   manifest item 8.
+   manifest item 7.
 3. Replace the scaffold content with a full lesson, using only the schema,
    path, and object details found in the manifest's canonical sources.
 

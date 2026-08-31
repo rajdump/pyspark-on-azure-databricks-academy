@@ -1,26 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Creating DataFrames
+# MAGIC # 01 - Creating DataFrames
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Explain what a Spark DataFrame represents in technical terms
-# MAGIC - Create a small DataFrame four ways from Python rows:
-# MAGIC   - without columns and without schema
-# MAGIC   - with columns and without schema
-# MAGIC   - with columns and an explicit DDL schema
-# MAGIC   - with columns and an explicit `StructType` schema
-# MAGIC - Inspect each DataFrame with `printSchema()` and row output
-# MAGIC - Explain why inferred schemas are convenient for demos but risky for
-# MAGIC   production data models
+# MAGIC What a DataFrame is, and four ways to create one from Python rows.
 # MAGIC
-# MAGIC **Prerequisites.** `04 - Your First DataFrame` in Module 1 — you should
-# MAGIC already be comfortable with `spark.createDataFrame(...)`, `show()`, and
-# MAGIC `printSchema()`.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC tiny hand-built rideshare rows (2-3 rows per example) so the focus stays
-# MAGIC on DataFrame creation patterns.
-
+# MAGIC - Explain what a Spark DataFrame is
+# MAGIC - Create DataFrames unnamed/inferred, named/inferred, named with DDL, and named
+# MAGIC   with `StructType`
+# MAGIC - Inspect each path and explain inferred vs production risk
 # COMMAND ----------
 
 # MAGIC %md

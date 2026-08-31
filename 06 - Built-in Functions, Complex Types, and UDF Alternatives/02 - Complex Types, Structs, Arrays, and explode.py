@@ -1,26 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC # 02 - Complex Types, Structs, Arrays, and explode
 # MAGIC
-# MAGIC # 02 - Complex Types: Structs, Arrays, and explode
+# MAGIC Flatten nested **`drivers`** XML and write curated `drivers_flat`.
 # MAGIC
-# MAGIC Nested data often arrives as structs and arrays instead of one flat row per
-# MAGIC business event. The landing `drivers` XML file keeps vehicle details and assigned
-# MAGIC trip IDs nested under each driver. This notebook turns that nested data into a
-# MAGIC curated output that Module 7 can join to trips.
+# MAGIC Landing **`drivers`**.
 # MAGIC
-# MAGIC You will:
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC 1. Read landing `drivers` XML using `rowTag`
-# MAGIC 2. Access fields in the nested `vehicle` struct
-# MAGIC 3. Work with the `trips_assigned.trip_id` array
-# MAGIC 4. Flatten assigned trips with `F.explode` and `F.explode_outer`
-# MAGIC 5. Write one row per driver and assigned trip to the curated volume
-# MAGIC
-# MAGIC **Prerequisites.** Complete Module 5 **`05 - Reading XML`** and Module 6
-# MAGIC **`01 - Column Transforms with Built-in Functions`**. The `drivers` XML landing
-# MAGIC data must be available under the landing Volume. This notebook reads landing data
-# MAGIC and writes only `curated/drivers_flat/`; it does not read `practice/`.
-
+# MAGIC - Access struct fields, work with array columns, and flatten with **`explode`**
+# MAGIC   / **`explode_outer`**
 # COMMAND ----------
 
 # MAGIC %md

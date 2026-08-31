@@ -1,21 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Your First DataFrame
+# MAGIC # 04 - Your First DataFrame
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Build a small rideshare DataFrame from in-notebook Python data
-# MAGIC - Inspect rows with `show()` and `display()`, and explain when each is useful
-# MAGIC - Inspect the **default (inferred) schema** with `printSchema()`
-# MAGIC - Explain why inferred schemas are convenient for demos, but not recommended
-# MAGIC   for production pipelines
+# MAGIC First DataFrame from in-notebook Python rows — not file reads from
+# MAGIC `data/raw/`.
 # MAGIC
-# MAGIC **Prerequisites.** `03 - Working with Notebooks` in this module — you
-# MAGIC should be comfortable with notebook cells, magics, and shared Python state.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Setup.** Use any attached compute with PySpark available. This notebook
-# MAGIC uses a hand-built, small rideshare example (not file reads from `data/raw/`
-# MAGIC yet).
-
+# MAGIC - Build a small rideshare DataFrame from Python rows (no explicit schema)
+# MAGIC - Inspect with `show` / `display` / `printSchema`
+# MAGIC - Explain why an inferred schema is fine for demos, not for production
 # COMMAND ----------
 
 # MAGIC %md

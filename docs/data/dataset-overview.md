@@ -287,7 +287,7 @@ dropoff_location_id int
 **Reads:** `trip_enriched`, `trip_driver_assignment`. **Writes:** three
 managed `kpi_*` tables (`saveAsTable`).
 [Module 8 README](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
-(column formulas: [Paths and outputs](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md#paths-and-outputs)).
+(column formulas: [Shared paths and assets](../../08%20-%20Aggregations%20and%20Window%20Functions/README.md#shared-paths-and-assets)).
 
 | Table | Grain / rows | Source table |
 |---|---|---|
@@ -404,7 +404,7 @@ first write.
 
 - Why the model looks this way, and why row counts / NULLs change —
   [`dataset-guide.md`](dataset-guide.md)
-- KPI column formulas — Module 8 README (Paths and outputs)
+- KPI column formulas — Module 8 README (Shared paths and assets)
 - Module 10 extract rows and lab DDL — Module 10 README
 - Module 11 extract and **02–04** mutations — Module 11 README; **00–01**
   DML is in those notebooks

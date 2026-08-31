@@ -44,20 +44,195 @@ Small **ad-hoc** rideshare-flavored DataFrames built in code, aligned with
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md). Volume
 file reading starts in Module 5.
 
-## Notebooks
+## Notebook 01 — Creating DataFrames
 
-Six notebooks, in order. Each ends with a short hands-on task on a slightly
-different rideshare DataFrame. **`01 - Creating DataFrames`** includes one
-medium exercise on inferred vs explicit schema inspection.
+### Context
 
-| # | Notebook | Focus |
-|---|---|---|
-| 01 | Creating DataFrames | What a DataFrame is; create without columns/schema (`_1`, `_2`, …); named + inferred; DDL; `StructType`; inspect each path; inferred vs production risk; keep examples tiny (2–3 rows) |
-| 02 | Inspecting DataFrames | Contents: `show` options (`n`, `truncate`, `vertical`) / `display`; structure: `printSchema`, `schema`, `columns`, `dtypes`; size: `count`, `isEmpty`; `describe` / `summary`; metadata checks vs methods that run Spark work |
-| 03 | Selecting and Transforming Columns | `select` / immutability; name strings vs `F.col`; `alias`, arithmetic, light `cast`, `F.lit`; `F.when` / `otherwise`; `withColumn` / `withColumns`; `withColumnRenamed` / `withColumnsRenamed` / `drop`; when to use `select` vs `withColumn`; chain into a small ops-style output |
-| 04 | SQL Expressions in DataFrame Code | `F.expr`; `selectExpr`; SQL `CASE WHEN`; misspelled columns (`AnalysisException`) across styles; Python `SyntaxError` vs Spark SQL parse errors; choose and reuse related rules consistently |
-| 05 | Filtering Rows | `filter` / `where`; combine with SQL `AND` vs Column `&` (parens); why Python `and` fails; `\|`, `~`, `isin`, `between`, `like`; intro NULL (`isNull` / `isNotNull`; `== None` fails); empty string ≠ NULL; deeper NULL → Module 3 |
-| 06 | Querying DataFrames with SQL | Same calculated column via `F.when`, `F.expr`, `selectExpr`; why `%sql` cannot see a Python variable; session temp views (`createOrReplaceTempView`); `%sql` and `spark.sql`; global temp views (`global_temp`) — classic only / not serverless; session vs global vs persisted table |
+What a DataFrame is, and four ways to create one from Python rows.
+
+### Learning objectives
+
+- Explain what a Spark DataFrame is
+- Create DataFrames unnamed/inferred, named/inferred, named with DDL, and
+  named with `StructType`
+- Inspect each path and explain inferred vs production risk
+
+### Lesson flow
+
+What a DataFrame is; create without columns/schema (`_1`, `_2`, …); named +
+inferred; DDL; `StructType`; inspect each path; inferred vs production risk;
+keep examples tiny (2–3 rows).
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Medium exercise on inferred vs explicit schema inspection, on a slightly
+different rideshare DataFrame.
+
+### Next
+
+`02 - Inspecting DataFrames`
+
+## Notebook 02 — Inspecting DataFrames
+
+### Context
+
+Inspect beyond a first look: contents, structure, size, and summary stats.
+
+### Learning objectives
+
+- Inspect contents with `show` options and `display`
+- Inspect structure with `printSchema`, `schema`, `columns`, `dtypes`
+- Check size with `count` and `isEmpty`; use `describe` / `summary`
+- Distinguish metadata checks from methods that run Spark work
+
+### Lesson flow
+
+Contents: `show` options (`n`, `truncate`, `vertical`) / `display`;
+structure: `printSchema`, `schema`, `columns`, `dtypes`; size: `count`,
+`isEmpty`; `describe` / `summary`; metadata checks vs methods that run Spark
+work.
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Short hands-on on a slightly different rideshare DataFrame.
+
+### Next
+
+`03 - Selecting and Transforming Columns`
+
+## Notebook 03 — Selecting and Transforming Columns
+
+### Context
+
+Reshape columns with the DataFrame API — the transforms later notebooks
+reuse.
+
+### Learning objectives
+
+- Select, add, rename, recalculate, and drop columns
+- Build Column expressions with `F.col`, `alias`, light `cast`, `F.lit`, and
+  `F.when` / `otherwise`
+- Choose `select` vs `withColumn` and chain into a small ops-style output
+
+### Lesson flow
+
+`select` / immutability; name strings vs `F.col`; `alias`, arithmetic, light
+`cast`, `F.lit`; `F.when` / `otherwise`; `withColumn` / `withColumns`;
+`withColumnRenamed` / `withColumnsRenamed` / `drop`; when to use `select` vs
+`withColumn`; chain into a small ops-style output.
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Short hands-on on a slightly different rideshare DataFrame.
+
+### Next
+
+`04 - SQL Expressions in DataFrame Code`
+
+## Notebook 04 — SQL Expressions in DataFrame Code
+
+### Context
+
+Express the same column logic as SQL strings inside DataFrame code.
+
+### Learning objectives
+
+- Use `F.expr` and `selectExpr`, including SQL `CASE WHEN`
+- Recognize misspelled-column `AnalysisException` across styles
+- Distinguish Python `SyntaxError` from Spark SQL parse errors and choose
+  a consistent style
+
+### Lesson flow
+
+`F.expr`; `selectExpr`; SQL `CASE WHEN`; misspelled columns
+(`AnalysisException`) across styles; Python `SyntaxError` vs Spark SQL parse
+errors; choose and reuse related rules consistently.
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Short hands-on on a slightly different rideshare DataFrame.
+
+### Next
+
+`05 - Filtering Rows`
+
+## Notebook 05 — Filtering Rows
+
+### Context
+
+Keep rows with `filter` / `where`, including intro NULL and blank traps.
+
+### Learning objectives
+
+- Filter with Column ops and SQL strings; combine with `AND` vs `&`
+- Use `|`, `~`, `isin`, `between`, `like`
+- Apply intro NULL checks (`isNull` / `isNotNull`); empty string ≠ NULL
+
+### Lesson flow
+
+`filter` / `where`; combine with SQL `AND` vs Column `&` (parens); why Python
+`and` fails; `|`, `~`, `isin`, `between`, `like`; intro NULL (`isNull` /
+`isNotNull`; `== None` fails); empty string ≠ NULL; deeper NULL → Module 3.
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Short hands-on on a slightly different rideshare DataFrame.
+
+### Next
+
+`06 - Querying DataFrames with SQL`
+
+## Notebook 06 — Querying DataFrames with SQL
+
+### Context
+
+Query a DataFrame through temp views and Spark SQL — including when
+side-by-side APIs are the learning objective.
+
+### Learning objectives
+
+- Express the same calculated column via `F.when`, `F.expr`, and `selectExpr`
+- Register a session temporary view; query with `%sql` and `spark.sql`
+- Recognize global temporary views on classic compute (not serverless)
+
+### Lesson flow
+
+Same calculated column via `F.when`, `F.expr`, `selectExpr`; why `%sql`
+cannot see a Python variable; session temp views (`createOrReplaceTempView`);
+`%sql` and `spark.sql`; global temp views (`global_temp`) — classic only /
+not serverless; session vs global vs persisted table.
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Short hands-on on a slightly different rideshare DataFrame.
+
+### Next
+
+Module 3 — Data Cleaning, NULL Semantics, and Type Handling.
 
 ## Minimum privileges required
 

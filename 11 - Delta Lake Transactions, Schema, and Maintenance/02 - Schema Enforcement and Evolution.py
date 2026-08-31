@@ -2,26 +2,12 @@
 # MAGIC %md
 # MAGIC # 02 - Schema Enforcement and Evolution
 # MAGIC
+# MAGIC Enforce schema, add a column, and apply `NOT NULL` / `CHECK` on
+# MAGIC `fare_maint_lab`.
+# MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Create `fare_maint_lab` with extract columns only and insert trips **1001–1004**
-# MAGIC - Show schema enforcement when a write includes `driver_payout_amount`
-# MAGIC - Add that column, write with `mergeSchema`, and confirm **4** rows with payout **NULL**
-# MAGIC - Add `NOT NULL` on `trip_id` and `CHECK (tip_amount >= 0)`, then show a violating insert fail
-# MAGIC
-# MAGIC **Reads:** none of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, `curated/`)
-# MAGIC
-# MAGIC **Writes:**
-# MAGIC - `rideshare_dev.processed.fare_maint_lab` at `{url}/external-tables/fare_maint_lab`
-# MAGIC
-# MAGIC **Prerequisites:** Module 10 notebooks `01`–`04`. Module 5
-# MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `el_rideshare_dev`, `processed`).
-# MAGIC
-# MAGIC This notebook does **not** teach column mapping, `DROP COLUMN`,
-# MAGIC identity or generated columns, `MERGE`, deletion vectors, or `OPTIMIZE`.
-
+# MAGIC - Enforce a table schema, add a column, and apply `NOT NULL` / `CHECK`
 # COMMAND ----------
 
 # MAGIC %md

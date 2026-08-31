@@ -2,31 +2,14 @@
 # MAGIC %md
 # MAGIC # 01 - Parquet Rewrite vs Delta UPDATE
 # MAGIC
-# MAGIC Module 5 created both a Parquet and a Delta folder. This notebook contains the first `row change`: a correction for one row in a four-row handmade extract.
-# MAGIC
-# MAGIC In production, a fare correction involves fixing a single row. Parquet can only `rewrite` files, while Delta records the same correction as an `UPDATE`.
+# MAGIC Isolated folders: why a one-row fare correction is a full Parquet rewrite,
+# MAGIC then the same correction as a Delta `UPDATE`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Show why correcting one row in Parquet means rewriting the files
-# MAGIC - Apply the same correction as a Delta `UPDATE`
-# MAGIC - Confirm Delta still stores Parquet plus a `_delta_log` folder
-# MAGIC
-# MAGIC **Reads:** none of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, `curated/`)
-# MAGIC
-# MAGIC **Writes:**
-# MAGIC - `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_parquet/`
-# MAGIC - `/Volumes/rideshare_dev/processed/output_files/practice/fare_correction_delta/`
-# MAGIC
-# MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
-# MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `processed.output_files`) and
-# MAGIC `07 - Write Patterns and Table Preview.py` (Parquet vs Delta folder).
-# MAGIC
-# MAGIC This notebook does **not** teach ACID, time travel, `DESCRIBE HISTORY`,
-# MAGIC JSON action names, `DELETE`, `MERGE`, `VACUUM`, or deletion vectors.
-
+# MAGIC - Show why a one-row fare correction is a full Parquet rewrite
+# MAGIC - Apply the same correction as a Delta `UPDATE` that records the change in
+# MAGIC   `_delta_log`
 # COMMAND ----------
 
 # MAGIC %md

@@ -1,41 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC
 # MAGIC # 04 - Reading Parquet
 # MAGIC
-# MAGIC Parquet is a columnar file format widely used in data lakes and lakehouses.
-# MAGIC In this notebook, we read the **`trip_time`** dataset — stored as Parquet in
-# MAGIC the landing volume.
+# MAGIC Read **`trip_time`** from landing.
 # MAGIC
-# MAGIC **Key difference from CSV and JSON:** Parquet embeds schema and type metadata
-# MAGIC in the file. Spark reads column names and types without **`inferSchema`**. An
-# MAGIC explicit schema is still useful for validation and production contracts.
+# MAGIC `/Volumes/rideshare_dev/landing/source_files/trip_time/`.
 # MAGIC
-# MAGIC ---
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC ### What you will learn
-# MAGIC
-# MAGIC | Topic | What you will do |
-# MAGIC |-------|------------------|
-# MAGIC | Read Parquet | Load **`trip_time`** from a Volume path |
-# MAGIC | Two read syntaxes | `.parquet(path)` shorthand vs `format("parquet").load(path)` |
-# MAGIC | Embedded schema | Inspect with `printSchema()`, a sample row, and row count |
-# MAGIC | Explicit schemas | Apply DDL string and `StructType` schemas for validation |
-# MAGIC | Schema mismatch | See casts, misleading values, nulls, or dropped columns on disagreement |
-# MAGIC | Light reshape | Select and rename columns after read |
-# MAGIC | Write Parquet | Save a practice output under `practice/` |
-# MAGIC | Round-trip test | Re-read written Parquet and confirm types are preserved |
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Prerequisites.** Module 4, **01 - Unity Catalog Volumes and Data
-# MAGIC Landing**, and **02 - Reading CSV** / **03 - Reading JSON** — landing
-# MAGIC volume populated with **`trip_time/trip_time.parquet`**.
-# MAGIC
-# MAGIC **Source file:** `/Volumes/rideshare_dev/landing/source_files/trip_time/trip_time.parquet`
-# MAGIC
-# MAGIC **Compute:** Any cluster with PySpark. This notebook uses Volume paths only.
-
+# MAGIC - Read Parquet with an explicit schema
 # COMMAND ----------
 
 # MAGIC %md

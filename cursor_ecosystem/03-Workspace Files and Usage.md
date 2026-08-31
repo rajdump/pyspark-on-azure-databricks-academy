@@ -84,8 +84,7 @@ here**; they do not duplicate the content.
 | File | Usage |
 |---|---|
 | `notebook-authoring-checklist.md` | Per-command reads and acceptance bars for notebook authoring and review |
-| `notebook-writing.md` | Databricks source `.py` format: header, `# COMMAND ----------`, cell structure |
-| `teaching-guidelines.md` | Pedagogy: how to explain, what to show, what not to skip |
+| `notebook-content-standard.md` | Databricks source `.py` format, cell structure, pedagogy, and exercises |
 | `coding-standards.md` | Python / PySpark conventions in notebooks |
 | `naming-conventions.md` | `NN - Descriptive Title` folders and notebooks |
 | `readme-authoring.md` | Module README structure and design-complete definition |

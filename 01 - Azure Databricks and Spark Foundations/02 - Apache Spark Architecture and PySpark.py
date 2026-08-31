@@ -1,29 +1,16 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Apache Spark Architecture and PySpark
+# MAGIC # 02 - Apache Spark Architecture and PySpark
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Explain what Apache Spark is and why data engineers use it
-# MAGIC - Explain what the `spark` variable (a **SparkSession**) is and how PySpark
-# MAGIC   relates to Spark
-# MAGIC - Identify the driver, executors, and cluster manager
-# MAGIC - Describe how a submitted request becomes jobs, stages, and tasks
+# MAGIC Build the mental model of how Spark executes a request once compute is
+# MAGIC attached.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Explain why Spark distributes work and how PySpark relates to Spark
+# MAGIC - Use the provided `SparkSession` (`spark`)
+# MAGIC - Describe driver/executors and jobs → stages → tasks
 # MAGIC - Observe one live request in the Spark UI on classic compute
-# MAGIC
-# MAGIC **Prerequisites.** `01 - Introduction to Azure Databricks and the Workspace`
-# MAGIC — you should already know how to attach compute and run a cell.
-# MAGIC
-# MAGIC **Setup.** Attach this notebook to **classic all-purpose** compute
-# MAGIC (**Standard** access mode when available). Prefer classic compute so the
-# MAGIC **Spark UI** is easy to open after you submit a request.
-# MAGIC
-# MAGIC **Running story.** Imagine a rideshare batch job that must **count today's
-# MAGIC trips**. Real trip DataFrames come later in this module. Here you will
-# MAGIC submit a simple count request that follows the **same Spark path**, then
-# MAGIC see who runs it and how Spark nests the work.
-# MAGIC
-# MAGIC We start with the one idea Spark is built on.
-
 # COMMAND ----------
 
 # MAGIC %md

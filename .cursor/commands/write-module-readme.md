@@ -6,7 +6,7 @@ Reads:
 - `COURSE_MODULES.md`
   - the `Phase N` heading for the named phase, its column headings, and that
     module's row
-- `docs/standards/teaching-guidelines.md`
+- `docs/standards/notebook-content-standard.md`
   - [[Audience assumptions]], [[Production framing]]
 - `docs/standards/naming-conventions.md`
   - [[Module folders]], [[Notebook files]]
@@ -35,7 +35,8 @@ Steps:
    (`1` → `Phase I`, and so on) and use that module's row. Take the number,
    title, and other row fields from that row only.
 2. Build the module folder name from that row's title, per [[Module folders]].
-3. Create the folder if needed and write the `README.md`.
+3. Create the folder if needed and write the `README.md` using only
+   [[Notebook contracts]] (H2 `## Notebook NN — Title`).
 
 Verify: the README meets [[Required structure]] and the
 [[Design-complete definition]] in `docs/standards/readme-authoring.md`.

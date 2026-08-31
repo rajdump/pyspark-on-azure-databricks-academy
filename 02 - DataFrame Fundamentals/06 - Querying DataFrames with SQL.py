@@ -1,28 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Querying DataFrames with SQL
+# MAGIC # 06 - Querying DataFrames with SQL
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Express the same derived column with `F.when`, `F.expr`, and
-# MAGIC   `selectExpr` and explain when each style fits
-# MAGIC - Explain why a `%sql` cell cannot read a Python DataFrame variable
-# MAGIC - Register a session temporary view with `createOrReplaceTempView`
-# MAGIC - Query a temp view with `%sql` and with `spark.sql(...)`
-# MAGIC - Continue working from the DataFrame that `spark.sql` returns
-# MAGIC - Recognize global temporary views (`global_temp`) in existing code
-# MAGIC   and note classic-compute limitations
-# MAGIC - Contrast session views, global views, and persisted tables (tables
-# MAGIC   come in later modules)
+# MAGIC Query a DataFrame through temp views and Spark SQL — including when
+# MAGIC side-by-side APIs are the learning objective.
 # MAGIC
-# MAGIC **Prerequisites.** `05 - Filtering Rows` in this module — you should
-# MAGIC already know `F.col`, `F.expr`, `filter` / `where`, and reusable Column
-# MAGIC or SQL predicate expressions.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC a small, hand-built rideshare-style DataFrame (aligned with the `trip`
-# MAGIC table column names). The global temporary view demo requires **classic**
-# MAGIC all-purpose compute — not serverless.
-
+# MAGIC - Express the same calculated column via `F.when`, `F.expr`, and `selectExpr`
+# MAGIC - Register a session temporary view; query with `%sql` and `spark.sql`
+# MAGIC - Recognize global temporary views on classic compute (not serverless)
 # COMMAND ----------
 
 # MAGIC %md

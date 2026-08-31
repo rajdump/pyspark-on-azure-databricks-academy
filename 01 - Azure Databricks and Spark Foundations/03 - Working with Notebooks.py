@@ -1,26 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Working with Notebooks
+# MAGIC # 03 - Working with Notebooks
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Explain how Python cells share state by **run order**
-# MAGIC - Explain that each notebook language keeps its **own** state — and prove it
-# MAGIC   with an expected-fail SQL cell
-# MAGIC - Switch a cell's language with common magic commands (`%md`, `%sql`, `%fs`,
-# MAGIC   `%sh`)
-# MAGIC - Use `dbutils.fs` when you need a filesystem listing as Python data, not
-# MAGIC   only as a quick look
+# MAGIC How notebook cells, languages, magics, and `dbutils` share — and do not share
+# MAGIC — a live session.
 # MAGIC
-# MAGIC **Prerequisites.** `02 - Apache Spark Architecture and PySpark` — you
-# MAGIC should already know what a SparkSession is and how to attach compute.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Setup.** Any compute type works for most cells. Prefer classic
-# MAGIC all-purpose **Standard** if you want reliable `%sh` behavior (see the
-# MAGIC serverless gotcha on `%sh` later).
-# MAGIC
-# MAGIC You already attach compute and run cells. Next we watch how those cells
-# MAGIC share — and do not share — a live session.
-
+# MAGIC - Explain cell run order and shared Python state
+# MAGIC - Explain that languages keep separate state
+# MAGIC - Use magics (`%md`, `%sql`, `%fs`, `%sh`) and `%fs` vs `dbutils.fs`
 # COMMAND ----------
 
 # MAGIC %md

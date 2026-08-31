@@ -37,18 +37,124 @@ Small **ad-hoc** rideshare-flavored DataFrames built in code, aligned with
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md). Volume
 file reading starts in Module 5.
 
-## Notebooks
+## Notebook 01 — NULL Semantics and Predicate Correctness
 
-Four notebooks, in order. Each ends with a short hands-on task on a slightly
-different messy DataFrame (NULL-safe filter, sentinel normalize, rejected
-casts, safe date parse, etc.).
+### Context
 
-| # | Notebook | Focus |
-|---|---|---|
-| 01 | NULL Semantics and Predicate Correctness | Three-valued logic as columns (`TRUE` / `FALSE` / `NULL`); filters keep only `TRUE`; `isNull` / `isNotNull`; `isin` + `None` trap; `eqNullSafe` / `<=>`; reusable eligibility / quality predicate chain |
-| 02 | Missing, Blank, and Sentinel Values | `NULL`, blanks, sentinels (`"N/A"`, `-1`), `NaN`; normalize before `na.drop` / `na.fill`; `na.drop` (`how="any"` / `"all"`, `subset`) / `na.fill` / `na.replace`; `F.coalesce` (not partition coalesce) |
-| 03 | Safe Type Casting | `cast` vs `try_cast` under Spark 4 / ANSI; rejected-row pattern (`source.isNotNull() & casted.isNull()`); unsupported type pairs |
-| 04 | Numeric Overflow and Date-Timestamp Parsing | Cast / arithmetic overflow; `try_sum` / `try_avg`; `to_date` / `to_timestamp` with formats; session timezone (`spark.sql.session.timeZone`); `try_to_date` / `try_to_timestamp`; invalid source vs invalid format |
+Three-valued logic and NULL-safe predicates — before messy-value cleanup.
+
+### Learning objectives
+
+- Explain three-valued logic and why filters keep only `TRUE` rows
+- Build NULL-safe predicates with `isNull` / `isNotNull`, the `isin` + NULL
+  trap, and `eqNullSafe` / `<=>`
+
+### Lesson flow
+
+Three-valued logic as columns (`TRUE` / `FALSE` / `NULL`); filters keep only
+`TRUE`; `isNull` / `isNotNull`; `isin` + `None` trap; `eqNullSafe` / `<=>`;
+reusable eligibility / quality predicate chain.
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+NULL-safe filter on a slightly different messy DataFrame.
+
+### Next
+
+`02 - Missing, Blank, and Sentinel Values`
+
+## Notebook 02 — Missing, Blank, and Sentinel Values
+
+### Context
+
+Normalize missing shapes to real `NULL` before drop/fill.
+
+### Learning objectives
+
+- Identify `NULL`, blanks, sentinels, and `NaN`
+- Use `na.drop` / `na.fill` / `na.replace` and `F.coalesce` (not partition
+  coalesce)
+
+### Lesson flow
+
+`NULL`, blanks, sentinels (`"N/A"`, `-1`), `NaN`; normalize before `na.drop`
+/ `na.fill`; `na.drop` (`how="any"` / `"all"`, `subset`) / `na.fill` /
+`na.replace`; `F.coalesce` (not partition coalesce).
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Sentinel normalize on a slightly different messy DataFrame.
+
+### Next
+
+`03 - Safe Type Casting`
+
+## Notebook 03 — Safe Type Casting
+
+### Context
+
+`cast` vs `try_cast` under Spark 4 / ANSI, and rejected-row detection.
+
+### Learning objectives
+
+- Cast with `cast` and `try_cast`
+- Detect rows rejected by a cast
+
+### Lesson flow
+
+`cast` vs `try_cast` under Spark 4 / ANSI; rejected-row pattern
+(`source.isNotNull() & casted.isNull()`); unsupported type pairs.
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Rejected-cast detection on a slightly different messy DataFrame.
+
+### Next
+
+`04 - Numeric Overflow and Date-Timestamp Parsing`
+
+## Notebook 04 — Numeric Overflow and Date-Timestamp Parsing
+
+### Context
+
+Overflow and unparseable dates/timestamps with Spark 4 / ANSI `try_*`
+helpers.
+
+### Learning objectives
+
+- Handle numeric overflow (`try_sum` / `try_avg`)
+- Parse dates/timestamps with formats and session timezone; use
+  `try_to_date` / `try_to_timestamp`
+
+### Lesson flow
+
+Cast / arithmetic overflow; `try_sum` / `try_avg`; `to_date` /
+`to_timestamp` with formats; session timezone (`spark.sql.session.timeZone`);
+`try_to_date` / `try_to_timestamp`; invalid source vs invalid format.
+
+### Expected state
+
+Not applicable — no persistent data state.
+
+### Exercise
+
+Safe date parse on a slightly different messy DataFrame.
+
+### Next
+
+Module 4 — Transformations, Actions, and Lazy Evaluation.
 
 ## Minimum privileges required
 

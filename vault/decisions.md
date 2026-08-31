@@ -43,7 +43,7 @@ Learner notebooks are `.py` with first line `# Databricks notebook source`,
 `# COMMAND ----------` cell boundaries, and `# MAGIC` for markdown/SQL. Never
 `.ipynb`.
 
-Source: [notebook writing](../docs/standards/notebook-writing.md)
+Source: [notebook content standard](../docs/standards/notebook-content-standard.md)
 
 ### D-004 — GitHub is canonical remote
 
@@ -136,7 +136,7 @@ Source: [compute validation policy](../docs/standards/compute-validation-policy.
 Explain before use; one concept path per notebook; worked example before
 exercise; call out production mistakes; depth over API breadth.
 
-Source: [teaching guidelines](../docs/standards/teaching-guidelines.md)
+Source: [notebook content standard](../docs/standards/notebook-content-standard.md)
 
 ### D-013 — DataFrame API and built-ins default
 

@@ -6,32 +6,13 @@
 # MAGIC %md
 # MAGIC # 05 - CTEs and Parameterized SQL
 # MAGIC
-# MAGIC As SQL queries grow and become more complex, nested logic can be hard to follow, and hard-coded
-# MAGIC values make the same query harder to reuse.
+# MAGIC CTEs and safe named `:params` — not f-string SQL.
 # MAGIC
-# MAGIC In this notebook, we'll address both:
-# MAGIC
-# MAGIC - **Common table expressions (CTEs):** organize SQL operations into cleaner multi-step queries.
-# MAGIC - **Named parameters:** allow you to reuse a query with different input values without rewriting the SQL query.
-# MAGIC
-# MAGIC We'll apply both to calculate tip-share:
-# MAGIC borough total tip ÷ fleet total tip × 100 = tip-share percentage
-# MAGIC per borough.
+# MAGIC `trip_enriched`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Organize multi-step SQL with CTEs
-# MAGIC - Combine multiple CTEs in one query
-# MAGIC - Compare CTEs with nested subqueries
-# MAGIC - Pass values with named `:params` (not f-string SQL)
-# MAGIC - Combine CTEs and parameters in one query
-# MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` — **106 rows**
-# MAGIC
-# MAGIC **Writes:** None.
-# MAGIC
-# MAGIC **Prerequisites:** Module 9 `04 - SQL Windows and QUALIFY`.
-
+# MAGIC - Compose multi-step logic with CTEs and safe named `:params` (not f-string SQL)
 # COMMAND ----------
 
 # MAGIC %md

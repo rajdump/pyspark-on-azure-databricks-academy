@@ -5,7 +5,7 @@ than identifier naming. It applies to learner notebooks now and to reusable
 `src/` code after Module 13 introduces it.
 
 Direct readers: `docs/standards/notebook-authoring-checklist.md`,
-`docs/standards/notebook-writing.md`, and
+`docs/standards/notebook-content-standard.md`, and
 `docs/standards/permissions-and-governance.md`. Notebook commands and
 `.cursor/rules/learner-notebooks.mdc` receive these rules through the
 checklist.
@@ -101,5 +101,5 @@ Catalog operations — that validation only happens in Azure Databricks (see
 
 - Identifier naming — see `docs/standards/naming-conventions.md`.
 - Notebook structure and cell formatting — see
-  `docs/standards/notebook-writing.md`.
+  `docs/standards/notebook-content-standard.md`.
 - Compute selection — see `docs/standards/compute-validation-policy.md`.

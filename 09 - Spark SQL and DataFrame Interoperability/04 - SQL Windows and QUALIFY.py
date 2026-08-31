@@ -6,38 +6,14 @@
 # MAGIC %md
 # MAGIC # 04 - SQL Windows and QUALIFY
 # MAGIC
-# MAGIC A window function adds group-level information to each row while keeping
-# MAGIC the row-level details (Module 8 `05 - Window Functions Fundamentals`).
+# MAGIC Window `OVER` + `QUALIFY`, and running totals / `LAG` on daily KPI grain.
 # MAGIC
-# MAGIC In this notebook, we'll answer two questions with Spark SQL:
-# MAGIC
-# MAGIC 1. Within each borough, which zones rank highest by total tip?
-# MAGIC 2. How does total trip distance change from one day to the next?
-# MAGIC
-# MAGIC We'll also use `QUALIFY` to filter window results in the same query.
+# MAGIC `kpi_zone_performance`, `kpi_daily_trip_summary`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Rank rows within a group with `ROW_NUMBER() OVER (...)`
-# MAGIC - Filter window results with `QUALIFY`
-# MAGIC - Write the same Top-N logic with a subquery
-# MAGIC - Calculate a running total with windowed `SUM`
-# MAGIC - Access the previous row with `LAG`
-# MAGIC - Derive a day-over-day change from the current and previous values
-# MAGIC
-# MAGIC **Callbacks:** Module 8 `05 - Window Functions Fundamentals` introduced
-# MAGIC ranking windows, and `06 - Running Totals and Lag and Lead` covered running
-# MAGIC totals and `LAG`. Here we apply those patterns with Spark SQL.
-# MAGIC
-# MAGIC **Reads:**
-# MAGIC
-# MAGIC - `rideshare_dev.processed.kpi_zone_performance` — **20 rows**
-# MAGIC - `rideshare_dev.processed.kpi_daily_trip_summary` — **14 rows**
-# MAGIC
-# MAGIC **Writes:** None.
-# MAGIC
-# MAGIC **Prerequisites:** Module 9 `03 - SQL Pivot, Unpivot, and Sampling`.
-
+# MAGIC - Rank and filter with window `OVER` + `QUALIFY`
+# MAGIC - Compute running totals / `LAG` on daily KPI grain
 # COMMAND ----------
 
 # MAGIC %md

@@ -2,43 +2,13 @@
 # MAGIC %md
 # MAGIC # 02 - Understanding the Delta Transaction Log
 # MAGIC
-# MAGIC Notebook 01 showed that an `UPDATE` changes the Delta table state and
-# MAGIC creates a new entry in `_delta_log`, but we did not inspect the log
-# MAGIC itself.
-# MAGIC
-# MAGIC In this notebook, we start with an empty Delta folder and examine each
-# MAGIC commit step by step to see how the transaction log records the table's
-# MAGIC history.
+# MAGIC Walk `_delta_log` commit by commit on a Volume folder — no catalog table.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC By the end of this notebook, you will be able to:
-# MAGIC
-# MAGIC - Inspect `_delta_log` one commit at a time and identify `protocol`,
-# MAGIC   `metaData`, `commitInfo`, `add`, and `remove` actions.
-# MAGIC - Use `add` and `remove` actions to understand which data files belong
-# MAGIC   to the current Delta table snapshot.
-# MAGIC - Use `DESCRIBE HISTORY` to review the sequence of operations performed
-# MAGIC   on the Delta folder.
-# MAGIC
-# MAGIC **Reads:** This notebook uses only the handmade dataframe and Delta folder created within the
-# MAGIC notebook. It does not read the 100-row source datasets, teaching tables
-# MAGIC such as `trip_enriched`, KPI tables, or `curated/` outputs.
-# MAGIC
-# MAGIC Do not modify `fare_correction_parquet/` or `fare_correction_delta/`.
-# MAGIC
-# MAGIC **Writes:**
-# MAGIC - `/Volumes/rideshare_dev/processed/output_files/practice/fare_log_delta/`
-# MAGIC
-# MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
-# MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `processed.output_files`). Module 10
-# MAGIC `01 - Parquet Rewrite vs Delta UPDATE.py`.
-# MAGIC
-# MAGIC This notebook does **not** teach `VERSION AS OF`, `TIMESTAMP AS OF`,
-# MAGIC `RESTORE`, `OPTIMIZE`, `VACUUM`, checkpoints, deletion vectors, or
-# MAGIC managed vs external tables.
-
+# MAGIC - Walk `_delta_log` commit by commit (`protocol` / `metaData` / `commitInfo` /
+# MAGIC   `add` / `remove`), reconstruct the current snapshot, and read `DESCRIBE
+# MAGIC   HISTORY`
 # COMMAND ----------
 
 # MAGIC %md

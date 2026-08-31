@@ -1,36 +1,15 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 04 - Semi Joins and Anti Joins
 # MAGIC
-# MAGIC The four common join types — inner, left, right, and full — combine columns
-# MAGIC from two DataFrames. What differs between them is which matched and unmatched
-# MAGIC rows survive.
+# MAGIC `left_semi` / `left_anti` on curated trip vs payment.
 # MAGIC
-# MAGIC Semi and anti joins work differently: they do not combine columns from both
-# MAGIC DataFrames. The right DataFrame is used only to check whether a matching row
-# MAGIC exists. Spark then keeps or removes rows from the left DataFrame based on
-# MAGIC that check.
+# MAGIC Curated `trip/` (106), curated `payment/` (105).
 # MAGIC
-# MAGIC Columns from the right DataFrame never appear in the result.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - **`left_semi`** — keeps left rows that have a match on the right. It is
-# MAGIC   similar to SQL `WHERE EXISTS`.
-# MAGIC - **`left_anti`** — keeps left rows that do not have a match on the right.
-# MAGIC   It is similar to SQL `WHERE NOT EXISTS`.
-# MAGIC
-# MAGIC | Section | Focus |
-# MAGIC |---|---|
-# MAGIC | 1 | `left_semi` — keep trips that have a payment |
-# MAGIC | 2 | `left_anti` — find trips without a payment; verify; reverse anti |
-# MAGIC | 3 | Practice — apply semi/anti to a second gap (trip_time) |
-# MAGIC | 4 | Bridge to `subtract()` — conceptual preview for Notebook 06 |
-# MAGIC
-# MAGIC **Prerequisites.** Module 7 **`01`–`03`**; Module 6 (**`01`–`04`**) so
-# MAGIC `curated/trip` and `curated/payment` exist. Join syntax, key profiling, and
-# MAGIC outer-join behavior are applied here, not re-taught. **No write.**
-
+# MAGIC - Use `left_semi` / `left_anti`, and contrast anti-join with `subtract()`
+# MAGIC   (bridge to **06**)
 # COMMAND ----------
 
 # DBTITLE 1,Setup

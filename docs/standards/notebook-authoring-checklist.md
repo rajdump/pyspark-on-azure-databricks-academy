@@ -64,30 +64,35 @@ subsection.
   empty or contain `# TODO`.
 - **Full lesson:** a learner notebook with runnable teaching demonstrations
   for its planned concepts. Exercise `# TODO` markers are allowed.
-- **`Focus` entry:** the entry in a module README's Notebooks table that owns
-  the notebook's topics, subtopics, comparisons, gotchas, and exercise
-  expectation. This is not a Databricks notebook cell.
 
 Use **scaffold**, not *skeleton*. Use **authoring-quality review** for Cursor
 review and **runtime validation** for execution in Azure Databricks.
 
-### Command target selection
+## Command target selection
 
 - Resolve a module from an existing module path, its module number, or its
   exact roadmap title. Do not use fuzzy or substring title matching. Stop and
   ask when the input has no unique match.
-- An explicitly named notebook must map to exactly one Notebooks table row
-  by number, title, or full path. Stop on an unplanned or ambiguous target.
-- `/new-lesson` selects the first table row whose planned file is missing. An
-  explicit later row is allowed only when every prior row has a file.
-- `/write-lesson` selects the first table row whose file exists and is still
-  a scaffold. For an explicit target, the file must exist. Every prior
-  in-module row must have a file, and the immediately prior notebook must be
-  a full lesson.
-- `/validate-notebook` selects the last table row whose file exists and is a
-  full lesson. For an explicit target, the file must exist; the Validation
-  guards determine its content state. Every prior in-module row must have a
-  file, and the immediately prior notebook must be a full lesson.
+- An explicitly named notebook must map to exactly one
+  `## Notebook NN — Title` H2 ([[Notebook contracts]] in
+  `docs/standards/readme-authoring.md`) by number, title, or full path.
+  Stop on an unplanned or ambiguous target. Take number and title from that
+  H2, then build the filesystem name per [[Notebook files]] in
+  `docs/standards/naming-conventions.md`: `NN - Descriptive Title.py`
+  (ASCII hyphen, no `Notebook ` prefix). Do not save `Notebook 01 — Title.py`.
+  Topic source of truth: Lesson flow.
+- `/new-lesson` selects the first planned notebook whose file is missing
+  (first H2 by `NN`). An explicit later notebook is
+  allowed only when every prior planned notebook has a file.
+- `/write-lesson` selects the first planned notebook whose file exists and is
+  still a scaffold. For an explicit target, the file must exist. Every prior
+  in-module planned notebook must have a file, and the immediately prior
+  notebook must be a full lesson.
+- `/validate-notebook` selects the last planned notebook whose file exists
+  and is a full lesson. For an explicit target, the file must exist; the
+  Validation guards determine its content state. Every prior in-module
+  planned notebook must have a file, and the immediately prior notebook must
+  be a full lesson.
 - `/review-module` resolves the module only; it does not select an individual
   notebook.
 
@@ -104,10 +109,10 @@ Read:
 1. The target module's full `README.md`.
 2. The target module row and its table headings in `COURSE_MODULES.md`.
 3. The full `docs/standards/readme-authoring.md`.
-4. The [[Format]] and [[Notebook-level structure]] sections in
-   `docs/standards/notebook-writing.md`.
+4. The [[Format]], [[Opening cell]], and [[Notebook-level structure]]
+   sections in `docs/standards/notebook-content-standard.md`.
 5. The [[Audience assumptions]] and [[Explanation style]] sections in
-   `docs/standards/teaching-guidelines.md`.
+   `docs/standards/notebook-content-standard.md`.
 6. The [[Notebook files]] section in
    `docs/standards/naming-conventions.md`.
 7. The sections selected by [[#Dataset scope]] when the notebook uses course
@@ -125,20 +130,19 @@ placeholders.
 
 Read:
 
-1. The target module README's full [[Notebooks]] table (including the target row,
-   the next row when present, and per-row **Reads** when that column exists),
-   plus [[Prerequisites]], [[Dataset]], and **Paths and outputs** when
-   present, and [[Minimum privileges required]] when present.
+1. The target module README's selected contract: the matching
+   `## Notebook NN — Title` H2 plus its Next H2 when present; plus
+   [[Prerequisites]], [[Dataset]], and Shared paths when present, and
+   [[Minimum privileges required]] when present.
 2. The target module row in `COURSE_MODULES.md` for **Production Relevance**
    when applying production framing.
-3. The full `docs/standards/notebook-writing.md`.
-4. The full `docs/standards/teaching-guidelines.md`.
-5. The full `docs/standards/coding-standards.md`.
-6. The [[Python identifiers]] section in
+3. The full `docs/standards/notebook-content-standard.md`.
+4. The full `docs/standards/coding-standards.md`.
+5. The [[Python identifiers]] section in
    `docs/standards/naming-conventions.md`, plus [[Unity Catalog objects]]
    when the lesson names course objects.
-7. The sections selected by [[#Dataset scope]].
-8. One completed sibling notebook for voice and cell structure: use the
+6. The sections selected by [[#Dataset scope]].
+7. One completed sibling notebook for voice and cell structure: use the
    immediately prior in-module notebook after [[#Command target selection]]
    confirms that it exists and is a full lesson. For Notebook 01, read the
    last numbered notebook of the previous module when one exists.
@@ -174,12 +178,12 @@ Read:
 3. The full `docs/standards/readme-authoring.md`.
 4. The [[Module folders]] and [[Notebook files]] sections in
    `docs/standards/naming-conventions.md`.
-5. The [[Format]], [[Notebook-level structure]], [[Notebook dependencies and
-   execution state]], [[Code cell conventions]], [[Output display
-   convention]], and [[What must never appear in a notebook]] sections in
-   `docs/standards/notebook-writing.md`.
+5. The [[Format]], [[Opening cell]], [[Notebook-level structure]],
+   [[Notebook dependencies and execution state]], [[Code cell conventions]],
+   [[Output display convention]], and [[What must never appear in a
+   notebook]] sections in `docs/standards/notebook-content-standard.md`.
 6. The [[Explanation style]], [[Structure patterns]], and [[Production
-   framing]] sections in `docs/standards/teaching-guidelines.md`.
+   framing]] sections in `docs/standards/notebook-content-standard.md`.
 7. The [[Style baseline]], [[PySpark-specific conventions]], [[Error handling
    in teaching notebooks]], [[Security and portability]], and [[Permitted
    author defaults]] sections in `docs/standards/coding-standards.md`.
@@ -224,29 +228,30 @@ module folder for existing `.py` files and report a
 
 Select the target through [[#Command target selection]] (including
 non-contiguous numbers such as `99` when planned). Build the filename from
-that row's `#` and `Notebook` columns per
+the selected H2's number and title — `## Notebook NN — Title` — then apply
 `docs/standards/naming-conventions.md`. Stop without creating a file if every
-planned row already has a matching file, or if the named or selected target
-file already exists.
+planned notebook already has a matching file, or if the named or selected
+target file already exists.
 
 - **Filesystem cross-check:** Report (do not block on) any numbered `.py`
-  files on disk that are not listed in the README Notebooks table.
+  files on disk that are not in the selected contract set (H2 notebooks).
 
-When readiness passes and a target row is selected, the scaffold is valid only
+When readiness passes and a target is selected, the scaffold is valid only
 when all checks below pass:
 
 - **Format:** It uses the required Databricks source format.
 - **Planned structure:** Its section headings match the topics and subtopics
-  in that row's **`Focus` entry**.
-- **Placeholders:** It includes objectives, prerequisites, setup, summary,
-  and a next-notebook pointer placeholder. Include an exercise placeholder
-  only when the `Focus` entry plans an exercise or hands-on task; for
-  write-only, utility, or no-exercise notebooks, use ordered concept-section
-  placeholders per the `Focus` entry instead.
+  in Lesson flow.
+- **Placeholders:** The first `%md` cell is a lean [[Opening cell]] (stem
+  H1, context, learning objectives only). Setup, summary, and a
+  next-notebook pointer are later cells. Include an exercise placeholder
+  only when Lesson flow / Exercise plans an exercise or
+  hands-on task; for write-only, utility, or no-exercise notebooks, use
+  ordered concept-section placeholders per Lesson flow instead.
 - **Dataset setup:** If the notebook will use the shared dataset, setup
   comments name the correct tables and schema or path from
   `docs/data/dataset-overview.md` without inventing columns.
-- **Module 5 setup or cleanup:** When the target row is setup or cleanup,
+- **Module 5 setup or cleanup:** When the target is setup or cleanup,
   include config placeholders per [[#Scaffold manifest]] item 8 — do not invent
   learner-specific values.
 - **No lesson content yet:** `# TODO` or empty code cells are acceptable.
@@ -258,19 +263,25 @@ This bar summarizes the final checks; the linked standards still apply. A
 lesson is ready for `/validate-notebook` only when its manifest and
 conditional reads are followed and all checks below pass:
 
-- **Planned coverage:** The module README's **Notebooks table `Focus` entry**
-  for the target row is fully implemented. Planned topics, subtopics,
-  comparisons, and gotchas have runnable demonstrations where behavior can
-  be shown. When the `Focus` entry plans an exercise or hands-on task, the
-  exercise matches that scope. Write-only, utility, or no-exercise notebooks
-  implement the `Focus` entry through ordered concept sections and writes
-  instead of a learner exercise.
+- **Opening cell:** Satisfy [[Opening cell]], the [[Format]] example,
+  [[Notebook-level structure]] item 1, and the unlabeled-sentence form of
+  [[Notebook dependencies and execution state]] in
+  `docs/standards/notebook-content-standard.md`.
+- **Planned coverage:** Lesson flow for the target is fully implemented.
+  Planned topics, subtopics, comparisons, and gotchas have runnable
+  demonstrations where behavior can be shown. When Lesson flow / Exercise
+  plans an exercise or hands-on task, the exercise matches that scope.
+  Write-only, utility, or no-exercise notebooks implement Lesson flow
+  through ordered concept sections and writes instead of a learner
+  exercise.
 - **Teaching order:** Worked examples come before any exercise section. When
   an exercise is planned, it applies the demonstrated pattern to slightly
   different data. Write-only and utility notebooks follow ordered concept
-  sections per the `Focus` entry.
+  sections per Lesson flow.
 - **Required course structure:** The notebook includes objectives, setup,
   incremental teaching cells, a summary, and a next-notebook pointer.
+  Objectives belong in the opening; setup, summary, and next-pointer are
+  later cells.
 - **Voice consistency (reviewer judgment):** The explanation style and
   progression are consistent with the teaching standard and completed
   sibling notebooks. Match idiom drift where the sibling establishes a
@@ -303,7 +314,7 @@ in Cursor — not runtime validation and not module-level review.
 - **Hidden session state:** The notebook runs after its own setup only — no
   dependency on variables, imports, or temp views from another notebook's
   session (see [[Notebook dependencies and execution state]] in
-  `docs/standards/notebook-writing.md`).
+  `docs/standards/notebook-content-standard.md`).
 - **Intentional failures:** Demonstrated failures use Markdown explanation
   and `# Expected: <ErrorType>` on the failing line (see [[Error handling
   in teaching notebooks]] in `docs/standards/coding-standards.md`).
@@ -325,7 +336,7 @@ apply. A module passes `/review-module` only when all checks below pass:
   course roadmap, global standards, or Cursor instructions.
 - **Naming:** Folder and notebook names follow [[Module folders]] and
   [[Notebook files]] in `docs/standards/naming-conventions.md`.
-- **Notebook sequence:** Every [[Notebooks table]] row has a matching
+- **Notebook sequence:** Every `## Notebook NN — Title` H2 has a matching
   `NN - Title.py` file (including non-contiguous numbers such as `99` when
   planned). No unplanned numbered `.py` files on disk (inverse of the
   **Filesystem cross-check** in [[#Scaffold contents]]).
@@ -338,10 +349,16 @@ apply. A module passes `/review-module` only when all checks below pass:
   personal identifiers do not appear anywhere in the module folder.
 - **No unfinished scaffolds:** No notebook is still a scaffold per
   [[#Artifact and content-state terminology]]; report that `/write-lesson`
-  must run first.
+  must run first. Exception: [[#Module 11 scaffold exception]].
 - **README minimum privileges:** When any notebook in the module uses Unity
   Catalog objects beyond default learner access, the module `README.md`
   documents them under [[Minimum privileges required]].
+
+## Module 11 scaffold exception
+
+Module 11 notebooks `02` and `03` may remain scaffolds. Do not fail **No
+unfinished scaffolds** for those two files. All other Module-review checks
+still apply.
 
 ## Command boundaries
 

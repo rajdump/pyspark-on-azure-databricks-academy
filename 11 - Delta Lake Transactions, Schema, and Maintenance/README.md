@@ -76,8 +76,6 @@ sets deletion vectors and auto-compaction **off** after registering
 notebook **00**'s table (lab control, not taught). Ignore `.crc` files
 in listings.
 
-## Paths and outputs
-
 Object locations:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md)
 (Module 11 — Delta Lake Transactions, Schema, and Maintenance). `{url}` is
@@ -99,19 +97,203 @@ before copy. **01** must not `rm` that folder. **02–04** setup `DROP`s
 files. Module 5 `99` Level 1 does not clear `external-tables/` (same as
 Module 10 notebook 03).
 
-## Notebooks
+## Notebook 00 — Copy Fare DV Lab File
 
-Five notebooks, in order. **00** is setup (**no exercise**). Notebook
-**03** ends with a short exercise. Notebooks **01**, **02**, and **04**
-have **no exercise**.
+### Context
 
-| # | Notebook | Focus |
-|---|---|---|
-| 00 | Copy Fare DV Lab File | Setup for notebook **01**. Open from the course Git folder. `DROP TABLE IF EXISTS fare_dv_lab`; `rm` the destination folder; copy `fare_dv_lab.parquet`; `LIST`; `CONVERT TO DELTA`; `LIST`. Do not `CREATE TABLE`. Fence: no DV teaching, `UPDATE`, `VACUUM`, `OPTIMIZE`. **No exercise** |
-| 01 | Deletion Vectors, REORG TABLE, and VACUUM | After Module 10 `04` retention/`VACUUM` warning: cleanup of obsolete physical data on **00**'s large external `fare_dv_lab` (not `fare_maint_lab` / `fare_timetravel_lab`; do not `rm` **00**'s folder). First cell: title, DV context, learning objectives only — no Reads / Writes / Prerequisites. Register **00**'s folder; DV and auto-compact **off** (control, not taught). Compare one `UPDATE` with DV off vs on (`LIST`, `DESCRIBE HISTORY`). `DELETE` a row (hidden until purge). `VACUUM RETAIN 0 HOURS`, then `REORG TABLE ... APPLY (PURGE)`, then a second `VACUUM`. Fence: no `OPTIMIZE`, auto-compact teaching, `VERSION AS OF` / `RESTORE`, `MERGE`, other `REORG` `APPLY` clauses, or partition `WHERE`. **No exercise**. **Next:** `02 - Schema Enforcement and Evolution` |
-| 02 | Schema Enforcement and Evolution | **0** `CREATE` extract columns only (no `driver_payout_amount`), `INSERT` **1001–1004**, **4** rows. **1** enforcement: write/append a DataFrame that includes `driver_payout_amount` → expected fail. **2** `ALTER TABLE ADD COLUMN driver_payout_amount DECIMAL(10,2)`; `mergeSchema` write succeeds; `SELECT` still **4** rows; payout is **NULL**. **3** `NOT NULL` on `trip_id`; `CHECK (tip_amount >= 0)`; one insert that violates `CHECK` → expected fail. Fence: no column mapping, `DROP COLUMN`, identity/generated columns, `MERGE`, DV, or `OPTIMIZE`. **No exercise** |
-| 03 | Introductory MERGE | DV off. **0** `CREATE` + `INSERT` **1001–1003** only (**3** rows; 1003 tip **6.00**; **1004** absent). **1** `MERGE` from a source with 1003 tip **10.00** and extract row **1004**: `WHEN MATCHED` update tip; `WHEN NOT MATCHED` insert. **2** `SELECT` **4** rows; 1003 is **10.00**; 1004 present. Fence: no production incremental `MERGE` (Module 15), CDF, or `REPLACE WHERE`. Exercise: `MERGE` **1001** **3.00 → 4.00**; still **4** rows; 1003 stays **10.00** |
-| 04 | ACID and Optimistic Concurrency | DV off. **0** `CREATE` + `INSERT` **1001–1004**. **1** `UPDATE` 1003 tip **6.00 → 10.00**; `DESCRIBE HISTORY`. **2** Explain OCC: readers see a snapshot; a writer validates against that version; overlapping writers on the same files conflict. **3** One overlapping-write demo (second writer loses with a concurrent-modification error, then retries); **4** rows remain. **4** `SHOW TBLPROPERTIES` glance (`delta.enableDeletionVectors`). Mention: deletion vectors can allow row-level concurrency for non-overlapping rows — no lab. Fence: no isolation-level tour, checkpoints, protocol versions, or `OPTIMIZE`. **No exercise** |
+Setup for notebook **01**. Open from the course Git folder.
+
+### Learning objectives
+
+- Copy the lab Parquet, `LIST`, and `CONVERT TO DELTA` so notebook **01**
+  can register an external table
+
+### Lesson flow
+
+Setup for notebook **01**. Open from the course Git folder.
+`DROP TABLE IF EXISTS fare_dv_lab`; `rm` the destination folder; copy
+`fare_dv_lab.parquet`; `LIST`; `CONVERT TO DELTA`; `LIST`. Do not
+`CREATE TABLE`.
+
+### Expected state
+
+- Input: `data/lab/fare_dv_lab.parquet`
+- Output: `{url}/external-tables/fare_dv_lab` converted to Delta. See
+  Dataset.
+
+### Exercise
+
+An exercise does not apply — this is a setup notebook.
+
+### Boundaries
+
+No DV teaching, `UPDATE`, `VACUUM`, `OPTIMIZE`.
+
+### Next
+
+`01 - Deletion Vectors, REORG TABLE, and VACUUM`
+
+## Notebook 01 — Deletion Vectors, REORG TABLE, and VACUUM
+
+### Context
+
+First cleanup of obsolete physical data on **00**'s large external table,
+after Module 10's retention/`VACUUM` warning.
+
+### Learning objectives
+
+- Compare `UPDATE` with and without deletion vectors
+- Physically remove old row bytes with `REORG TABLE ... APPLY (PURGE)` and
+  `VACUUM`
+
+### Lesson flow
+
+After Module 10 `04` retention/`VACUUM` warning: cleanup of obsolete
+physical data on **00**'s large external `fare_dv_lab` (not `fare_maint_lab`
+/ `fare_timetravel_lab`; do not `rm` **00**'s folder). First cell: title, DV
+context, learning objectives only — no Reads / Writes / Prerequisites.
+Register **00**'s folder; DV and auto-compact **off** (control, not taught).
+Compare one `UPDATE` with DV off vs on (`LIST`, `DESCRIBE HISTORY`).
+`DELETE` a row (hidden until purge). `VACUUM RETAIN 0 HOURS`, then
+`REORG TABLE ... APPLY (PURGE)`, then a second `VACUUM`.
+
+### Expected state
+
+- Input: **00**'s folder `{url}/external-tables/fare_dv_lab`
+- Output: `rideshare_dev.processed.fare_dv_lab` at that location. DML uses
+  `row_id` and `passenger_fare` from the lab file only.
+
+### Exercise
+
+An exercise does not apply.
+
+### Boundaries
+
+No `OPTIMIZE`, auto-compact teaching, `VERSION AS OF` / `RESTORE`, `MERGE`,
+other `REORG` `APPLY` clauses, or partition `WHERE`. Do not `rm` **00**'s
+folder.
+
+### Next
+
+`02 - Schema Enforcement and Evolution`
+
+## Notebook 02 — Schema Enforcement and Evolution
+
+### Context
+
+Enforce schema, add a column, and apply `NOT NULL` / `CHECK` on
+`fare_maint_lab`.
+
+### Learning objectives
+
+- Enforce a table schema, add a column, and apply `NOT NULL` / `CHECK`
+
+### Lesson flow
+
+**0** `CREATE` extract columns only (no `driver_payout_amount`), `INSERT`
+**1001–1004**, **4** rows. **1** enforcement: write/append a DataFrame that
+includes `driver_payout_amount` → expected fail. **2** `ALTER TABLE ADD
+COLUMN driver_payout_amount DECIMAL(10,2)`; `mergeSchema` write succeeds;
+`SELECT` still **4** rows; payout is **NULL**. **3** `NOT NULL` on
+`trip_id`; `CHECK (tip_amount >= 0)`; one insert that violates `CHECK` →
+expected fail.
+
+### Expected state
+
+- Output: `rideshare_dev.processed.fare_maint_lab` at
+  `{url}/external-tables/fare_maint_lab`
+- Expected rows: **4**; `driver_payout_amount` **NULL** on lab rows
+- Expected failure: append with extra column before `ALTER`; insert that
+  violates `CHECK`
+
+### Exercise
+
+An exercise does not apply.
+
+### Boundaries
+
+No column mapping, `DROP COLUMN`, identity/generated columns, `MERGE`, DV,
+or `OPTIMIZE`.
+
+### Next
+
+`03 - Introductory MERGE`
+
+## Notebook 03 — Introductory MERGE
+
+### Context
+
+Matched update and not-matched insert — not production incremental `MERGE`.
+
+### Learning objectives
+
+- Apply an introductory `MERGE` (matched update and not-matched insert)
+
+### Lesson flow
+
+DV off. **0** `CREATE` + `INSERT` **1001–1003** only (**3** rows; 1003 tip
+**6.00**; **1004** absent). **1** `MERGE` from a source with 1003 tip
+**10.00** and extract row **1004**: `WHEN MATCHED` update tip; `WHEN NOT
+MATCHED` insert. **2** `SELECT` **4** rows; 1003 is **10.00**; 1004 present.
+
+### Expected state
+
+- Output: `rideshare_dev.processed.fare_maint_lab`
+- Expected rows: after setup **3**; after `MERGE` **4** (1003 tip **10.00**;
+  1004 present)
+
+### Exercise
+
+`MERGE` **1001** **3.00 → 4.00**; still **4** rows; 1003 stays **10.00**.
+
+### Boundaries
+
+No production incremental `MERGE` (Module 15), CDF, or `REPLACE WHERE`.
+
+### Next
+
+`04 - ACID and Optimistic Concurrency`
+
+## Notebook 04 — ACID and Optimistic Concurrency
+
+### Context
+
+ACID and optimistic concurrency, including a write conflict and retry.
+
+### Learning objectives
+
+- Explain ACID and optimistic concurrency, including a write conflict and
+  retry
+
+### Lesson flow
+
+DV off. **0** `CREATE` + `INSERT` **1001–1004**. **1** `UPDATE` 1003 tip
+**6.00 → 10.00**; `DESCRIBE HISTORY`. **2** Explain OCC: readers see a
+snapshot; a writer validates against that version; overlapping writers on
+the same files conflict. **3** One overlapping-write demo (second writer
+loses with a concurrent-modification error, then retries); **4** rows
+remain. **4** `SHOW TBLPROPERTIES` glance (`delta.enableDeletionVectors`).
+Mention: deletion vectors can allow row-level concurrency for
+non-overlapping rows — no lab.
+
+### Expected state
+
+- Output: `rideshare_dev.processed.fare_maint_lab`
+- Expected rows: **4** remain after the OCC demo
+- Expected failure: concurrent-modification error on the overlapping write,
+  then retry
+
+### Exercise
+
+An exercise does not apply.
+
+### Boundaries
+
+No isolation-level tour, checkpoints, protocol versions, or `OPTIMIZE`.
+
+### Next
+
+Module 12 — Unity Catalog and Data Governance.
 
 ## Minimum privileges required
 

@@ -2,25 +2,11 @@
 # MAGIC %md
 # MAGIC # 03 - Introductory MERGE
 # MAGIC
+# MAGIC Matched update and not-matched insert — not production incremental `MERGE`.
+# MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Create `fare_maint_lab` with extract columns and insert trips **1001–1003**
-# MAGIC - `MERGE` a matched tip update for **1003** and a not-matched insert for **1004**
-# MAGIC - Confirm **4** rows: **1003** tip is **10.00** and **1004** is present
-# MAGIC
-# MAGIC **Reads:** none of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, `curated/`)
-# MAGIC
-# MAGIC **Writes:**
-# MAGIC - `rideshare_dev.processed.fare_maint_lab` at `{url}/external-tables/fare_maint_lab`
-# MAGIC
-# MAGIC **Prerequisites:** Module 10 notebooks `01`–`04`. Module 5
-# MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `el_rideshare_dev`, `processed`).
-# MAGIC
-# MAGIC This notebook does **not** teach production incremental `MERGE` (Module 15),
-# MAGIC Change Data Feed, or `REPLACE WHERE`.
-
+# MAGIC - Apply an introductory `MERGE` (matched update and not-matched insert)
 # COMMAND ----------
 
 # MAGIC %md

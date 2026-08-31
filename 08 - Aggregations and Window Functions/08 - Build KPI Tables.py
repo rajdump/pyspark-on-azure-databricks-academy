@@ -2,31 +2,13 @@
 # MAGIC %md
 # MAGIC # 08 - Build KPI Tables
 # MAGIC
-# MAGIC In this notebook, we bring together the aggregation and window patterns from
-# MAGIC this module to build three analytics-ready KPI tables.
+# MAGIC Write-only: three managed `kpi_*` Delta tables for Module 9.
 # MAGIC
-# MAGIC We will create:
+# MAGIC Both managed tables (`trip_enriched`, `trip_driver_assignment`).
 # MAGIC
-# MAGIC | KPI table | Grain | Expected rows |
-# MAGIC |---|---|---:|
-# MAGIC | `rideshare_dev.processed.kpi_daily_trip_summary` | one row per `trip_date` | 14 |
-# MAGIC | `rideshare_dev.processed.kpi_zone_performance` | one row per (`pickup_borough`, `pickup_zone`) | 20 |
-# MAGIC | `rideshare_dev.processed.kpi_driver_productivity` | one row per `driver_id` | 12 |
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC The notebook uses patterns covered in Notebooks **01–07**, including:
-# MAGIC
-# MAGIC - `groupBy` and `agg`
-# MAGIC - NULL-aware aggregation
-# MAGIC - `collect_set`
-# MAGIC - aggregate first, then rank
-# MAGIC
-# MAGIC Each result is written as a **Unity Catalog managed Delta table**. Module 9
-# MAGIC `04 - SQL Windows and QUALIFY` reads the daily and zone tables.
-# MAGIC `06 - End-to-End SQL Pipeline` rebuilds the same KPI logic in Spark SQL
-# MAGIC (read-only — no writes).
-# MAGIC
-# MAGIC This is a **write-only notebook** — there is no exercise.
-
+# MAGIC - Apply the module patterns to write three managed `kpi_*` tables
 # COMMAND ----------
 
 # MAGIC %md

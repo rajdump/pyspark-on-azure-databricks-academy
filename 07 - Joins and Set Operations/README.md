@@ -45,7 +45,7 @@ Does **not** read
 below: Level 1 for `practice/` hygiene; Level 4 to drop managed tables. Do
 **not** run Level 2 before this module — that deletes the curated inputs.
 
-## Paths and outputs
+## Dataset
 
 Schemas, join keys, and the `zone_lookup` 21–22 design:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md).
@@ -84,24 +84,219 @@ managed tables. To reset Module 7 managed tables (**`trip_enriched`**,
 CASCADE` step drops every managed table in the catalog, current and future,
 with no per-table statement required.
 
-## Notebooks
+## Notebook 01 — Grain, Join Syntax, and Unmatched Keys
 
-Seven notebooks, in order. Notebooks **01–06** are skill-building only
-(**no write**) and each includes a short hands-on task.
-`07 - Build Unified Curated Tables.py` is write-only (no practice, no
-profiling/validation cells): load, build both tables per mapping docs,
-`saveAsTable` overwrite, short AQE note. Key profiling and validation belong
-in **01–06**; they interrupt the production-style build flow.
+### Context
 
-| # | Notebook | Reads | Focus |
-|---|---|---|---|
-| 01 | Grain, Join Syntax, and Unmatched Keys | Landing `trip`, `trip_time` (+ constructed frames). No `payment`. | Grain; 1:1 / 1:M / M:M; string join `trip`↔`trip_time` → 100; list join `trip_charges`↔`rate_card` (`trip_id` alone → 12 wrong; `["trip_id", "charge_type"]` → 4); Boolean rename + duplicate-column trap; unmatched-keys exercise (expect 3 / 5 / 5 / 7) |
-| 02 | Silent Join Failures and Validation | Landing `trip`, `trip_time`, `payment` (+ frames) | M:M fanout; key profiling; `dropDuplicates` vs window dedup; NULL keys + `eqNullSafe`; accidental Cartesian; profile → predict → run → verify |
-| 03 | Lookup Joins, Columns, and Broadcast | `zone_lookup` (22); `/Volumes/rideshare_dev/processed/output_files/curated/trip/` (106) | Apply **01–02** join/alias/profile patterns (no re-teach); fact vs dim; repeated pickup/dropoff lookup; `select`/rename; unmatched 21–22 **practice**; `-1` threshold then `F.broadcast` + `.explain()` (reused in **07**) |
-| 04 | Semi Joins and Anti Joins | `/Volumes/rideshare_dev/processed/output_files/curated/trip/` (106), `/Volumes/rideshare_dev/processed/output_files/curated/payment/` (105) | `left_semi` / `left_anti` (trip 106 on anti); reverse anti; bridge to **`subtract()`** in **06** |
-| 05 | Union and unionByName | Constructed frames (no landing read) | `union` vs `unionByName`; column-order trap; `allowMissingColumns`; when `distinct()` after union |
-| 06 | Intersect, subtract, and exceptAll | Constructed frames (no landing read) | Whole-row set ops; `intersect` vs `intersectAll`; `subtract` vs `exceptAll`; SQL `EXCEPT` naming |
-| 07 | Build Unified Curated Tables | Curated trip/payment/drivers_flat; landing `trip_time`, `zone_lookup` | Write-only business flow: load → stepwise left joins + zone broadcast → select 16/13 mapping columns → `saveAsTable` overwrite; short AQE note — no profiling, validation, or practice |
+Grain, cardinality, and join syntax — skill-building only (no write).
+
+### Learning objectives
+
+- Define grain and cardinality and predict join row counts before running
+- Write equi-joins in string, list, and Boolean form
+
+### Lesson flow
+
+Grain; 1:1 / 1:M / M:M; string join `trip`↔`trip_time` → 100; list join
+`trip_charges`↔`rate_card` (`trip_id` alone → 12 wrong; `["trip_id",
+"charge_type"]` → 4); Boolean rename + duplicate-column trap; unmatched-keys
+exercise (expect 3 / 5 / 5 / 7).
+
+### Expected state
+
+- Input: landing `trip`, `trip_time` (+ constructed frames). No `payment`.
+- Output: none (no write)
+
+### Exercise
+
+Unmatched-keys exercise (expect 3 / 5 / 5 / 7).
+
+### Next
+
+`02 - Silent Join Failures and Validation`
+
+## Notebook 02 — Silent Join Failures and Validation
+
+### Context
+
+M:M fanout, key profiling, and NULL-key traps — still no write.
+
+### Learning objectives
+
+- Profile keys and resolve duplicates with `Window` + `row_number` (not
+  `dropDuplicates`) when payloads differ
+- Explain NULL-key behavior and use `eqNullSafe` when NULLs must match
+
+### Lesson flow
+
+M:M fanout; key profiling; `dropDuplicates` vs window dedup; NULL keys +
+`eqNullSafe`; accidental Cartesian; profile → predict → run → verify.
+
+### Expected state
+
+- Input: landing `trip`, `trip_time`, `payment` (+ frames)
+- Output: none (no write)
+
+### Exercise
+
+Short hands-on on the demonstrated join-validation pattern.
+
+### Next
+
+`03 - Lookup Joins, Columns, and Broadcast`
+
+## Notebook 03 — Lookup Joins, Columns, and Broadcast
+
+### Context
+
+Repeated zone lookup, column cleanup, and broadcast — reused in notebook
+**07**.
+
+### Learning objectives
+
+- Run a repeated lookup join (`zone_lookup` for pickup and dropoff)
+- Clean columns with `select` / rename and `F.broadcast` a small dimension
+  (confirm in `.explain()`)
+
+### Lesson flow
+
+Apply **01–02** join/alias/profile patterns (no re-teach); fact vs dim;
+repeated pickup/dropoff lookup; `select`/rename; unmatched 21–22 **practice**;
+`-1` threshold then `F.broadcast` + `.explain()` (reused in **07**).
+
+### Expected state
+
+- Input: `zone_lookup` (22);
+  `/Volumes/rideshare_dev/processed/output_files/curated/trip/` (106)
+- Output: none (no write)
+
+### Exercise
+
+Unmatched 21–22 practice.
+
+### Next
+
+`04 - Semi Joins and Anti Joins`
+
+## Notebook 04 — Semi Joins and Anti Joins
+
+### Context
+
+`left_semi` / `left_anti` on curated trip vs payment.
+
+### Learning objectives
+
+- Use `left_semi` / `left_anti`, and contrast anti-join with `subtract()`
+  (bridge to **06**)
+
+### Lesson flow
+
+`left_semi` / `left_anti` (trip 106 on anti); reverse anti; bridge to
+**`subtract()`** in **06**.
+
+### Expected state
+
+- Input: curated `trip/` (106), curated `payment/` (105)
+- Output: none (no write)
+
+### Exercise
+
+Short hands-on on semi/anti.
+
+### Next
+
+`05 - Union and unionByName`
+
+## Notebook 05 — Union and unionByName
+
+### Context
+
+Stack frames with `union` / `unionByName` — constructed frames only.
+
+### Learning objectives
+
+- Combine frames with `union` / `unionByName` (column-order trap;
+  `allowMissingColumns`)
+
+### Lesson flow
+
+`union` vs `unionByName`; column-order trap; `allowMissingColumns`; when
+`distinct()` after union.
+
+### Expected state
+
+- Input: constructed frames (no landing read)
+- Output: none (no write)
+
+### Exercise
+
+Short hands-on on union alignment.
+
+### Next
+
+`06 - Intersect, subtract, and exceptAll`
+
+## Notebook 06 — Intersect, subtract, and exceptAll
+
+### Context
+
+Whole-row set ops on constructed frames.
+
+### Learning objectives
+
+- Use `intersect` / `intersectAll` / `subtract` / `exceptAll` and SQL
+  `EXCEPT` naming
+
+### Lesson flow
+
+Whole-row set ops; `intersect` vs `intersectAll`; `subtract` vs `exceptAll`;
+SQL `EXCEPT` naming.
+
+### Expected state
+
+- Input: constructed frames (no landing read)
+- Output: none (no write)
+
+### Exercise
+
+Short hands-on on set ops.
+
+### Next
+
+`07 - Build Unified Curated Tables`
+
+## Notebook 07 — Build Unified Curated Tables
+
+### Context
+
+Write-only business flow: load, build both tables per mapping docs,
+`saveAsTable` overwrite.
+
+### Learning objectives
+
+- Apply the module patterns to write **`trip_enriched`** and
+  **`trip_driver_assignment`**
+
+### Lesson flow
+
+Write-only business flow: load → stepwise left joins + zone broadcast →
+select 16/13 mapping columns → `saveAsTable` overwrite; short AQE note — no
+profiling, validation, or practice.
+
+### Expected state
+
+- Input: curated trip/payment/drivers_flat; landing `trip_time`,
+  `zone_lookup`
+- Output: `rideshare_dev.processed.trip_enriched` (106 rows, 16 columns) and
+  `rideshare_dev.processed.trip_driver_assignment` (13 columns). See Dataset.
+
+### Exercise
+
+An exercise does not apply — this notebook is write-only (no practice).
+
+### Next
+
+Module 8 — Aggregations and Window Functions.
 
 ## Minimum privileges required
 

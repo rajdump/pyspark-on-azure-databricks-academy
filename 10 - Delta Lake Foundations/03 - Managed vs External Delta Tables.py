@@ -2,46 +2,15 @@
 # MAGIC %md
 # MAGIC # 03 - Managed vs External Delta Tables
 # MAGIC
-# MAGIC Both managed and external tables are governed by Unity Catalog (UC).
-# MAGIC The key differences are who controls the table’s physical storage and
-# MAGIC which capabilities Databricks manages automatically.
-# MAGIC
-# MAGIC
-# MAGIC ```text
-# MAGIC Managed table
-# MAGIC UC table ──► UC chooses the storage location
-# MAGIC              Databricks manages the table storage and
-# MAGIC              supported automatic optimizations
-# MAGIC
-# MAGIC External table
-# MAGIC UC table ──► You choose the storage location
-# MAGIC              You manage the storage path and files
-# MAGIC ```
+# MAGIC Self-contained managed vs external CREATE / DROP / UNDROP / re-register.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Create the same empty Delta table as managed and as external, then load
-# MAGIC   the same four rows
-# MAGIC - Compare table type and storage location (`DESCRIBE DETAIL`,
-# MAGIC   `information_schema`, `LIST`)
-# MAGIC - `DROP` both, `UNDROP` both, and re-register the external folder
-# MAGIC
-# MAGIC **Reads:** none of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, `curated/`)
-# MAGIC
-# MAGIC **Writes:**
-# MAGIC - `rideshare_dev.processed.fare_managed_lab`
-# MAGIC - `rideshare_dev.processed.fare_external_lab` at
-# MAGIC   `{url}/external-tables/fare_external_lab`
-# MAGIC
-# MAGIC **Prerequisites:** Module 9 notebooks `01`–`06`. Module 5
-# MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `el_rideshare_dev`, `processed`).
-# MAGIC
-# MAGIC This notebook does **not** teach `UPDATE`, `DESCRIBE HISTORY`,
-# MAGIC `OPTIMIZE`, `VACUUM`, Predictive Optimization, time travel, `RESTORE`,
-# MAGIC grants (Module 12), or `CREATE TABLE` at a Volume path.
-
+# MAGIC - Contrast managed and external Unity Catalog tables on storage location, `DROP`
+# MAGIC   / `UNDROP` (including the managed dropped-table recovery window), and external
+# MAGIC   re-registration
+# MAGIC - Choose managed vs external (Databricks-managed storage and optimizations vs
+# MAGIC   path control)
 # COMMAND ----------
 
 # MAGIC %md

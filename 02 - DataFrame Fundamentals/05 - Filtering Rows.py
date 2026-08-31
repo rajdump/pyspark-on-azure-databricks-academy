@@ -1,28 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Filtering Rows
+# MAGIC # 05 - Filtering Rows
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Keep only matching rows with `filter` / `where` (same method; alias)
-# MAGIC - Combine row conditions with Column `&`, `|`, and `~` (with parentheses)
-# MAGIC - Write multi-condition filters as SQL predicate strings and with
-# MAGIC   `F.expr`
-# MAGIC - Explain why Python `and` fails on Column conditions (same class of error
-# MAGIC   for `or` and `not`)
-# MAGIC - Filter with `isin`, `like`, and `between`
-# MAGIC - Use intro NULL checks with `isNull` / `isNotNull` and explain why
-# MAGIC   `== None` does not find NULLs
-# MAGIC - Treat empty string as distinct from NULL in separate checks
-# MAGIC - Chain a reusable filter into a small operations-style output
+# MAGIC Keep rows with `filter` / `where`, including intro NULL and blank traps.
 # MAGIC
-# MAGIC **Prerequisites.** `04 - SQL Expressions in DataFrame Code` in this
-# MAGIC module — you should already know `F.col`, `F.expr`, and SQL expression
-# MAGIC strings in DataFrame code.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC a small, hand-built rideshare-style DataFrame (aligned with the `trip`
-# MAGIC table column names).
-
+# MAGIC - Filter with Column ops and SQL strings; combine with `AND` vs `&`
+# MAGIC - Use `|`, `~`, `isin`, `between`, `like`
+# MAGIC - Apply intro NULL checks (`isNull` / `isNotNull`); empty string ≠ NULL
 # COMMAND ----------
 
 # MAGIC %md

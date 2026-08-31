@@ -1,9 +1,19 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 02 - Multi-column Keys, NULL Groups, and Filter Placement
 # MAGIC
+# MAGIC NULL key groups vs `countDistinct`, and `WHERE` vs `HAVING`.
+# MAGIC
+# MAGIC `trip_enriched`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Build aliased aggregates with composite keys
+# MAGIC - Reason about NULL keys vs `countDistinct`
+# MAGIC - Choose whether to filter input rows (`WHERE`) or aggregated groups (`HAVING`)
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Two traps: the NULL group and the filter's position
 # MAGIC
 # MAGIC ### Trap 1: An unexpected group
@@ -32,12 +42,6 @@
 # MAGIC | 1a | Composite key | Only pairs that exist in the data become rows |
 # MAGIC | 2a–2d | Filter placement | Compare filtering input rows with filtering groups |
 # MAGIC | Exercise | Per-borough summary, then a second key | Apply both ideas to a new key |
-# MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
-# MAGIC
-# MAGIC **Prerequisites:** Notebook 01 (`groupBy`, aliasing, NULL exclusion);
-# MAGIC Module 7 (join NULL semantics).
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup

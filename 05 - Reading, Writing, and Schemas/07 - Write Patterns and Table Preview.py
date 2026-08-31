@@ -1,60 +1,18 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC
 # MAGIC # 07 - Write Patterns and Table Preview
 # MAGIC
-# MAGIC Earlier notebooks wrote to
-# MAGIC **`/Volumes/rideshare_dev/processed/output_files/practice/`** with
-# MAGIC **`.mode("overwrite")`**, which replaces any files already at that path.
-# MAGIC This notebook covers the full set of Spark save modes, a partitioned
-# MAGIC write, and writing the same DataFrame either to a Volume folder or into
-# MAGIC a managed Unity Catalog table with **`saveAsTable`**.
+# MAGIC Save modes, a brief partitioned write, Delta as a **file** format, and a
+# MAGIC managed **`saveAsTable`** preview.
 # MAGIC
-# MAGIC You will:
+# MAGIC Landing **`trip_time`** (and prior practice patterns).
 # MAGIC
-# MAGIC 1. Compare the four Spark **save modes** (`overwrite`, `append`,
-# MAGIC    `ignore`, `errorifexists`)
-# MAGIC 2. Write a small **partitioned** Parquet folder under **`practice/`**
-# MAGIC 3. Write Delta two ways — as **files** on the external volume path, and as
-# MAGIC    a **managed table** in **`rideshare_dev.processed`**
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Files vs tables (the key contrast):**
-# MAGIC
-# MAGIC | | Files under `practice/` | Managed table |
-# MAGIC |---|-------------------------|---------------|
-# MAGIC | How you name it | A Volume path string | `catalog.schema.table` |
-# MAGIC | Where it lives | External volume `output_files` | Catalog managed location |
-# MAGIC | Example in this notebook | `/Volumes/.../practice/trip_time_delta_file/` | `rideshare_dev.processed.trip_time_preview` |
-# MAGIC
-# MAGIC Both targets can hold the same columns and rows. Delta features such as
-# MAGIC ACID transactions, **`MERGE`**, and time travel → Module 10. Unity
-# MAGIC Catalog table privileges → Module 11.
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC ### What you will learn
-# MAGIC
-# MAGIC | Topic | What you will do |
-# MAGIC |-------|------------------|
-# MAGIC | Save modes | Compare `overwrite`, `append`, `ignore`, and `errorifexists` |
-# MAGIC | Partitioned write | Write a small extract partitioned by a column |
-# MAGIC | Delta file write | Write Delta under `practice/` on the external volume |
-# MAGIC | Managed `saveAsTable` | Save into `rideshare_dev.processed` |
-# MAGIC | Files vs tables | Contrast volume paths with managed table location |
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Prerequisites.** Module 4 and Module 5 Notebooks **01–06** — landing
-# MAGIC volume populated with **`trip_time/trip_time.parquet`**. Notebooks
-# MAGIC **02–06** already wrote practice folders with **`.mode("overwrite")`**.
-# MAGIC
-# MAGIC **Source file:** `/Volumes/rideshare_dev/landing/source_files/trip_time/trip_time.parquet`
-# MAGIC
-# MAGIC **Write root:** `/Volumes/rideshare_dev/processed/output_files/practice/`
-# MAGIC
-# MAGIC **Compute:** Any cluster with PySpark. This notebook uses Volume paths
-# MAGIC and Unity Catalog managed tables under **`rideshare_dev.processed`**.
-
+# MAGIC - Use save modes and a brief partitioned write
+# MAGIC - Preview Delta as a file format under `practice/` and create managed table
+# MAGIC   **`rideshare_dev.processed.trip_time_preview`**
+# MAGIC - Distinguish files vs managed tables
 # COMMAND ----------
 
 # MAGIC %md

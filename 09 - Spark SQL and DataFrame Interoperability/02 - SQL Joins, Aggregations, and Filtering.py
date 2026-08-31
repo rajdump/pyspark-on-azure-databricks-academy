@@ -2,36 +2,15 @@
 # MAGIC %md
 # MAGIC # 02 - SQL Joins, Aggregations, and Filtering
 # MAGIC
-# MAGIC In this notebook, we'll build one SQL query step by step — starting with
-# MAGIC trip-level data and ending with a driven-trip tier summary filtered by
-# MAGIC `HAVING`.
+# MAGIC Layered SQL: projection through `HAVING`, including a deliberate ambiguous
+# MAGIC reference.
 # MAGIC
-# MAGIC Along the way, we'll handle a common JOIN problem: both tables contain a
-# MAGIC column with the same name.
+# MAGIC `trip_enriched`, `trip_driver_assignment`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Add row-level categories with `CASE WHEN`
-# MAGIC - Replace NULL values with `COALESCE`
-# MAGIC - Join tables using clear SQL aliases
-# MAGIC - Resolve ambiguous column references after a JOIN
-# MAGIC - Aggregate joined data with `GROUP BY`
-# MAGIC - Filter aggregated results with `HAVING`
-# MAGIC - Find rows with no matching record using `NOT EXISTS`
-# MAGIC
-# MAGIC **Callbacks:** Module 7 covered join patterns. Module 8 `01 - GroupBy and
-# MAGIC Basic Aggregations` and `02 - Multi-column Keys, NULL Groups, and Filter
-# MAGIC Placement` covered aggregations and filter placement. Here we apply those
-# MAGIC ideas with Spark SQL.
-# MAGIC
-# MAGIC **Reads:**
-# MAGIC - `rideshare_dev.processed.trip_enriched` — **106 rows**
-# MAGIC - `rideshare_dev.processed.trip_driver_assignment` — **100 rows**
-# MAGIC
-# MAGIC **Writes:** None.
-# MAGIC
-# MAGIC **Prerequisites:** Module 9 `01 - Dual API Foundations and When to Choose`.
-
+# MAGIC - Write SQL joins with qualified aliases, `CASE WHEN`, `COALESCE`, `GROUP BY`,
+# MAGIC   and `HAVING` (including compound predicates)
 # COMMAND ----------
 
 # MAGIC %md

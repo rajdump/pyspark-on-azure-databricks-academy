@@ -2,30 +2,14 @@
 # MAGIC %md
 # MAGIC # 03 - SQL Pivot, Unpivot, and Sampling
 # MAGIC
-# MAGIC In this notebook, we'll reshape trip counts with Spark SQL.
+# MAGIC SQL `PIVOT` / `UNPIVOT` and a brief `TABLESAMPLE` contrast.
 # MAGIC
-# MAGIC We'll start with one row per borough and service type, use `PIVOT` so
-# MAGIC each service type becomes a column, then `UNPIVOT` those columns back
-# MAGIC into rows. We'll finish with a short look at SQL `TABLESAMPLE`.
+# MAGIC `trip_enriched`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Use `PIVOT` so `service_type` values become columns
-# MAGIC - Use `UNPIVOT` to turn those columns back into rows
-# MAGIC - Replace missing pivot cells with `COALESCE`
-# MAGIC - Store an intermediate result in a SQL temp view
-# MAGIC - Compare SQL `TABLESAMPLE` with seeded DataFrame sampling
-# MAGIC
-# MAGIC **Callbacks:** Module 8 `04 - Pivot` introduced the DataFrame `pivot`
-# MAGIC operation; Module 8 `07 - Top-N per Group and Sampling` used seeded
-# MAGIC `.sample()`. Here we use the SQL forms, including `UNPIVOT`.
-# MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` — **106 rows**
-# MAGIC
-# MAGIC **Writes:** None.
-# MAGIC
-# MAGIC **Prerequisites:** Module 9 `02 - SQL Joins, Aggregations, and Filtering`.
-
+# MAGIC - Reshape with SQL `PIVOT` / `UNPIVOT` and contrast SQL `TABLESAMPLE` with
+# MAGIC   seeded DataFrame sampling
 # COMMAND ----------
 
 # MAGIC %md

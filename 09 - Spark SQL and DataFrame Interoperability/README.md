@@ -41,12 +41,12 @@ Does **not** write managed tables or touch
 `/Volumes/rideshare_dev/processed/output_files/practice/` /
 `/Volumes/rideshare_dev/processed/output_files/curated/`.
 
-## Paths and outputs
+## Dataset
 
 Schemas, join keys, and KPI contracts:
 [`docs/data/dataset-overview.md`](../docs/data/dataset-overview.md) and
-Module 8 [`README.md`](../08%20-%20Aggregations%20and%20Window%20Functions/README.md)
-(Paths and outputs).
+Module 8 [`README.md`](../08%20-%20Aggregations%20and%20Window%20Functions/README.md#shared-paths-and-assets)
+(Shared paths and assets).
 
 | Role | Location |
 |---|---|
@@ -60,20 +60,192 @@ SQL from `trip_enriched` and `trip_driver_assignment`. Read-only — no writes.
 drops these managed tables with the rest of `rideshare_dev`. This module
 creates nothing durable to tear down.
 
-## Notebooks
+## Notebook 01 — Dual API Foundations and When to Choose
 
-Six notebooks, in order. Notebooks **01–05** each end with a short SQL
-exercise. `06 - End-to-End SQL Pipeline.py` has **no exercise** (the three
-KPI rebuilds are the synthesis).
+### Context
 
-| # | Notebook | Reads | Focus |
-|---|---|---|---|
-| 01 | Dual API Foundations and When to Choose | `trip_enriched` | UC `%sql` + `spark.table`; `spark.sql`→DF; row-level `CASE` → `tip_amount_band` (≠ Module 6 percent `tip_band`); DF→temp view; when-to-choose table. **No `GROUP BY`.** Locked bands: zero 26 / low 40 / medium 20 / high 18 / no_data 2. Exercise → **43** Manhattan known-tip rows |
-| 02 | SQL Joins, Aggregations, and Filtering | `trip_enriched`, `trip_driver_assignment` | Layered arc: projection → service `tier` CASE → `COALESCE` → JOIN (deliberate `AMBIGUOUS_REFERENCE` then fix) → first `GROUP BY` → `HAVING`. Side path: `NOT EXISTS` undriven (**6**). After JOIN: high 15 / standard 64 / other 21. Exercise: compound `HAVING` + undriven ids |
-| 03 | SQL Pivot, Unpivot, and Sampling | `trip_enriched` | Borough×service counts (**18**) → `PIVOT` service columns → `COALESCE` zeros + SQL `TEMP VIEW` → `UNPIVOT` back to rows; brief non-deterministic `TABLESAMPLE`. Exercise: `payment_method` reshape by borough |
-| 04 | SQL Windows and QUALIFY | `kpi_zone_performance`, `kpi_daily_trip_summary` | Part 1: `ROW_NUMBER` + `QUALIFY` Top-2 by tip (**9** rows) + subquery equivalent. Part 2: running distance + `LAG` + direction `CASE`. Exercise: Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows |
-| 05 | CTEs and Parameterized SQL | `trip_enriched` | Single CTE → multi-CTE tip-share → nested-subquery contrast → `:borough` params (anti f-string) → CTE + params. Exercise: borough daily tip as share of fleet daily |
-| 06 | End-to-End SQL Pipeline | `trip_enriched`, `trip_driver_assignment` | Rebuild daily / zone / driver KPIs in `%sql` (layered steps). No writes. No exercise. Phase II synthesis; next is Module 10 (Phase III) |
+Choose among `%sql`, `spark.table`, `spark.sql`→DataFrame, and DF→temp view.
+No `GROUP BY`.
+
+### Learning objectives
+
+- Choose among direct `%sql`, `spark.table`, `spark.sql`→DataFrame, and
+  DF→`createOrReplaceTempView` for a given task
+
+### Lesson flow
+
+UC `%sql` + `spark.table`; `spark.sql`→DF; row-level `CASE` →
+`tip_amount_band` (≠ Module 6 percent `tip_band`); DF→temp view;
+when-to-choose table. **No `GROUP BY`.** Locked bands: zero 26 / low 40 /
+medium 20 / high 18 / no_data 2. Exercise → **43** Manhattan known-tip rows.
+
+### Expected state
+
+- Input: `trip_enriched`
+- Output: none to managed tables
+- Expected rows: locked bands zero 26 / low 40 / medium 20 / high 18 /
+  no_data 2; exercise → **43** Manhattan known-tip rows
+
+### Exercise
+
+**43** Manhattan known-tip rows.
+
+### Next
+
+`02 - SQL Joins, Aggregations, and Filtering`
+
+## Notebook 02 — SQL Joins, Aggregations, and Filtering
+
+### Context
+
+Layered SQL: projection through `HAVING`, including a deliberate ambiguous
+reference.
+
+### Learning objectives
+
+- Write SQL joins with qualified aliases, `CASE WHEN`, `COALESCE`,
+  `GROUP BY`, and `HAVING` (including compound predicates)
+
+### Lesson flow
+
+Layered arc: projection → service `tier` CASE → `COALESCE` → JOIN
+(deliberate `AMBIGUOUS_REFERENCE` then fix) → first `GROUP BY` → `HAVING`.
+Side path: `NOT EXISTS` undriven (**6**). After JOIN: high 15 / standard 64 /
+other 21. Exercise: compound `HAVING` + undriven ids.
+
+### Expected state
+
+- Input: `trip_enriched`, `trip_driver_assignment`
+- Output: none to managed tables
+- Expected rows: undriven **6**; after JOIN high 15 / standard 64 / other 21
+
+### Exercise
+
+Compound `HAVING` + undriven ids.
+
+### Next
+
+`03 - SQL Pivot, Unpivot, and Sampling`
+
+## Notebook 03 — SQL Pivot, Unpivot, and Sampling
+
+### Context
+
+SQL `PIVOT` / `UNPIVOT` and a brief `TABLESAMPLE` contrast.
+
+### Learning objectives
+
+- Reshape with SQL `PIVOT` / `UNPIVOT` and contrast SQL `TABLESAMPLE` with
+  seeded DataFrame sampling
+
+### Lesson flow
+
+Borough×service counts (**18**) → `PIVOT` service columns → `COALESCE` zeros
++ SQL `TEMP VIEW` → `UNPIVOT` back to rows; brief non-deterministic
+`TABLESAMPLE`. Exercise: `payment_method` reshape by borough.
+
+### Expected state
+
+- Input: `trip_enriched`
+- Output: session temp view only (not a managed-table write)
+- Expected rows: borough×service counts **18**
+
+### Exercise
+
+`payment_method` reshape by borough.
+
+### Next
+
+`04 - SQL Windows and QUALIFY`
+
+## Notebook 04 — SQL Windows and QUALIFY
+
+### Context
+
+Window `OVER` + `QUALIFY`, and running totals / `LAG` on daily KPI grain.
+
+### Learning objectives
+
+- Rank and filter with window `OVER` + `QUALIFY`
+- Compute running totals / `LAG` on daily KPI grain
+
+### Lesson flow
+
+Part 1: `ROW_NUMBER` + `QUALIFY` Top-2 by tip (**9** rows) + subquery
+equivalent. Part 2: running distance + `LAG` + direction `CASE`. Exercise:
+Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows.
+
+### Expected state
+
+- Input: `kpi_zone_performance`, `kpi_daily_trip_summary`
+- Output: none to managed tables
+- Expected rows: Top-2 by tip **9**; exercise Top-2 by `trip_count` → **8**
+
+### Exercise
+
+Top-2 by `trip_count` with `WHERE` + `QUALIFY` → **8** rows.
+
+### Next
+
+`05 - CTEs and Parameterized SQL`
+
+## Notebook 05 — CTEs and Parameterized SQL
+
+### Context
+
+CTEs and safe named `:params` — not f-string SQL.
+
+### Learning objectives
+
+- Compose multi-step logic with CTEs and safe named `:params` (not f-string
+  SQL)
+
+### Lesson flow
+
+Single CTE → multi-CTE tip-share → nested-subquery contrast → `:borough`
+params (anti f-string) → CTE + params. Exercise: borough daily tip as share
+of fleet daily.
+
+### Expected state
+
+- Input: `trip_enriched`
+- Output: none to managed tables
+
+### Exercise
+
+Borough daily tip as share of fleet daily.
+
+### Next
+
+`06 - End-to-End SQL Pipeline`
+
+## Notebook 06 — End-to-End SQL Pipeline
+
+### Context
+
+Phase II synthesis: rebuild Module 8 KPI contracts in Spark SQL. Read-only.
+
+### Learning objectives
+
+- Rebuild Module 8 KPI contracts in Spark SQL (read-only; no writes)
+
+### Lesson flow
+
+Rebuild daily / zone / driver KPIs in `%sql` (layered steps). No writes. No
+exercise. Phase II synthesis; next is Module 10 (Phase III).
+
+### Expected state
+
+- Input: `trip_enriched`, `trip_driver_assignment`
+- Output: none — no writes. KPI contracts: Module 8 Shared paths and assets.
+
+### Exercise
+
+An exercise does not apply — the three KPI rebuilds are the synthesis.
+
+### Next
+
+Module 10 — Delta Lake Foundations.
 
 ## Minimum privileges required
 

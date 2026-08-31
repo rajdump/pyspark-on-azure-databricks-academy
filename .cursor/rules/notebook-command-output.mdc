@@ -35,7 +35,7 @@ minimal**.
 - One line: next step → `/validate-notebook`; after every planned notebook
   passes, run `/review-module`, then follow the Git-to-Databricks runtime
   workflow
-- Only mention blockers (missing scaffold, missing `Focus` entry topic, etc.)
+- Only mention blockers (missing scaffold, missing Lesson flow topic, etc.)
 
 ## `/validate-notebook` and `/review-module`
 

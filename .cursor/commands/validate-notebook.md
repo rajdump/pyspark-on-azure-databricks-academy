@@ -9,7 +9,7 @@ Reads:
   - [[Command boundaries]], which this command must follow
   - [[Conditional reads]], only those that apply to the target
 - `docs/standards/readme-authoring.md`
-  - [[Notebooks table]]
+  - [[Notebook contracts]]
 - `docs/standards/naming-conventions.md`
   - [[Notebook files]]
 
@@ -22,11 +22,11 @@ Guards — stop before proceeding when:
 
 Steps:
 1. Read the [[Validation manifest]], including the completed sibling selected
-   by [[Full-lesson manifest]] item 8, then load any applicable
+   by [[Full-lesson manifest]] item 7, then load any applicable
    [[Conditional reads]].
-2. Match the filename to its row in the module README's [[Notebooks table]],
-   per [[Notebook files]]. That row's `Focus` entry is the topic source of
-   truth.
+2. Match the filename to `## Notebook NN — Title` ([[Notebook contracts]]).
+   Take number and title, then apply [[Notebook files]]. Lesson flow is the
+   topic source of truth.
 3. Review the notebook against the [[Full-lesson bar]], including
    [[Voice consistency]], and the [[Validation gate checks]].
 

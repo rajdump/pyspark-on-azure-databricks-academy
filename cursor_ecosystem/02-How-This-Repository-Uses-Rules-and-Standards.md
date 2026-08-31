@@ -104,8 +104,7 @@ Detailed project rules live in `docs/standards/` and `docs/data/`.
 | File | Owns |
 | --- | --- |
 | `docs/standards/notebook-authoring-checklist.md` | Command-specific read manifests and notebook acceptance bars |
-| `docs/standards/notebook-writing.md` | Notebook structure and formatting |
-| `docs/standards/teaching-guidelines.md` | Pedagogy and explanation style |
+| `docs/standards/notebook-content-standard.md` | Notebook structure, formatting, pedagogy, and explanation style |
 | `docs/standards/coding-standards.md` | Python and PySpark conventions |
 | `docs/standards/naming-conventions.md` | Folder, file, and notebook names |
 | `docs/standards/readme-authoring.md` | Module README structure and design-complete definition |
@@ -180,7 +179,7 @@ notebook.
 
 The selected manifest also routes the agent to the target module README and
 the relevant canonical standards. Full-lesson work reads some standards as
-whole files (`notebook-writing.md`, `teaching-guidelines.md`,
+whole files (`notebook-content-standard.md`,
 `coding-standards.md`); other sources stay heading-scoped.
 
 ### `course-authoring.mdc`
@@ -343,7 +342,7 @@ Checklist consumers: those four commands, `learner-notebooks.mdc` (ad-hoc Path C
 | Source | Sections |
 | --- | --- |
 | `COURSE_MODULES.md` | `Phase N` heading, column headings, target module row |
-| `docs/standards/teaching-guidelines.md` | Audience assumptions, Production framing |
+| `docs/standards/notebook-content-standard.md` | Audience assumptions, Production framing |
 | `docs/standards/naming-conventions.md` | Module folders, Notebook files |
 | `docs/data/dataset-overview.md` | Applicable headings only |
 | `docs/standards/permissions-and-governance.md` | Whole file — only when privileges go beyond basic workspace access |

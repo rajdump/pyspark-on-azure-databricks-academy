@@ -1,25 +1,17 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
 # MAGIC # 01 - Deletion Vectors, REORG TABLE, and VACUUM
 # MAGIC
-# MAGIC Module 10 showed that old files can remain available for history and
-# MAGIC time travel. This notebook shows how `VACUUM` and
-# MAGIC `REORG TABLE ... APPLY (PURGE)` clean up obsolete files and
-# MAGIC deletion-vector rows.
+# MAGIC First cleanup of obsolete physical data on **00**'s large external table,
+# MAGIC after Module 10's retention/`VACUUM` warning.
 # MAGIC
-# MAGIC Run `00 - Copy Fare DV Lab File` first so this folder already has the
-# MAGIC converted Delta files.
+# MAGIC **00**'s folder `{url}/external-tables/fare_dv_lab`.
 # MAGIC
-# MAGIC Without deletion vectors, updating, deleting and merging even a single row can require Delta to rewrite the entire Parquet file containing that row. With deletion vectors, Delta marks the affected rows instead of immediately rewriting the file. When the table is read, Delta uses these marks to hide the affected rows and return the current data.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC # Learning objectives
-# MAGIC
-# MAGIC - Compare one `UPDATE` with and without **deletion vectors**
-# MAGIC - `DELETE` a row that stays in the live file until purge
-# MAGIC - `VACUUM` — cleans up old, unused files
-# MAGIC - `REORG TABLE APPLY (PURGE)` — removes marked rows from live files
-
+# MAGIC - Compare `UPDATE` with and without deletion vectors
+# MAGIC - Physically remove old row bytes with `REORG TABLE ... APPLY (PURGE)` and
+# MAGIC   `VACUUM`
 # COMMAND ----------
 
 lab_table = "rideshare_dev.processed.fare_dv_lab"

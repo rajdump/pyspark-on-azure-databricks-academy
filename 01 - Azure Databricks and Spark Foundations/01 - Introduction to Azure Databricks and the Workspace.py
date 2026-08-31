@@ -1,18 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Introduction to Azure Databricks and the Workspace
+# MAGIC # 01 - Introduction to Azure Databricks and the Workspace
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Navigate the main areas of the Azure Databricks workspace
-# MAGIC - Attach a notebook to compute and run a cell
-# MAGIC - Explain, at a high level, what Databricks Runtime (and LTS) means for this course
+# MAGIC First orientation in the Azure Databricks workspace, before Spark architecture
+# MAGIC or DataFrames.
 # MAGIC
-# MAGIC **Prerequisites.** None — this is the first notebook in the course.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Dataset note.** This module uses small, hand-built examples when needed.
-# MAGIC File-based reads of the shared rideshare dataset begin later. This notebook
-# MAGIC focuses on the workspace and compute — no dataset files are required.
-
+# MAGIC - Navigate the workspace browser, notebook editor, and compute attach
+# MAGIC - Explain Databricks Runtime / LTS, including the classic vs serverless gotcha
 # COMMAND ----------
 
 # MAGIC %md

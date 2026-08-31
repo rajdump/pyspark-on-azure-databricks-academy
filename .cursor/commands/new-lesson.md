@@ -7,6 +7,8 @@ Reads:
   - [[Scaffold manifest]], [[Command target selection]]
   - [[Scaffold bar]], including [[Readiness precondition]] and
     [[Scaffold contents]]
+- `docs/standards/naming-conventions.md`
+  - [[Notebook files]]
 
 Target: the module to scaffold into, resolved through
 [[Command target selection]]. If open files or recent conversation do not
@@ -22,7 +24,8 @@ Guards — stop before proceeding when:
 
 Steps:
 1. Select and name the notebook through [[Command target selection]] and
-   [[Scaffold contents]].
+   [[Scaffold contents]] (`## Notebook NN — Title`, then [[Notebook
+   files]]).
 2. Apply the [[Filesystem cross-check]] — report mismatches, do not block on
    them.
 3. Create the correctly named Databricks source `.py` file and populate a

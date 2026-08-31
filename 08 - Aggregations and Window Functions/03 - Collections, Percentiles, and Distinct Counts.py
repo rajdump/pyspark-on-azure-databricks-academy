@@ -1,9 +1,18 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 03 - Collections, Percentiles, and Distinct Counts
 # MAGIC
+# MAGIC Collection aggregates, percentiles, and distinct counts.
+# MAGIC
+# MAGIC `trip_enriched`, `trip_driver_assignment`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Use advanced aggregates (`collect_list` / `collect_set`, approximate
+# MAGIC   percentiles, `countDistinct`)
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC `groupBy` with `count`, `sum`, and `avg` covers many common aggregation needs.
 # MAGIC This notebook adds `collect_list` / `collect_set`, `percentile_approx`, and
 # MAGIC `countDistinct`.
@@ -16,12 +25,6 @@
 # MAGIC | 2 | `avg` vs `percentile_approx` (p50 / p90) | Compare average trip distance with median and upper-range distance thresholds. |
 # MAGIC | 3 | `countDistinct` | Count how many unique pickup-to-drop-off routes appear. |
 # MAGIC | Exercise | Same three patterns by `pickup_borough` | Apply the same aggregation patterns to borough-level questions. |
-# MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
-# MAGIC `rideshare_dev.processed.trip_driver_assignment` (100 rows). **No writes.**
-# MAGIC
-# MAGIC **Prerequisites:** Notebook 01; Notebook 02.
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup

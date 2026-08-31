@@ -2,36 +2,15 @@
 # MAGIC %md
 # MAGIC # 01 - Unity Catalog Volumes and Data Landing
 # MAGIC
-# MAGIC This notebook sets up the rideshare data infrastructure in **your** Azure
-# MAGIC Databricks account so later notebooks can read files from Volume paths.
+# MAGIC Create the course catalog, volumes, and land repo source files — including
+# MAGIC controlled-bad CSVs for Module 6.
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Fill the lab config cell with your storage account, container, storage
-# MAGIC   credential, and ADLS folder
-# MAGIC - Create the ADLS project folder in the Azure Portal, then create external
-# MAGIC   location `el_rideshare_dev`, catalog `rideshare_dev`, schemas, and volumes
-# MAGIC - Create dataset folders under the landing volume, copy repo files into
-# MAGIC   them, and verify the landed files
+# MAGIC Repo `data/raw` (open from the Git folder) plus config-cell Azure.
 # MAGIC
-# MAGIC **Prerequisites.** Module 4. Storage credential must already exist (course
-# MAGIC PDF). Open this notebook from the course Git folder so `data/raw` can be
-# MAGIC found. Overwrite the config cell with **your** Azure values before running.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC By the end, the following structure is ready:
-# MAGIC
-# MAGIC ```text
-# MAGIC rideshare_dev (catalog)
-# MAGIC ├── landing (schema)
-# MAGIC │   └── source_files (volume) → trip/, trip_time/, zone_lookup/, payment/, drivers/
-# MAGIC └── processed (schema)
-# MAGIC     └── output_files (volume)
-# MAGIC         ├── practice/   ← Module 5 write practice (created on first write)
-# MAGIC         └── curated/    ← Module 6+ pipeline outputs (created on first write)
-# MAGIC ```
-# MAGIC
-# MAGIC > Run all cells top-to-bottom. If something goes wrong, use
-# MAGIC > **Notebook 99 - Rideshare Project Cleanup and Reset** to start over.
-
+# MAGIC - Set Tier 1 lab config and create `rideshare_dev` landing/processed volumes
+# MAGIC - Copy canonical + controlled-bad sources into landing and verify
 # COMMAND ----------
 
 # Lab config — overwrite with YOUR Azure values before running.

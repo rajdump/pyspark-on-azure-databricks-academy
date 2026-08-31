@@ -1,9 +1,18 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 01 - Grain, Join Syntax, and Unmatched Keys
 # MAGIC
+# MAGIC Grain, cardinality, and join syntax — skill-building only (no write).
+# MAGIC
+# MAGIC Landing `trip`, `trip_time` (+ constructed frames). No `payment`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Define grain and cardinality and predict join row counts before running
+# MAGIC - Write equi-joins in string, list, and Boolean form
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## The problem: wrong joins cost more than syntax errors
 # MAGIC
 # MAGIC A syntax error stops your code immediately — you fix it and move on. A wrong
@@ -55,12 +64,6 @@
 # MAGIC | Exercise | Unmatched keys — join types | Control which rows survive |
 # MAGIC
 # MAGIC **Core habit:** predict row count → run the join → verify with `count()`.
-# MAGIC
-# MAGIC **Reads:** landing `trip` and `trip_time` (100 rows each). **No writes.**
-# MAGIC
-# MAGIC **Prerequisites:** Module 6 notebooks 01–04; landing Volume with `trip` (CSV)
-# MAGIC and `trip_time` (Parquet).
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup

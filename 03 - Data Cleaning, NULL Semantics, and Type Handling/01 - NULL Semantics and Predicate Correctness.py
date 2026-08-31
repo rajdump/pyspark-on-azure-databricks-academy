@@ -1,31 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # NULL Semantics and Predicate Correctness
+# MAGIC # 01 - NULL Semantics and Predicate Correctness
 # MAGIC
-# MAGIC The focus of this notebook is NULL semantics and predicate correctness in
-# MAGIC PySpark. You will see how three-valued logic (`TRUE`, `FALSE`, `NULL`)
-# MAGIC affects condition columns and why `filter` / `where` keep only rows where
-# MAGIC the condition is `TRUE`.
+# MAGIC Three-valued logic and NULL-safe predicates — before messy-value cleanup.
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Explain three-valued logic and show `TRUE`, `FALSE`, and `NULL` as
-# MAGIC   intermediate condition columns
-# MAGIC - Explain why `filter` / `where` keep only rows whose condition is `TRUE`
-# MAGIC - Use `isNull` / `isNotNull` for definite answers when a column value may
-# MAGIC   be missing
-# MAGIC - Build NULL-safe predicates with `isNull` / `isNotNull`, the `isin` +
-# MAGIC   Python `None` trap, and `eqNullSafe` / `<=>`
-# MAGIC - Chain reward and blocklist rules into a reusable eligibility report
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Prerequisites.** Module 2 — especially `05 - Filtering Rows` and
-# MAGIC `06 - Querying DataFrames with SQL`. You should already know `F.col`,
-# MAGIC `filter` / `where`, Column `&` / `|` / `~`, intro `isNull` /
-# MAGIC `isNotNull`, and why `== None` does not find NULLs.
-# MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC a small, hand-built rideshare-style DataFrame aligned with `trip` and
-# MAGIC `payment` column names from the course dataset.
-
+# MAGIC - Explain three-valued logic and why filters keep only `TRUE` rows
+# MAGIC - Build NULL-safe predicates with `isNull` / `isNotNull`, the `isin` + NULL
+# MAGIC   trap, and `eqNullSafe` / `<=>`
 # COMMAND ----------
 
 # MAGIC %md

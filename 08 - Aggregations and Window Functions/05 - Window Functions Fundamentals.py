@@ -1,9 +1,18 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 05 - Window Functions Fundamentals
 # MAGIC
+# MAGIC Windows preserve input rows — contrast with `groupBy`.
+# MAGIC
+# MAGIC `trip_enriched`, `trip_driver_assignment`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Build windows for ranking and partition-only aggregates
+# MAGIC - Preview Top-2 filter-after-rank (full Top-N → **07**)
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC A **window function** lets you add group-level information to each row while
 # MAGIC keeping the row-level details.
 # MAGIC
@@ -24,13 +33,8 @@
 # MAGIC | 4 | Filter after rank | Keep the top rows per group |
 # MAGIC | Exercise | Service windows | Add service totals and a duration rank to each trip |
 # MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
-# MAGIC `rideshare_dev.processed.trip_driver_assignment` (100 rows). **No writes.**
-# MAGIC
-# MAGIC **Prerequisites:** Module 8 Notebooks **01–04**; Module 7 Notebooks
 # MAGIC **01–07**, especially **`07 - Build Unified Curated Tables`** (managed
 # MAGIC tables used here).
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup and baseline grain

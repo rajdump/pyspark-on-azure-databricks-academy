@@ -86,7 +86,7 @@ agents.
 - Module folders and notebooks: `NN - Descriptive Title` — see
   `docs/standards/naming-conventions.md`
 - Slash commands (`.cursor/commands/`): `docs/standards/command-authoring.md`
-- Coding and notebook-writing standards: `docs/standards/`
+- Coding and notebook content standards: `docs/standards/`
 - Compute selection and validation order:
   `docs/standards/compute-validation-policy.md`
 - Dataset reference (schemas, join keys, physical layout): `docs/data/dataset-overview.md`

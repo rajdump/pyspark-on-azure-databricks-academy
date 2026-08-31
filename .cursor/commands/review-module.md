@@ -5,7 +5,7 @@ Response format: @.cursor/rules/notebook-command-output.mdc
 Reads:
 - `docs/standards/notebook-authoring-checklist.md`
   - [[Module-review manifest]], [[Module-review bar]],
-    [[Command target selection]]
+    [[Command target selection]], [[Module 11 scaffold exception]]
   - [[Command boundaries]], which this command must follow
   - [[Conditional reads]], only those that apply to the target
 

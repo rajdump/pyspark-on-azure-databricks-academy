@@ -2,28 +2,13 @@
 # MAGIC %md
 # MAGIC # 06 - End-to-End SQL Pipeline
 # MAGIC
-# MAGIC Module 8 `08 - Build KPI Tables` already built these three KPIs in the
-# MAGIC DataFrame API and wrote the managed tables. This notebook converts the
-# MAGIC **same logic** to Spark SQL. It does not write tables or add new metrics.
+# MAGIC Phase II synthesis: rebuild Module 8 KPI contracts in Spark SQL. Read-only.
 # MAGIC
-# MAGIC | KPI | Grain | Expected rows |
-# MAGIC |---|---|---:|
-# MAGIC | Daily trip summary | one row per `trip_date` | 14 |
-# MAGIC | Zone performance | one row per (`pickup_borough`, `pickup_zone`) | 20 |
-# MAGIC | Driver productivity | one row per `driver_id` | 12 |
+# MAGIC `trip_enriched`, `trip_driver_assignment`.
 # MAGIC
-# MAGIC Patterns reused: `GROUP BY`, `CASE`, CTEs, and `DENSE_RANK`.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Reads:**
-# MAGIC - `rideshare_dev.processed.trip_enriched` — **106 rows**
-# MAGIC - `rideshare_dev.processed.trip_driver_assignment` — **100 rows**
-# MAGIC
-# MAGIC **Writes:** None.
-# MAGIC
-# MAGIC **Prerequisites:** Module 9 notebooks 01–05; Module 8 KPI writes.
-# MAGIC
-# MAGIC This notebook has **no exercise**.
-
+# MAGIC - Rebuild Module 8 KPI contracts in Spark SQL (read-only; no writes)
 # COMMAND ----------
 
 # MAGIC %md

@@ -1,9 +1,18 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 01 - GroupBy and Basic Aggregations
 # MAGIC
+# MAGIC Output grain and basic `groupBy().agg()` — no write.
+# MAGIC
+# MAGIC `trip_enriched`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Name and verify the output grain of grouped calculations
+# MAGIC - Build aliased aggregates and reason about NULL values and count semantics
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Two traps every data engineer faces in aggregations
 # MAGIC
 # MAGIC ### Trap 1: Spark skips NULLs silently
@@ -45,12 +54,6 @@
 # MAGIC | 3. Counting | 3 counts, 3 answers | Match count function to business question |
 # MAGIC | 4. Aggregates skip NULLs | `sum` / `avg` ignore NULLs | Control denominator with `F.coalesce` |  # noqa: E501
 # MAGIC | Exercise | Per-`payment_method` summary | Apply all four habits on a new key |
-# MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
-# MAGIC
-# MAGIC **Prerequisites:** Module 7 notebooks 01–07 (`trip_enriched`);
-# MAGIC Module 3 NULLs & `F.coalesce`; Module 4 wide/shuffle stages.
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup

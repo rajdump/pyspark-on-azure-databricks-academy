@@ -1,45 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC
 # MAGIC # 04 - Delta Time Travel and Restore
 # MAGIC
-# MAGIC A Delta table can change over time, creating multiple versions of the
-# MAGIC same table. This raises two important questions:
-# MAGIC
-# MAGIC - How can you inspect what the table looked like at an earlier point?
-# MAGIC - How can you make a previous table state the current state again?
-# MAGIC
-# MAGIC In `02 - Understanding the Delta Transaction Log`, you learned how Delta
-# MAGIC records table changes and creates new versions. This notebook builds on
-# MAGIC that foundation to explore how those versions can be queried and restored.
+# MAGIC Self-contained managed table: query a past snapshot and `RESTORE`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC By the end of this notebook, you will be able to:
-# MAGIC
-# MAGIC - Inspect Delta table history
-# MAGIC - Query an earlier table state by version
-# MAGIC - Query an earlier table state by timestamp
-# MAGIC - Read a historical version using PySpark
-# MAGIC - Restore an earlier table state
-# MAGIC - Understand how retention limits access to historical versions
-# MAGIC
-# MAGIC **Reads:** None of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, or `curated/`)
-# MAGIC
-# MAGIC **Writes:**
-# MAGIC
-# MAGIC - `rideshare_dev.processed.fare_timetravel_lab`
-# MAGIC
-# MAGIC **Prerequisites:**
-# MAGIC
-# MAGIC - Module 9 notebooks `01`–`06`
-# MAGIC - Module 5 `01 - Unity Catalog Volumes and Data Landing.py`
-# MAGIC   (catalog and `processed` schema)
-# MAGIC
-# MAGIC **Scope note:** This notebook focuses on table history, time travel,
-# MAGIC `RESTORE`, and retention. It does not run `VACUUM`.
-
+# MAGIC - Query a past snapshot (`VERSION AS OF`, one PySpark `versionAsOf` read) and
+# MAGIC   `RESTORE` it
+# MAGIC - Recognize `TIMESTAMP AS OF` syntax; explain that historical access is bounded
+# MAGIC   by retention and that `VACUUM` removes eligible files
 # COMMAND ----------
 
 # MAGIC %md

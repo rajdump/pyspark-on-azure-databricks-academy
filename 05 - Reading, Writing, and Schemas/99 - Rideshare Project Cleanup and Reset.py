@@ -2,37 +2,15 @@
 # MAGIC %md
 # MAGIC # 99 - Rideshare Project Cleanup and Reset
 # MAGIC
-# MAGIC Use this notebook to reset your work if something goes wrong.
-# MAGIC All cleanup actions are **off by default** — change the flag to `True` only when needed.
+# MAGIC Utility reset if something goes wrong. All cleanup actions are off by default.
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Clear Module 5 `practice/` outputs without touching `curated/`
-# MAGIC - Clear Module 6 `curated/` outputs (wide blast radius — rebuild from Module 6)
-# MAGIC - Clear landing source files and re-copy from Notebook 01
-# MAGIC - Fully tear down the rideshare catalog, external location, and ADLS folder
-# MAGIC   while leaving the storage credential in place
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Prerequisites.** Notebook 01 completed at least once (or a partial setup
-# MAGIC you want to reset). Overwrite the config cell with **your** Azure values
-# MAGIC (same as Notebook 01).
-# MAGIC
-# MAGIC | Level | What it does | When to use |
-# MAGIC |-------|-------------|-------------|
-# MAGIC | 1 | Clear `practice/` outputs | Redo Module 5 write practice only |
-# MAGIC | 2 | Clear `curated/` outputs | Wipe Module 6 curated Parquet (wide blast radius) |
-# MAGIC | 3 | Clear landing source files | You copied source files incorrectly |
-# MAGIC | 4 | Full project teardown | Start over from scratch |
-# MAGIC
-# MAGIC > **Important:** Levels 1–2 clear **volume files only**. Managed tables
-# MAGIC > created later with `saveAsTable` are removed only by Level 4
-# MAGIC > (`DROP CATALOG … CASCADE`).
-# MAGIC >
-# MAGIC > Level 4 removes the catalog, schemas, volumes, external location, and
-# MAGIC > the ADLS project folder. The storage credential named in the config
-# MAGIC > cell is **never** removed.
-# MAGIC >
-# MAGIC > Run **only the cell you need** — do not run all cells at once.
-
+# MAGIC - Clear `practice/` without touching `curated/`
+# MAGIC - Clear `curated/` (wide blast radius)
+# MAGIC - Clear landing and recopy from notebook **01**
+# MAGIC - Fully tear down catalog, external location, and ADLS folder while leaving the
+# MAGIC   storage credential in place
 # COMMAND ----------
 
 # Lab config — must match Notebook 01 (overwrite with YOUR values).

@@ -1,9 +1,17 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 04 - Pivot
 # MAGIC
+# MAGIC Reshape grouped results with `pivot`.
+# MAGIC
+# MAGIC `trip_enriched`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Use pivoting to summarize and reshape data
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Pivot reshapes grouped results
 # MAGIC
 # MAGIC A stakeholder asks: for each pickup borough, show trip counts for service types
@@ -25,11 +33,6 @@
 # MAGIC | 2 | `pivot` + explicit values | Turn known category values into report columns |
 # MAGIC | 3 | When not to pivot | Avoid creating too many columns from high-cardinality data |
 # MAGIC | Exercise | Pivot `payment_method` | Apply the same pattern to another small category set |
-# MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
-# MAGIC
-# MAGIC **Prerequisites:** Notebook 01; Notebook 02.
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup

@@ -59,7 +59,7 @@ AGENTS.md
     → "Use .py files for learner notebooks."
 
 .mdc rule
-    → "Follow the notebook-writing standard for this lesson."
+    → "Follow the notebook content standard for this lesson."
 ```
 
 These come from different sources, but they all tell the model **what it should follow**.

@@ -1,9 +1,18 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
+# MAGIC # 06 - Running Totals and Lag and Lead
 # MAGIC
-# MAGIC # 06 - Running Totals and `lag` / `lead`
+# MAGIC Ordered frames: running totals and `lag` / `lead`. May first aggregate to
+# MAGIC daily grain, then window over that.
 # MAGIC
+# MAGIC `trip_enriched`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Build windows for running calculations and row-to-row comparisons
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## The problem: a running total shows future revenue
 # MAGIC
 # MAGIC Finance wants to see Manhattan's **cumulative fare revenue after each trip**.
@@ -77,12 +86,6 @@
 # MAGIC | 3 | How much has accumulated through each date? | Running totals on a 14-row daily series |  # noqa: E501
 # MAGIC | 4 | Did today beat yesterday? | `lag` / `lead` |
 # MAGIC | Exercise | Which service type's tips are growing? | Running tip totals and previous-row change |  # noqa: E501
-# MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows). **No writes.**
-# MAGIC
-# MAGIC **Prerequisites:** Module 8 Notebooks **01-05**, especially **05** for
-# MAGIC `Window`, `partitionBy`, and ranking.
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup

@@ -1,38 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Narrow vs Wide Transformations
+# MAGIC # 03 - Narrow vs Wide Transformations
 # MAGIC
-# MAGIC In Notebook 02, we learned how lazy evaluation allows Spark to build and
-# MAGIC optimize an execution plan before running it. We used `explain()` and the
-# MAGIC Spark UI to inspect that plan.
+# MAGIC Local work versus shuffles — `Exchange` as a stage boundary.
 # MAGIC
-# MAGIC The example used narrow transformations, which Spark could process without
-# MAGIC moving rows between partitions.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC This notebook compares **narrow** and **wide** transformations: why a wide
-# MAGIC step must move rows between partitions (a **shuffle**), how that appears as
-# MAGIC **`Exchange`** in the physical plan, and how a shuffle boundary divides
-# MAGIC execution into **stages**.
-# MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Inspect how rows are distributed across partitions
-# MAGIC - Run a narrow transformation (`filter`) and confirm it does not shuffle
-# MAGIC - Run a wide transformation (`groupBy`) and identify `Exchange` as the
-# MAGIC   shuffle / stage boundary in the plan and Spark UI
-# MAGIC - Recognize common shuffle triggers
-# MAGIC
-# MAGIC **Prerequisites.** `01 - Transformations vs Actions` and
-# MAGIC `02 - Lazy Evaluation and the Query Plan` in this module.
-# MAGIC
-# MAGIC **Setup.** Prefer classic all-purpose compute (**Dedicated** access mode) for
-# MAGIC the clearest partition and shuffle demos, and easy Spark UI navigation. The
-# MAGIC notebook also runs on Standard and serverless, but those environments may
-# MAGIC collapse this hand-built sample into a single partition, which weakens the
-# MAGIC narrow vs wide contrast. This notebook uses small, hand-built
-# MAGIC rideshare-style DataFrames aligned with the course `payment` schema.
-# MAGIC Partition count follows the cluster (often tied to cores) — observe what
-# MAGIC you get.
-
+# MAGIC - Differentiate narrow from wide transformations
+# MAGIC - Identify `Exchange` in the physical plan
+# MAGIC - Recognize common shuffle triggers such as `groupBy` and `orderBy`
 # COMMAND ----------
 
 # MAGIC %md

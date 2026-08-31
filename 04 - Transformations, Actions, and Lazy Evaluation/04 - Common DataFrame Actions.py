@@ -1,27 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Common DataFrame Actions
+# MAGIC # 04 - Common DataFrame Actions
 # MAGIC
-# MAGIC Notebook 03 showed how an action starts Spark execution and how shuffles
-# MAGIC divide a job into stages. You already used `show()`, `collect()`, and
-# MAGIC `count()` earlier in this module.
+# MAGIC Return types and driver-side memory risk for common pull/check actions.
 # MAGIC
-# MAGIC This notebook covers additional DataFrame actions that return a result to
-# MAGIC the driver: `first()`, `head()`, `take()`, `tail()`, `isEmpty()`, and
-# MAGIC `toPandas()`. Use actions that return multiple rows only when the result
-# MAGIC is small. Writing with `DataFrame.write` waits for Module 5.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Use `first()`, `head()`, `take()`, `tail()`, `isEmpty()`, and `toPandas()`
-# MAGIC - Understand the driver-side memory risks of actions that return many rows
-# MAGIC
-# MAGIC **Prerequisites.** Notebooks 01–03 in this module — transformations vs
-# MAGIC actions, lazy evaluation, and narrow vs wide.
-# MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC small, hand-built rideshare-style DataFrames aligned with the course
-# MAGIC `payment` schema.
-
+# MAGIC - Choose common actions (`first`, `head`, `take`, `tail`, `isEmpty`, `toPandas`)
+# MAGIC   and know their driver-side memory risks
 # COMMAND ----------
 
 # MAGIC %md

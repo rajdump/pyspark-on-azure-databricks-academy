@@ -1,33 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Missing, Blank, and Sentinel Values
+# MAGIC # 02 - Missing, Blank, and Sentinel Values
 # MAGIC
-# MAGIC The focus of this notebook is handling missing values in realistic forms:
-# MAGIC `NULL`, blank strings, sentinels, and `NaN`. You will normalize these to
-# MAGIC real `NULL` values before deciding where to use `na.drop`, `na.fill`,
-# MAGIC `na.replace`, and `F.coalesce`.
+# MAGIC Normalize missing shapes to real `NULL` before drop/fill.
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Identify missing data disguised as `NULL`, blank strings, sentinels,
-# MAGIC   and `NaN` in a messy rideshare-style DataFrame
-# MAGIC - Normalize blanks, sentinels, and `NaN` to real `NULL` before
-# MAGIC   `na.drop` / `na.fill` decisions
-# MAGIC - Drop rows with `na.drop` (`how="any"` / `"all"`, `subset`)
-# MAGIC - Fill missing values with `na.fill` and replace known values with
-# MAGIC   `na.replace`
-# MAGIC - Set column fallbacks with **`F.coalesce`** (not partition
-# MAGIC   **`DataFrame.coalesce(n)`**)
-# MAGIC - Chain normalization and cleaning into a small operations-style output
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Prerequisites.** `01 - NULL Semantics and Predicate Correctness` in this
-# MAGIC module — you should already know three-valued logic, why filters keep
-# MAGIC only `TRUE`, and intro `isNull` / `isNotNull`. Module 2 covered empty
-# MAGIC string vs `NULL` separately.
-# MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC a small, hand-built rideshare-style DataFrame aligned with `payment` and
-# MAGIC `trip` column names from the course dataset.
-
+# MAGIC - Identify `NULL`, blanks, sentinels, and `NaN`
+# MAGIC - Use `na.drop` / `na.fill` / `na.replace` and `F.coalesce` (not partition
+# MAGIC   coalesce)
 # COMMAND ----------
 
 # MAGIC %md

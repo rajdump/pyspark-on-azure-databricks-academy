@@ -1,9 +1,19 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 07 - Top-N per Group and Sampling
 # MAGIC
+# MAGIC Top-N per group, NULL sort placement, and sampling.
+# MAGIC
+# MAGIC `trip_enriched`, `trip_driver_assignment`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Control NULL sort placement with `nullsFirst` / `nullsLast`
+# MAGIC - Select Top-N per group (including tie-selection policy) and draw reproducible
+# MAGIC   samples with `sample` / `sampleBy` / `randomSplit`
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC Keeping the "top N" rows sounds simple, but two decisions matter:
 # MAGIC
 # MAGIC 1. **How should ties at the cutoff be handled?**
@@ -23,13 +33,8 @@
 # MAGIC | 4 | Sampling | Draw reproducible subsets with a seed |
 # MAGIC | Exercise | Top tips per borough | Combine Top-N with explicit tip NULL placement |
 # MAGIC
-# MAGIC **Reads:** `rideshare_dev.processed.trip_enriched` (106 rows) and
-# MAGIC `rideshare_dev.processed.trip_driver_assignment` (100 rows). **No writes.**
-# MAGIC
-# MAGIC **Prerequisites:** Module 8 Notebooks **01–06**, especially
 # MAGIC **`05 - Window Functions Fundamentals`** and
 # MAGIC **`06 - Running Totals and Lag and Lead`**.
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup — load both managed tables

@@ -1,26 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Lazy Evaluation and the Query Plan
+# MAGIC # 02 - Lazy Evaluation and the Query Plan
 # MAGIC
-# MAGIC Notebook 01 showed that transformations build a plan and actions execute it.
-# MAGIC This notebook explains why Spark waits for an action and how to inspect the
-# MAGIC query plan with `explain(mode="extended")`.
+# MAGIC Why Spark waits for an action, and how the optimizer can rewrite a plan.
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Explain why Spark waits for an action before executing a DataFrame's
-# MAGIC   logical plan
-# MAGIC - Inspect query plans with `explain(mode="extended")`
-# MAGIC - Recognize how the Spark optimizer can apply a late filter earlier
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Prerequisites.** `01 - Transformations vs Actions` in this module — you
-# MAGIC should already know transformations, actions, and chaining before a single
-# MAGIC action.
-# MAGIC
-# MAGIC **Setup.** Prefer classic all-purpose compute (Standard access mode) so Spark
-# MAGIC UI job and stage navigation is easy while you inspect this notebook. This
-# MAGIC notebook uses small, hand-built rideshare-style DataFrames aligned with the
-# MAGIC course `payment` schema.
-
+# MAGIC - Explain lazy evaluation
+# MAGIC - Inspect logical and physical plans with `.explain()` and spot optimizer
+# MAGIC   changes
 # COMMAND ----------
 
 # MAGIC %md

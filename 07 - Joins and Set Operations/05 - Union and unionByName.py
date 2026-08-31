@@ -1,32 +1,15 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
 # MAGIC # 05 - Union and unionByName
 # MAGIC
-# MAGIC Notebooks **01**–**04** used **joins**: joins match rows based on a join
-# MAGIC condition. The join type determines which matched and unmatched rows remain,
-# MAGIC and most joins produce a wider result by adding columns from the other
-# MAGIC DataFrame.
+# MAGIC Stack frames with `union` / `unionByName` — constructed frames only.
 # MAGIC
-# MAGIC This notebook is about **union**: Unions stack one DataFrame under another.
-# MAGIC They need compatible columns, not a join condition. The result is taller —
-# MAGIC more rows from both sides, same column shape.
+# MAGIC Constructed frames (no landing read).
 # MAGIC
-# MAGIC Spark provides two union methods:
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC * **`union()`** matches columns by position. It can silently place values under the wrong columns when column order differs.
-# MAGIC * **`unionByName()`** matches columns by name. It is safer when column order may differ and can handle missing columns with `allowMissingColumns=True`.
-# MAGIC
-# MAGIC | Section  | Focus                                                                      |
-# MAGIC | -------- | -------------------------------------------------------------------------- |
-# MAGIC | 1        | `union()` — stack rows by column position and expose the column-order risk |
-# MAGIC | 2        | `unionByName()` — align columns by name instead of position                |
-# MAGIC | 3        | `allowMissingColumns=True` — combine DataFrames with missing columns       |
-# MAGIC | 4        | `distinct()` after union — remove duplicate rows when required             |
-# MAGIC | Practice | Predict and verify union and distinct row counts           |
-# MAGIC
-# MAGIC **Prerequisites.** Module 7 **`01`–`04`**. **No write.**
-
+# MAGIC - Combine frames with `union` / `unionByName` (column-order trap;
+# MAGIC   `allowMissingColumns`)
 # COMMAND ----------
 
 # DBTITLE 1,Union rules

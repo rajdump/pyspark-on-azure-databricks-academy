@@ -83,8 +83,7 @@ Catalog behavior is validated only in Azure Databricks.
 ## Quick links
 
 - [Notebook authoring checklist](../docs/standards/notebook-authoring-checklist.md)
-- [Notebook writing](../docs/standards/notebook-writing.md)
-- [Teaching guidelines](../docs/standards/teaching-guidelines.md)
+- [Notebook content standard](../docs/standards/notebook-content-standard.md)
 - [Coding standards](../docs/standards/coding-standards.md)
 - [Naming conventions](../docs/standards/naming-conventions.md)
 - [Compute validation policy](../docs/standards/compute-validation-policy.md)

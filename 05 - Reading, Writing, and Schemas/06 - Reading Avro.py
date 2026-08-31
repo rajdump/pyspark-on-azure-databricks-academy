@@ -1,8 +1,17 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC
 # MAGIC # 06 - Reading Avro
 # MAGIC
+# MAGIC Read **`payment`** from landing (Avro copied in notebook **01**).
+# MAGIC
+# MAGIC `/Volumes/rideshare_dev/landing/source_files/payment/`.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Read Avro with an explicit schema
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## What is Avro?
 # MAGIC
 # MAGIC Avro is a **row-oriented binary format** commonly used to exchange
@@ -19,7 +28,6 @@
 # MAGIC
 # MAGIC The diagram below uses three small payments to show how Avro lays those
 # MAGIC fields out on disk.
-
 # COMMAND ----------
 
 # MAGIC %md
@@ -94,7 +102,6 @@
 # MAGIC ```
 
 # COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## When to use each format
 # MAGIC
@@ -117,33 +124,6 @@
 # MAGIC
 # MAGIC In production pipelines, the discovered schema should still be validated
 # MAGIC against the expected data contract.
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC ### What you will learn
-# MAGIC
-# MAGIC | Topic | What you will do |
-# MAGIC |-------|------------------|
-# MAGIC | When to use Avro | Contrast Avro with Parquet for ingestion vs analytics |
-# MAGIC | Read Avro | Load **`payment`** from a Volume path |
-# MAGIC | DataSource syntax | Use `format("avro").load(...)` / `.save(...)` |
-# MAGIC | Embedded schema | Inspect with `printSchema()`, a sample row, and row count |
-# MAGIC | Explicit schemas | Apply DDL string and `StructType` schemas for validation |
-# MAGIC | Schema mismatch | See nulls, dropped columns, or hard fails when `.schema(...)` disagrees |
-# MAGIC | Light reshape | Select fare columns for a practice write |
-# MAGIC | Write Avro | Save a practice output under `practice/` |
-# MAGIC | Round-trip test | Re-read written Avro and confirm types are preserved |
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Prerequisites.** Module 4, **01 - Unity Catalog Volumes and Data
-# MAGIC Landing**, and prior Module 5 format notebooks — landing volume populated
-# MAGIC with **`payment/payment.avro`**.
-# MAGIC
-# MAGIC **Source file:** `/Volumes/rideshare_dev/landing/source_files/payment/payment.avro`
-# MAGIC
-# MAGIC **Compute:** Any cluster with PySpark. This notebook uses Volume paths only.
-
 # COMMAND ----------
 
 # MAGIC %md

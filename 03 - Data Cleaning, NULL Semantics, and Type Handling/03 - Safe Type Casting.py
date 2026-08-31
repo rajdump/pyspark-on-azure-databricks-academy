@@ -1,32 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Safe Type Casting
+# MAGIC # 03 - Safe Type Casting
 # MAGIC
-# MAGIC The focus of this notebook is type safety: converting string columns to
-# MAGIC typed values under Spark 4 / ANSI mode. You will see why an invalid
-# MAGIC **`cast`** now raises an error instead of silently returning **`NULL`**,
-# MAGIC how **`try_cast`** turns malformed or overflowing values into **`NULL`**
-# MAGIC without stopping the job, and how to find the rows that a cast rejected.
+# MAGIC `cast` vs `try_cast` under Spark 4 / ANSI, and rejected-row detection.
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Explain how Spark 4 / ANSI mode changes invalid **`cast`** behavior
-# MAGIC - Cast string columns to typed values with **`cast`**
-# MAGIC - Use **`try_cast`** when malformed or overflowing values should become
-# MAGIC   **`NULL`** instead of raising an error
-# MAGIC - Detect rows rejected by a cast with
-# MAGIC   **`source.isNotNull() & casted.isNull()`**
-# MAGIC - Recognize unsupported type pairs where **`try_cast`** cannot help
-# MAGIC - Inspect rejected casts in a small operations-style output
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Prerequisites.** `02 - Missing, Blank, and Sentinel Values` in this
-# MAGIC module — you should already know normalize-first cleaning and intro
-# MAGIC **`cast`** from Module 2 **`03 - Selecting and Transforming Columns`**.
-# MAGIC Module 2 deferred the deeper casting rules to here.
-# MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC small, hand-built rideshare-style DataFrames aligned with **`payment`**
-# MAGIC and **`trip`** column names from the course dataset.
-
+# MAGIC - Cast with `cast` and `try_cast`
+# MAGIC - Detect rows rejected by a cast
 # COMMAND ----------
 
 # MAGIC %md

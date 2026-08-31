@@ -1,30 +1,17 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC
 # MAGIC # 01 - Column Transforms with Built-in Functions
 # MAGIC
-# MAGIC Data arriving in a landing area is rarely ready for reporting or downstream
-# MAGIC processing. Text may need standard labels, numeric values may need new units,
-# MAGIC and dates may need calendar fields. Spark provides built-in functions for these
-# MAGIC common transformations.
+# MAGIC Same transforms after load from a Volume path vs a managed table — no curated
+# MAGIC write.
 # MAGIC
-# MAGIC You will:
+# MAGIC Landing **`trip_time`** Parquet and.
 # MAGIC
-# MAGIC 1. Load `trip_time` from a landing Volume path and a managed Unity Catalog table
-# MAGIC 2. Apply the same built-in transformation expressions after either load
-# MAGIC 3. Transform string, numeric, decimal, conditional, date, and time columns
-# MAGIC 4. Practice building new columns with `pyspark.sql.functions` as `F`
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Prerequisites.** Complete **`01 - Unity Catalog Volumes and Data Landing`**
-# MAGIC through **`07 - Write Patterns and Table Preview`** in Module 5 — Reading,
-# MAGIC Writing, and Schemas. The landing Volume must be populated, and the managed table
-# MAGIC **`rideshare_dev.processed.trip_time_preview`** must exist.
-# MAGIC
-# MAGIC This is a skill-building notebook. It reads landing data but does **not** write
-# MAGIC to `practice/` or `curated/`. Module 6
-# MAGIC **`03 - Cleaning and Curated Outputs`** will re-read the landing datasets and
-# MAGIC persist curated results.
-
+# MAGIC - Apply string, numeric, date/time, and conditional `F.*` transforms
+# MAGIC - Load the same logical dataset from a Volume path and a managed table, then
+# MAGIC   apply identical chains after load
 # COMMAND ----------
 
 # MAGIC %md

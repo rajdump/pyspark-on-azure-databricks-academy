@@ -1,9 +1,20 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
-# MAGIC
 # MAGIC # 03 - Lookup Joins, Columns, and Broadcast
 # MAGIC
+# MAGIC Repeated zone lookup, column cleanup, and broadcast — reused in notebook
+# MAGIC **07**.
+# MAGIC
+# MAGIC `zone_lookup` (22);.
+# MAGIC
+# MAGIC ## Learning objectives
+# MAGIC
+# MAGIC - Run a repeated lookup join (`zone_lookup` for pickup and dropoff)
+# MAGIC - Clean columns with `select` / rename and `F.broadcast` a small dimension
+# MAGIC   (confirm in `.explain()`)
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ### The problem: location IDs aren't names — and a tiny lookup table shouldn't cost a big shuffle
 # MAGIC
 # MAGIC Every trip in `curated/trip` includes a `pickup_location_id` and a `dropoff_location_id`, represented by numeric codes. To make this information clearer, you can join the `zone_lookup` table on `location_id` twice: once for pickup and once for dropoff.
@@ -22,14 +33,9 @@
 # MAGIC
 # MAGIC 4. **Broadcasting** - Hinting to Spark to avoid shuffle operations and verifying this in the physical plan.
 # MAGIC
-# MAGIC **Reads:** `zone_lookup` (JSON Lines, 22 rows); processed `curated/trip` (Parquet, 106 rows). **No write.**
-# MAGIC
-# MAGIC **Prerequisites.** Module 7 **`01 - Grain, Join Syntax, and Unmatched Keys`**
-# MAGIC and **`02 - Silent Join Failures and Validation`**; Module 6 (**`01`** through
 # MAGIC **`04`**) so **`curated/trip`** exists. Boolean join syntax, `.alias`, key
 # MAGIC profiling, and left/right/full unmatched-key behavior are applied here, not
 # MAGIC re-taught. Landing Volume must contain **`zone_lookup`**.
-
 # COMMAND ----------
 
 # DBTITLE 1,Setup

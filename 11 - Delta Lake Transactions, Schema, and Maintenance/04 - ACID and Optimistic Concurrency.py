@@ -2,33 +2,11 @@
 # MAGIC %md
 # MAGIC # 04 - ACID and Optimistic Concurrency
 # MAGIC
-# MAGIC Two jobs correct fares on the **same four trips** in `fare_maint_lab`.
-# MAGIC That one story is the ACID example.
-# MAGIC
-# MAGIC Production pipelines need those writes to stay **transactionally
-# MAGIC correct**: one commit must not mix partial work from two writers.
+# MAGIC ACID and optimistic concurrency, including a write conflict and retry.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
-# MAGIC - Create `fare_maint_lab` with extract columns and insert trips **1001–1004**
-# MAGIC - `UPDATE` trip **1003** tip **6.00 → 10.00** and inspect `DESCRIBE HISTORY`
-# MAGIC - Explain optimistic concurrency: snapshot reads, version checks, and
-# MAGIC   overlapping-write conflicts
-# MAGIC - Show one overlapping-write conflict, a retry, and **4** remaining rows
-# MAGIC
-# MAGIC **Reads:** none of the 100-row source files or teaching tables
-# MAGIC (`trip_enriched`, KPIs, `curated/`)
-# MAGIC
-# MAGIC **Writes:**
-# MAGIC - `rideshare_dev.processed.fare_maint_lab` at `{url}/external-tables/fare_maint_lab`
-# MAGIC
-# MAGIC **Prerequisites:** Module 10 notebooks `01`–`04`. Module 5
-# MAGIC `01 - Unity Catalog Volumes and Data Landing.py` (catalog,
-# MAGIC `el_rideshare_dev`, `processed`).
-# MAGIC
-# MAGIC This notebook does **not** teach isolation levels, checkpoints, protocol
-# MAGIC versions, or `OPTIMIZE`.
-
+# MAGIC - Explain ACID and optimistic concurrency, including a write conflict and retry
 # COMMAND ----------
 
 # MAGIC %md

@@ -1,41 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC
 # MAGIC # 03 - Reading JSON
 # MAGIC
-# MAGIC JSON is the most common format for API responses, microservice exports,
-# MAGIC and configuration data. In this notebook, we read the **`zone_lookup`**
-# MAGIC dataset — stored as a JSON Lines file in the landing volume.
+# MAGIC Read **`zone_lookup`** (JSON Lines) from landing.
 # MAGIC
-# MAGIC **Key difference from CSV:** Spark's JSON reader automatically detects
-# MAGIC field names and types. No need to manually cast columns like we did
-# MAGIC with CSV. But for production, an explicit schema is still best practice.
+# MAGIC `/Volumes/rideshare_dev/landing/source_files/zone_lookup/`.
 # MAGIC
-# MAGIC ---
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC ### What you will learn
-# MAGIC
-# MAGIC | Topic | What you will do |
-# MAGIC |-------|------------------|
-# MAGIC | Read JSON | Load a JSON Lines file from a Volume path |
-# MAGIC | Two read syntaxes | `.json(path)` shorthand vs `format("json").load(path)` |
-# MAGIC | Inferred read | Inspect with `printSchema()`, a sample row, and row count |
-# MAGIC | JSON Lines vs multiline | Understand when `multiLine=True` is needed |
-# MAGIC | Explicit schemas | Apply DDL string and `StructType` schemas |
-# MAGIC | Missing/extra fields | See how Spark handles mismatched JSON keys |
-# MAGIC | Write JSON | Reshape with `select()` and write a practice output |
-# MAGIC | Round-trip test | Re-read written JSON; apply explicit schema on read |
-# MAGIC
-# MAGIC ---
-# MAGIC
-# MAGIC **Prerequisites.** Module 4, **01 - Unity Catalog Volumes and Data
-# MAGIC Landing**, and **02 - Reading CSV** — landing volume populated with
-# MAGIC **`zone_lookup/zone_lookup.json`**.
-# MAGIC
-# MAGIC **Source file:** `/Volumes/rideshare_dev/landing/source_files/zone_lookup/zone_lookup.json`
-# MAGIC
-# MAGIC **Compute:** Any cluster with PySpark. This notebook uses Volume paths only.
-
+# MAGIC - Read JSON Lines with an explicit schema
 # COMMAND ----------
 
 # MAGIC %md

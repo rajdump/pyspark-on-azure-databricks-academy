@@ -1,35 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Numeric Overflow and Date-Timestamp Parsing
+# MAGIC # 04 - Numeric Overflow and Date-Timestamp Parsing
 # MAGIC
-# MAGIC The focus of this notebook is two remaining failure modes under Spark 4 /
-# MAGIC ANSI mode: **numeric overflow** during casts, arithmetic, and aggregations,
-# MAGIC and **date/timestamp parsing** when values arrive as text. You will see why
-# MAGIC plain operations raise errors, how **`try_*`** helpers return **`NULL`**
-# MAGIC instead, and how to tell a bad source value from a bad format pattern in
-# MAGIC your code.
+# MAGIC Overflow and unparseable dates/timestamps with Spark 4 / ANSI `try_*` helpers.
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Handle integer and decimal **cast overflow** under Spark 4 / ANSI mode
-# MAGIC - Use **`try_add`** and **`try_sum`** / **`try_avg`** when arithmetic or
-# MAGIC   aggregation overflow should return **`NULL`** instead of raising
-# MAGIC - Parse text into **`date`** and **`timestamp`** values with
-# MAGIC   **`to_date`** / **`to_timestamp`** and format patterns
-# MAGIC - Check **`spark.sql.session.timeZone`** and set it when the project
-# MAGIC   needs a specific timezone
-# MAGIC - Use **`try_to_date`** / **`try_to_timestamp`** for invalid source values
-# MAGIC - Distinguish an **invalid source value** (data problem) from an
-# MAGIC   **invalid format pattern** (code problem)
-# MAGIC - Chain safe parsing into a small operations-style output
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Prerequisites.** `03 - Safe Type Casting` in this module — you should
-# MAGIC already know **`cast`**, **`try_cast`**, ANSI mode, and the rejected-row
-# MAGIC pattern **`source.isNotNull() & casted.isNull()`**.
-# MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. This notebook uses
-# MAGIC small, hand-built rideshare-style DataFrames aligned with **`trip`**,
-# MAGIC **`trip_time`**, and **`payment`** column names from the course dataset.
-
+# MAGIC - Handle numeric overflow (`try_sum` / `try_avg`)
+# MAGIC - Parse dates/timestamps with formats and session timezone; use `try_to_date` /
+# MAGIC   `try_to_timestamp`
 # COMMAND ----------
 
 # MAGIC %md

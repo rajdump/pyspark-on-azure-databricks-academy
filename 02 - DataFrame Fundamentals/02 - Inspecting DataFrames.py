@@ -1,23 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Inspecting DataFrames
+# MAGIC # 02 - Inspecting DataFrames
 # MAGIC
-# MAGIC **Learning objectives.** After this notebook, you will be able to:
-# MAGIC - Inspect DataFrame contents with `show()` options and `display()`
-# MAGIC - Inspect DataFrame structure with `printSchema()`, `schema`, `columns`,
-# MAGIC   and `dtypes`
-# MAGIC - Check DataFrame size and emptiness with `count()` and `isEmpty()`
-# MAGIC - Review first-pass statistics with `describe()` and `summary()`
-# MAGIC - Explain which inspection methods are metadata lookups vs methods that
-# MAGIC   execute Spark work, and choose lightweight checks first when possible
+# MAGIC Inspect beyond a first look: contents, structure, size, and summary stats.
 # MAGIC
-# MAGIC **Prerequisites.** `01 - Creating DataFrames` in this module — you should
-# MAGIC already know how to create small DataFrames with inferred and explicit
-# MAGIC schemas.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Setup.** Attach any compute with PySpark available. Use a small,
-# MAGIC hand-built rideshare-style DataFrame for examples in this notebook.
-
+# MAGIC - Inspect contents with `show` options and `display`
+# MAGIC - Inspect structure with `printSchema`, `schema`, `columns`, `dtypes`
+# MAGIC - Check size with `count` and `isEmpty`; use `describe` / `summary`
+# MAGIC - Distinguish metadata checks from methods that run Spark work
 # COMMAND ----------
 
 # MAGIC %md

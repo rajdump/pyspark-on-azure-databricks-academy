@@ -1,28 +1,16 @@
 # Databricks notebook source
-# DBTITLE 1,Introduction
 # MAGIC %md
 # MAGIC # 02 - Silent Join Failures and Validation
 # MAGIC
-# MAGIC Joins can succeed and still be wrong. No error, no warning — just silently
-# MAGIC corrupted row counts and broken aggregations downstream.
+# MAGIC M:M fanout, key profiling, and NULL-key traps — still no write.
 # MAGIC
-# MAGIC This notebook covers three silent failures and the habits that prevent them:
+# MAGIC Landing `trip`, `trip_time`, `payment` (+ frames).
 # MAGIC
-# MAGIC * **M:M duplicate keys** — rows multiply (2×2 = 4 per key)
-# MAGIC * **NULL keys** — rows vanish from inner joins
-# MAGIC * **Accidental Cartesian** — every row × every row
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC Between those: how to detect duplicates before joining (key profiling) and
-# MAGIC how to resolve them deterministically (window ranking, not dropDuplicates).
-# MAGIC
-# MAGIC **Reads:** landing `trip`, `trip_time`, `payment` (100 rows each) +
-# MAGIC constructed mini-frames. **No write.**
-# MAGIC
-# MAGIC **Prerequisites.** Module 7 **`01 - Grain, Join Syntax, and Unmatched Keys`**
-# MAGIC and Module 6 (**`01`** through **`04`**). Landing Volume must contain **`trip`**,
-# MAGIC **`trip_time`**, and **`payment`** (100 rows each). Recall Module 3
-# MAGIC **`eqNullSafe`** when NULL keys must match.
-
+# MAGIC - Profile keys and resolve duplicates with `Window` + `row_number` (not
+# MAGIC   `dropDuplicates`) when payloads differ
+# MAGIC - Explain NULL-key behavior and use `eqNullSafe` when NULLs must match
 # COMMAND ----------
 
 # DBTITLE 1,Setup

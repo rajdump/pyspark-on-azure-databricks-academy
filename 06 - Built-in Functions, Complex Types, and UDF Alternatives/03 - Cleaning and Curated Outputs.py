@@ -1,22 +1,15 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC
 # MAGIC # 03 - Cleaning and Curated Outputs
 # MAGIC
-# MAGIC Production pipelines can fail due to inconsistent raw data. This notebook demonstrates a standard batch-cleaning pattern commonly used in real projects. It applies technical and business validation rules, rejects invalid rows, normalizes business fields, maintains the necessary rows for later processing and saves curated outputs for downstream application/projects
+# MAGIC Full-size controlled-bad CSVs → curated **`trip`** and **`payment`**.
 # MAGIC
-# MAGIC You will:
+# MAGIC Landing **`bad_trip_data.csv`** (108 source rows) and.
 # MAGIC
-# MAGIC 1. Implement methods for safely handling null values, cleaning up inaccurate data, and ensuring safe data type conversions.
-# MAGIC 2. Apply production-quality cleaning rules to ensure reliable `trip` and `payment` outputs.
-# MAGIC 3. Save the cleaned and enhanced columns in the final output.
-# MAGIC 4. Write and review the final `trip` and `payment` datasets.
+# MAGIC ## Learning objectives
 # MAGIC
-# MAGIC **Prerequisites.** Complete Module 6 **`01 - Column Transforms with Built-in
-# MAGIC Functions`** and **`02 - Complex Types: Structs, Arrays, and explode`**. Run Module
-# MAGIC 5 **`01 - Unity Catalog Volumes and Data Landing`** so both controlled-bad CSV files
-# MAGIC exist in the landing Volume.
-
+# MAGIC - Review Module 3 cleaning patterns on full-size controlled-bad CSV variants and
+# MAGIC   persist cleaned DataFrames to curated outputs
 # COMMAND ----------
 
 # MAGIC %md
