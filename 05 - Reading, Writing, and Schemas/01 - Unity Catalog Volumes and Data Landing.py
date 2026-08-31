@@ -5,7 +5,8 @@
 # MAGIC Create the course catalog, volumes, and land repo source files — including
 # MAGIC controlled-bad CSVs for Module 6.
 # MAGIC
-# MAGIC Repo `data/raw` (open from the Git folder) plus config-cell Azure.
+# MAGIC Repo `data/raw` (open from the Git folder) plus config-cell Azure
+# MAGIC values.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC

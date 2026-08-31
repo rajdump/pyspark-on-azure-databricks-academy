@@ -33,6 +33,7 @@
 # MAGIC | 4 | Sampling | Draw reproducible subsets with a seed |
 # MAGIC | Exercise | Top tips per borough | Combine Top-N with explicit tip NULL placement |
 # MAGIC
+# MAGIC Run this module **01–06**, especially
 # MAGIC **`05 - Window Functions Fundamentals`** and
 # MAGIC **`06 - Running Totals and Lag and Lead`**.
 # COMMAND ----------

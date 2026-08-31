@@ -33,8 +33,8 @@
 # MAGIC | 4 | Filter after rank | Keep the top rows per group |
 # MAGIC | Exercise | Service windows | Add service totals and a duration rank to each trip |
 # MAGIC
-# MAGIC **01–07**, especially **`07 - Build Unified Curated Tables`** (managed
-# MAGIC tables used here).
+# MAGIC Run Module 8 **01–04** and Module 7 **01–07**, especially
+# MAGIC **`07 - Build Unified Curated Tables`** (managed tables used here).
 # COMMAND ----------
 
 # DBTITLE 1,Setup and baseline grain
