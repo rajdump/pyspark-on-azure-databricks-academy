@@ -5,7 +5,8 @@
 # MAGIC Repeated zone lookup, column cleanup, and broadcast — reused in notebook
 # MAGIC **07**.
 # MAGIC
-# MAGIC `zone_lookup` (22);.
+# MAGIC `zone_lookup` (22);
+# MAGIC `/Volumes/rideshare_dev/processed/output_files/curated/trip/` (106).
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
@@ -15,7 +16,10 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### The problem: location IDs aren't names — and a tiny lookup table shouldn't cost a big shuffle
+# MAGIC ## The problem: location IDs aren't names — and a tiny lookup table shouldn't cost a big shuffle
+# MAGIC
+# MAGIC This module **01**–**02** and Module 6 **01**–**04** must already have run so
+# MAGIC **`curated/trip`** exists.
 # MAGIC
 # MAGIC Every trip in `curated/trip` includes a `pickup_location_id` and a `dropoff_location_id`, represented by numeric codes. To make this information clearer, you can join the `zone_lookup` table on `location_id` twice: once for pickup and once for dropoff.
 # MAGIC
@@ -32,10 +36,6 @@
 # MAGIC 3. **Unmatched Dimension Rows** - Identifying zones in `zone_lookup` that have no trip references and discussing join behaviours.
 # MAGIC
 # MAGIC 4. **Broadcasting** - Hinting to Spark to avoid shuffle operations and verifying this in the physical plan.
-# MAGIC
-# MAGIC **`04`**) so **`curated/trip`** exists. Boolean join syntax, `.alias`, key
-# MAGIC profiling, and left/right/full unmatched-key behavior are applied here, not
-# MAGIC re-taught. Landing Volume must contain **`zone_lookup`**.
 # COMMAND ----------
 
 # DBTITLE 1,Setup

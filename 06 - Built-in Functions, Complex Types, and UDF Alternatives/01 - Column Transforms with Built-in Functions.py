@@ -5,7 +5,9 @@
 # MAGIC Same transforms after load from a Volume path vs a managed table — no curated
 # MAGIC write.
 # MAGIC
-# MAGIC Landing **`trip_time`** Parquet and.
+# MAGIC Landing **`trip_time`** Parquet and
+# MAGIC **`rideshare_dev.processed.trip_time_preview`**; also landing **`trip`**
+# MAGIC (and optional light **`payment`**).
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC

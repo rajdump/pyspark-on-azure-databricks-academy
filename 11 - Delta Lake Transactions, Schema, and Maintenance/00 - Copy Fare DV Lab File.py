@@ -11,6 +11,7 @@
 # MAGIC - Copy the lab Parquet, `LIST`, and `CONVERT TO DELTA` so notebook **01** can
 # MAGIC   register an external table
 # COMMAND ----------
+
 # MAGIC %md
 # MAGIC **Next:** `01 - Deletion Vectors, REORG TABLE, and VACUUM`
 # COMMAND ----------

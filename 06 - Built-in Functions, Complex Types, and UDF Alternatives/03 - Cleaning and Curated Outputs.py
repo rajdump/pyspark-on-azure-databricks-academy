@@ -4,7 +4,8 @@
 # MAGIC
 # MAGIC Full-size controlled-bad CSVs → curated **`trip`** and **`payment`**.
 # MAGIC
-# MAGIC Landing **`bad_trip_data.csv`** (108 source rows) and.
+# MAGIC Landing **`bad_trip_data.csv`** (108 source rows) and
+# MAGIC **`bad_payment_data.csv`** (106 source rows).
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC

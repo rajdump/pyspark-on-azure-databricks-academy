@@ -19,6 +19,13 @@
 # MAGIC here: `trip_id` (`bigint`), `payment_method` (`string`),
 # MAGIC `base_fare_amount` (`decimal(10,2)`), and `tip_amount` (`decimal(10,2)`).
 # MAGIC
+# MAGIC Prefer classic all-purpose compute (**Dedicated** access mode) for the
+# MAGIC clearest partition and shuffle demos. The notebook also runs on Standard
+# MAGIC and serverless, but those environments may collapse this hand-built sample
+# MAGIC into a single partition, which weakens the narrow vs wide contrast.
+# MAGIC Partition count follows the cluster (often tied to cores) — observe what
+# MAGIC you get.
+# MAGIC
 # MAGIC The same DataFrame is used for both the narrow and wide demos.
 
 # COMMAND ----------

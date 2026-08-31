@@ -5,7 +5,8 @@
 # MAGIC Write-only business flow: load, build both tables per mapping docs,
 # MAGIC `saveAsTable` overwrite.
 # MAGIC
-# MAGIC Curated trip/payment/drivers_flat; landing `trip_time`,.
+# MAGIC Curated trip/payment/drivers_flat; landing `trip_time`,
+# MAGIC `zone_lookup`.
 # MAGIC
 # MAGIC ## Learning objectives
 # MAGIC
